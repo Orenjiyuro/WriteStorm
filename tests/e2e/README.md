@@ -9,6 +9,8 @@ Current validation in this workspace is Windows-only. macOS path handling is cov
 
 Electron stderr is captured and attached to e2e failures so startup, CDP connection, and assertion failures do not lose native-process diagnostics.
 
+The packaged smoke is a scaffold/runtime check, not a production release signal. Remote CI is not configured, Windows signing is not configured, macOS notarization is not configured, and auto-update is not configured.
+
 ## Current Status
 
 - Local CI equivalent command is `npm run check`, which runs `typecheck`, unit tests, and full Electron e2e.

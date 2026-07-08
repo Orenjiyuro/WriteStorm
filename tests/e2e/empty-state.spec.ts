@@ -46,9 +46,62 @@ test('shows the no-library empty state in a real Electron window', async () => {
 
     await expect(page.getByRole('heading', { name: 'No library open' })).toBeVisible();
     await expect(page.getByText('Create or open a local library')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Analysis module contract readout' })).toBeVisible();
+    await expect(page.locator('[data-contract-source="shared-domain-analysis"]')).toBeVisible();
+    await expect(page.getByText('Source: shared domain contract')).toBeVisible();
+    await expect(page.getByText('7 contract modules')).toBeVisible();
+    await expect(page.getByText('作品结构与分段')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'AI 约束摘要' })).toBeVisible();
+    await expect(page.getByText('Disabled placeholder')).toBeVisible();
+    await expect(
+      page.getByText('专题视角是跨模块派生视图，不属于 AnalysisModule scope matrix。'),
+    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Technique library contract readout' })).toBeVisible();
+    await expect(page.locator('[data-contract-source="shared-domain-technique"]')).toBeVisible();
+    await expect(page.getByText('来自已采纳候选')).toBeVisible();
+    await expect(page.getByText('Source snapshot secondary information')).toBeVisible();
+    await expect(page.getByText('Read-only provenance position')).toBeVisible();
+    await expect(page.getByText('Manual primary action unavailable')).toBeVisible();
+    await expect(page.getByRole('button')).toHaveCount(0);
 
     const health = await page.evaluate(() => window.writestorm.internal.health());
     expect(health).toEqual({ ok: true, app: 'WriteStorm' });
+
+    const writestormApiShape = await page.evaluate(() => ({
+      root: Object.keys(window.writestorm),
+      library: Object.keys(window.writestorm.library),
+      books: Object.keys(window.writestorm.books),
+      structure: Object.keys(window.writestorm.structure),
+      modules: Object.keys(window.writestorm.modules),
+      jobs: Object.keys(window.writestorm.jobs),
+      exports: Object.keys(window.writestorm.exports),
+      hasRawInvoke: 'invoke' in window.writestorm,
+      hasRawIpcRenderer: 'ipcRenderer' in window.writestorm,
+    }));
+    expect(writestormApiShape).toEqual({
+      root: ['internal', 'library', 'books', 'structure', 'modules', 'jobs', 'exports'],
+      library: ['create', 'open', 'getCurrent'],
+      books: ['list', 'importSource'],
+      structure: ['get', 'updateNode', 'updateStoryRange', 'freeze'],
+      modules: ['listInstances', 'updateBody'],
+      jobs: ['list', 'get', 'cancel'],
+      exports: ['getStatus'],
+      hasRawInvoke: false,
+      hasRawIpcRenderer: false,
+    });
+
+    const productResponse = await page.evaluate(() => window.writestorm.books.list());
+    expect(productResponse).toEqual({
+      ok: false,
+      error: {
+        code: 'NOT_IMPLEMENTED',
+        message: 'Channel books:list is not implemented.',
+        recoverable: false,
+        details: {
+          channel: 'books:list',
+        },
+      },
+    });
 
     const hasNodeRequire = await page.evaluate(() => 'require' in window);
     expect(hasNodeRequire).toBe(false);

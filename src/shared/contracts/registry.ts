@@ -1,0 +1,145 @@
+import { z } from 'zod';
+import {
+  bookRequestSchema,
+  bookSummarySchema,
+  contractResponseSchema,
+  emptyRequestSchema,
+  exportStatusSchema,
+  freezeStructureResponseDataSchema,
+  importSourceRequestSchema,
+  jobRequestSchema,
+  jobSummarySchema,
+  librarySummarySchema,
+  moduleInstanceSummarySchema,
+  optionalBookRequestSchema,
+  storySegmentRangeSchema,
+  structureNodeSchema,
+  updateModuleBodyRequestSchema,
+  updateStorySegmentRangeRequestSchema,
+  updateStructureNodeRequestSchema,
+} from './schemas';
+import type { ProductIpcChannel } from './channels';
+
+export type IpcContract<
+  TChannel extends ProductIpcChannel,
+  TRequest extends z.ZodTypeAny,
+  TResponse extends z.ZodTypeAny,
+> = {
+  channel: TChannel;
+  request: TRequest;
+  response: TResponse;
+};
+
+function createContract<
+  TChannel extends ProductIpcChannel,
+  TRequest extends z.ZodTypeAny,
+  TResponse extends z.ZodTypeAny,
+>(
+  channel: TChannel,
+  request: TRequest,
+  response: TResponse,
+): IpcContract<TChannel, TRequest, TResponse> {
+  return {
+    channel,
+    request,
+    response,
+  };
+}
+
+export const CONTRACT_REGISTRY = {
+  'library:create': createContract(
+    'library:create',
+    emptyRequestSchema,
+    contractResponseSchema(librarySummarySchema.nullable()),
+  ),
+  'library:open': createContract(
+    'library:open',
+    emptyRequestSchema,
+    contractResponseSchema(librarySummarySchema.nullable()),
+  ),
+  'library:get-current': createContract(
+    'library:get-current',
+    emptyRequestSchema,
+    contractResponseSchema(librarySummarySchema.nullable()),
+  ),
+  'books:list': createContract(
+    'books:list',
+    emptyRequestSchema,
+    contractResponseSchema(z.array(bookSummarySchema)),
+  ),
+  'books:import-source': createContract(
+    'books:import-source',
+    importSourceRequestSchema,
+    contractResponseSchema(jobSummarySchema),
+  ),
+  'structure:get': createContract(
+    'structure:get',
+    bookRequestSchema,
+    contractResponseSchema(z.object({
+      nodes: z.array(structureNodeSchema),
+      storyRanges: z.array(storySegmentRangeSchema),
+      structureEdition: z.number().int().positive().nullable(),
+    }).strict()),
+  ),
+  'structure:update-node': createContract(
+    'structure:update-node',
+    updateStructureNodeRequestSchema,
+    contractResponseSchema(structureNodeSchema),
+  ),
+  'structure:update-story-range': createContract(
+    'structure:update-story-range',
+    updateStorySegmentRangeRequestSchema,
+    contractResponseSchema(storySegmentRangeSchema),
+  ),
+  'structure:freeze': createContract(
+    'structure:freeze',
+    bookRequestSchema,
+    contractResponseSchema(freezeStructureResponseDataSchema),
+  ),
+  'modules:list-instances': createContract(
+    'modules:list-instances',
+    bookRequestSchema,
+    contractResponseSchema(z.array(moduleInstanceSummarySchema)),
+  ),
+  'modules:update-body': createContract(
+    'modules:update-body',
+    updateModuleBodyRequestSchema,
+    contractResponseSchema(moduleInstanceSummarySchema),
+  ),
+  'jobs:list': createContract(
+    'jobs:list',
+    optionalBookRequestSchema,
+    contractResponseSchema(z.array(jobSummarySchema)),
+  ),
+  'jobs:get': createContract(
+    'jobs:get',
+    jobRequestSchema,
+    contractResponseSchema(jobSummarySchema.nullable()),
+  ),
+  'jobs:cancel': createContract(
+    'jobs:cancel',
+    jobRequestSchema,
+    contractResponseSchema(jobSummarySchema),
+  ),
+  'exports:get-status': createContract(
+    'exports:get-status',
+    bookRequestSchema,
+    contractResponseSchema(exportStatusSchema),
+  ),
+} as const satisfies {
+  [TChannel in ProductIpcChannel]: IpcContract<TChannel, z.ZodTypeAny, z.ZodTypeAny>;
+};
+
+export function getContract<TChannel extends ProductIpcChannel>(
+  channel: TChannel,
+): (typeof CONTRACT_REGISTRY)[TChannel] {
+  return CONTRACT_REGISTRY[channel];
+}
+
+export type ContractRequest<TChannel extends ProductIpcChannel> = z.infer<
+  (typeof CONTRACT_REGISTRY)[TChannel]['request']
+>;
+
+export type ContractResponse<TChannel extends ProductIpcChannel> = z.infer<
+  (typeof CONTRACT_REGISTRY)[TChannel]['response']
+>;

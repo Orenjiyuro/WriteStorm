@@ -1,0 +1,176 @@
+# WriteStorm Engineering Decisions
+
+日期：2026-07-05  
+状态：活跃决策记录
+
+## D001: Target Platforms
+
+Decision: WriteStorm targets Windows 11 and macOS desktop apps only.
+
+Implications:
+
+- No Web runtime or hosted Web app.
+- UI can use web technologies only inside Electron.
+- Platform-specific file dialogs, packaging and path behavior must be tested on both Windows 11 and macOS.
+
+## D002: Desktop Stack
+
+Decision: Use Electron Forge + Vite + React + TypeScript.
+
+Reason:
+
+- User selected Electron + React/TypeScript after comparing cross-desktop options.
+- Electron supports Windows/macOS desktop packaging and lets the team use mature React editor/workbench patterns.
+- Electron risks are handled through process isolation, typed IPC, no renderer Node access and explicit tests.
+
+Rejected:
+
+- WinUI 3/.NET: Windows-only.
+- Avalonia/.NET: viable but not selected.
+- Tauri/Rust/TypeScript: viable but not selected.
+- Qt/C++/QML: viable but not selected.
+
+## D003: Primary Store
+
+Decision: SQLite is the only transactional main fact source.
+
+Reason:
+
+- WriteStorm needs stable local transactions, indexes, migrations, recovery and health checks.
+- JSON/Markdown are still important, but only as export, mirror or human-readable artifacts.
+
+Implications:
+
+- Do not dual-write JSON as an authoritative source.
+- Markdown body edits are controlled service writes into SQLite.
+- Export and mirror files are rebuildable from SQLite plus source files.
+
+## D004: Library Folder
+
+Decision: A library is a user-selected local folder containing `manifest.json`, `writestorm.sqlite`, copied source files, exports, logs, cache and derived mirrors.
+
+Implications:
+
+- Imported source copies are owned by the library.
+- Credentials never enter the library folder.
+- `cache/` and `mirrors/` can be rebuilt.
+- Migration packages include SQLite plus source files and derived export artifacts when requested.
+
+## D005: Renderer Privilege Boundary
+
+Decision: Renderer is unprivileged and talks to main through typed IPC only.
+
+Rules:
+
+- `nodeIntegration` off.
+- `contextIsolation` on.
+- Preload exposes only a typed `window.writestorm` API.
+- Renderer cannot directly access fs, SQLite, shell, child processes or Codex SDK.
+
+## D006: Service Boundary
+
+Decision: Domain services live in main or utility/worker processes.
+
+Services:
+
+- `LibraryService`
+- `BookService`
+- `SourceTextService`
+- `StructureService`
+- `ModuleInstanceService`
+- `JobService`
+- `ExportService`
+- `CodexService`
+- `TypedIpcBridge`
+
+Implications:
+
+- Renderer receives DTOs, not raw database rows.
+- Main validates paths and owns transactions.
+- Heavy work moves to utility/worker process.
+
+## D007: Codex SDK Is V1 AI Surface
+
+Decision: V1 AI integration supports Codex SDK only.
+
+Rules:
+
+- Codex SDK spike must pass before real AI breakdown implementation starts.
+- If SDK fails required checks, V1 AI is blocked.
+- Do not fall back to `codex exec`, app-server, GUI automation, API Key, local model or another provider without a new product decision.
+
+Required spike checks:
+
+- Electron main/utility compatibility.
+- Structured output.
+- Cancellation or timeout.
+- Error mapping.
+- Logging.
+- Auth/session behavior.
+- Packaged Windows 11/macOS runtime.
+
+## D008: First Implementation Increment
+
+Decision: First implementation increment is breakdown workbench foundation, not AI.
+
+Includes:
+
+- Library create/open.
+- Breakdown shelf.
+- txt/md import.
+- Source metadata.
+- Structure review shell.
+- Story segment range shell.
+- Module instance shell.
+- Job state shell.
+- Export blocked state.
+
+Excludes:
+
+- Real Codex SDK integration.
+- Real AI analysis output.
+- Prompt template editor.
+- Original novel project.
+- Full technique-library fusion.
+
+## D009: External File Changes
+
+Decision: First increment does not add automatic file watching.
+
+Reason:
+
+- Source copies are treated as library-owned and immutable for the first slice.
+- SQLite is the main fact source.
+- External mutations are handled later by explicit health-check and repair flows.
+
+Implications:
+
+- No silent import from changed mirror files.
+- Repair flow can detect hash mismatch, broken source copy and stale mirrors.
+
+## D010: Package Manager
+
+Decision: Use npm for initial scaffold and scripts.
+
+Reason:
+
+- Electron Forge documentation uses npm-compatible flows.
+- It reduces package-manager choices for the first implementation thread.
+
+Implications:
+
+- Initial scripts must include `npm run typecheck`, `npm run test:unit`, `npm run test:e2e` and `npm run build`.
+
+## D011: Validation And Test Stack
+
+Decision: Use Zod for runtime validation, TanStack Query for renderer service-state caching, Vitest for unit/integration tests, React Testing Library for renderer component tests, and Playwright for Electron entry-path tests.
+
+Reason:
+
+- IPC needs runtime validation in addition to TypeScript.
+- Renderer data should be cached as service data, not treated as local truth.
+- First implementation must verify both domain behavior and real desktop entry paths.
+
+Implications:
+
+- Initial scripts must include `npm run typecheck`, `npm run test:unit`, `npm run test:e2e` and `npm run build`.

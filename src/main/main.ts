@@ -7,6 +7,7 @@ import {
   shouldAllowNavigation,
   shouldUseHeaderContentSecurityPolicy,
 } from './security';
+import { createTrustedDevServerOrigins, registerProductIpc } from './ipc';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -132,9 +133,7 @@ function installNavigationGuards(mainWindow: BrowserWindow): void {
 function registerInternalIpc(): void {
   ipcMain.handle('internal:health', (event): HealthResponse => {
     const senderUrl = event.senderFrame?.url ?? '';
-    const trustedDevOrigins = MAIN_WINDOW_VITE_DEV_SERVER_URL
-      ? new Set([new URL(MAIN_WINDOW_VITE_DEV_SERVER_URL).origin])
-      : new Set<string>();
+    const trustedDevOrigins = createTrustedDevServerOrigins(MAIN_WINDOW_VITE_DEV_SERVER_URL);
 
     if (!isTrustedSenderUrl(senderUrl, trustedDevOrigins)) {
       throw new Error('UNTRUSTED_IPC_SENDER');
@@ -151,6 +150,7 @@ app.whenReady().then(async () => {
   installContentSecurityPolicy();
   registerAppProtocol();
   registerInternalIpc();
+  registerProductIpc(ipcMain, MAIN_WINDOW_VITE_DEV_SERVER_URL);
   await createWindow();
 });
 

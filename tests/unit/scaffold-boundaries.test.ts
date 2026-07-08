@@ -29,11 +29,14 @@ describe('Forge Vite scaffold', () => {
   it('keeps main, preload, and renderer Vite entries separated', () => {
     const forgeConfig = readFileSync(path.join(rootDir, 'forge.config.ts'), 'utf8');
 
-    expect(forgeConfig).toContain("entry: 'src/main/main.ts'");
-    expect(forgeConfig).toContain("entry: 'src/preload/index.ts'");
-    expect(forgeConfig).toContain("name: 'main_window'");
-    expect(forgeConfig).toContain("config: 'vite.renderer.config.ts'");
-    expect(forgeConfig).toContain('asar: true');
+    // Static guard: Forge config is consumed by Electron Forge at package time.
+    // Importing the plugin instance gives little stable public shape, so build/e2e
+    // are the behavioral proof and this test guards the expected scaffold wiring.
+    expect(forgeConfig).toMatch(/entry:\s*['"]src\/main\/main\.ts['"]/);
+    expect(forgeConfig).toMatch(/entry:\s*['"]src\/preload\/index\.ts['"]/);
+    expect(forgeConfig).toMatch(/name:\s*['"]main_window['"]/);
+    expect(forgeConfig).toMatch(/config:\s*['"]vite\.renderer\.config\.ts['"]/);
+    expect(forgeConfig).toMatch(/asar:\s*true/);
   });
 
   it('keeps the renderer HTML wired to the Vite module entry', () => {
@@ -44,11 +47,12 @@ describe('Forge Vite scaffold', () => {
 
   it('keeps production renderer HTML covered by a restrictive CSP meta tag', () => {
     const rendererHtml = readFileSync(path.join(rootDir, 'src/renderer/index.html'), 'utf8');
+    const cspContent = rendererHtml.match(/http-equiv="Content-Security-Policy"[^>]+content="([^"]+)"/)?.[1];
 
-    expect(rendererHtml).toContain('http-equiv="Content-Security-Policy"');
-    expect(rendererHtml).toContain("default-src 'self'");
-    expect(rendererHtml).not.toContain('unsafe-inline');
-    expect(rendererHtml).not.toContain('unsafe-eval');
+    expect(cspContent).toBeDefined();
+    expect(cspContent).toContain("default-src 'self'");
+    expect(cspContent).not.toContain('unsafe-inline');
+    expect(cspContent).not.toContain('unsafe-eval');
   });
 });
 
@@ -56,9 +60,11 @@ describe('BrowserWindow security wiring', () => {
   it('keeps renderer privileges disabled and installs navigation protections', () => {
     const mainSource = readFileSync(path.join(rootDir, 'src/main/main.ts'), 'utf8');
 
-    expect(mainSource).toContain('nodeIntegration: false');
-    expect(mainSource).toContain('contextIsolation: true');
-    expect(mainSource).toContain('sandbox: true');
+    // Static guard: BrowserWindow construction is intentionally not exported
+    // just for tests. E2E covers user-observable renderer isolation.
+    expect(mainSource).toMatch(/webPreferences:\s*{[\s\S]*nodeIntegration:\s*false/);
+    expect(mainSource).toMatch(/webPreferences:\s*{[\s\S]*contextIsolation:\s*true/);
+    expect(mainSource).toMatch(/webPreferences:\s*{[\s\S]*sandbox:\s*true/);
     expect(mainSource).toContain("WRITESTORM_DISABLE_HARDWARE_ACCELERATION === '1'");
     expect(mainSource).toContain('app.disableHardwareAcceleration()');
     expect(mainSource).toContain('protocol.registerSchemesAsPrivileged');
@@ -75,21 +81,25 @@ describe('preload health bridge', () => {
   it('routes health through typed preload IPC without exposing raw ipcRenderer', () => {
     const mainSource = readFileSync(path.join(rootDir, 'src/main/main.ts'), 'utf8');
     const preloadSource = readFileSync(path.join(rootDir, 'src/preload/index.ts'), 'utf8');
+    const exposedSource = preloadSource.slice(preloadSource.indexOf('contextBridge.exposeInMainWorld'));
 
     expect(mainSource).toContain("ipcMain.handle('internal:health'");
     expect(mainSource).toContain('isTrustedSenderUrl');
-    expect(preloadSource).toContain("ipcRenderer.invoke('internal:health')");
-    expect(preloadSource).not.toContain('ipcRenderer,');
+    expect(preloadSource).toMatch(/contextBridge\.exposeInMainWorld\(\s*['"]writestorm['"]/);
+    expect(preloadSource).toMatch(/ipcRenderer\.invoke\(/);
+    expect(exposedSource).not.toMatch(/\bipcRenderer\s*[,}]/);
+    expect(exposedSource).not.toMatch(/\bipcRenderer\s*:/);
   });
 });
 
 describe('process import boundaries', () => {
-  it('keeps the shared domain, contract, and error layout explicit', () => {
-    const sharedDir = path.join(rootDir, 'src/shared');
+  it('keeps the Block 1 process directories explicit', () => {
+    const srcDir = path.join(rootDir, 'src');
 
-    expect(existsSync(path.join(sharedDir, 'domain/index.ts'))).toBe(true);
-    expect(existsSync(path.join(sharedDir, 'contracts/index.ts'))).toBe(true);
-    expect(existsSync(path.join(sharedDir, 'errors/index.ts'))).toBe(true);
+    expect(existsSync(path.join(srcDir, 'main'))).toBe(true);
+    expect(existsSync(path.join(srcDir, 'preload'))).toBe(true);
+    expect(existsSync(path.join(srcDir, 'renderer'))).toBe(true);
+    expect(existsSync(path.join(srcDir, 'shared'))).toBe(true);
   });
 
   it('keeps privileged modules out of renderer and shared source files', () => {
@@ -99,16 +109,15 @@ describe('process import boundaries', () => {
     ];
     const sharedFiles = sourceFiles(path.join(rootDir, 'src/shared'));
 
-    const privilegedImportPattern =
-      /\bfrom\s+['"](?:electron|node:fs|node:path|node:child_process|fs|path|child_process)['"]|\bimport\s+['"](?:electron|node:fs|node:path|node:child_process|fs|path|child_process)['"]/;
-    const sharedOnlyForbiddenImportPattern =
-      /\bfrom\s+['"](?:react|react-dom|better-sqlite3|sqlite3|@openai\/codex)['"]|\bimport\s+['"](?:react|react-dom|better-sqlite3|sqlite3|@openai\/codex)['"]/;
-
     const privilegedImportOffenders = rendererAndSharedFiles.filter((filePath) => {
-      return privilegedImportPattern.test(readFileSync(filePath, 'utf8'));
+      return importSpecifiers(readFileSync(filePath, 'utf8')).some((specifier) => {
+        return isPackageImport(specifier, ['electron', 'node:fs', 'node:path', 'node:child_process', 'fs', 'path', 'child_process']);
+      });
     });
     const sharedImportOffenders = sharedFiles.filter((filePath) => {
-      return sharedOnlyForbiddenImportPattern.test(readFileSync(filePath, 'utf8'));
+      return importSpecifiers(readFileSync(filePath, 'utf8')).some((specifier) => {
+        return isPackageImport(specifier, ['react', 'react-dom', 'better-sqlite3', 'sqlite3', '@openai/codex']);
+      });
     });
 
     expect(privilegedImportOffenders).toEqual([]);
@@ -128,3 +137,19 @@ describe('renderer a11y and i18n shell baseline', () => {
     expect(i18nSource).toContain('rendererFormats');
   });
 });
+
+function importSpecifiers(source: string): string[] {
+  const specifiers: string[] = [];
+  const importPattern =
+    /\b(?:import|export)\s+(?:type\s+)?(?:[^'"]*?\s+from\s+)?['"]([^'"]+)['"]|\bimport\(\s*['"]([^'"]+)['"]\s*\)/g;
+
+  for (const match of source.matchAll(importPattern)) {
+    specifiers.push(match[1] ?? match[2]);
+  }
+
+  return specifiers;
+}
+
+function isPackageImport(specifier: string, packages: string[]): boolean {
+  return packages.some((packageName) => specifier === packageName || specifier.startsWith(`${packageName}/`));
+}

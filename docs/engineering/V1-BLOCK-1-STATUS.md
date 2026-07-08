@@ -2,7 +2,7 @@
 
 Date: 2026-07-07
 
-Status: e2e blocker resolved, pending total-thread review
+Status: Block 1 scaffold/security/e2e baseline landed, pending total-thread review
 
 Scope: Block 1 scaffold, security baseline, local verification status, and known blockers. This file does not mark Block 1 complete and does not authorize Block 2.
 
@@ -55,6 +55,8 @@ Latest accepted results from the implementation thread:
 - `npm run build`: passed after `forge.config.ts` was updated to pass local `electron/checksums.json` into `packagerConfig.download.checksums`.
 - `npm run test:e2e`: passed, including `npm run build`, `electron-forge package`, and 1 real Electron window smoke.
 - `npm run check`: passed outside the Codex sandbox; this is the local CI equivalent command for Block 1.
+- Windows packaged smoke: present; the smoke launches the packaged Windows Electron app and verifies the no-library empty state plus renderer privilege isolation.
+- macOS packaged smoke: not yet run; it still requires a macOS runner.
 - Historical note: `npx playwright test` passed outside the Codex sandbox before this fix, but it only proved the already-packaged window smoke and did not clear the full e2e gate.
 - Sandbox caveat: the same real-window smoke can time out inside the Codex sandbox at the Playwright connection phase; GUI smoke evidence should come from an environment allowed to launch and connect to the packaged Electron window.
 
@@ -68,6 +70,20 @@ Latest accepted results from the implementation thread:
 - Latest local CI equivalent result: passed outside the Codex sandbox on Windows.
 - Remote CI status: blocked/not configured.
 - Remote CI blocked reason: the V1 total thread has not selected a remote CI provider/workflow or provided a macOS runner policy; macOS packaged smoke also requires a macOS runner before cross-platform CI can be claimed.
+
+## Current Workspace Verification Caveat
+
+- During the Block 1 maintenance pass on 2026-07-07, targeted Block 1 unit tests passed: `scaffold.test.tsx`, `scaffold-boundaries.test.ts`, `main-security.test.ts`, and `e2e-support.test.ts`.
+- `npm run build` passed and still produced the Windows package.
+- Full `npm run typecheck` and `npm run test:unit` are currently blocked by separate in-progress Block 2 typed IPC/contract tests and type definitions in the working tree.
+- This caveat must not be downgraded into a warning: the mixed working tree is not full-local-CI green until those Block 2 failures are fixed or isolated.
+
+## Scaffold Test Maintenance Notes
+
+- Security policy behavior is covered through exported pure helpers in `src/main/security.ts` and `tests/unit/main-security.test.ts`.
+- The real packaged-window smoke covers the user-observable renderer boundary: no Node `require`, visible empty state, and health bridge.
+- Some `tests/unit/scaffold-boundaries.test.ts` checks remain static by design: Forge plugin entry wiring, BrowserWindow `webPreferences`, app protocol wiring, and preload exposure are Electron startup assembly details with no stable public behavior API before launching Electron.
+- Those static checks are kept narrow and do not expose new production internals only for testing.
 
 ## A11y And I18n Shell Baseline
 

@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import { createWritestormPreloadApi } from './writestorm-api';
 
-contextBridge.exposeInMainWorld('writestorm', {
-  internal: {
-    health: () => ipcRenderer.invoke('internal:health') as Promise<{ ok: true; app: 'WriteStorm' }>,
-  },
-});
+contextBridge.exposeInMainWorld(
+  'writestorm',
+  createWritestormPreloadApi((channel, request) => ipcRenderer.invoke(channel, request)),
+);

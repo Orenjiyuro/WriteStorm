@@ -3,6 +3,8 @@ import {
   ANALYSIS_ASSET_KINDS,
   ANALYSIS_MODULE_KEYS,
   ANALYSIS_MODULE_ASSET_MATRIX,
+  ANALYSIS_MODULE_DEPENDENCY_GRAPH,
+  ANALYSIS_MODULE_SCOPE_MATRIX,
   ANALYSIS_TECHNIQUE_OBSERVATION_ROUTING,
   type AnalysisAssetKind,
   type AnalysisModuleAssetMatrixEntry,
@@ -115,6 +117,19 @@ describe('analysis module asset matrix', () => {
 
     expect(matrixKeys).toEqual([...ANALYSIS_MODULE_KEYS]);
     expect(new Set(matrixKeys).size).toBe(ANALYSIS_MODULE_KEYS.length);
+  });
+
+  it('keeps analysis scope, asset, and dependency matrices aligned with the seven module keys', () => {
+    const scopeKeys = ANALYSIS_MODULE_SCOPE_MATRIX.map((entry) => entry.moduleKey);
+    const assetKeys = ANALYSIS_MODULE_ASSET_MATRIX.map((entry) => entry.moduleKey);
+    const dependencyKeys = ANALYSIS_MODULE_DEPENDENCY_GRAPH.map((entry) => entry.moduleKey);
+
+    expect(scopeKeys).toEqual([...ANALYSIS_MODULE_KEYS]);
+    expect(assetKeys).toEqual([...ANALYSIS_MODULE_KEYS]);
+    expect(dependencyKeys).toEqual([...ANALYSIS_MODULE_KEYS]);
+    expect(new Set([...scopeKeys, ...assetKeys, ...dependencyKeys])).toEqual(
+      new Set(ANALYSIS_MODULE_KEYS),
+    );
   });
 
   it('prevents Markdown body from becoming the only module output bucket', () => {

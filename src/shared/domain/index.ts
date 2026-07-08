@@ -7,6 +7,7 @@ export type {
   JobId,
   LibraryId,
   RevisionId,
+  ReviewAssetId,
   ReusableTechniqueCandidateId,
   SourceSnapshotId,
   SourceTextId,
@@ -46,6 +47,7 @@ export {
   ANALYSIS_ASSET_KINDS,
   ANALYSIS_BODY_BOUNDARY_POLICY,
   ANALYSIS_CRITICAL_CONCLUSION_EVIDENCE_POLICY,
+  EVIDENCE_POLICIES,
   ANALYSIS_EXPORT_PARTICIPATION_POLICY,
   ANALYSIS_INSUFFICIENT_EVIDENCE_PARTICIPATION_POLICY,
   ANALYSIS_MARKDOWN_EDIT_POLICY,
@@ -60,11 +62,13 @@ export {
   ANALYSIS_SECONDARY_SYSTEM_PAGE_KEYS,
   ANALYSIS_SECONDARY_SYSTEM_PAGES,
   ANALYSIS_REVIEW_ASSET_CONTRACT,
+  ANALYSIS_REVIEW_CONFIRMATION_EVIDENCE_POLICY,
   ANALYSIS_REVIEW_STATUSES,
   ANALYSIS_REVIEW_TRANSITION_POLICY,
   ANALYSIS_STRUCTURED_FIELD_KINDS,
   ANALYSIS_TECHNIQUE_LIBRARY_PARTICIPATION_POLICY,
   ANALYSIS_TECHNIQUE_OBSERVATION_ROUTING,
+  REVIEW_ASSET_STATUSES,
 } from './analysis';
 export type {
   AnalysisAiConstraintDependencyPolicy,
@@ -93,6 +97,8 @@ export type {
   AnalysisOriginalContextParticipationPolicy,
   AnalysisReviewAssetContract,
   AnalysisReviewAssetKind,
+  AnalysisReviewConfirmationEvidencePolicy,
+  AnalysisReviewEvidenceGate,
   AnalysisReviewStatus,
   AnalysisReviewTransitionPolicy,
   AnalysisReviewTransitionRule,
@@ -104,6 +110,9 @@ export type {
   AnalysisStructuredFieldKind,
   AnalysisTechniqueLibraryParticipationPolicy,
   AnalysisTechniqueObservationRouting,
+  EvidencePolicy,
+  ReviewAssetEnvelope,
+  ReviewAssetStatus,
 } from './analysis';
 export {
   ORIGINAL_REFERENCE_SNAPSHOT_POLICY,

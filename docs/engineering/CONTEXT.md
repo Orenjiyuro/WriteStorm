@@ -45,11 +45,13 @@ Current Block 3 facts:
 
 - Tasks 3.1-3.8 artifacts are present in shared domain contracts, unit fixtures/tests, and the renderer no-library contract readout.
 - The seven ordinary analysis modules are fixed in `ANALYSIS_MODULE_DEFINITIONS`; `AI 约束摘要` is a secondary system page and does not create a normal `AnalysisModuleInstance`.
-- `AnalysisModuleInstance` contract now aligns with `ModuleInstanceSummary`: instance identity uses `moduleId`, `scope`, `analysisRevision`, and an instance-level `status` from `MODULE_INSTANCE_STATUSES`.
-- Reviewable assets are separated from module instance state: `ReviewAsset` uses structured `review_status` and `ANALYSIS_REVIEW_STATUSES` for pending/confirmed/rejected/excluded/needs_evidence/stale.
+- `AnalysisModuleInstance` contract aligns with `ModuleInstanceSummary`: instance identity uses `moduleId`, `scope`, `analysisRevision`, and an instance-level summary `status` from `MODULE_INSTANCE_STATUSES`.
+- Reviewable assets are separated from module instance state: `ReviewAssetEnvelope` uses `ReviewAssetId`, `sourceModuleInstanceId`, source `AnalysisModuleKey` snapshot, same-scope `scopeRef`, `ReviewAssetStatus`, `EvidencePolicy`, edition/version/revision fields, and timestamps.
+- `ReviewAssetStatus` is the canonical asset review state vocabulary for pending/confirmed/rejected/excluded/needs_evidence/stale; it is distinct from `ModuleInstanceStatus`.
+- Review asset confirmation uses the asset's own `EvidencePolicy`: only `required_for_confirmation` requires a valid `EvidenceAnchor` before `confirmed`; `not_required` and `optional` are not blocked by the transition contract. Critical conclusions must use `required_for_confirmation`.
 - Markdown body remains human-readable text only; evidence, relations, structured objects, technique observations/candidates, AI constraints and review status remain structured assets.
 - The renderer no-library entry shows `Analysis module contract readout` sourced from shared domain constants, including the module list, secondary-system-page disabled placeholder, and unsupported scope reasons.
-- Latest Block 3 repair verification on 2026-07-08: `npm run check` passed with `typecheck`, `21 unit files / 90 tests`, and Electron e2e `1 passed`.
+- Latest Block 3 repair verification on 2026-07-08: `npm run check` passed with `typecheck`, `29 unit files / 126 tests`, and Electron e2e `1 passed`.
 - Block 3 still does not authorize SQLite, real services, import implementation, AI/Codex SDK calls, real prompts, generated module body, seven-module deep output schema, or ordinary-module treatment of thematic perspectives.
 
 Current Block 4 facts:

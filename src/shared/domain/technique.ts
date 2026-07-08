@@ -6,7 +6,7 @@ import type {
   TechniqueEntryId,
   WorkTechniqueObservationId,
 } from './ids';
-import type { AnalysisReviewStatus } from './analysis';
+import type { ReviewAssetStatus } from './analysis';
 import type { IsoDateTimeString } from './dtos';
 import { sourceSnapshotSchema } from './source-snapshot';
 import type { SourceSnapshot } from './source-snapshot';
@@ -271,7 +271,7 @@ export type OriginalReferenceSnapshotSourceTechniqueAssetKind =
 
 export type OriginalReferenceSnapshotConfirmedCandidateSource = {
   readonly sourceTechniqueAssetKind: Extract<TechniqueAssetKind, 'reusable_technique_candidate'>;
-  readonly requiredReviewStatus: Extract<AnalysisReviewStatus, 'confirmed'>;
+  readonly requiredReviewStatus: Extract<ReviewAssetStatus, 'confirmed'>;
 };
 
 export type OriginalReferenceSnapshotOrganizedEntrySource = {
@@ -327,7 +327,7 @@ export type OriginalReferenceSnapshotBase = {
 export type ConfirmedCandidateOriginalReferenceSnapshot = OriginalReferenceSnapshotBase & {
   readonly sourceTechniqueAssetKind: Extract<TechniqueAssetKind, 'reusable_technique_candidate'>;
   readonly sourceCandidateId: ReusableTechniqueCandidateId;
-  readonly sourceCandidateReviewStatus: Extract<AnalysisReviewStatus, 'confirmed'>;
+  readonly sourceCandidateReviewStatus: Extract<ReviewAssetStatus, 'confirmed'>;
 };
 
 export type OrganizedEntryOriginalReferenceSnapshot = OriginalReferenceSnapshotBase & {

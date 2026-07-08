@@ -1,23 +1,31 @@
 import { describe, expect, it } from 'vitest';
 import {
   ANALYSIS_CRITICAL_CONCLUSION_EVIDENCE_POLICY,
+  EVIDENCE_POLICIES,
   ANALYSIS_INSUFFICIENT_EVIDENCE_PARTICIPATION_POLICY,
   ANALYSIS_REVIEW_ASSET_CONTRACT,
-  ANALYSIS_REVIEW_STATUSES,
+  ANALYSIS_REVIEW_CONFIRMATION_EVIDENCE_POLICY,
   ANALYSIS_REVIEW_TRANSITION_POLICY,
   MODULE_INSTANCE_STATUSES,
+  REVIEW_ASSET_STATUSES,
   type AnalysisCriticalConclusionEvidencePolicy,
   type AnalysisEvidenceAnchorRequirement,
   type AnalysisInsufficientEvidenceParticipationPolicy,
-  type AnalysisReviewStatus,
+  type AnalysisReviewConfirmationEvidencePolicy,
   type AnalysisReviewTransitionPolicy,
+  type EvidencePolicy,
+  type ReviewAssetStatus,
 } from '../../src/shared/domain';
 
-const confirmedReviewStatus: AnalysisReviewStatus = 'confirmed';
+const confirmedReviewStatus: ReviewAssetStatus = 'confirmed';
 const evidenceRequirement: AnalysisEvidenceAnchorRequirement = 'valid_evidence_anchor';
+const requiredEvidencePolicy: EvidencePolicy = 'required_for_confirmation';
 
 // @ts-expect-error Review assets use pending, not the module instance generation status.
-const invalidReviewStatus: AnalysisReviewStatus = 'generated_pending_review';
+const invalidReviewStatus: ReviewAssetStatus = 'generated_pending_review';
+
+// @ts-expect-error User acceptance is not an evidence policy.
+const invalidEvidencePolicy: EvidencePolicy = 'user_subjective_acceptance';
 
 // @ts-expect-error User acceptance is not a valid evidence anchor.
 const invalidEvidenceRequirement: AnalysisEvidenceAnchorRequirement = 'user_subjective_acceptance';
@@ -29,61 +37,74 @@ const expectedReviewStatuses = [
   'excluded',
   'needs_evidence',
   'stale',
-] as const satisfies readonly AnalysisReviewStatus[];
+] as const satisfies readonly ReviewAssetStatus[];
 
 const expectedTransitionPolicy = {
-  statusFieldKind: 'review_status',
+  statusField: 'reviewStatus',
+  structuredStatusFieldKind: 'review_status',
   initialStatus: 'pending',
   statuses: expectedReviewStatuses,
+  definesCompleteWorkflow: false,
   allowedTransitions: [
     {
       from: 'pending',
       to: 'confirmed',
-      requiresValidEvidenceAnchor: true,
+      evidenceGate: 'uses_review_asset_evidence_policy',
       userAcceptanceMaySubstituteEvidence: false,
     },
     {
       from: 'needs_evidence',
       to: 'confirmed',
-      requiresValidEvidenceAnchor: true,
+      evidenceGate: 'uses_review_asset_evidence_policy',
       userAcceptanceMaySubstituteEvidence: false,
     },
     {
       from: 'pending',
       to: 'needs_evidence',
-      requiresValidEvidenceAnchor: false,
+      evidenceGate: 'not_required_for_transition',
       userAcceptanceMaySubstituteEvidence: false,
     },
     {
       from: 'pending',
       to: 'rejected',
-      requiresValidEvidenceAnchor: false,
+      evidenceGate: 'not_required_for_transition',
       userAcceptanceMaySubstituteEvidence: false,
     },
     {
       from: 'pending',
       to: 'excluded',
-      requiresValidEvidenceAnchor: false,
+      evidenceGate: 'not_required_for_transition',
       userAcceptanceMaySubstituteEvidence: false,
     },
     {
       from: 'confirmed',
       to: 'stale',
-      requiresValidEvidenceAnchor: false,
+      evidenceGate: 'not_required_for_transition',
       userAcceptanceMaySubstituteEvidence: false,
     },
     {
       from: 'stale',
       to: 'needs_evidence',
-      requiresValidEvidenceAnchor: false,
+      evidenceGate: 'not_required_for_transition',
       userAcceptanceMaySubstituteEvidence: false,
     },
   ],
 } as const satisfies AnalysisReviewTransitionPolicy;
 
+const expectedConfirmationEvidencePolicy = {
+  statusField: 'reviewStatus',
+  evidencePolicyField: 'evidencePolicy',
+  confirmationStatus: 'confirmed',
+  evidenceRequiredWhenPolicy: 'required_for_confirmation',
+  evidenceNotRequiredPolicyValues: ['not_required', 'optional'],
+  requiredEvidenceAnchor: 'valid_evidence_anchor',
+  userAcceptanceMaySubstituteEvidence: false,
+} as const satisfies AnalysisReviewConfirmationEvidencePolicy;
+
 const expectedCriticalConclusionEvidencePolicy = {
   appliesTo: 'critical_conclusion',
   confirmationStatus: 'confirmed',
+  requiredEvidencePolicy: 'required_for_confirmation',
   requiredEvidenceAssetKind: 'evidence_anchor',
   requiredEvidenceAnchor: 'valid_evidence_anchor',
   userAcceptanceMaySubstituteEvidence: false,
@@ -100,17 +121,42 @@ const expectedInsufficientEvidencePolicy = {
 describe('analysis review state contract', () => {
   it('defines the minimum review asset status vocabulary separately from module instance statuses', () => {
     expect(confirmedReviewStatus).toBe('confirmed');
-    expect(ANALYSIS_REVIEW_STATUSES).toEqual(expectedReviewStatuses);
-    expect(ANALYSIS_REVIEW_STATUSES).not.toContain('generated_pending_review');
+    expect(REVIEW_ASSET_STATUSES).toEqual(expectedReviewStatuses);
+    expect(REVIEW_ASSET_STATUSES).not.toContain('generated_pending_review');
     expect(MODULE_INSTANCE_STATUSES).toContain('generated_pending_review');
+  });
+
+  it('defines the minimum evidence policy vocabulary without replacing EvidenceAnchor validation', () => {
+    expect(requiredEvidencePolicy).toBe('required_for_confirmation');
+    expect(EVIDENCE_POLICIES).toEqual([
+      'not_required',
+      'optional',
+      'required_for_confirmation',
+    ]);
+    expect(ANALYSIS_REVIEW_ASSET_CONTRACT.evidencePolicyField).toBe('evidencePolicy');
+  });
+
+  it('uses ReviewAsset evidencePolicy to decide whether confirmation requires evidence', () => {
+    expect(ANALYSIS_REVIEW_CONFIRMATION_EVIDENCE_POLICY).toEqual(
+      expectedConfirmationEvidencePolicy,
+    );
+    expect(
+      ANALYSIS_REVIEW_TRANSITION_POLICY.allowedTransitions
+        .filter((transition) => transition.to === 'confirmed')
+        .every((transition) => transition.evidenceGate === 'uses_review_asset_evidence_policy'),
+    ).toBe(true);
+    expect(
+      ANALYSIS_REVIEW_CONFIRMATION_EVIDENCE_POLICY.evidenceNotRequiredPolicyValues,
+    ).toEqual(['not_required', 'optional']);
   });
 
   it('anchors review transitions on ReviewAsset status instead of a scheduler workflow', () => {
     expect(ANALYSIS_REVIEW_TRANSITION_POLICY).toEqual(expectedTransitionPolicy);
-    expect(ANALYSIS_REVIEW_TRANSITION_POLICY.statusFieldKind).toBe(
-      ANALYSIS_REVIEW_ASSET_CONTRACT.statusFieldKind,
+    expect(ANALYSIS_REVIEW_TRANSITION_POLICY.statusField).toBe(
+      ANALYSIS_REVIEW_ASSET_CONTRACT.statusField,
     );
-    expect(ANALYSIS_REVIEW_TRANSITION_POLICY.statuses).toEqual(ANALYSIS_REVIEW_STATUSES);
+    expect(ANALYSIS_REVIEW_TRANSITION_POLICY.statuses).toEqual(REVIEW_ASSET_STATUSES);
+    expect(ANALYSIS_REVIEW_TRANSITION_POLICY.definesCompleteWorkflow).toBe(false);
   });
 
   it('requires valid EvidenceAnchor before any critical conclusion can be confirmed', () => {
@@ -124,8 +170,13 @@ describe('analysis review state contract', () => {
     );
 
     expect(confirmationTransitions.length).toBeGreaterThan(0);
+    expect(ANALYSIS_CRITICAL_CONCLUSION_EVIDENCE_POLICY.requiredEvidencePolicy).toBe(
+      'required_for_confirmation',
+    );
     expect(
-      confirmationTransitions.every((transition) => transition.requiresValidEvidenceAnchor),
+      confirmationTransitions.every(
+        (transition) => transition.evidenceGate === 'uses_review_asset_evidence_policy',
+      ),
     ).toBe(true);
     expect(
       confirmationTransitions.every(

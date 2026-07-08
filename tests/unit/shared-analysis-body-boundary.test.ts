@@ -8,15 +8,25 @@ import {
   MODULE_INSTANCE_STATUSES,
   type AnalysisBodyContentKind,
   type AnalysisMarkdownEditResultKind,
+  type AnalysisModuleId,
+  type AnalysisModuleInstanceId,
+  type AnalysisModuleKey,
   type AnalysisReviewAssetKind,
   type AnalysisStructuredFieldKind,
+  type BreakdownBookId,
   type ModuleInstanceSummary,
+  type ReviewAssetEnvelope,
+  type ReviewAssetId,
+  type ReviewAssetStatus,
+  type RevisionId,
+  type ScopeRef,
 } from '../../src/shared/domain';
 
 const bodyContentKind: AnalysisBodyContentKind = 'human_readable_markdown';
 const revisionResultKind: AnalysisMarkdownEditResultKind = 'revision';
 const evidenceStructuredField: AnalysisStructuredFieldKind = 'evidence_anchor';
 const reviewAssetKind: AnalysisReviewAssetKind = 'reusable_technique_candidate';
+const reviewAssetStatus: ReviewAssetStatus = 'pending';
 const moduleInstanceModuleField: keyof ModuleInstanceSummary = 'moduleId';
 const moduleInstanceStatusField: keyof ModuleInstanceSummary = 'status';
 
@@ -28,6 +38,35 @@ const invalidMarkdownFactField: AnalysisStructuredFieldKind = 'markdown_json_blo
 
 // @ts-expect-error AnalysisModuleInstance DTO identity uses moduleId, not moduleKey.
 const invalidModuleInstanceModuleField: keyof ModuleInstanceSummary = 'moduleKey';
+
+const sourceModuleKey: AnalysisModuleKey = 'technique_principles';
+const sourceModuleInstanceId = 'module-instance-1' as AnalysisModuleInstanceId;
+const sourceScopeRef = {
+  kind: 'book',
+  bookId: 'book-1' as BreakdownBookId,
+} satisfies ScopeRef;
+
+const reviewAssetEnvelope = {
+  reviewAssetId: 'review-asset-1' as ReviewAssetId,
+  assetKind: 'reusable_technique_candidate',
+  sourceModuleInstanceId,
+  sourceModuleKey,
+  scopeRef: sourceScopeRef,
+  reviewStatus: reviewAssetStatus,
+  evidencePolicy: 'required_for_confirmation',
+  sourceTextEdition: 3,
+  structureEdition: 5,
+  schemaVersion: 'analysis-review-asset-envelope.v1',
+  revisionId: 'revision-1' as RevisionId,
+  createdAt: '2026-07-08T00:00:00.000Z',
+  updatedAt: '2026-07-08T00:01:00.000Z',
+} satisfies ReviewAssetEnvelope;
+
+const invalidReviewAssetModuleSnapshot = {
+  ...reviewAssetEnvelope,
+  // @ts-expect-error ReviewAssetEnvelope stores sourceModuleKey as a module snapshot, not a module id.
+  sourceModuleKey: 'technique_principles' as AnalysisModuleId,
+} satisfies ReviewAssetEnvelope;
 
 describe('analysis body and structured field boundary', () => {
   it('defines module body as human-readable Markdown only', () => {
@@ -98,8 +137,13 @@ describe('analysis body and structured field boundary', () => {
 
   it('defines ReviewAsset as the shared reviewable asset envelope without making body structured', () => {
     expect(reviewAssetKind).toBe('reusable_technique_candidate');
+    expect(reviewAssetEnvelope.sourceModuleInstanceId).toBe(sourceModuleInstanceId);
+    expect(reviewAssetEnvelope.sourceModuleKey).toBe(sourceModuleKey);
+    expect(reviewAssetEnvelope.scopeRef).toBe(sourceScopeRef);
     expect(ANALYSIS_REVIEW_ASSET_CONTRACT).toEqual({
       ownerKind: 'analysis_module_instance',
+      envelopeKind: 'review_asset',
+      identityField: 'reviewAssetId',
       assetKinds: [
         'body',
         'structured_object',
@@ -118,9 +162,21 @@ describe('analysis body and structured field boundary', () => {
         'reusable_technique_candidate',
         'ai_constraint',
       ],
-      statusFieldKind: 'review_status',
+      sourceFields: ['sourceModuleInstanceId', 'sourceModuleKey'],
+      authoritativeSourceField: 'sourceModuleInstanceId',
+      moduleKeySnapshotField: 'sourceModuleKey',
+      scopeField: 'scopeRef',
+      defaultScopeRelation: 'matches_source_module_instance_scope',
+      fineGrainedLocationFieldKinds: ['evidence_anchor', 'object_link'],
+      statusField: 'reviewStatus',
+      structuredStatusFieldKind: 'review_status',
+      evidencePolicyField: 'evidencePolicy',
+      editionFields: ['sourceTextEdition', 'structureEdition'],
+      versionFields: ['schemaVersion', 'revisionId'],
+      timestampFields: ['createdAt', 'updatedAt'],
       bodyCarriesStructuredFacts: false,
       structuredAssetsRequireControls: true,
+      definesDeepPayloadSchema: false,
     });
   });
 });

@@ -1,4 +1,10 @@
-import type { AnalysisModuleId } from './ids';
+import type {
+  AnalysisModuleId,
+  AnalysisModuleInstanceId,
+  ReviewAssetId,
+  RevisionId,
+} from './ids';
+import type { IsoDateTimeString, ScopeRef } from './dtos';
 import { MODULE_INSTANCE_STATUSES, type ModuleInstanceStatus, type ScopeKind } from './status';
 
 export const ANALYSIS_MODULE_KEYS = [
@@ -337,6 +343,45 @@ export const ANALYSIS_MARKDOWN_EDIT_POLICY = {
 
 export type AnalysisReviewAssetKind = AnalysisAssetKind;
 
+export const REVIEW_ASSET_STATUSES = [
+  'pending',
+  'confirmed',
+  'rejected',
+  'excluded',
+  'needs_evidence',
+  'stale',
+] as const;
+
+export type ReviewAssetStatus = (typeof REVIEW_ASSET_STATUSES)[number];
+
+export const ANALYSIS_REVIEW_STATUSES = REVIEW_ASSET_STATUSES;
+
+export type AnalysisReviewStatus = ReviewAssetStatus;
+
+export const EVIDENCE_POLICIES = [
+  'not_required',
+  'optional',
+  'required_for_confirmation',
+] as const;
+
+export type EvidencePolicy = (typeof EVIDENCE_POLICIES)[number];
+
+export type ReviewAssetEnvelope = {
+  readonly reviewAssetId: ReviewAssetId;
+  readonly assetKind: AnalysisReviewAssetKind;
+  readonly sourceModuleInstanceId: AnalysisModuleInstanceId;
+  readonly sourceModuleKey: AnalysisModuleKey;
+  readonly scopeRef: ScopeRef;
+  readonly reviewStatus: ReviewAssetStatus;
+  readonly evidencePolicy: EvidencePolicy;
+  readonly sourceTextEdition?: number;
+  readonly structureEdition?: number;
+  readonly schemaVersion: string;
+  readonly revisionId?: RevisionId;
+  readonly createdAt: IsoDateTimeString;
+  readonly updatedAt: IsoDateTimeString;
+};
+
 export type AnalysisModuleInstanceContract = {
   readonly ownerKind: 'analysis_module_instance';
   readonly identityFields: readonly ['id', 'bookId', 'moduleId', 'scope', 'analysisRevision'];
@@ -369,16 +414,35 @@ export const ANALYSIS_MODULE_INSTANCE_CONTRACT = {
 
 export type AnalysisReviewAssetContract = {
   readonly ownerKind: 'analysis_module_instance';
+  readonly envelopeKind: 'review_asset';
+  readonly identityField: 'reviewAssetId';
   readonly assetKinds: readonly AnalysisReviewAssetKind[];
   readonly bodyAssetKind: Extract<AnalysisAssetKind, 'body'>;
   readonly structuredAssetKinds: readonly Exclude<AnalysisReviewAssetKind, 'body'>[];
-  readonly statusFieldKind: Extract<AnalysisStructuredFieldKind, 'review_status'>;
+  readonly sourceFields: readonly ['sourceModuleInstanceId', 'sourceModuleKey'];
+  readonly authoritativeSourceField: 'sourceModuleInstanceId';
+  readonly moduleKeySnapshotField: 'sourceModuleKey';
+  readonly scopeField: 'scopeRef';
+  readonly defaultScopeRelation: 'matches_source_module_instance_scope';
+  readonly fineGrainedLocationFieldKinds: readonly [
+    Extract<AnalysisStructuredFieldKind, 'evidence_anchor'>,
+    Extract<AnalysisStructuredFieldKind, 'object_link'>,
+  ];
+  readonly statusField: 'reviewStatus';
+  readonly structuredStatusFieldKind: Extract<AnalysisStructuredFieldKind, 'review_status'>;
+  readonly evidencePolicyField: 'evidencePolicy';
+  readonly editionFields: readonly ['sourceTextEdition', 'structureEdition'];
+  readonly versionFields: readonly ['schemaVersion', 'revisionId'];
+  readonly timestampFields: readonly ['createdAt', 'updatedAt'];
   readonly bodyCarriesStructuredFacts: false;
   readonly structuredAssetsRequireControls: true;
+  readonly definesDeepPayloadSchema: false;
 };
 
 export const ANALYSIS_REVIEW_ASSET_CONTRACT = {
   ownerKind: 'analysis_module_instance',
+  envelopeKind: 'review_asset',
+  identityField: 'reviewAssetId',
   assetKinds: [
     'body',
     'structured_object',
@@ -397,91 +461,124 @@ export const ANALYSIS_REVIEW_ASSET_CONTRACT = {
     'reusable_technique_candidate',
     'ai_constraint',
   ],
-  statusFieldKind: 'review_status',
+  sourceFields: ['sourceModuleInstanceId', 'sourceModuleKey'],
+  authoritativeSourceField: 'sourceModuleInstanceId',
+  moduleKeySnapshotField: 'sourceModuleKey',
+  scopeField: 'scopeRef',
+  defaultScopeRelation: 'matches_source_module_instance_scope',
+  fineGrainedLocationFieldKinds: ['evidence_anchor', 'object_link'],
+  statusField: 'reviewStatus',
+  structuredStatusFieldKind: 'review_status',
+  evidencePolicyField: 'evidencePolicy',
+  editionFields: ['sourceTextEdition', 'structureEdition'],
+  versionFields: ['schemaVersion', 'revisionId'],
+  timestampFields: ['createdAt', 'updatedAt'],
   bodyCarriesStructuredFacts: false,
   structuredAssetsRequireControls: true,
+  definesDeepPayloadSchema: false,
 } as const satisfies AnalysisReviewAssetContract;
-
-export const ANALYSIS_REVIEW_STATUSES = [
-  'pending',
-  'confirmed',
-  'rejected',
-  'excluded',
-  'needs_evidence',
-  'stale',
-] as const;
-
-export type AnalysisReviewStatus = (typeof ANALYSIS_REVIEW_STATUSES)[number];
 
 export type AnalysisEvidenceAnchorRequirement = 'valid_evidence_anchor';
 
+export type AnalysisReviewEvidenceGate =
+  | 'uses_review_asset_evidence_policy'
+  | 'not_required_for_transition';
+
 export type AnalysisReviewTransitionRule = {
-  readonly from: AnalysisReviewStatus;
-  readonly to: AnalysisReviewStatus;
-  readonly requiresValidEvidenceAnchor: boolean;
+  readonly from: ReviewAssetStatus;
+  readonly to: ReviewAssetStatus;
+  readonly evidenceGate: AnalysisReviewEvidenceGate;
   readonly userAcceptanceMaySubstituteEvidence: false;
 };
 
 export type AnalysisReviewTransitionPolicy = {
-  readonly statusFieldKind: Extract<AnalysisStructuredFieldKind, 'review_status'>;
-  readonly initialStatus: Extract<AnalysisReviewStatus, 'pending'>;
-  readonly statuses: readonly AnalysisReviewStatus[];
+  readonly statusField: 'reviewStatus';
+  readonly structuredStatusFieldKind: Extract<AnalysisStructuredFieldKind, 'review_status'>;
+  readonly initialStatus: Extract<ReviewAssetStatus, 'pending'>;
+  readonly statuses: readonly ReviewAssetStatus[];
+  readonly definesCompleteWorkflow: false;
   readonly allowedTransitions: readonly AnalysisReviewTransitionRule[];
 };
 
 export const ANALYSIS_REVIEW_TRANSITION_POLICY = {
-  statusFieldKind: 'review_status',
+  statusField: 'reviewStatus',
+  structuredStatusFieldKind: 'review_status',
   initialStatus: 'pending',
-  statuses: ANALYSIS_REVIEW_STATUSES,
+  statuses: REVIEW_ASSET_STATUSES,
+  definesCompleteWorkflow: false,
   allowedTransitions: [
     {
       from: 'pending',
       to: 'confirmed',
-      requiresValidEvidenceAnchor: true,
+      evidenceGate: 'uses_review_asset_evidence_policy',
       userAcceptanceMaySubstituteEvidence: false,
     },
     {
       from: 'needs_evidence',
       to: 'confirmed',
-      requiresValidEvidenceAnchor: true,
+      evidenceGate: 'uses_review_asset_evidence_policy',
       userAcceptanceMaySubstituteEvidence: false,
     },
     {
       from: 'pending',
       to: 'needs_evidence',
-      requiresValidEvidenceAnchor: false,
+      evidenceGate: 'not_required_for_transition',
       userAcceptanceMaySubstituteEvidence: false,
     },
     {
       from: 'pending',
       to: 'rejected',
-      requiresValidEvidenceAnchor: false,
+      evidenceGate: 'not_required_for_transition',
       userAcceptanceMaySubstituteEvidence: false,
     },
     {
       from: 'pending',
       to: 'excluded',
-      requiresValidEvidenceAnchor: false,
+      evidenceGate: 'not_required_for_transition',
       userAcceptanceMaySubstituteEvidence: false,
     },
     {
       from: 'confirmed',
       to: 'stale',
-      requiresValidEvidenceAnchor: false,
+      evidenceGate: 'not_required_for_transition',
       userAcceptanceMaySubstituteEvidence: false,
     },
     {
       from: 'stale',
       to: 'needs_evidence',
-      requiresValidEvidenceAnchor: false,
+      evidenceGate: 'not_required_for_transition',
       userAcceptanceMaySubstituteEvidence: false,
     },
   ],
 } as const satisfies AnalysisReviewTransitionPolicy;
 
+export type AnalysisReviewConfirmationEvidencePolicy = {
+  readonly statusField: 'reviewStatus';
+  readonly evidencePolicyField: 'evidencePolicy';
+  readonly confirmationStatus: Extract<ReviewAssetStatus, 'confirmed'>;
+  readonly evidenceRequiredWhenPolicy: Extract<EvidencePolicy, 'required_for_confirmation'>;
+  readonly evidenceNotRequiredPolicyValues: readonly Extract<
+    EvidencePolicy,
+    'not_required' | 'optional'
+  >[];
+  readonly requiredEvidenceAnchor: AnalysisEvidenceAnchorRequirement;
+  readonly userAcceptanceMaySubstituteEvidence: false;
+};
+
+export const ANALYSIS_REVIEW_CONFIRMATION_EVIDENCE_POLICY = {
+  statusField: 'reviewStatus',
+  evidencePolicyField: 'evidencePolicy',
+  confirmationStatus: 'confirmed',
+  evidenceRequiredWhenPolicy: 'required_for_confirmation',
+  evidenceNotRequiredPolicyValues: ['not_required', 'optional'],
+  requiredEvidenceAnchor: 'valid_evidence_anchor',
+  userAcceptanceMaySubstituteEvidence: false,
+} as const satisfies AnalysisReviewConfirmationEvidencePolicy;
+
 export type AnalysisCriticalConclusionEvidencePolicy = {
   readonly appliesTo: 'critical_conclusion';
-  readonly confirmationStatus: Extract<AnalysisReviewStatus, 'confirmed'>;
+  readonly confirmationStatus: Extract<ReviewAssetStatus, 'confirmed'>;
+  readonly requiredEvidencePolicy: Extract<EvidencePolicy, 'required_for_confirmation'>;
   readonly requiredEvidenceAssetKind: Extract<AnalysisAssetKind, 'evidence_anchor'>;
   readonly requiredEvidenceAnchor: AnalysisEvidenceAnchorRequirement;
   readonly userAcceptanceMaySubstituteEvidence: false;
@@ -490,6 +587,7 @@ export type AnalysisCriticalConclusionEvidencePolicy = {
 export const ANALYSIS_CRITICAL_CONCLUSION_EVIDENCE_POLICY = {
   appliesTo: 'critical_conclusion',
   confirmationStatus: 'confirmed',
+  requiredEvidencePolicy: 'required_for_confirmation',
   requiredEvidenceAssetKind: 'evidence_anchor',
   requiredEvidenceAnchor: 'valid_evidence_anchor',
   userAcceptanceMaySubstituteEvidence: false,
@@ -500,7 +598,7 @@ export type AnalysisInsufficientEvidenceParticipationTarget =
   | 'original_context';
 
 export type AnalysisInsufficientEvidenceParticipationPolicy = {
-  readonly insufficientEvidenceStatus: Extract<AnalysisReviewStatus, 'needs_evidence'>;
+  readonly insufficientEvidenceStatus: Extract<ReviewAssetStatus, 'needs_evidence'>;
   readonly blockedAssetKinds: readonly Extract<AnalysisAssetKind, 'reusable_technique_candidate'>[];
   readonly blockedTargets: readonly AnalysisInsufficientEvidenceParticipationTarget[];
   readonly mayCreateReusableTechniqueCandidate: false;

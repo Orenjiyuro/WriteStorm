@@ -13,6 +13,7 @@ export type AnalysisModuleId = BrandedId<'AnalysisModuleId'>;
 export type AnalysisModuleInstanceId = BrandedId<'AnalysisModuleInstanceId'>;
 export type JobId = BrandedId<'JobId'>;
 export type RevisionId = BrandedId<'RevisionId'>;
+export type ReviewAssetId = BrandedId<'ReviewAssetId'>;
 export type EvidenceAnchorId = BrandedId<'EvidenceAnchorId'>;
 export type ExportId = BrandedId<'ExportId'>;
 export type WorkTechniqueObservationId = BrandedId<'WorkTechniqueObservationId'>;

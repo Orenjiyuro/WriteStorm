@@ -64,6 +64,7 @@ code {
 }
 
 .analysis-contract-readout,
+.perspective-contract-readout,
 .technique-library-readout {
   width: min(100%, 960px);
   border-top: 1px solid #d7e0e8;
@@ -93,19 +94,22 @@ code {
 }
 
 .module-list,
+.perspective-list,
 .scope-exclusions ul {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.module-list {
+.module-list,
+.perspective-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 8px;
 }
 
-.module-card {
+.module-card,
+.perspective-card {
   display: grid;
   gap: 8px;
   min-height: 104px;
@@ -126,6 +130,8 @@ code {
 
 .secondary-system-page,
 .scope-exclusions,
+.perspective-boundary-shell,
+.perspective-status-shell,
 .technique-empty-readout,
 .technique-detail-shell {
   margin-top: 16px;
@@ -141,6 +147,101 @@ code {
   justify-content: space-between;
   gap: 16px;
   opacity: 0.72;
+}
+
+.perspective-readout-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.perspective-boundary-shell,
+.perspective-status-shell {
+  margin-top: 0;
+  min-height: 188px;
+  opacity: 0.84;
+}
+
+.perspective-boundary-shell {
+  display: grid;
+  gap: 12px;
+}
+
+.perspective-boundary-shell dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.perspective-boundary-shell dl div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid #e3e9ee;
+  padding-top: 10px;
+}
+
+.perspective-boundary-shell dl div:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.perspective-boundary-shell dt,
+.perspective-status-shell p {
+  color: #52616f;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.perspective-boundary-shell dd {
+  margin: 0;
+}
+
+.perspective-status-shell ul {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.perspective-status-shell li {
+  display: grid;
+  gap: 6px;
+  border-top: 1px solid #e3e9ee;
+  padding: 10px 0;
+}
+
+.perspective-status-shell li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.perspective-status-shell li:last-child {
+  padding-bottom: 0;
+}
+
+.perspective-status-shell li div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.perspective-status-shell p {
+  margin: 0;
+}
+
+.status-pill {
+  border: 1px solid #bcc7d1;
+  border-radius: 999px;
+  color: #52616f;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  text-transform: uppercase;
 }
 
 .technique-readout-grid {

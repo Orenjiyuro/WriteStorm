@@ -4,6 +4,10 @@ import { mkdirSync } from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 import {
+  PERSPECTIVE_DEFINITIONS,
+  PERSPECTIVE_MISSING_DEPENDENCY_FIXTURES,
+} from '../../src/shared/domain';
+import {
   createElectronStderrBuffer,
   formatErrorWithElectronStderr,
   isSupportedPackagedPlatform,
@@ -50,12 +54,34 @@ test('shows the no-library empty state in a real Electron window', async () => {
     await expect(page.locator('[data-contract-source="shared-domain-analysis"]')).toBeVisible();
     await expect(page.getByText('Source: shared domain contract')).toBeVisible();
     await expect(page.getByText('7 contract modules')).toBeVisible();
+    await expect(page.getByText('8 contract modules')).toHaveCount(0);
     await expect(page.getByText('作品结构与分段')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'AI 约束摘要' })).toBeVisible();
     await expect(page.getByText('Disabled placeholder')).toBeVisible();
     await expect(
       page.getByText('专题视角是跨模块派生视图，不属于 AnalysisModule scope matrix。'),
     ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Perspective contract readout' })).toBeVisible();
+    const perspectiveReadout = page.locator('[data-contract-source="shared-domain-perspective"]');
+    await expect(perspectiveReadout).toBeVisible();
+    await expect(perspectiveReadout.getByText('5 derived views')).toBeVisible();
+    await expect(perspectiveReadout.getByText('Derived view, not an AnalysisModule').first()).toBeVisible();
+    await expect(perspectiveReadout.getByText('not a fact source').first()).toBeVisible();
+    await expect(
+      perspectiveReadout.getByRole('heading', { name: 'Dependency status shell' }),
+    ).toBeVisible();
+
+    for (const perspectiveDefinition of PERSPECTIVE_DEFINITIONS) {
+      await expect(perspectiveReadout.getByText(perspectiveDefinition.name)).toBeVisible();
+      await expect(perspectiveReadout.getByText(perspectiveDefinition.key).first()).toBeVisible();
+    }
+
+    for (const fixture of PERSPECTIVE_MISSING_DEPENDENCY_FIXTURES) {
+      await expect(perspectiveReadout.getByText(fixture.perspectiveKey).first()).toBeVisible();
+      await expect(perspectiveReadout.getByText(fixture.missingAssetKind).first()).toBeVisible();
+      await expect(perspectiveReadout.getByText(fixture.displayStatus).first()).toBeVisible();
+    }
+
     await expect(page.getByRole('heading', { name: 'Technique library contract readout' })).toBeVisible();
     await expect(page.locator('[data-contract-source="shared-domain-technique"]')).toBeVisible();
     await expect(page.getByText('来自已采纳候选')).toBeVisible();

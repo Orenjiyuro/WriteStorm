@@ -69,6 +69,22 @@ Current Block 4 facts:
 - Latest Block 4 closeout verification on 2026-07-08: `npm run check` passed with `typecheck`, `29 unit files / 123 tests`, and Electron e2e `1 passed`.
 - Block 4 still does not authorize complete technique library UI, automatic fusion/merge, multi-source publication gates, original citation system implementation, OriginalBook data, SQLite, migrations, real services, import implementation, AI/Codex SDK calls, real prompts, generated prose, or new IPC channels.
 
+Current Block 5 facts:
+
+- Tasks 5.1-5.8 artifacts are present in shared domain perspective contracts, unit fixtures/tests, the renderer no-library perspective contract readout, and the Electron empty-state e2e smoke.
+- V1 built-in perspective keys are stable: `foreshadowing_suspense_payoff`, `character_relation_dynamics`, `setting_rule_payoff`, `pacing_emotion_drive`, and `technique_source_trace`.
+- `PerspectiveDefinition` is a `derived_composite_view`, not an `AnalysisModule`, does not create an `AnalysisModuleInstance`, is not a fact source, and may only store a view instance.
+- `PerspectiveInstance` identity is `id + perspectiveKey + bookId + scopeRef + status + sourceRevisionSnapshot`. Its `scopeRef` still means analysis target boundary, not text offsets or UI navigation position.
+- Perspective dependencies reference existing source assets only: `AnalysisModuleInstance`, `RelationLink`, `EvidenceAnchor`, `WorkTechniqueObservation`, and `ReusableTechniqueCandidate`. Relation links are `reference_only`; perspectives must not generate relation facts.
+- Missing dependency status is intentionally split: missing analysis module instances display `partial`; missing required source assets can display `blocked`; missing optional assets display `partial`.
+- Perspective edit policy allows only user view notes/annotations. Relationship facts, evidence state, and reusable technique candidates must be edited in their source module. Perspective refresh is a future authorized flow only: `autoRefreshEnabled: false` and `refreshOnOpen: false`.
+- Perspective statuses are `current | partial | stale | blocked | needs_refresh`. Structure changes mark affected perspectives as `needs_refresh` without auto recompute or open-time overwrite; broken evidence anchors display source errors.
+- Perspective export participation is derived-reading-view only. `partial` and `stale` exports must carry status markers, and exports must not present perspective output as a fact source.
+- Future original context may reference only confirmed source assets. It must not cite a perspective view or perspective-derived fact as an original-context source.
+- The `technique_source_trace` perspective only traces the technique source chain. It does not create, edit, store, adopt, or mutate `TechniqueEntry`; `TechniqueEntry` remains owned by the fusion technique library.
+- The renderer no-library entry now shows `Perspective contract readout` from shared domain constants, including five derived views, blocked shell wording, and dependency `partial`/`blocked` statuses. It exposes no compute/refresh/edit/adopt buttons and is not a real workbench tab.
+- Block 5 still does not authorize SQLite, migrations, real services, imports, new IPC channels, AI/Codex SDK calls, prompts, automatic refresh/calculation, five-perspective deep UI, original-context implementation, or treating perspectives as an eighth analysis module.
+
 ## 2. Product Domains
 
 ### Breakdown Shelf
@@ -102,11 +118,14 @@ V1 placeholder only. It may only reserve snapshot-based reference boundaries for
 | `SourceSnapshot` | Readonly redacted source trace copied into a technique-library asset |
 | `TechniqueEntry` | Technique-library item copied/derived from confirmed candidate |
 | `OriginalReferenceSnapshot` | Placeholder snapshot contract for future original references, not OriginalBook data |
+| `PerspectiveDefinition` | Stable thematic derived-view definition, not an analysis module |
+| `PerspectiveInstance` | Stored derived/composite view for a book and analysis target boundary, not a fact source |
 
 ## 4. Stable Technical Language
 
 - Main fact source: SQLite.
 - Derived artifacts: JSON exports, Markdown exports, optional mirrors.
+- Perspective: derived composite/reading view over confirmed source assets; never a primary fact source.
 - Renderer: React UI with no privileged APIs.
 - Main process: Electron privileged process, service host and IPC router.
 - Preload: typed bridge only.
@@ -129,6 +148,9 @@ V1 placeholder only. It may only reserve snapshot-based reference boundaries for
 - Do not store full original excerpts, original sentences, character names or proprietary setting body in `SourceSnapshot`, `ReusableTechniqueCandidate`, `ProblemSolutionPattern`, or `TechniqueEntry`.
 - Do not treat `EvidenceAnchor` as a cross-domain mutable source of truth for the technique library.
 - Do not expose technique-library manual primary creation, automatic merge/fusion, or OriginalBook creation before a new product decision authorizes it.
+- Do not add thematic perspectives to the seven ordinary `AnalysisModule` definitions or present them as an eighth module.
+- Do not let perspectives generate relation facts, edit evidence state, edit reusable technique candidates, adopt `TechniqueEntry`, or participate directly in original context.
+- Do not auto-refresh or auto-calculate perspectives on open; stale and partial perspective views must remain visibly marked.
 
 ## 6. First Implementation Path
 
@@ -139,13 +161,14 @@ The V1 implementation path is:
 3. Add shared domain/contracts/errors and main typed IPC bridge. Completed in Block 2.
 4. Lock analysis module boundary contracts and expose the contract readout from the desktop entry. Completed in Block 3.
 5. Lock technique asset boundary contracts and expose the technique-library contract readout from the desktop entry. Completed in Block 4.
-6. Add SQLite connection and migrations. Not started.
-7. Implement library create/open. Not started.
-8. Implement txt/md import and metadata. Not started.
-9. Implement structure/story range shells. Not started.
-10. Implement module instance shell. Not started.
-11. Implement job state shell. Not started.
-12. Implement export blocked state. Not started.
+6. Lock thematic perspective boundary contracts and expose the perspective contract readout from the desktop entry. Completed in Block 5.
+7. Add SQLite connection and migrations. Not started.
+8. Implement library create/open. Not started.
+9. Implement txt/md import and metadata. Not started.
+10. Implement structure/story range shells. Not started.
+11. Implement module instance shell. Not started.
+12. Implement job state shell. Not started.
+13. Implement export blocked state. Not started.
 
 ## 7. Validation Expectations
 
@@ -168,6 +191,8 @@ The minimum user-visible path to verify is:
 8. See module instance shells.
 9. See job recovery state.
 10. See export blocked reason.
+
+Until library create/open exists, the no-library Electron smoke must keep the contract readouts visible for analysis modules, technique library, and perspectives. The perspective readout must prove five derived views, `partial`/`blocked` dependency status, and the non-module/non-fact-source boundary.
 
 ## 8. Source Documents To Read First
 

@@ -36,4 +36,16 @@ export const rendererText = {
     manualActionUnavailable: 'Manual primary action unavailable',
     futureManualDecision: 'Future manual creation requires a new product decision.',
   },
+  perspectiveContractReadout: {
+    title: 'Perspective contract readout',
+    source: 'Source: shared perspective domain contract',
+    viewCountSuffix: 'derived views',
+    boundaryLabel: 'Derived view, not an AnalysisModule',
+    factSourceLabel: 'not a fact source',
+    scopeMeaningLabel: 'Scope meaning',
+    viewKindLabel: 'View kind',
+    blockedShellLabel: 'Blocked shell',
+    dependencyStatusTitle: 'Dependency status shell',
+    missingAssetLabel: 'Missing asset',
+  },
 } as const;

@@ -3,6 +3,9 @@ import {
   ANALYSIS_MODULE_DEFINITIONS,
   ANALYSIS_SCOPE_EXCLUDED_TARGETS,
   ANALYSIS_SECONDARY_SYSTEM_PAGES,
+  PERSPECTIVE_DEFINITIONS,
+  PERSPECTIVE_IDENTITY_CONTRACT,
+  PERSPECTIVE_MISSING_DEPENDENCY_FIXTURES,
   TECHNIQUE_ASSET_OWNERSHIP,
   TECHNIQUE_EVIDENCE_CHAIN_POLICY,
   TECHNIQUE_LIBRARY_MANUAL_CREATE_POLICY,
@@ -12,6 +15,7 @@ import { rendererText } from './i18n';
 export function App(): ReactElement {
   const readoutText = rendererText.analysisContractReadout;
   const techniqueReadoutText = rendererText.techniqueLibraryContractReadout;
+  const perspectiveReadoutText = rendererText.perspectiveContractReadout;
   const aiConstraintSummary = ANALYSIS_SECONDARY_SYSTEM_PAGES[0];
   const techniqueEntryOwnership = TECHNIQUE_ASSET_OWNERSHIP.techniqueEntry;
   const techniqueEvidencePolicy = TECHNIQUE_EVIDENCE_CHAIN_POLICY.techniqueEntry;
@@ -75,6 +79,74 @@ export function App(): ReactElement {
             ))}
           </ul>
         </section>
+      </section>
+
+      <section
+        className="perspective-contract-readout"
+        aria-labelledby="perspective-contract-title"
+        data-contract-source="shared-domain-perspective"
+      >
+        <div className="readout-header">
+          <div>
+            <p className="eyebrow">{perspectiveReadoutText.source}</p>
+            <h2 id="perspective-contract-title">{perspectiveReadoutText.title}</h2>
+          </div>
+          <p className="module-count">
+            {PERSPECTIVE_DEFINITIONS.length} {perspectiveReadoutText.viewCountSuffix}
+          </p>
+        </div>
+
+        <ul className="perspective-list" aria-label={perspectiveReadoutText.title}>
+          {PERSPECTIVE_DEFINITIONS.map((perspectiveDefinition) => (
+            <li className="perspective-card" key={perspectiveDefinition.key} aria-disabled="true">
+              <span className="module-name">{perspectiveDefinition.name}</span>
+              <code>{perspectiveDefinition.key}</code>
+              <span className="module-category">{perspectiveReadoutText.boundaryLabel}</span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="perspective-readout-grid">
+          <article className="perspective-boundary-shell" aria-disabled="true">
+            <p className="readout-label">{perspectiveReadoutText.blockedShellLabel}</p>
+            <h3>{perspectiveReadoutText.boundaryLabel}</h3>
+            <dl>
+              <div>
+                <dt>{perspectiveReadoutText.viewKindLabel}</dt>
+                <dd>
+                  <code>{PERSPECTIVE_IDENTITY_CONTRACT.definitionKind}</code>
+                </dd>
+              </div>
+              <div>
+                <dt>{perspectiveReadoutText.scopeMeaningLabel}</dt>
+                <dd>
+                  <code>{PERSPECTIVE_IDENTITY_CONTRACT.scopeRefMeaning}</code>
+                </dd>
+              </div>
+              <div>
+                <dt>{perspectiveReadoutText.factSourceLabel}</dt>
+                <dd>{PERSPECTIVE_IDENTITY_CONTRACT.isFactSource ? 'fact source' : 'not a fact source'}</dd>
+              </div>
+            </dl>
+          </article>
+
+          <section className="perspective-status-shell" aria-labelledby="perspective-status-title">
+            <h3 id="perspective-status-title">{perspectiveReadoutText.dependencyStatusTitle}</h3>
+            <ul>
+              {PERSPECTIVE_MISSING_DEPENDENCY_FIXTURES.map((fixture) => (
+                <li key={`${fixture.perspectiveKey}:${fixture.missingAssetKind}`}>
+                  <div>
+                    <code>{fixture.perspectiveKey}</code>
+                    <span className="status-pill">{fixture.displayStatus}</span>
+                  </div>
+                  <p>
+                    {perspectiveReadoutText.missingAssetLabel}: <code>{fixture.missingAssetKind}</code>
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
       </section>
 
       <section

@@ -182,8 +182,10 @@ library-root/
 
 Rules:
 
-- `writestorm.sqlite` is the only main fact source.
-- `manifest.json` stores library identity, schema version, app version and database filename.
+- `writestorm.sqlite` is the only main fact source, including authoritative schema version through SQLite `schema_migrations`.
+- SQLite `schema_migrations` is the authoritative schema-version source.
+- SQLite `library` row owns library identity once the database exists; `LibrarySummary` must read id, name and app version from SQLite, not manifest identity fields.
+- `manifest.json` stores library identity, `manifestVersion`, app version, database filename, and optional `schemaVersionHint` diagnostic metadata. `schemaVersionHint` must never override SQLite `schema_migrations`.
 - `source/` stores immutable imported source copies.
 - `exports/` stores user-created export packages.
 - `logs/` stores user-visible local logs under the configured log policy.
@@ -197,18 +199,22 @@ Minimum tables for the first implementation:
 | Table | Purpose |
 | --- | --- |
 | `schema_migrations` | Applied migrations and timestamps |
-| `settings` | App/library settings that are safe to store in the library |
-| `books` | `BreakdownBook` records and lifecycle state |
+| `library` | Library identity row owned by SQLite, not by manifest |
+| `books` | `BreakdownBook` records and lifecycle state; `books.source_text_id` references `source_texts.id` |
 | `source_texts` | Imported file metadata, hash, encoding and source edition |
 | `structure_nodes` | Title tree nodes for book/volume/chapter |
 | `story_segment_ranges` | Cross-chapter story segment scopes |
+| `jobs` | Import, structure, analysis placeholder and export jobs |
+| `exports` | Export requests, outputs and blocked reasons |
 | `analysis_modules` | Stable module definitions |
 | `analysis_module_instances` | Module + scope instances, body, status and revision |
-| `jobs` | Import, structure, analysis placeholder and export jobs |
-| `job_checkpoints` | Resumable job checkpoint data |
-| `revisions` | Module body and structured asset revisions |
 | `evidence_anchors` | Placeholder and future evidence states |
-| `exports` | Export requests, outputs and blocked reasons |
+| `relation_links` | Reference-only relationship links owned by source modules, not perspectives |
+| `work_technique_observations` | Breakdown-book technique observations with evidence-anchor references |
+| `reusable_technique_candidates` | Breakdown-book reusable technique candidates, separate from technique entries |
+| `source_snapshots` | Readonly redacted source trace copied for technique-library assets |
+| `technique_entries` | Technique-library entries that point to source snapshots and never write back to candidates |
+| `perspective_views` | Stored derived/composite perspective views, not analysis module instances |
 
 Version fields:
 
@@ -220,6 +226,8 @@ Migration rules:
 
 - All schema changes go through numbered SQL migrations.
 - App startup runs pending migrations in a transaction after backing up or snapshotting the database according to the migration policy.
+- Migration startup validates applied migration id/name history against the static migration registry. Unknown future migrations and id/name mismatches must reject open before pending migrations run.
+- applied migrations must be a contiguous prefix of the static registry; a database with migration 2 applied and migration 1 missing is invalid.
 - Failed migration leaves the original database usable or explicitly marks it blocked with a recoverable reason.
 
 ## 8. Service Contracts
@@ -242,6 +250,8 @@ Service rules:
 - Services return domain errors with stable codes.
 - Services never return raw SQLite rows directly to renderer.
 - Long work emits job progress instead of blocking request IPC.
+- `LibraryService.create` is the only flow allowed to create `writestorm.sqlite`; it requires an absent or empty library root and must not adopt an existing database without a valid create flow.
+- `LibraryService.open` requires both `manifest.json` and `writestorm.sqlite`; it must not recreate a missing database for an existing library.
 
 ## 9. IPC Contract
 

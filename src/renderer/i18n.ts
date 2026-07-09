@@ -9,6 +9,18 @@ export const rendererText = {
   emptyLibrary: {
     title: 'No library open',
     description: 'Create or open a local library to start using the breakdown shelf.',
+    actionsLabel: 'Library actions',
+    createButton: 'Create library',
+    openButton: 'Open library',
+    actionError: 'Library action failed.',
+  },
+  libraryShelf: {
+    eyebrow: 'Current library',
+    title: 'Breakdown shelf',
+    emptyTitle: 'No books yet',
+    rootPathLabel: 'Root',
+    schemaVersionLabel: 'Schema version',
+    appVersionLabel: 'App version',
   },
   analysisContractReadout: {
     title: 'Analysis module contract readout',

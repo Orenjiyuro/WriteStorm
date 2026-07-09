@@ -55,6 +55,10 @@ Implications:
 - Credentials never enter the library folder.
 - `cache/` and `mirrors/` can be rebuilt.
 - Migration packages include SQLite plus source files and derived export artifacts when requested.
+- `manifest.json` identifies the library folder and uses `manifestVersion` for the manifest contract.
+- If the manifest stores a database version field, it must be named `schemaVersionHint`; it is diagnostic only and must not override SQLite.
+- SQLite `schema_migrations` is the authoritative schema-version source.
+- SQLite `library` row is the authoritative library identity source for id, name and app version; manifest identity fields are bootstrap/diagnostic metadata only after the database exists.
 
 ## D005: Renderer Privilege Boundary
 
@@ -174,3 +178,20 @@ Reason:
 Implications:
 
 - Initial scripts must include `npm run typecheck`, `npm run test:unit`, `npm run test:e2e` and `npm run build`.
+
+## D012: Library Entry Path Boundary
+
+Decision: Library create/open paths are selected in the Electron main process, not supplied by renderer requests.
+
+Rules:
+
+- `library:create`, `library:open`, and `library:get-current` keep empty renderer request contracts.
+- Production create/open uses main-side Electron directory dialogs and then calls `LibraryService`.
+- Packaged e2e may use `WRITESTORM_E2E_LIBRARY_DIALOG_STUB=1` with `WRITESTORM_E2E_LIBRARY_ROOT` and optional `WRITESTORM_E2E_LIBRARY_NAME` to bypass native dialogs.
+- The e2e dialog stub is read only by the main process at app launch; it is not exposed through preload or renderer APIs.
+
+Implications:
+
+- Renderer code cannot pass arbitrary filesystem paths to library IPC.
+- Dialog-stub behavior is acceptable only for Electron packaged smoke tests.
+- Source import, book services, and full Breakdown shelf behavior still require separate authorization.

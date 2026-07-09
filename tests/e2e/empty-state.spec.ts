@@ -88,10 +88,21 @@ test('shows the no-library empty state in a real Electron window', async () => {
     await expect(page.getByText('Source snapshot secondary information')).toBeVisible();
     await expect(page.getByText('Read-only provenance position')).toBeVisible();
     await expect(page.getByText('Manual primary action unavailable')).toBeVisible();
-    await expect(page.getByRole('button')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Create library' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Open library' })).toBeVisible();
+    await expect(page.getByRole('button')).toHaveCount(2);
+    await expect(page.getByRole('button', { name: 'Import source' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Run analysis' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Adopt candidate' })).toHaveCount(0);
 
     const health = await page.evaluate(() => window.writestorm.internal.health());
     expect(health).toEqual({ ok: true, app: 'WriteStorm' });
+
+    const currentLibraryResponse = await page.evaluate(() => window.writestorm.library.getCurrent());
+    expect(currentLibraryResponse).toEqual({
+      ok: true,
+      data: null,
+    });
 
     const writestormApiShape = await page.evaluate(() => ({
       root: Object.keys(window.writestorm),

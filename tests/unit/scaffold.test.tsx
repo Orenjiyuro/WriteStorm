@@ -9,5 +9,7 @@ describe('scaffold boundary', () => {
 
     expect(markup).toContain(rendererText.emptyLibrary.title);
     expect(markup).toContain(rendererText.emptyLibrary.description);
+    expect(markup).toContain(rendererText.emptyLibrary.createButton);
+    expect(markup).toContain(rendererText.emptyLibrary.openButton);
   });
 });

@@ -32,7 +32,7 @@ describe('renderer technique library contract readout', () => {
 
     expect(markup).toContain('Manual primary action unavailable');
     expect(markup).toContain('Future manual creation requires a new product decision.');
-    expect(markup).not.toContain('<button');
+    expect(markup).not.toContain('Create TechniqueEntry');
     expect(markup).not.toContain('Edit technique');
     expect(markup).not.toContain('Adopt candidate');
     expect(markup).not.toContain('Merge technique');

@@ -52,10 +52,10 @@ describe('renderer perspective contract readout', () => {
     const markup = renderToStaticMarkup(<App />);
 
     expect(markup).toContain('Blocked shell');
-    expect(markup).not.toContain('<button');
     expect(markup).not.toContain('Run perspective');
     expect(markup).not.toContain('Refresh perspective');
     expect(markup).not.toContain('Edit relation');
+    expect(markup).not.toContain('Run analysis');
     expect(markup).not.toContain('Adopt TechniqueEntry');
   });
 });

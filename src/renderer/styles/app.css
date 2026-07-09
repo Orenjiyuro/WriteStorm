@@ -24,6 +24,112 @@ body {
   width: min(100%, 560px);
 }
 
+.library-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.library-actions button {
+  min-height: 40px;
+  border: 1px solid #1f6f5b;
+  border-radius: 8px;
+  background: #1f6f5b;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.94rem;
+  font-weight: 700;
+  padding: 8px 14px;
+}
+
+.library-actions button:last-child {
+  border-color: #9fb0bf;
+  background: #ffffff;
+  color: #1f2933;
+}
+
+.library-actions button:disabled {
+  cursor: default;
+  opacity: 0.62;
+}
+
+.library-error {
+  color: #9f2d2d;
+  font-size: 0.92rem;
+  margin: 12px 0 0;
+}
+
+.library-shelf {
+  width: min(100%, 960px);
+}
+
+.library-summary,
+.breakdown-empty-shelf {
+  border: 1px solid #d7e0e8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.library-summary {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.library-summary code {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.library-path-label {
+  color: #52616f;
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.library-summary dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.library-summary dl div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid #e3e9ee;
+  padding-top: 10px;
+}
+
+.library-summary dl div:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.library-summary dt {
+  color: #52616f;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.library-summary dd {
+  margin: 0;
+}
+
+.breakdown-empty-shelf {
+  min-height: 180px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  margin-top: 16px;
+}
+
 .eyebrow {
   margin: 0 0 12px;
   color: #52616f;

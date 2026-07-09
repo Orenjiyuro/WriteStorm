@@ -1,6 +1,6 @@
 # WriteStorm Engineering Context
 
-日期：2026-07-08  
+日期：2026-07-09  
 目的：给后续实现线程提供稳定领域语言、工程边界和当前仓库事实。
 
 ## 1. Current Repository State
@@ -36,10 +36,10 @@ Block 2 shared contract, product IPC, and preload product API artifacts in the w
 Current Block 2 facts:
 
 - Tasks 2.1-2.9 artifacts are present: shared domain IDs/unions/DTOs/errors, Zod contract registry, main typed IPC router, product `NOT_IMPLEMENTED` handlers, and typed `window.writestorm.internal/library/books/structure/modules/jobs/exports` preload API.
-- Product IPC calls still return stable `NOT_IMPLEMENTED` envelopes until real services are authorized.
+- Non-library product IPC calls still return stable `NOT_IMPLEMENTED` envelopes until their services are authorized. `library:create/open/get-current` are now wired through main-side providers in the Task 6.12 desktop entry skeleton.
 - Task 2.10 boundary gates are part of the accepted Block 2 baseline.
 - Total-thread recertification for Block 2 passed `npm run check` before Block 3 authorization.
-- SQLite, real LibraryService/BookService, import implementation, AI, and full product UI have not started.
+- SQLite native gate, real `LibraryService`, and the minimal desktop create/open library entry skeleton have started in Block 6. `BookService`, source import implementation, AI, and full product UI have not started.
 
 Current Block 3 facts:
 
@@ -84,6 +84,38 @@ Current Block 5 facts:
 - The `technique_source_trace` perspective only traces the technique source chain. It does not create, edit, store, adopt, or mutate `TechniqueEntry`; `TechniqueEntry` remains owned by the fusion technique library.
 - The renderer no-library entry now shows `Perspective contract readout` from shared domain constants, including five derived views, blocked shell wording, and dependency `partial`/`blocked` statuses. It exposes no compute/refresh/edit/adopt buttons and is not a real workbench tab.
 - Block 5 still does not authorize SQLite, migrations, real services, imports, new IPC channels, AI/Codex SDK calls, prompts, automatic refresh/calculation, five-perspective deep UI, original-context implementation, or treating perspectives as an eighth analysis module.
+
+Current Block 6 native gate facts:
+
+- Block 6 native gate is the approved first substage of Block 6. It covers the library folder contract, manifest boundary, `better-sqlite3` dependency baseline, SQLite connection wrapper, static migration runner, Vite native externalization, and local CI integration-test gate.
+- Windows native package/rebuild passed after installing Visual Studio Build Tools 2022 for the current `@electron/rebuild` 3.7.2 / `@electron/node-gyp` `10.2.0-electron.1` chain. `npm run build`, packaged native SQLite smoke, and `npm run check` passed locally on Windows.
+- Task 6.9 Windows packaged smoke now loads `better-sqlite3`, opens SQLite, runs a test-only migration, closes/reopens the database, and verifies reopened schema version readback. macOS packaged SQLite smoke remains blocked-by-platform.
+- `npm run make` is still release/maker strategy blocked-or-not-applicable because `makers: []` gives Forge no win32 make target. macOS packaged SQLite smoke is still blocked-by-platform until a macOS runner executes the same packaged smoke.
+- `manifest.json` uses `manifestVersion` for the manifest contract. A `schemaVersionHint` field is allowed only as diagnostic/readout metadata and must not override SQLite.
+- SQLite `schema_migrations` is the authoritative schema-version source for migrations.
+- Migration runner rejects unknown applied migration ids and applied migration id/name mismatches before running pending migrations. Older apps must not continue on unknown future schemas.
+- Migration runner rejects non-contiguous applied migration histories. Applied rows must be a contiguous prefix of the static registry, so a database with migration 2 but missing migration 1 cannot be opened or repaired by running migration 1 later.
+- Task 6.4 Foundation Schema is implemented as production migration `001_foundation_schema` and brings app schema version to at least 1. It creates `library`, `books`, `source_texts`, `structure_nodes`, `story_segment_ranges`, `jobs`, and `exports` with introspected core columns and relationships.
+- `books.source_text_id` is constrained by FK to `source_texts.id`; the current-source pointer must not reference a nonexistent source text.
+- Task 6.5 Content Model Schema shell is implemented as production migration `002_content_model_shell` and brings app schema version to 2. It creates `analysis_modules`, `analysis_module_instances`, `evidence_anchors`, `relation_links`, `work_technique_observations`, `reusable_technique_candidates`, `source_snapshots`, `technique_entries`, and `perspective_views`.
+- TechniqueEntry and ReusableTechniqueCandidate remain separate tables. `technique_entries` reference `source_snapshots`, not reusable candidates or evidence anchors directly.
+- Perspective views are stored in `perspective_views`, not `analysis_module_instances`; `perspective_views` does not FK to `analysis_module_instances` and does not make perspectives the eighth analysis module.
+- `relation_links` and `evidence_anchors` are independent shell tables. Perspective views may read them later but must not generate relation facts or own evidence state.
+- Task 6.10 path guard is implemented in the main/library layer. Library relative paths must stay inside the canonical library root, absolute child inputs are rejected, same-prefix sibling escapes are rejected, and existing symlink/junction segments that realpath outside the root are rejected before future LibraryService create/open/current flows use them.
+- Task 6.11 LibraryService create/open/current is implemented as a main/service-layer minimum loop. It creates the library folder layout, writes non-authoritative `manifest.json`, opens `writestorm.sqlite`, runs the static migration runner, sets current context, and returns `LibrarySummary` with schema version read from SQLite.
+- LibraryService reads `LibrarySummary` identity from SQLite `library`, not manifest identity fields. Manifest id/name/appVersion can be used to bootstrap create, but open must treat SQLite as authoritative.
+- LibraryService create requires an absent or empty root. Create is the only flow allowed to create a new SQLite file; it refuses non-empty roots and existing database artifacts instead of adopting them, and it cleans partial create artifacts if migration or database setup fails.
+- LibraryService.open refuses a manifest-only library when `writestorm.sqlite` is missing. Opening an existing library must surface a recoverable library error instead of silently recreating an empty database.
+- LibraryService.open validates source/exports/logs/cache/mirrors as existing directories before opening an existing library, so damaged folder contracts fail early with a recoverable library error.
+- SQLite open failures map to `LIBRARY_ERROR` with `database_open_failed` over IPC instead of generic `INTERNAL_ERROR`.
+- Expected LibraryService failures are mapped to `LIBRARY_ERROR` over IPC with a stable reason, so duplicate roots, invalid manifests, missing databases, path guard rejection, and migration failure do not collapse into generic `INTERNAL_ERROR`.
+- Library product IPC can now be wired with main-side root providers for `library:create`, `library:open`, and `library:get-current`; renderer requests remain empty and cannot submit arbitrary paths. Default product IPC registration without those providers still leaves non-wired product channels on stable `NOT_IMPLEMENTED`.
+- Task 6.11 authorizes only the LibraryService service/IPC minimum loop. It does not authorize renderer library UI, source import, book services, AI, or full product workbench behavior.
+- Task 6.12 desktop entry skeleton is implemented. The renderer exposes only Create library and Open library entry buttons, calls typed preload `library:create/open/get-current`, and switches to an empty Breakdown shelf from a returned `LibrarySummary`.
+- The Task 6.12 directory-selection path stays main-side: production uses Electron directory dialogs, while packaged e2e may set `WRITESTORM_E2E_LIBRARY_DIALOG_STUB=1` plus `WRITESTORM_E2E_LIBRARY_ROOT`/`WRITESTORM_E2E_LIBRARY_NAME`. That stub is read only by the main process at launch, is not exposed through preload/renderer, and renderer still cannot submit arbitrary filesystem paths.
+- Task 6.12 still does not authorize source import, book services, AI/Codex, full workbench UI, technique-library UI, perspective computation, or new non-library IPC channels.
+- Task 6.13 SQLite/migration performance baseline is implemented. The small fixture uses 25 probe rows and the medium fixture uses 1,000 probe rows through test-only migrations, then records create/open/migration/summary-query timings against non-regression limits.
+- Task 6.13 stays inside the authorized SQLite/LibraryService boundary. Its performance fixtures remain test-only and separate from the production Task 6.4/6.5 schema; it does not add BookService queries, source import, AI, or renderer behavior.
 
 ## 2. Product Domains
 
@@ -162,13 +194,14 @@ The V1 implementation path is:
 4. Lock analysis module boundary contracts and expose the contract readout from the desktop entry. Completed in Block 3.
 5. Lock technique asset boundary contracts and expose the technique-library contract readout from the desktop entry. Completed in Block 4.
 6. Lock thematic perspective boundary contracts and expose the perspective contract readout from the desktop entry. Completed in Block 5.
-7. Add SQLite connection and migrations. Not started.
-8. Implement library create/open. Not started.
-9. Implement txt/md import and metadata. Not started.
-10. Implement structure/story range shells. Not started.
-11. Implement module instance shell. Not started.
-12. Implement job state shell. Not started.
-13. Implement export blocked state. Not started.
+7. Add SQLite connection and migrations. Windows native gate passed; release maker strategy and macOS packaged SQLite smoke remain blocked/not applicable.
+8. Implement library create/open. Minimal LibraryService + desktop entry skeleton completed in Tasks 6.11-6.12; book shelf content remains empty.
+9. Record SQLite/migration performance baseline. Completed in Task 6.13 for the authorized LibraryService/migration layer.
+10. Implement txt/md import and metadata. Not started.
+11. Implement structure/story range shells. Not started.
+12. Implement module instance shell. Not started.
+13. Implement job state shell. Not started.
+14. Implement export blocked state. Not started.
 
 ## 7. Validation Expectations
 
@@ -192,7 +225,7 @@ The minimum user-visible path to verify is:
 9. See job recovery state.
 10. See export blocked reason.
 
-Until library create/open exists, the no-library Electron smoke must keep the contract readouts visible for analysis modules, technique library, and perspectives. The perspective readout must prove five derived views, `partial`/`blocked` dependency status, and the non-module/non-fact-source boundary.
+The no-library Electron smoke must keep the contract readouts visible for analysis modules, technique library, and perspectives alongside only the library entry buttons. The perspective readout must prove five derived views, `partial`/`blocked` dependency status, and the non-module/non-fact-source boundary. The library-entry Electron smoke must prove create/open through the desktop entry reaches an empty Breakdown shelf without exposing renderer filesystem paths.
 
 ## 8. Source Documents To Read First
 

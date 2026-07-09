@@ -3,6 +3,10 @@ export {
   registerNotImplementedProductIpcHandlers,
   registerProductIpc,
 } from './not-implemented-handlers';
+export type {
+  LibraryIpcDependencies,
+  ProductIpcRegistrationOptions,
+} from './not-implemented-handlers';
 export {
   registerTypedIpcHandler,
   registerTypedIpcHandlers,

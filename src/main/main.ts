@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, protocol, session, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, protocol, session, shell } from 'electron';
 import path from 'node:path';
 import {
   createContentSecurityPolicy,
@@ -8,6 +8,9 @@ import {
   shouldUseHeaderContentSecurityPolicy,
 } from './security';
 import { createTrustedDevServerOrigins, registerProductIpc } from './ipc';
+import { runOptionalNativeSqliteProbe } from './db/native-probe';
+import { createLibraryEntryIpcDependencies } from './library/library-entry';
+import { LibraryService } from './library/library-service';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -15,6 +18,7 @@ declare const MAIN_WINDOW_VITE_NAME: string;
 const allowedExternalOrigins = new Set<string>();
 const appProtocol = 'writestorm';
 const appProtocolHost = 'app';
+const libraryService = new LibraryService({ appVersion: app.getVersion() });
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -150,8 +154,19 @@ app.whenReady().then(async () => {
   installContentSecurityPolicy();
   registerAppProtocol();
   registerInternalIpc();
-  registerProductIpc(ipcMain, MAIN_WINDOW_VITE_DEV_SERVER_URL);
+  registerProductIpc(ipcMain, MAIN_WINDOW_VITE_DEV_SERVER_URL, {
+    library: createLibraryEntryIpcDependencies({
+      service: libraryService,
+      env: process.env,
+      showOpenDialog: (options) => dialog.showOpenDialog(options),
+    }),
+  });
   await createWindow();
+  await runOptionalNativeSqliteProbe();
+});
+
+app.on('before-quit', () => {
+  libraryService.closeCurrent();
 });
 
 app.on('window-all-closed', () => {

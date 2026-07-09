@@ -36,7 +36,7 @@ describe('Forge Vite scaffold', () => {
     expect(forgeConfig).toMatch(/entry:\s*['"]src\/preload\/index\.ts['"]/);
     expect(forgeConfig).toMatch(/name:\s*['"]main_window['"]/);
     expect(forgeConfig).toMatch(/config:\s*['"]vite\.renderer\.config\.ts['"]/);
-    expect(forgeConfig).toMatch(/asar:\s*true/);
+    expect(forgeConfig).toMatch(/asar:\s*(true|{[\s\S]*unpack:\s*['"]\*\*\/\*\.node['"])/);
   });
 
   it('keeps the renderer HTML wired to the Vite module entry', () => {

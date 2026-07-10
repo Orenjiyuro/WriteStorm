@@ -1,5 +1,6 @@
 import {
   PRODUCT_IPC_CHANNELS,
+  type ContractRequest,
   type ContractResponse,
   type ProductIpcChannel,
 } from '../../shared/contracts';
@@ -31,6 +32,13 @@ export type LibraryIpcDependencies = {
 
 export type ProductIpcRegistrationOptions = {
   readonly library?: LibraryIpcDependencies;
+  readonly books?: {
+    readonly list?: () => MaybePromise<ContractResponse<'books:list'>>;
+    readonly clearPendingImports?: () => void;
+    readonly importSource: (
+      request: ContractRequest<'books:import-source'>,
+    ) => MaybePromise<ContractResponse<'books:import-source'>>;
+  };
 };
 
 export function registerNotImplementedProductIpcHandlers(
@@ -66,18 +74,27 @@ function createNotImplementedProductHandlers(): TypedIpcHandlerMap {
 function createProductHandlers(options: ProductIpcRegistrationOptions): TypedIpcHandlerMap {
   return {
     ...createNotImplementedProductHandlers(),
-    ...(options.library ? createLibraryProductHandlers(options.library) : {}),
+    ...(options.library ? createLibraryProductHandlers(options.library, options.books?.clearPendingImports) : {}),
+    ...(options.books ? createBookProductHandlers(options.books) : {}),
   };
 }
 
-function createLibraryProductHandlers(library: LibraryIpcDependencies): TypedIpcHandlerMap {
+function createLibraryProductHandlers(
+  library: LibraryIpcDependencies,
+  onLibrarySessionChanged?: () => void,
+): TypedIpcHandlerMap {
   const createHandler: TypedIpcHandler<'library:create'> = async () => {
     const selection = await library.selectCreateRoot();
 
     try {
+      const summary = selection ? library.service.create(selection) : null;
+      if (summary) {
+        onLibrarySessionChanged?.();
+      }
+
       return {
         ok: true,
-        data: selection ? library.service.create(selection) : null,
+        data: summary,
       };
     } catch (error) {
       return libraryServiceErrorResponse('library:create', error);
@@ -87,9 +104,14 @@ function createLibraryProductHandlers(library: LibraryIpcDependencies): TypedIpc
     const rootPath = await library.selectOpenRoot();
 
     try {
+      const summary = rootPath ? library.service.open({ rootPath }) : null;
+      if (summary) {
+        onLibrarySessionChanged?.();
+      }
+
       return {
         ok: true,
-        data: rootPath ? library.service.open({ rootPath }) : null,
+        data: summary,
       };
     } catch (error) {
       return libraryServiceErrorResponse('library:open', error);
@@ -104,6 +126,20 @@ function createLibraryProductHandlers(library: LibraryIpcDependencies): TypedIpc
     'library:create': createHandler,
     'library:open': openHandler,
     'library:get-current': getCurrentHandler,
+  };
+}
+
+function createBookProductHandlers(
+  books: NonNullable<ProductIpcRegistrationOptions['books']>,
+): TypedIpcHandlerMap {
+  const listHandler: TypedIpcHandler<'books:list'> = books.list
+    ? () => books.list!()
+    : () => notImplementedResponse('books:list');
+  const importSourceHandler: TypedIpcHandler<'books:import-source'> = (request) => books.importSource(request);
+
+  return {
+    'books:list': listHandler,
+    'books:import-source': importSourceHandler,
   };
 }
 

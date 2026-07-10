@@ -8,6 +8,7 @@ import { LibraryService } from '../../src/main/library/library-service';
 import { LIBRARY_DATABASE_FILE_NAME } from '../../src/main/library/folder-contract';
 import type { ProductIpcChannel } from '../../src/shared/contracts';
 import type { LibraryId } from '../../src/shared/domain';
+import { createNotImplementedError } from '../../src/shared/errors';
 
 type MockIpcListener = (event: MockIpcEvent, payload: unknown) => unknown;
 
@@ -125,6 +126,45 @@ describe('main library product IPC handlers', () => {
         },
       },
     });
+  });
+
+  it('clears main-only pending imports when the library session changes', async () => {
+    const rootPath = libraryRootPath();
+    const ipcMain = new MockIpcMain();
+    const service = new LibraryService({
+      appVersion: '0.1.0-test',
+      now: () => '2026-07-09T00:00:00.000Z',
+      createLibraryId: () => libraryId,
+    });
+    let clearCalls = 0;
+
+    try {
+      registerProductIpc(ipcMain, undefined, {
+        library: {
+          service,
+          selectCreateRoot: () => ({ rootPath, name: 'Session Library' }),
+          selectOpenRoot: () => rootPath,
+        },
+        books: {
+          clearPendingImports: () => {
+            clearCalls += 1;
+          },
+          importSource: () => ({
+            ok: false,
+            error: createNotImplementedError('books:import-source'),
+          }),
+        },
+      });
+
+      await ipcMain.invoke('library:create', {});
+      expect(clearCalls).toBe(1);
+
+      service.closeCurrent();
+      await ipcMain.invoke('library:open', {});
+      expect(clearCalls).toBe(2);
+    } finally {
+      service.closeCurrent();
+    }
   });
 
   it('does not accept renderer-supplied root paths on library channels', async () => {

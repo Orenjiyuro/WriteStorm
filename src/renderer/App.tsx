@@ -14,8 +14,15 @@ import {
   TECHNIQUE_EVIDENCE_CHAIN_POLICY,
   TECHNIQUE_LIBRARY_MANUAL_CREATE_POLICY,
 } from '../shared/domain';
-import type { LibrarySummary } from '../shared/domain';
+import type { BookSummary, ImportSourceResult, LibrarySummary } from '../shared/domain';
+import type { ContractRequest } from '../shared/contracts';
 import { rendererText } from './i18n';
+import {
+  createSourceImportFailureViewModel,
+  SourceImportFailurePanel,
+  type SourceImportFailureAction,
+  type SourceImportFailureViewModel,
+} from './source-import-failure';
 
 type LibraryAction = 'create' | 'open';
 
@@ -23,6 +30,10 @@ export function App(): ReactElement {
   const [currentLibrary, setCurrentLibrary] = useState<LibrarySummary | null>(null);
   const [pendingLibraryAction, setPendingLibraryAction] = useState<LibraryAction | null>(null);
   const [libraryError, setLibraryError] = useState<string | null>(null);
+  const [pendingSourceImport, setPendingSourceImport] = useState(false);
+  const [sourceImportResults, setSourceImportResults] = useState<ImportSourceResult[]>([]);
+  const [sourceImportFailure, setSourceImportFailure] = useState<SourceImportFailureViewModel | null>(null);
+  const [openedBook, setOpenedBook] = useState<BookSummary | null>(null);
   const readoutText = rendererText.analysisContractReadout;
   const techniqueReadoutText = rendererText.techniqueLibraryContractReadout;
   const perspectiveReadoutText = rendererText.perspectiveContractReadout;
@@ -46,6 +57,9 @@ export function App(): ReactElement {
 
         if (response.ok) {
           setCurrentLibrary(response.data);
+          setSourceImportResults([]);
+          setSourceImportFailure(null);
+          setOpenedBook(null);
           setLibraryError(null);
         } else {
           setLibraryError(response.error.message);
@@ -73,6 +87,9 @@ export function App(): ReactElement {
 
       if (response.ok) {
         setCurrentLibrary(response.data);
+        setSourceImportResults([]);
+        setSourceImportFailure(null);
+        setOpenedBook(null);
       } else {
         setLibraryError(response.error.message);
       }
@@ -80,6 +97,88 @@ export function App(): ReactElement {
       setLibraryError(rendererText.emptyLibrary.actionError);
     } finally {
       setPendingLibraryAction(null);
+    }
+  };
+
+  const runSourceImport = async (
+    request: ContractRequest<'books:import-source'>,
+  ): Promise<void> => {
+    setPendingSourceImport(true);
+    setSourceImportFailure(null);
+
+    try {
+      const response = await window.writestorm.books.importSource(request);
+
+      if (response.ok) {
+        setSourceImportResults((results) => [...results, response.data]);
+      } else {
+        setSourceImportFailure(createSourceImportFailureViewModel(response.error));
+      }
+    } catch {
+      setSourceImportFailure(createSourceImportFailureViewModel({
+        code: 'IMPORT_ERROR',
+        message: rendererText.sourceImport.actionError,
+        recoverable: true,
+        details: {
+          reason: 'database_write_failed',
+        },
+      }));
+    } finally {
+      setPendingSourceImport(false);
+    }
+  };
+
+  const handleSourceImport = async (): Promise<void> => runSourceImport({});
+
+  const handleSourceImportFailureAction = async (action: SourceImportFailureAction): Promise<void> => {
+    switch (action.kind) {
+      case 'open_library':
+        await handleLibraryAction('open');
+        return;
+      case 'choose_file':
+      case 'choose_smaller_file':
+      case 'retry_import':
+        await handleSourceImport();
+        return;
+      case 'retry_encoding':
+        await runSourceImport({
+          pendingImportId: action.pendingImportId,
+          encodingOverride: action.encodingOverride,
+        });
+        return;
+      case 'open_existing_book': {
+        setPendingSourceImport(true);
+        try {
+          const response = await window.writestorm.books.list();
+          if (!response.ok) {
+            setSourceImportFailure(createSourceImportFailureViewModel(response.error));
+            return;
+          }
+
+          const existingBook = response.data.find((book) => book.id === action.existingBookId);
+          if (!existingBook) {
+            setSourceImportFailure(createSourceImportFailureViewModel({
+              code: 'IMPORT_ERROR',
+              message: rendererText.sourceImport.failure.existingBookNotFound,
+              recoverable: true,
+              details: { reason: 'database_write_failed' },
+            }));
+            return;
+          }
+
+          setOpenedBook(existingBook);
+          setSourceImportFailure(null);
+        } catch {
+          setSourceImportFailure(createSourceImportFailureViewModel({
+            code: 'IMPORT_ERROR',
+            message: rendererText.sourceImport.actionError,
+            recoverable: true,
+            details: { reason: 'database_write_failed' },
+          }));
+        } finally {
+          setPendingSourceImport(false);
+        }
+      }
     }
   };
 
@@ -107,7 +206,42 @@ export function App(): ReactElement {
             </dl>
           </div>
           <section className="breakdown-empty-shelf" aria-labelledby="empty-breakdown-shelf-title">
-            <h2 id="empty-breakdown-shelf-title">{rendererText.libraryShelf.emptyTitle}</h2>
+            <div className="breakdown-shelf-header">
+              <h2 id="empty-breakdown-shelf-title">
+                {sourceImportResults.length > 0
+                  ? rendererText.libraryShelf.importedTitle
+                  : rendererText.libraryShelf.emptyTitle}
+              </h2>
+              <button
+                type="button"
+                onClick={() => void handleSourceImport()}
+                disabled={pendingSourceImport}
+              >
+                {rendererText.sourceImport.button}
+              </button>
+            </div>
+            {sourceImportFailure ? (
+              <SourceImportFailurePanel
+                failure={sourceImportFailure}
+                onAction={(action) => void handleSourceImportFailureAction(action)}
+              />
+            ) : null}
+            {openedBook ? (
+              <p className="opened-book-status" role="status">
+                {rendererText.libraryShelf.openedBookStatus(openedBook.title)}
+              </p>
+            ) : null}
+            {sourceImportResults.length > 0 ? (
+              <ul className="book-list" aria-label={rendererText.libraryShelf.importedTitle}>
+                {sourceImportResults.map((result) => (
+                  <li key={result.book.id}>
+                    <strong>{result.book.title}</strong>
+                    <span>{result.sourceText.fileName}</span>
+                    <span>{result.job.checkpointSummary}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </section>
         </section>
       ) : (

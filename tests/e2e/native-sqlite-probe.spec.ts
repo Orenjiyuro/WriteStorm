@@ -67,11 +67,15 @@ test('packaged Electron main process can load better-sqlite3 and open SQLite', a
       sqliteVersion: string;
       migrationSchemaVersion: number;
       reopenedSchemaVersion: number;
+      gb18030Text: string;
+      gb18030Encoding: string;
     };
     expect(probeResult).toMatchObject({
       ok: true,
       migrationSchemaVersion: 1,
       reopenedSchemaVersion: 1,
+      gb18030Text: '中文',
+      gb18030Encoding: 'gb18030',
     });
 
     const health = await page.evaluate(() => window.writestorm.internal.health());

@@ -12,8 +12,10 @@ import type {
   BreakdownBookId,
   ExportId,
   JobId,
+  JobSummary,
   LibraryId,
   SourceTextId,
+  SourceTextMetadata,
   StorySegmentRangeId,
   StructureNodeId,
 } from '../../src/shared/domain';
@@ -55,6 +57,30 @@ const bookSummary = {
   structureEdition: 1,
   updatedAt: '2026-07-07T00:00:00.000Z',
 };
+
+const sourceTextMetadata = {
+  id: sourceTextId,
+  bookId,
+  fileName: 'example.md',
+  format: 'md',
+  sizeBytes: 1024,
+  encoding: 'utf-8',
+  contentHash: 'sha256:example',
+  sourceTextEdition: 1,
+  importedAt: '2026-07-07T00:00:00.000Z',
+} satisfies SourceTextMetadata;
+
+const completedImportJob = {
+  id: jobId,
+  bookId,
+  state: 'completed',
+  title: 'Import source',
+  completedUnits: 1,
+  totalUnits: 1,
+  checkpointSummary: 'Source imported.',
+  failureReason: null,
+  updatedAt: '2026-07-07T00:00:00.000Z',
+} satisfies JobSummary;
 
 const booksListRequest = {} satisfies ContractRequest<'books:list'>;
 const booksListResponse = {
@@ -124,16 +150,219 @@ describe('shared contract registry', () => {
   it('keeps renderer requests away from arbitrary file paths', () => {
     expect(getContract('library:create').request.safeParse({ rootPath: 'C:\\Library' }).success).toBe(false);
     expect(getContract('library:open').request.safeParse({ rootPath: 'C:\\Library' }).success).toBe(false);
-    expect(
-      getContract('books:import-source').request.safeParse({
-        sourcePath: 'C:\\Books\\example.md',
-      }).success,
-    ).toBe(false);
+
+    for (const forbiddenPathField of ['sourcePath', 'filePath', 'path', 'rootPath']) {
+      expect(
+        getContract('books:import-source').request.safeParse({
+          [forbiddenPathField]: 'C:\\Books\\example.md',
+        }).success,
+      ).toBe(false);
+    }
+
     expect(
       getContract('books:import-source').request.safeParse({
         title: 'Example Book',
       }).success,
     ).toBe(true);
+  });
+
+  it('separates source import request modes so encoding retry cannot rename or pass paths', () => {
+    expect(getContract('books:import-source').request.parse({})).toEqual({});
+    expect(getContract('books:import-source').request.parse({ title: 'Example Book' })).toEqual({
+      title: 'Example Book',
+    });
+    expect(
+      getContract('books:import-source').request.parse({
+        pendingImportId: 'pending-1',
+        encodingOverride: 'gb18030',
+      }),
+    ).toEqual({
+      pendingImportId: 'pending-1',
+      encodingOverride: 'gb18030',
+    });
+    expect(
+      getContract('books:import-source').request.safeParse({
+        title: 'Retitled during retry',
+        pendingImportId: 'pending-1',
+        encodingOverride: 'gb18030',
+      }).success,
+    ).toBe(false);
+    expect(
+      getContract('books:import-source').request.safeParse({
+        pendingImportId: 'pending-1',
+      }).success,
+    ).toBe(false);
+    expect(
+      getContract('books:import-source').request.safeParse({
+        encodingOverride: 'gb18030',
+      }).success,
+    ).toBe(false);
+  });
+
+  it('returns imported book, source metadata, and completed job for source import success', () => {
+    const response = {
+      ok: true,
+      data: {
+        book: bookSummary,
+        sourceText: sourceTextMetadata,
+        job: completedImportJob,
+      },
+    } satisfies ContractResponse<'books:import-source'>;
+
+    expect(getContract('books:import-source').response.parse(response)).toEqual(response);
+    expect(
+      getContract('books:import-source').response.safeParse({
+        ok: true,
+        data: completedImportJob,
+      }).success,
+    ).toBe(false);
+  });
+
+  it('requires stable import error reasons for books:import-source failures', () => {
+    const response = {
+      ok: false,
+      error: {
+        code: 'IMPORT_ERROR',
+        message: 'The selected file is larger than 20 MiB.',
+        recoverable: true,
+        details: {
+          reason: 'file_too_large',
+          maxSizeBytes: 20 * 1024 * 1024,
+          sizeBytes: 20 * 1024 * 1024 + 1,
+        },
+      },
+    } satisfies ContractResponse<'books:import-source'>;
+
+    expect(getContract('books:import-source').response.parse(response)).toEqual(response);
+    expect(
+      getContract('books:import-source').response.safeParse({
+        ok: false,
+        error: {
+          code: 'IMPORT_ERROR',
+          message: 'Import failed.',
+          recoverable: true,
+          details: {
+            reason: 'some_unstable_string',
+          },
+        },
+      }).success,
+    ).toBe(false);
+    expect(
+      getContract('books:import-source').response.safeParse({
+        ok: false,
+        error: {
+          code: 'IMPORT_ERROR',
+          message: 'Import failed.',
+          recoverable: true,
+        },
+      }).success,
+    ).toBe(false);
+    expect(
+      getContract('books:import-source').response.safeParse({
+        ok: false,
+        error: createNotImplementedError('books:import-source'),
+      }).success,
+    ).toBe(true);
+  });
+
+  it('carries duplicate hash and target conflict details for source import failures', () => {
+    expect(
+      getContract('books:import-source').response.parse({
+        ok: false,
+        error: {
+          code: 'IMPORT_ERROR',
+          message: 'This source text has already been imported.',
+          recoverable: true,
+          details: {
+            reason: 'duplicate_source_hash',
+            existingBookId: bookId,
+            existingSourceTextId: sourceTextId,
+          },
+        },
+      }),
+    ).toEqual({
+      ok: false,
+      error: {
+        code: 'IMPORT_ERROR',
+        message: 'This source text has already been imported.',
+        recoverable: true,
+        details: {
+          reason: 'duplicate_source_hash',
+          existingBookId: bookId,
+          existingSourceTextId: sourceTextId,
+        },
+      },
+    });
+
+    expect(
+      getContract('books:import-source').response.parse({
+        ok: false,
+        error: {
+          code: 'IMPORT_ERROR',
+          message: 'The library already contains a copied source at the target path.',
+          recoverable: true,
+          details: {
+            reason: 'target_conflict',
+            relativePath: 'source/source-1/example.md',
+          },
+        },
+      }),
+    ).toEqual({
+      ok: false,
+      error: {
+        code: 'IMPORT_ERROR',
+        message: 'The library already contains a copied source at the target path.',
+        recoverable: true,
+        details: {
+          reason: 'target_conflict',
+          relativePath: 'source/source-1/example.md',
+        },
+      },
+    });
+  });
+
+  it('requires actionable details for duplicate hash and target conflict import failures', () => {
+    expect(
+      getContract('books:import-source').response.safeParse({
+        ok: false,
+        error: {
+          code: 'IMPORT_ERROR',
+          message: 'This source text has already been imported.',
+          recoverable: true,
+          details: {
+            reason: 'duplicate_source_hash',
+            existingBookId: bookId,
+          },
+        },
+      }).success,
+    ).toBe(false);
+    expect(
+      getContract('books:import-source').response.safeParse({
+        ok: false,
+        error: {
+          code: 'IMPORT_ERROR',
+          message: 'This source text has already been imported.',
+          recoverable: true,
+          details: {
+            reason: 'duplicate_source_hash',
+            existingSourceTextId: sourceTextId,
+          },
+        },
+      }).success,
+    ).toBe(false);
+    expect(
+      getContract('books:import-source').response.safeParse({
+        ok: false,
+        error: {
+          code: 'IMPORT_ERROR',
+          message: 'The library already contains a copied source at the target path.',
+          recoverable: true,
+          details: {
+            reason: 'target_conflict',
+          },
+        },
+      }).success,
+    ).toBe(false);
   });
 
   it('validates representative product channel requests', () => {

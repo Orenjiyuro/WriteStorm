@@ -64,6 +64,12 @@ export type SourceTextMetadata = {
   importedAt: IsoDateTimeString;
 };
 
+export type ImportSourceResult = {
+  book: BookSummary;
+  sourceText: SourceTextMetadata;
+  job: JobSummary;
+};
+
 export type StructureNodeDto = {
   id: StructureNodeId;
   bookId: BreakdownBookId;

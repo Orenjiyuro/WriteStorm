@@ -269,6 +269,49 @@ describe('WriteStorm app schema migrations', () => {
       db.close();
     }
   });
+
+  it('creates the Task 7.2 source import metadata schema without implementing import writes', () => {
+    const db = migratedDatabase();
+
+    try {
+      expect(getCurrentSchemaVersion(db)).toBeGreaterThanOrEqual(3);
+      expect(columnNames(db, 'source_texts')).toEqual(expect.arrayContaining([
+        'original_file_name',
+        'size_bytes',
+      ]));
+      expect(indexNames(db, 'source_texts')).toEqual(expect.arrayContaining([
+        'idx_source_texts_content_hash',
+      ]));
+      expect(columnDefaultValue(db, 'source_texts', 'original_file_name')).toBeNull();
+      expect(columnDefaultValue(db, 'source_texts', 'size_bytes')).toBeNull();
+    } finally {
+      db.close();
+    }
+  });
+
+  it('rejects source_text rows without valid import metadata', () => {
+    const db = migratedDatabase();
+
+    try {
+      insertBook(db);
+
+      expect(() => insertSourceText(db, {})).toThrow(/source_texts import metadata/i);
+      expect(() => insertSourceText(db, {
+        originalFileName: '',
+        sizeBytes: 120,
+      })).toThrow(/source_texts import metadata/i);
+      expect(() => insertSourceText(db, {
+        originalFileName: 'example.md',
+        sizeBytes: 0,
+      })).toThrow(/source_texts import metadata/i);
+      expect(() => insertSourceText(db, {
+        originalFileName: 'example.md',
+        sizeBytes: 120,
+      })).not.toThrow();
+    } finally {
+      db.close();
+    }
+  });
 });
 
 function migratedDatabase(): SqliteDatabase {
@@ -311,4 +354,77 @@ function foreignKeys(db: SqliteDatabase, tableName: string): Array<{
     table: foreignKey.table,
     to: foreignKey.to,
   }));
+}
+
+function indexNames(db: SqliteDatabase, tableName: string): string[] {
+  return (db.prepare(`PRAGMA index_list(${tableName})`).all() as Array<{ name: string }>)
+    .map((index) => index.name);
+}
+
+function columnDefaultValue(
+  db: SqliteDatabase,
+  tableName: string,
+  columnName: string,
+): string | number | null {
+  const column = (db.prepare(`PRAGMA table_info(${tableName})`).all() as Array<{
+    name: string;
+    dflt_value: string | number | null;
+  }>).find((candidate) => candidate.name === columnName);
+
+  if (!column) {
+    throw new Error(`Column ${tableName}.${columnName} does not exist.`);
+  }
+
+  return column.dflt_value;
+}
+
+function insertBook(db: SqliteDatabase): void {
+  db.prepare(`
+    INSERT INTO books (id, title, created_at, updated_at)
+    VALUES ('book-1', 'Example Book', '2026-07-09T00:00:00.000Z', '2026-07-09T00:00:00.000Z')
+  `).run();
+}
+
+function insertSourceText(
+  db: SqliteDatabase,
+  metadata: {
+    originalFileName?: string;
+    sizeBytes?: number;
+  },
+): void {
+  const columns = [
+    'id',
+    'book_id',
+    'format',
+    'content_hash',
+    'encoding',
+    'relative_path',
+    'imported_at',
+  ];
+  const values: unknown[] = [
+    `source-${Math.random()}`,
+    'book-1',
+    'md',
+    `sha256:${Math.random()}`,
+    'utf-8',
+    'sources/example.md',
+    '2026-07-09T00:00:00.000Z',
+  ];
+
+  if (metadata.originalFileName !== undefined) {
+    columns.push('original_file_name');
+    values.push(metadata.originalFileName);
+  }
+
+  if (metadata.sizeBytes !== undefined) {
+    columns.push('size_bytes');
+    values.push(metadata.sizeBytes);
+  }
+
+  const placeholders = columns.map(() => '?').join(', ');
+
+  db.prepare(`
+    INSERT INTO source_texts (${columns.join(', ')})
+    VALUES (${placeholders})
+  `).run(...values);
 }

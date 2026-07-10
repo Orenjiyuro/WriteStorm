@@ -68,6 +68,43 @@ const booksListResponse: ContractResponse<'books:list'> = {
   ],
 };
 
+const importSourceResponse: ContractResponse<'books:import-source'> = {
+  ok: true,
+  data: {
+    book: {
+      id: bookId,
+      libraryId,
+      title: 'Example Book',
+      sourceTextId,
+      sourceTextEdition: 1,
+      structureEdition: null,
+      updatedAt: '2026-07-07T00:00:00.000Z',
+    },
+    sourceText: {
+      id: sourceTextId,
+      bookId,
+      fileName: 'example.md',
+      format: 'md',
+      sizeBytes: 1024,
+      encoding: 'utf-8',
+      contentHash: 'sha256:example',
+      sourceTextEdition: 1,
+      importedAt: '2026-07-07T00:00:00.000Z',
+    },
+    job: {
+      id: jobId,
+      bookId,
+      state: 'completed',
+      title: 'Import source',
+      completedUnits: 1,
+      totalUnits: 1,
+      checkpointSummary: 'Source imported.',
+      failureReason: null,
+      updatedAt: '2026-07-07T00:00:00.000Z',
+    },
+  },
+};
+
 describe('main typed IPC router', () => {
   it('registers typed handlers and returns validated response envelopes', async () => {
     const ipcMain = new MockIpcMain();
@@ -117,20 +154,7 @@ describe('main typed IPC router', () => {
 
     registerTypedIpcHandler(ipcMain, 'books:import-source', () => {
       calls += 1;
-      return {
-        ok: true,
-        data: {
-          id: jobId,
-          bookId,
-          state: 'queued',
-          title: 'Import source',
-          completedUnits: 0,
-          totalUnits: null,
-          checkpointSummary: null,
-          failureReason: null,
-          updatedAt: '2026-07-07T00:00:00.000Z',
-        },
-      };
+      return importSourceResponse;
     });
 
     await expect(
@@ -184,20 +208,7 @@ describe('main typed IPC router', () => {
       'books:import-source',
       () => {
         calls += 1;
-        return {
-          ok: true,
-          data: {
-            id: jobId,
-            bookId,
-            state: 'queued',
-            title: 'Import source',
-            completedUnits: 0,
-            totalUnits: null,
-            checkpointSummary: null,
-            failureReason: null,
-            updatedAt: '2026-07-07T00:00:00.000Z',
-          },
-        };
+        return importSourceResponse;
       },
       {
         isTrustedSender: (sender) => {

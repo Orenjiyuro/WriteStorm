@@ -35,6 +35,7 @@ export type LibraryServiceOptions = {
   readonly appVersion: string;
   readonly now?: () => string;
   readonly createLibraryId?: () => LibraryId;
+  readonly createLibrarySessionId?: () => string;
   readonly migrations?: readonly Migration[];
 };
 
@@ -48,6 +49,7 @@ export type OpenLibraryInput = {
 };
 
 export type LibraryContext = {
+  readonly sessionId: string;
   readonly summary: LibrarySummary;
   readonly rootPath: string;
   readonly manifestPath: string;
@@ -97,12 +99,14 @@ export class LibraryService {
   private readonly appVersion: string;
   private readonly now: () => string;
   private readonly createLibraryId: () => LibraryId;
+  private readonly createLibrarySessionId: () => string;
   private readonly migrations: readonly Migration[];
 
   constructor(options: LibraryServiceOptions) {
     this.appVersion = options.appVersion;
     this.now = options.now ?? (() => new Date().toISOString());
     this.createLibraryId = options.createLibraryId ?? (() => randomUUID() as LibraryId);
+    this.createLibrarySessionId = options.createLibrarySessionId ?? randomUUID;
     this.migrations = options.migrations ?? APP_MIGRATIONS;
   }
 
@@ -165,6 +169,10 @@ export class LibraryService {
     return this.currentContext?.summary ?? null;
   }
 
+  getCurrentContext(): LibraryContext | null {
+    return this.currentContext;
+  }
+
   closeCurrent(): void {
     this.currentContext?.database.close();
     this.currentContext = null;
@@ -212,6 +220,7 @@ export class LibraryService {
 
       this.closeCurrent();
       this.currentContext = {
+        sessionId: this.createLibrarySessionId(),
         summary,
         rootPath: paths.rootPath,
         manifestPath: paths.manifestPath,

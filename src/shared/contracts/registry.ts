@@ -7,6 +7,7 @@ import {
   exportStatusSchema,
   freezeStructureResponseDataSchema,
   importSourceRequestSchema,
+  importSourceResponseSchema,
   jobRequestSchema,
   jobSummarySchema,
   librarySummarySchema,
@@ -70,7 +71,7 @@ export const CONTRACT_REGISTRY = {
   'books:import-source': createContract(
     'books:import-source',
     importSourceRequestSchema,
-    contractResponseSchema(jobSummarySchema),
+    importSourceResponseSchema,
   ),
   'structure:get': createContract(
     'structure:get',

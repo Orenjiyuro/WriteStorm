@@ -9,6 +9,7 @@ import {
 } from './security';
 import { createTrustedDevServerOrigins, registerProductIpc } from './ipc';
 import { runOptionalNativeSqliteProbe } from './db/native-probe';
+import { createBookImportIpcDependencies } from './books/book-import-ipc';
 import { createLibraryEntryIpcDependencies } from './library/library-entry';
 import { LibraryService } from './library/library-service';
 
@@ -19,6 +20,11 @@ const allowedExternalOrigins = new Set<string>();
 const appProtocol = 'writestorm';
 const appProtocolHost = 'app';
 const libraryService = new LibraryService({ appVersion: app.getVersion() });
+const books = createBookImportIpcDependencies({
+  service: libraryService,
+  env: process.env,
+  showOpenDialog: (options) => dialog.showOpenDialog(options),
+});
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -160,12 +166,14 @@ app.whenReady().then(async () => {
       env: process.env,
       showOpenDialog: (options) => dialog.showOpenDialog(options),
     }),
+    books,
   });
   await createWindow();
   await runOptionalNativeSqliteProbe();
 });
 
 app.on('before-quit', () => {
+  books.clearPendingImports();
   libraryService.closeCurrent();
 });
 

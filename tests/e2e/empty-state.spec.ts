@@ -131,11 +131,11 @@ test('shows the no-library empty state in a real Electron window', async () => {
     expect(productResponse).toEqual({
       ok: false,
       error: {
-        code: 'NOT_IMPLEMENTED',
-        message: 'Channel books:list is not implemented.',
-        recoverable: false,
+        code: 'LIBRARY_ERROR',
+        message: 'Open or create a library before listing books.',
+        recoverable: true,
         details: {
-          channel: 'books:list',
+          reason: 'no_current_library',
         },
       },
     });

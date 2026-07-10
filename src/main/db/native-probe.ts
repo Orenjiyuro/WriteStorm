@@ -12,6 +12,7 @@ import {
   type Migration,
 } from './migration-runner';
 import { openSqliteDatabase, type SqliteDatabase } from './sqlite';
+import { decodeSourceTextBytes } from '../source-text/source-text-encoding';
 
 export const WRITESTORM_NATIVE_SQLITE_PROBE_ENV = 'WRITESTORM_NATIVE_SQLITE_PROBE';
 export const WRITESTORM_NATIVE_SQLITE_PROBE_RESULT_ENV = 'WRITESTORM_NATIVE_SQLITE_PROBE_RESULT';
@@ -43,12 +44,21 @@ export async function runOptionalNativeSqliteProbe(env: NodeJS.ProcessEnv = proc
 
     database = openSqliteDatabase(databasePath);
     const reopenedSchemaVersion = getCurrentSchemaVersion(database);
+    const gb18030Decode = decodeSourceTextBytes(Buffer.from([0xd6, 0xd0, 0xce, 0xc4]), {
+      encodingOverride: 'gb18030',
+    });
+
+    if (!gb18030Decode.ok) {
+      throw new Error('Packaged runtime could not decode GB18030 source text bytes.');
+    }
 
     writeNativeSqliteProbeResult(
       env,
       String(sqliteVersion),
       migrationSchemaVersion,
       reopenedSchemaVersion,
+      gb18030Decode.text,
+      gb18030Decode.encoding,
     );
     console.error(`WRITESTORM_NATIVE_SQLITE_PROBE ok sqlite=${String(sqliteVersion)}`);
   } finally {
@@ -73,6 +83,8 @@ function writeNativeSqliteProbeResult(
   sqliteVersion: string,
   migrationSchemaVersion: number,
   reopenedSchemaVersion: number,
+  gb18030Text: string,
+  gb18030Encoding: string,
 ): void {
   const resultPath = env[WRITESTORM_NATIVE_SQLITE_PROBE_RESULT_ENV];
 
@@ -88,6 +100,8 @@ function writeNativeSqliteProbeResult(
       sqliteVersion,
       migrationSchemaVersion,
       reopenedSchemaVersion,
+      gb18030Text,
+      gb18030Encoding,
     }),
     'utf8',
   );

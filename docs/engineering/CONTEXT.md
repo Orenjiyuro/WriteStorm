@@ -117,6 +117,64 @@ Current Block 6 native gate facts:
 - Task 6.13 SQLite/migration performance baseline is implemented. The small fixture uses 25 probe rows and the medium fixture uses 1,000 probe rows through test-only migrations, then records create/open/migration/summary-query timings against non-regression limits.
 - Task 6.13 stays inside the authorized SQLite/LibraryService boundary. Its performance fixtures remain test-only and separate from the production Task 6.4/6.5 schema; it does not add BookService queries, source import, AI, or renderer behavior.
 
+Current Block 7 gate facts:
+
+- Block 7 6A deferral override: 6A has not run and has no recorded Go/No-Go.
+- Block 7 may continue only as non-AI Foundation work under the total-thread override recorded in `docs/engineering/V1-BLOCK-7-STATUS.md`.
+- AI/Codex/prompt/runtime remain blocked.
+- structure detection and module generation remain blocked.
+- Task 7.0 through Task 7.12 are authorized only for documentation gate, import IPC contract boundary work, source import metadata schema, main-side file dialog adapter, pending import token helper, source text preflight, source text encoding helper, source text copy helper, source text metadata helper, book + source_text transaction helper, duplicate/conflict policy helper, source import failure UI, packaged Electron import smoke, and Unicode/newline corpus coverage.
+- structure detection, AI, module generation, BookService implementation, SourceTextService implementation, and full workbench UI are not authorized by Task 7.0 through Task 7.12.
+- `books:import-source` must keep source path selection main-side. Renderer requests must not include `sourcePath`, `filePath`, `path`, or `rootPath`.
+- `books:import-source` success response is `ImportSourceResult`; `IMPORT_ERROR` failures must include a stable import `details.reason`.
+- UTF-8 and UTF-8 BOM decode automatically in Task 7.5.
+- GB18030 is available only through the manual retry encoding override before a later authorized task proves a deterministic confidence rule or approved dependency.
+- Task 7.2 source import metadata schema is implemented and brings the static app schema registry to schema version 3.
+- Task 7.2 adds `source_texts.original_file_name`, `source_texts.size_bytes`, unique `idx_source_texts_content_hash`, and validation triggers that reject missing, blank, or non-positive source import metadata.
+- Task 7.2 does not implement file dialog, preflight, source copy, SQLite import writes, renderer import UI, BookService, or SourceTextService.
+- Task 7.3 main-side file dialog adapter is implemented.
+- Task 7.3 selects `.txt` and `.md` files only through main-side dialog options.
+- Task 7.3 pending import tokens are main-only, scoped to the current library session, TTL-bound, and renderer-visible tokens do not contain source paths.
+- Task 7.3 does not implement preflight, encoding detection, source copy, SQLite import writes, renderer import UI, BookService, or SourceTextService.
+- Task 7.4 source text preflight is implemented.
+- Task 7.4 checks extension, 20 MiB size limit, readability, non-file selections, and empty files; only `.txt` and `.md` are accepted.
+- Task 7.4 does not implement encoding detection, source copy, SQLite import writes, renderer import UI, BookService, or SourceTextService.
+- Task 7.5 source text encoding helper is implemented.
+- Task 7.5 UTF-8 and UTF-8 BOM decode automatically.
+- Task 7.5 GB18030 is available only through the manual retry encoding override.
+- Task 7.5 does not implement source copy, SQLite import writes, renderer import UI, BookService, or SourceTextService.
+- Task 7.6 source text copy helper is implemented.
+- Task 7.6 stages copied bytes in the library source directory before final rename.
+- Task 7.6 writes under `source/<sourceTextId>/<originalFileName>`, refuses to overwrite an existing copied source target, and cleans the staging file when copy or rename fails.
+- Task 7.6 returns copied source relative path, size, and content hash.
+- Task 7.6 does not implement SQLite import writes, renderer import UI, BookService, or SourceTextService.
+- Task 7.7 source text metadata helper is implemented.
+- Task 7.7 maps filename, ext, size, hash, encoding, import time, relative path, and source_text_edition.
+- Task 7.7 produces the shared SourceTextMetadata DTO and source_texts insert row shape.
+- Task 7.7 does not implement book + source_text transaction, renderer import UI, BookService, or SourceTextService.
+- Task 7.8 book + source_text transaction helper is implemented.
+- Task 7.8 inserts book and source_text rows in one SQLite transaction and sets the book current source pointer to the inserted source text.
+- Task 7.8 rolls back the book row when source_text insertion fails.
+- Task 7.8 does not implement duplicate/conflict policy, renderer import UI, BookService, or SourceTextService.
+- Task 7.9 source import duplicate/conflict policy helper is implemented and wired into `books:import-source`; the unique content-hash write fallback is mapped back to existing book/source ids.
+- Task 7.9 duplicate content hash blocks import with `duplicate_source_hash` and returns existing book/source ids; SQLite also enforces a unique `source_texts.content_hash` index as the write-time fallback. It does not merge, overwrite, or create another book for the same source hash.
+- Task 7.9 copied source target conflict maps to `target_conflict` with the copied source relative path and does not overwrite the target.
+- Task 7.9 does not implement BookService, SourceTextService, or the full workbench UI; review remediation supplies the import orchestration and executable failure actions.
+- Task 7.10 source import failure UI is implemented.
+- Task 7.10 maps every stable `IMPORT_ERROR.details.reason` to a concrete repair path.
+- Task 7.10 encoding_required offers explicit UTF-8 and GB18030 retry actions when a pending token is present.
+- Task 7.10 does not implement full workbench UI, BookService, SourceTextService, or native dialog e2e; review remediation supplies the minimum import action wiring.
+- Task 7.11 packaged Electron import smoke is implemented.
+- Task 7.11 production import selection remains main-side native dialog selection.
+- Task 7.11 packaged e2e uses a main-process import dialog stub and does not use Playwright web filechooser.
+- Task 7.11 verifies real SQLite book/source_text rows and the copied source file after importing a fixed `.md` fixture.
+- Task 7.11 does not implement Unicode corpus, structure detection, AI, module generation, BookService, SourceTextService, or full workbench UI.
+- Task 7.12 Unicode/newline corpus is implemented.
+- Task 7.12 covers UTF-8 BOM, GB18030 manual retry, Japanese text, English text, fullwidth digits, CRLF/LF, and an overlong line.
+- Task 7.12 encoding_required returns a pending import token and supported manual encodings.
+- Task 7.12 does not implement structure detection, AI, module generation, BookService, SourceTextService, or full workbench UI.
+- Review remediation after Task 7.12: book, source_text, and completed import job share one SQLite transaction; books:import-source re-queries duplicate ids after a unique hash conflict; actual source reads are bounded by the 20 MiB limit from one opened descriptor; failure actions render executable buttons; books:list reads persisted book summaries for reopen/open-existing actions; pending tokens carry an opaque session ID; pending tokens are cleared when the library session changes or closes and rejected when the session ID does not match; source import and opened-book UI copy is centralized in the renderer i18n catalog.
+
 ## 2. Product Domains
 
 ### Breakdown Shelf

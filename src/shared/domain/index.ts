@@ -21,6 +21,7 @@ export type {
 export type {
   BookSummary,
   ExportStatusDto,
+  ImportSourceResult,
   IsoDateTimeString,
   JobSummary,
   LibrarySummary,

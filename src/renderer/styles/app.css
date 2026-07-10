@@ -125,9 +125,72 @@ body {
 .breakdown-empty-shelf {
   min-height: 180px;
   display: grid;
-  align-content: center;
-  justify-items: center;
+  align-content: start;
+  justify-items: stretch;
+  gap: 14px;
   margin-top: 16px;
+}
+
+.breakdown-shelf-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.breakdown-shelf-header button {
+  min-height: 36px;
+  border: 1px solid #1f6f5b;
+  border-radius: 8px;
+  background: #1f6f5b;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 7px 12px;
+}
+
+.breakdown-shelf-header button:disabled {
+  cursor: default;
+  opacity: 0.62;
+}
+
+.book-list {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.book-list li {
+  display: grid;
+  gap: 4px;
+  border-top: 1px solid #e3e9ee;
+  padding-top: 10px;
+}
+
+.book-list span {
+  color: #52616f;
+  font-size: 0.88rem;
+}
+
+.source-import-failure {
+  border: 1px solid #e0b4b4;
+  border-radius: 8px;
+  background: #fff7f7;
+  color: #7f1d1d;
+  padding: 12px;
+}
+
+.source-import-failure p {
+  margin: 8px 0 0;
+}
+
+.source-import-failure ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
 }
 
 .eyebrow {

@@ -45,6 +45,7 @@ describe('shared domain errors', () => {
       'INVALID_RESPONSE',
       'UNTRUSTED_IPC_SENDER',
       'LIBRARY_ERROR',
+      'IMPORT_ERROR',
       'INTERNAL_ERROR',
     ]);
   });

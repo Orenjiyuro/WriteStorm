@@ -113,7 +113,8 @@ describe('analysis body and structured field boundary', () => {
     expect(moduleInstanceStatusField).toBe('status');
     expect(ANALYSIS_MODULE_INSTANCE_CONTRACT).toEqual({
       ownerKind: 'analysis_module_instance',
-      identityFields: ['id', 'bookId', 'moduleId', 'scope', 'analysisRevision'],
+      identityFields: ['id', 'bookId', 'moduleId', 'scope'],
+      revisionField: 'analysisRevision',
       statusFieldKind: 'status',
       statusValues: MODULE_INSTANCE_STATUSES,
       bodyAssetKind: 'body',
@@ -129,6 +130,10 @@ describe('analysis body and structured field boundary', () => {
       reviewStatusFieldKind: 'review_status',
       bodyEditResultKind: 'revision',
     });
+    expect(ANALYSIS_MODULE_INSTANCE_CONTRACT.identityFields).not.toContain(
+      'analysisRevision',
+    );
+    expect(ANALYSIS_MODULE_INSTANCE_CONTRACT.revisionField).toBe('analysisRevision');
     expect(ANALYSIS_MODULE_INSTANCE_CONTRACT.identityFields).not.toContain('moduleKey');
     expect(ANALYSIS_MODULE_INSTANCE_CONTRACT.statusFieldKind).not.toBe(
       ANALYSIS_MODULE_INSTANCE_CONTRACT.reviewStatusFieldKind,

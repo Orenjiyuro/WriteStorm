@@ -53,7 +53,7 @@ Current Block 3 facts:
 
 - Tasks 3.1-3.8 artifacts are present in shared domain contracts, unit fixtures/tests, and the renderer no-library contract readout.
 - The seven ordinary analysis modules are fixed in `ANALYSIS_MODULE_DEFINITIONS`; `AI 约束摘要` is a secondary system page and does not create a normal `AnalysisModuleInstance`.
-- `AnalysisModuleInstance` contract aligns with `ModuleInstanceSummary`: instance identity uses `moduleId`, `scope`, `analysisRevision`, and an instance-level summary `status` from `MODULE_INSTANCE_STATUSES`.
+- `AnalysisModuleInstance` contract aligns with `ModuleInstanceSummary`: stable identity uses `id`, `bookId`, `moduleId`, and `scope`; `analysisRevision` is mutable version state, while the instance-level summary `status` comes from `MODULE_INSTANCE_STATUSES`.
 - Reviewable assets are separated from module instance state: `ReviewAssetEnvelope` uses `ReviewAssetId`, `sourceModuleInstanceId`, source `AnalysisModuleKey` snapshot, same-scope `scopeRef`, `ReviewAssetStatus`, `EvidencePolicy`, edition/version/revision fields, and timestamps.
 - `ReviewAssetStatus` is the canonical asset review state vocabulary for pending/confirmed/rejected/excluded/needs_evidence/stale; it is distinct from `ModuleInstanceStatus`.
 - Review asset confirmation uses the asset's own `EvidencePolicy`: only `required_for_confirmation` requires a valid `EvidenceAnchor` before `confirmed`; `not_required` and `optional` are not blocked by the transition contract. Critical conclusions must use `required_for_confirmation`.

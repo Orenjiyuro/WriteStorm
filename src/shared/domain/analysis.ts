@@ -384,7 +384,8 @@ export type ReviewAssetEnvelope = {
 
 export type AnalysisModuleInstanceContract = {
   readonly ownerKind: 'analysis_module_instance';
-  readonly identityFields: readonly ['id', 'bookId', 'moduleId', 'scope', 'analysisRevision'];
+  readonly identityFields: readonly ['id', 'bookId', 'moduleId', 'scope'];
+  readonly revisionField: 'analysisRevision';
   readonly statusFieldKind: 'status';
   readonly statusValues: readonly ModuleInstanceStatus[];
   readonly bodyAssetKind: Extract<AnalysisAssetKind, 'body'>;
@@ -395,7 +396,8 @@ export type AnalysisModuleInstanceContract = {
 
 export const ANALYSIS_MODULE_INSTANCE_CONTRACT = {
   ownerKind: 'analysis_module_instance',
-  identityFields: ['id', 'bookId', 'moduleId', 'scope', 'analysisRevision'],
+  identityFields: ['id', 'bookId', 'moduleId', 'scope'],
+  revisionField: 'analysisRevision',
   statusFieldKind: 'status',
   statusValues: MODULE_INSTANCE_STATUSES,
   bodyAssetKind: 'body',

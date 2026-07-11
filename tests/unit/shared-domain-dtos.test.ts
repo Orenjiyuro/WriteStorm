@@ -146,6 +146,7 @@ describe('shared domain DTO baselines', () => {
 
   it('keeps module instances, jobs, and export status as summaries only', () => {
     expect(moduleInstanceSummary.scope).toEqual({ kind: 'story_segment_range', rangeId });
+    expect(moduleInstanceSummary.analysisRevision).toBe(3);
     expect(jobSummary.state).toBe('resumable');
     expect(exportStatus.availability).toBe('blocked');
   });

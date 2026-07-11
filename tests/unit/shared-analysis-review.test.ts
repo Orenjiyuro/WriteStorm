@@ -3,6 +3,7 @@ import {
   ANALYSIS_CRITICAL_CONCLUSION_EVIDENCE_POLICY,
   EVIDENCE_POLICIES,
   ANALYSIS_INSUFFICIENT_EVIDENCE_PARTICIPATION_POLICY,
+  ANALYSIS_MODULE_INSTANCE_CONTRACT,
   ANALYSIS_REVIEW_ASSET_CONTRACT,
   ANALYSIS_REVIEW_CONFIRMATION_EVIDENCE_POLICY,
   ANALYSIS_REVIEW_TRANSITION_POLICY,
@@ -119,6 +120,19 @@ const expectedInsufficientEvidencePolicy = {
 } as const satisfies AnalysisInsufficientEvidenceParticipationPolicy;
 
 describe('analysis review state contract', () => {
+  it('keeps revision state out of module instance identity', () => {
+    expect(ANALYSIS_MODULE_INSTANCE_CONTRACT.identityFields).toEqual([
+      'id',
+      'bookId',
+      'moduleId',
+      'scope',
+    ]);
+    expect(ANALYSIS_MODULE_INSTANCE_CONTRACT.identityFields).not.toContain(
+      'analysisRevision',
+    );
+    expect(ANALYSIS_MODULE_INSTANCE_CONTRACT.revisionField).toBe('analysisRevision');
+  });
+
   it('defines the minimum review asset status vocabulary separately from module instance statuses', () => {
     expect(confirmedReviewStatus).toBe('confirmed');
     expect(REVIEW_ASSET_STATUSES).toEqual(expectedReviewStatuses);

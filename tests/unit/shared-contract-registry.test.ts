@@ -1,14 +1,23 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import type { z } from 'zod';
 import {
+  bookSummarySchema,
   CONTRACT_REGISTRY,
   PRODUCT_IPC_CHANNELS,
   getContract,
   jobSummarySchema,
+  librarySummarySchema,
+  sourceTextMetadataSchema,
 } from '../../src/shared/contracts';
 import type {
+  BookSummary,
   ContractRequest,
   ContractResponse,
+  ImportSourceResult,
   JobSummary,
+  LibrarySummary,
+  SourceTextMetadata,
 } from '../../src/shared/contracts';
 import { createNotImplementedError } from '../../src/shared/errors';
 import type {
@@ -19,7 +28,6 @@ import type {
   JobId,
   LibraryId,
   SourceTextId,
-  SourceTextMetadata,
   StorySegmentRangeId,
   StructureNodeId,
 } from '../../src/shared/domain';
@@ -74,6 +82,17 @@ const sourceTextMetadata = {
   importedAt: '2026-07-07T00:00:00.000Z',
 } satisfies SourceTextMetadata;
 
+const inferredLibrarySummary: z.infer<typeof librarySummarySchema> = {
+  id: libraryId,
+  name: 'Local Library',
+  rootPath: 'C:\\WriteStorm\\Library',
+  schemaVersion: 1,
+  appVersion: '0.1.0',
+};
+const canonicalLibrarySummary: LibrarySummary = inferredLibrarySummary;
+const inferredBookSummary: z.infer<typeof bookSummarySchema> = bookSummary;
+const canonicalBookSummary: BookSummary = inferredBookSummary;
+
 const completedImportJob = {
   id: jobId,
   bookId,
@@ -85,6 +104,12 @@ const completedImportJob = {
   failureReason: null,
   updatedAt: '2026-07-07T00:00:00.000Z',
 } satisfies JobSummary;
+
+const canonicalImportResult = {
+  book: canonicalBookSummary,
+  sourceText: sourceTextMetadata,
+  job: completedImportJob,
+} satisfies ImportSourceResult;
 
 const booksListRequest = {} satisfies ContractRequest<'books:list'>;
 const booksListResponse = {
@@ -220,6 +245,34 @@ describe('shared contract registry', () => {
         data: completedImportJob,
       }).success,
     ).toBe(false);
+  });
+
+  it('rejects zero-byte source metadata at the canonical wire boundary', () => {
+    expect(
+      sourceTextMetadataSchema.safeParse({
+        ...sourceTextMetadata,
+        sizeBytes: 0,
+      }).success,
+    ).toBe(false);
+  });
+
+  it('keeps core wire types canonical in focused Zod-first modules', () => {
+    expect(canonicalLibrarySummary.id).toBe(libraryId);
+    expect(canonicalImportResult.book.id).toBe(bookId);
+    for (const filePath of [
+      'src/shared/contracts/library.ts',
+      'src/shared/contracts/books.ts',
+      'src/shared/contracts/source-import.ts',
+    ]) {
+      const source = readFileSync(filePath, 'utf8');
+      expect(source).toContain('z.infer');
+      expect(source).not.toContain('as z.ZodType<');
+    }
+
+    const dtos = readFileSync('src/shared/domain/dtos.ts', 'utf8');
+    expect(dtos).not.toMatch(
+      /export type (LibrarySummary|BookSummary|SourceTextMetadata|ImportSourceResult) = \{/,
+    );
   });
 
   it('uses the canonical JobSummary schema for Job responses', () => {

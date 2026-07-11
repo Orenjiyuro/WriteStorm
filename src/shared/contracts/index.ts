@@ -19,6 +19,45 @@ export type {
   WritestormApi,
 } from './preload-api';
 export {
+  analysisModuleIdSchema,
+  analysisModuleInstanceIdSchema,
+  breakdownBookIdSchema,
+  contractResponseSchema,
+  domainErrorDetailsSchema,
+  domainErrorSchema,
+  emptyRequestSchema,
+  exportIdSchema,
+  isoDateTimeStringSchema,
+  jobIdSchema,
+  jsonValueSchema,
+  libraryIdSchema,
+  sourceTextIdSchema,
+  storySegmentRangeIdSchema,
+  structureNodeIdSchema,
+} from './common';
+export { librarySummarySchema } from './library';
+export type { LibrarySummary } from './library';
+export {
+  bookRequestSchema,
+  bookSummarySchema,
+  optionalBookRequestSchema,
+} from './books';
+export type { BookSummary } from './books';
+export {
+  IMPORT_SOURCE_ERROR_REASONS,
+  importSourceErrorDetailsSchema,
+  importSourceErrorReasonSchema,
+  importSourceRequestSchema,
+  importSourceResponseSchema,
+  importSourceResultSchema,
+  sourceTextMetadataSchema,
+} from './source-import';
+export type {
+  ImportSourceResult,
+  SourceTextFormat,
+  SourceTextMetadata,
+} from './source-import';
+export {
   jobCheckpointSchema,
   jobStateSchema,
   jobSummarySchema,
@@ -30,32 +69,10 @@ export type {
   VersionedJobPayloadEnvelope,
 } from './jobs';
 export {
-  bookRequestSchema,
-  bookSummarySchema,
-  breakdownBookIdSchema,
-  contractResponseSchema,
-  domainErrorSchema,
-  emptyRequestSchema,
-  exportIdSchema,
   exportStatusSchema,
-  IMPORT_SOURCE_ERROR_REASONS,
-  importSourceErrorDetailsSchema,
-  importSourceErrorReasonSchema,
-  importSourceRequestSchema,
-  importSourceResponseSchema,
-  importSourceResultSchema,
-  jobIdSchema,
   jobRequestSchema,
-  jsonValueSchema,
-  libraryIdSchema,
-  librarySummarySchema,
   moduleInstanceSummarySchema,
-  optionalBookRequestSchema,
-  sourceTextIdSchema,
-  sourceTextMetadataSchema,
-  storySegmentRangeIdSchema,
   storySegmentRangeSchema,
-  structureNodeIdSchema,
   structureNodeSchema,
   updateModuleBodyRequestSchema,
   updateStorySegmentRangeRequestSchema,

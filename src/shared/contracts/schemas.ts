@@ -1,107 +1,60 @@
 import { z } from 'zod';
+import {
+  analysisModuleIdSchema,
+  analysisModuleInstanceIdSchema,
+  breakdownBookIdSchema,
+  domainErrorSchema,
+  exportIdSchema,
+  isoDateTimeStringSchema,
+  jobIdSchema,
+  sourceTextIdSchema,
+  storySegmentRangeIdSchema,
+  structureNodeIdSchema,
+} from './common';
+export {
+  analysisModuleIdSchema,
+  analysisModuleInstanceIdSchema,
+  breakdownBookIdSchema,
+  contractResponseSchema,
+  domainErrorDetailsSchema,
+  domainErrorSchema,
+  emptyRequestSchema,
+  exportIdSchema,
+  isoDateTimeStringSchema,
+  jobIdSchema,
+  jsonValueSchema,
+  libraryIdSchema,
+  sourceTextIdSchema,
+  storySegmentRangeIdSchema,
+  structureNodeIdSchema,
+} from './common';
+import { bookRequestSchema } from './books';
+export {
+  bookRequestSchema,
+  bookSummarySchema,
+  optionalBookRequestSchema,
+} from './books';
+export { librarySummarySchema } from './library';
+export {
+  IMPORT_SOURCE_ERROR_REASONS,
+  importSourceErrorDetailsSchema,
+  importSourceErrorReasonSchema,
+  importSourceRequestSchema,
+  importSourceResponseSchema,
+  importSourceResultSchema,
+  sourceTextMetadataSchema,
+} from './source-import';
 import { jobSummarySchema } from './jobs';
 export { jobSummarySchema } from './jobs';
 import {
-  DOMAIN_ERROR_CODES,
-  type DomainError,
-  type DomainErrorDetails,
-  type JsonValue,
-} from '../errors';
-import {
   MODULE_INSTANCE_STATUSES,
   STRUCTURE_NODE_KINDS,
-  type AnalysisModuleId,
-  type AnalysisModuleInstanceId,
-  type BookSummary,
-  type BreakdownBookId,
-  type ExportId,
   type ExportStatusDto,
-  type ImportSourceResult,
-  type JobId,
-  type LibraryId,
-  type LibrarySummary,
   type ModuleInstanceSummary,
-  type SourceTextId,
-  type SourceTextMetadata,
   type StorySegmentRangeDto,
-  type StorySegmentRangeId,
   type StructureNodeDto,
-  type StructureNodeId,
 } from '../domain';
 
-const isoDateTimeStringSchema = z.iso.datetime({ offset: true });
-const idSchema = <T extends string>() => z.string().min(1) as unknown as z.ZodType<T>;
-
-export const libraryIdSchema = idSchema<LibraryId>();
-export const breakdownBookIdSchema = idSchema<BreakdownBookId>();
-export const sourceTextIdSchema = idSchema<SourceTextId>();
-export const structureNodeIdSchema = idSchema<StructureNodeId>();
-export const storySegmentRangeIdSchema = idSchema<StorySegmentRangeId>();
-export const analysisModuleIdSchema = idSchema<AnalysisModuleId>();
-export const analysisModuleInstanceIdSchema = idSchema<AnalysisModuleInstanceId>();
-export const jobIdSchema = idSchema<JobId>();
-export const exportIdSchema = idSchema<ExportId>();
-
-function isJsonValue(value: unknown): value is JsonValue {
-  if (value === null || typeof value === 'string' || typeof value === 'boolean') {
-    return true;
-  }
-
-  if (typeof value === 'number') {
-    return Number.isFinite(value);
-  }
-
-  if (Array.isArray(value)) {
-    return value.every(isJsonValue);
-  }
-
-  if (typeof value !== 'object' || Object.getPrototypeOf(value) !== Object.prototype) {
-    return false;
-  }
-
-  return Object.values(value as Record<string, unknown>).every(isJsonValue);
-}
-
-export const jsonValueSchema = z.custom<JsonValue>(isJsonValue);
-export const domainErrorDetailsSchema = z.record(z.string(), jsonValueSchema) as z.ZodType<DomainErrorDetails>;
-export const domainErrorSchema = z.object({
-  code: z.enum(DOMAIN_ERROR_CODES),
-  message: z.string().min(1),
-  recoverable: z.boolean(),
-  details: domainErrorDetailsSchema.optional(),
-}).strict() as z.ZodType<DomainError>;
-
-export const emptyRequestSchema = z.object({}).strict();
-
-export const librarySummarySchema = z.object({
-  id: libraryIdSchema,
-  name: z.string().min(1),
-  rootPath: z.string().min(1),
-  schemaVersion: z.number().int().nonnegative(),
-  appVersion: z.string().min(1),
-}).strict() as z.ZodType<LibrarySummary>;
-
-export const bookSummarySchema = z.object({
-  id: breakdownBookIdSchema,
-  libraryId: libraryIdSchema,
-  title: z.string().min(1),
-  sourceTextId: sourceTextIdSchema.nullable(),
-  sourceTextEdition: z.number().int().positive().nullable(),
-  structureEdition: z.number().int().positive().nullable(),
-  updatedAt: isoDateTimeStringSchema,
-}).strict() as z.ZodType<BookSummary>;
-
-export const sourceTextMetadataSchema = z.object({
-  id: sourceTextIdSchema,
-  bookId: breakdownBookIdSchema,
-  fileName: z.string().min(1),
-  format: z.enum(['txt', 'md']),
-  sizeBytes: z.number().int().nonnegative(),
-  encoding: z.string().min(1),
-  contentHash: z.string().min(1),
-  sourceTextEdition: z.number().int().positive(),
-  importedAt: isoDateTimeStringSchema,
-}).strict() as z.ZodType<SourceTextMetadata>;
 
 export const structureNodeSchema = z.object({
   id: structureNodeIdSchema,
@@ -174,65 +127,6 @@ export const moduleInstanceSummarySchema = z.object({
   updatedAt: isoDateTimeStringSchema.nullable(),
 }).strict() as z.ZodType<ModuleInstanceSummary>;
 
-export const importSourceResultSchema = z.object({
-  book: bookSummarySchema,
-  sourceText: sourceTextMetadataSchema,
-  job: jobSummarySchema,
-}).strict() as z.ZodType<ImportSourceResult>;
-
-export const IMPORT_SOURCE_ERROR_REASONS = [
-  'no_current_library',
-  'dialog_cancelled',
-  'invalid_extension',
-  'not_readable',
-  'file_too_large',
-  'empty_file',
-  'encoding_required',
-  'pending_import_not_found',
-  'library_session_changed',
-  'duplicate_source_hash',
-  'target_conflict',
-  'copy_failed',
-  'database_write_failed',
-] as const;
-
-export const importSourceErrorReasonSchema = z.enum(IMPORT_SOURCE_ERROR_REASONS);
-const importSourceGeneralErrorDetailsSchema = z.object({
-  reason: importSourceErrorReasonSchema,
-  pendingImportId: z.string().min(1).optional(),
-  existingBookId: breakdownBookIdSchema.optional(),
-  existingSourceTextId: sourceTextIdSchema.optional(),
-  relativePath: z.string().min(1).optional(),
-  maxSizeBytes: z.number().int().positive().optional(),
-  sizeBytes: z.number().int().nonnegative().optional(),
-  supportedEncodings: z.array(z.enum(['utf-8', 'gb18030'])).min(1).optional(),
-}).strict();
-
-const importSourceDuplicateHashErrorDetailsSchema = z.object({
-  reason: z.literal('duplicate_source_hash'),
-  existingBookId: breakdownBookIdSchema,
-  existingSourceTextId: sourceTextIdSchema,
-}).strict();
-
-const importSourceTargetConflictErrorDetailsSchema = z.object({
-  reason: z.literal('target_conflict'),
-  relativePath: z.string().min(1),
-}).strict();
-
-export const importSourceErrorDetailsSchema = z.union([
-  importSourceDuplicateHashErrorDetailsSchema,
-  importSourceTargetConflictErrorDetailsSchema,
-  importSourceGeneralErrorDetailsSchema.superRefine((details, context) => {
-    if (details.reason === 'duplicate_source_hash' || details.reason === 'target_conflict') {
-      context.addIssue({
-        code: 'custom',
-        path: ['reason'],
-        message: `${details.reason} requires actionable import error details.`,
-      });
-    }
-  }),
-]);
-
 export const exportStatusSchema = z.object({
   exportId: exportIdSchema.nullable(),
   bookId: breakdownBookIdSchema,
@@ -241,64 +135,6 @@ export const exportStatusSchema = z.object({
   latestJobId: jobIdSchema.nullable(),
   updatedAt: isoDateTimeStringSchema.nullable(),
 }).strict() as z.ZodType<ExportStatusDto>;
-
-export function contractResponseSchema<TDataSchema extends z.ZodTypeAny>(dataSchema: TDataSchema) {
-  return z.discriminatedUnion('ok', [
-    z.object({
-      ok: z.literal(true),
-      data: dataSchema,
-    }).strict(),
-    z.object({
-      ok: z.literal(false),
-      error: domainErrorSchema,
-    }).strict(),
-  ]);
-}
-
-const importSourceDomainErrorSchema = domainErrorSchema.superRefine((error, context) => {
-  if (error.code !== 'IMPORT_ERROR') {
-    return;
-  }
-
-  const detailsResult = importSourceErrorDetailsSchema.safeParse(error.details);
-
-  if (!detailsResult.success) {
-    context.addIssue({
-      code: 'custom',
-      path: ['details'],
-      message: 'IMPORT_ERROR details must include a stable source import error reason.',
-    });
-  }
-});
-
-export const importSourceResponseSchema = z.discriminatedUnion('ok', [
-  z.object({
-    ok: z.literal(true),
-    data: importSourceResultSchema,
-  }).strict(),
-  z.object({
-    ok: z.literal(false),
-    error: importSourceDomainErrorSchema,
-  }).strict(),
-]);
-
-const importSourceInitialRequestSchema = z.object({
-  title: z.string().min(1).optional(),
-}).strict();
-
-const importSourceEncodingRetryRequestSchema = z.object({
-  pendingImportId: z.string().min(1),
-  encodingOverride: z.enum(['utf-8', 'gb18030']),
-}).strict();
-
-export const importSourceRequestSchema = z.union([
-  importSourceInitialRequestSchema,
-  importSourceEncodingRetryRequestSchema,
-]);
-
-export const bookRequestSchema = z.object({
-  bookId: breakdownBookIdSchema,
-}).strict();
 
 export const updateStructureNodeRequestSchema = z.object({
   nodeId: structureNodeIdSchema,
@@ -356,10 +192,6 @@ export const freezeStructureResponseDataSchema = z.object({
 export const updateModuleBodyRequestSchema = z.object({
   instanceId: analysisModuleInstanceIdSchema,
   body: z.string(),
-}).strict();
-
-export const optionalBookRequestSchema = z.object({
-  bookId: breakdownBookIdSchema.optional(),
 }).strict();
 
 export const jobRequestSchema = z.object({

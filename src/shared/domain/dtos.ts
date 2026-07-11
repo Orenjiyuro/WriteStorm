@@ -4,7 +4,6 @@ import type {
   BreakdownBookId,
   ExportId,
   JobId,
-  LibraryId,
   SourceTextId,
   StorySegmentRangeId,
   StructureNodeId,
@@ -14,11 +13,8 @@ import type {
   ScopeKind,
   StructureNodeKind,
 } from './status';
-import type { JobSummary } from '../contracts/jobs';
 
 export type IsoDateTimeString = string;
-
-export type SourceTextFormat = 'txt' | 'md';
 
 export type ScopeRef =
   | {
@@ -34,41 +30,14 @@ export type ScopeRef =
       rangeId: StorySegmentRangeId;
     };
 
-export type LibrarySummary = {
-  id: LibraryId;
-  name: string;
-  rootPath: string;
-  schemaVersion: number;
-  appVersion: string;
-};
-
-export type BookSummary = {
-  id: BreakdownBookId;
-  libraryId: LibraryId;
-  title: string;
-  sourceTextId: SourceTextId | null;
-  sourceTextEdition: number | null;
-  structureEdition: number | null;
-  updatedAt: IsoDateTimeString;
-};
-
-export type SourceTextMetadata = {
-  id: SourceTextId;
-  bookId: BreakdownBookId;
-  fileName: string;
-  format: SourceTextFormat;
-  sizeBytes: number;
-  encoding: string;
-  contentHash: string;
-  sourceTextEdition: number;
-  importedAt: IsoDateTimeString;
-};
-
-export type ImportSourceResult = {
-  book: BookSummary;
-  sourceText: SourceTextMetadata;
-  job: JobSummary;
-};
+// TEMPORARY Task 4 compatibility shims. Task 5 must migrate consumers and delete them.
+export type { LibrarySummary } from '../contracts/library';
+export type { BookSummary } from '../contracts/books';
+export type {
+  ImportSourceResult,
+  SourceTextFormat,
+  SourceTextMetadata,
+} from '../contracts/source-import';
 
 export type StructureNodeDto = {
   id: StructureNodeId;

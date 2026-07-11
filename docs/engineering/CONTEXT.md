@@ -1,6 +1,6 @@
 # WriteStorm Engineering Context
 
-日期：2026-07-09  
+日期：2026-07-11
 目的：给后续实现线程提供稳定领域语言、工程边界和当前仓库事实。
 
 ## 1. Current Repository State
@@ -175,6 +175,17 @@ Current Block 7 gate facts:
 - Task 7.12 does not implement structure detection, AI, module generation, BookService, SourceTextService, or full workbench UI.
 - Review remediation after Task 7.12: book, source_text, and completed import job share one SQLite transaction; books:import-source re-queries duplicate ids after a unique hash conflict; actual source reads are bounded by the 20 MiB limit from one opened descriptor; failure actions render executable buttons; books:list reads persisted book summaries for reopen/open-existing actions; pending tokens carry an opaque session ID; pending tokens are cleared when the library session changes or closes and rejected when the session ID does not match; source import and opened-book UI copy is centralized in the renderer i18n catalog.
 
+Current Block 8A gate facts:
+
+- `docs/engineering/V1-BLOCK-8A-STATUS.md` is the durable authority for Block 8A status, numbering reconciliation, passed gates, limitations, and reproduction commands. Readers must not depend on conversation history to interpret internal slice labels.
+- The master Block 8A scope is Tasks 8.1-8.10, 8.12, 8.13, and 8.18. Internal labels are review/execution slices rather than master Task numbers: internal 8A-10 maps to master Task 8.13, while master Task 8.10 is validation.
+- Block 8A local deterministic detection, candidate-side persistence, validation, fixtures, worker/Job lifecycle, and observation-only performance recorder are implemented. Task 8.9 is complete only for candidate persistence and stage-separation foundation.
+- 8B and 8C remain unimplemented. Draft/frozen repository and service transactions, structure review/freeze product UI, the Task 8.17 real journey, and downstream invalidation hooks are not Block 8A deliverables.
+- 6A feasibility remains unexecuted and unrecorded. Block 8A does not record a Codex SDK feasibility decision and does not authorize AI prompt/runtime work.
+- Windows packaged performance results are observation-only and do not establish stable regression thresholds. macOS packaged performance evidence has not been recorded.
+- `startDetection` is the only public structure-detection execution entry. Cancellation persists `run=failed` and `Job=cancelled` before aborting the utility process.
+- The packaged 5 MiB renderer button is an event-loop probe, not a product Detect structure button. Product loading, Job presentation, correction, confirmation, freeze, and repeat-operation UX remain 8B work.
+
 ## 2. Product Domains
 
 ### Breakdown Shelf
@@ -255,10 +266,10 @@ The V1 implementation path is:
 7. Add SQLite connection and migrations. Windows native gate passed; release maker strategy and macOS packaged SQLite smoke remain blocked/not applicable.
 8. Implement library create/open. Minimal LibraryService + desktop entry skeleton completed in Tasks 6.11-6.12; book shelf content remains empty.
 9. Record SQLite/migration performance baseline. Completed in Task 6.13 for the authorized LibraryService/migration layer.
-10. Implement txt/md import and metadata. Not started.
-11. Implement structure/story range shells. Not started.
+10. Implement txt/md import and metadata. Completed in Block 7 for the authorized import path.
+11. Implement local structure/story-range candidate detection. Block 8A completed; review/freeze user lifecycle remains Block 8B.
 12. Implement module instance shell. Not started.
-13. Implement job state shell. Not started.
+13. Implement job state shell. Structure detection now uses real persisted Job lifecycle; general Job UI and later job types remain unfinished.
 14. Implement export blocked state. Not started.
 
 ## 7. Validation Expectations

@@ -18,6 +18,26 @@ const sourceFiles = (dir: string): string[] => {
 };
 
 describe('Forge Vite scaffold', () => {
+  it('wires real structure detection and an asynchronous quit barrier in the Electron main entry', () => {
+    const mainSource = readFileSync(path.join(rootDir, 'src/main/main.ts'), 'utf8');
+
+    expect(mainSource).toContain('new StructureService({');
+    expect(mainSource).toContain('createStructureDetectionIpcDependencies({');
+    expect(mainSource).toContain('beforeLibrarySessionChange: mainLifecycle.prepareForLibrarySessionChange');
+    expect(mainSource).toContain("app.on('before-quit', (event) => {");
+    expect(mainSource).toContain('event.preventDefault();');
+    expect(mainSource).toContain('await mainLifecycle.shutdown();');
+  });
+
+  it('keeps structure performance recording explicitly env-gated in the main entry', () => {
+    const mainSource = readFileSync(path.join(rootDir, 'src/main/main.ts'), 'utf8');
+
+    expect(mainSource).toContain('createOptionalStructurePerformanceRecorder(process.env)');
+    expect(mainSource).toContain('onDetectionComplete: (sample) => {');
+    expect(mainSource).toContain('structurePerformanceRecorder?.record({');
+    expect(mainSource).toContain("inputBytes: Buffer.byteLength(sample.input.sourceText, 'utf8')");
+  });
+
   it('uses the Vite build output as Electron main entry', () => {
     const packageJson = JSON.parse(readFileSync(path.join(rootDir, 'package.json'), 'utf8')) as {
       main?: string;
@@ -34,9 +54,17 @@ describe('Forge Vite scaffold', () => {
     // are the behavioral proof and this test guards the expected scaffold wiring.
     expect(forgeConfig).toMatch(/entry:\s*['"]src\/main\/main\.ts['"]/);
     expect(forgeConfig).toMatch(/entry:\s*['"]src\/preload\/index\.ts['"]/);
+    expect(forgeConfig).toMatch(/entry:\s*['"]src\/main\/structure\/worker\/structure-worker-entry\.ts['"]/);
+    expect(forgeConfig).toMatch(/config:\s*['"]vite\.structure-worker\.config\.ts['"]/);
     expect(forgeConfig).toMatch(/name:\s*['"]main_window['"]/);
     expect(forgeConfig).toMatch(/config:\s*['"]vite\.renderer\.config\.ts['"]/);
     expect(forgeConfig).toMatch(/asar:\s*(true|{[\s\S]*unpack:\s*['"]\*\*\/\*\.node['"])/);
+  });
+
+  it('disposes active structure utility workers before the app quits', () => {
+    const mainSource = readFileSync(path.join(rootDir, 'src/main/main.ts'), 'utf8');
+
+    expect(mainSource).toContain('structureWorkerRunner.dispose()');
   });
 
   it('keeps the renderer HTML wired to the Vite module entry', () => {

@@ -8,6 +8,12 @@ import {
 import {
   JOB_STATES,
   MODULE_INSTANCE_STATUSES,
+  STRUCTURE_CONFIDENCE_LEVELS,
+  STRUCTURE_DETECTION_RUN_STATES,
+  STRUCTURE_LOW_CONFIDENCE_RESOLUTIONS,
+  STRUCTURE_OFFSET_UNIT,
+  STRUCTURE_SET_STAGES,
+  STRUCTURE_STORY_RANGE_MODES,
   STRUCTURE_NODE_KINDS,
   type AnalysisModuleId,
   type AnalysisModuleInstanceId,
@@ -25,6 +31,19 @@ import {
   type SourceTextMetadata,
   type StorySegmentRangeDto,
   type StorySegmentRangeId,
+  type CandidateStructureSet,
+  type DraftStructureSet,
+  type FrozenStructureSet,
+  type StructureConfidence,
+  type StructureDetectionRun,
+  type StructureDetectionRunId,
+  type StructureDetectionStartResult,
+  type StructureHeadingSpan,
+  type StructureSetNodeDto,
+  type StructureSetId,
+  type StructureSetStoryRangeDto,
+  type StructureSourceSnapshot,
+  type StructureWorkspace,
   type StructureNodeDto,
   type StructureNodeId,
 } from '../domain';
@@ -35,6 +54,8 @@ const idSchema = <T extends string>() => z.string().min(1) as unknown as z.ZodTy
 export const libraryIdSchema = idSchema<LibraryId>();
 export const breakdownBookIdSchema = idSchema<BreakdownBookId>();
 export const sourceTextIdSchema = idSchema<SourceTextId>();
+export const structureSetIdSchema = idSchema<StructureSetId>();
+export const structureDetectionRunIdSchema = idSchema<StructureDetectionRunId>();
 export const structureNodeIdSchema = idSchema<StructureNodeId>();
 export const storySegmentRangeIdSchema = idSchema<StorySegmentRangeId>();
 export const analysisModuleIdSchema = idSchema<AnalysisModuleId>();
@@ -102,6 +123,254 @@ export const sourceTextMetadataSchema = z.object({
   sourceTextEdition: z.number().int().positive(),
   importedAt: isoDateTimeStringSchema,
 }).strict() as z.ZodType<SourceTextMetadata>;
+
+const structureSourceSnapshotSchemaRaw = z.object({
+  sourceTextId: sourceTextIdSchema,
+  sourceTextEdition: z.number().int().positive(),
+  contentHash: z.string().min(1),
+  decodedTextLength: z.number().int().nonnegative(),
+  offsetUnit: z.literal(STRUCTURE_OFFSET_UNIT),
+}).strict();
+
+export const structureSourceSnapshotSchema =
+  structureSourceSnapshotSchemaRaw as z.ZodType<StructureSourceSnapshot>;
+
+const structureHeadingSpanSchemaRaw = z.object({
+  rawHeadingText: z.string().min(1),
+  headingStartOffset: z.number().int().nonnegative(),
+  headingEndOffset: z.number().int().nonnegative(),
+}).strict().superRefine((heading, context) => {
+  if (heading.headingEndOffset <= heading.headingStartOffset) {
+    context.addIssue({
+      code: 'custom',
+      path: ['headingEndOffset'],
+      message: 'headingEndOffset must be greater than headingStartOffset.',
+    });
+  }
+});
+
+export const structureHeadingSpanSchema =
+  structureHeadingSpanSchemaRaw as z.ZodType<StructureHeadingSpan>;
+
+const structureConfidenceSchemaRaw = z.object({
+  score: z.number().min(0).max(1),
+  level: z.enum(STRUCTURE_CONFIDENCE_LEVELS),
+  lowConfidenceResolution: z.enum(STRUCTURE_LOW_CONFIDENCE_RESOLUTIONS).nullable(),
+}).strict().superRefine((confidence, context) => {
+  if (confidence.level === 'low' && confidence.lowConfidenceResolution === null) {
+    context.addIssue({
+      code: 'custom',
+      path: ['lowConfidenceResolution'],
+      message: 'Low-confidence items require an explicit review resolution.',
+    });
+  }
+
+  if (confidence.level !== 'low' && confidence.lowConfidenceResolution !== null) {
+    context.addIssue({
+      code: 'custom',
+      path: ['lowConfidenceResolution'],
+      message: 'Only low-confidence items may carry a review resolution.',
+    });
+  }
+});
+
+export const structureConfidenceSchema = structureConfidenceSchemaRaw as z.ZodType<StructureConfidence>;
+
+const structureSetNodeSchemaRaw = z.object({
+  id: structureNodeIdSchema,
+  originId: structureNodeIdSchema.nullable(),
+  kind: z.enum(STRUCTURE_NODE_KINDS),
+  title: z.string().min(1),
+  parentId: structureNodeIdSchema.nullable(),
+  order: z.number().int().nonnegative(),
+  startOffset: z.number().int().nonnegative(),
+  endOffset: z.number().int().nonnegative(),
+  heading: structureHeadingSpanSchemaRaw.nullable(),
+  confidence: structureConfidenceSchemaRaw,
+}).strict().superRefine((node, context) => {
+  if (node.endOffset <= node.startOffset) {
+    context.addIssue({
+      code: 'custom',
+      path: ['endOffset'],
+      message: 'endOffset must be greater than startOffset.',
+    });
+  }
+
+  if (node.heading && (
+    node.heading.headingStartOffset < node.startOffset ||
+    node.heading.headingEndOffset > node.endOffset
+  )) {
+    context.addIssue({
+      code: 'custom',
+      path: ['heading'],
+      message: 'Heading span must stay inside the node coverage range.',
+    });
+  }
+});
+
+export const structureSetNodeSchema = structureSetNodeSchemaRaw as z.ZodType<StructureSetNodeDto>;
+
+const structureSetStoryRangeSchemaRaw = z.object({
+  id: storySegmentRangeIdSchema,
+  originId: storySegmentRangeIdSchema.nullable(),
+  title: z.string().min(1),
+  startOffset: z.number().int().nonnegative(),
+  endOffset: z.number().int().nonnegative(),
+  coveredChapterIds: z.array(structureNodeIdSchema).min(1),
+  suggestedFunctionTags: z.array(z.string().min(1)),
+  boundaryEvidence: z.array(z.object({
+    kind: z.enum([
+      'chapter_window',
+      'explicit_separator',
+      'blank_line_cluster',
+      'markdown_subheading',
+      'length_window',
+      'transition_hint',
+    ]),
+    startOffset: z.number().int().nonnegative(),
+    endOffset: z.number().int().nonnegative(),
+  }).strict().superRefine((evidence, context) => {
+    if (evidence.endOffset <= evidence.startOffset) {
+      context.addIssue({
+        code: 'custom',
+        path: ['endOffset'],
+        message: 'Boundary evidence endOffset must be greater than startOffset.',
+      });
+    }
+  })).min(1),
+  startReason: z.string().min(1),
+  endReason: z.string().min(1),
+  confidence: structureConfidenceSchemaRaw,
+}).strict().superRefine((range, context) => {
+  if (range.endOffset <= range.startOffset) {
+    context.addIssue({
+      code: 'custom',
+      path: ['endOffset'],
+      message: 'endOffset must be greater than startOffset.',
+    });
+  }
+});
+
+export const structureSetStoryRangeSchema =
+  structureSetStoryRangeSchemaRaw as z.ZodType<StructureSetStoryRangeDto>;
+
+const structureSetBaseSchema = z.object({
+  id: structureSetIdSchema,
+  bookId: breakdownBookIdSchema,
+  sourceSnapshot: structureSourceSnapshotSchemaRaw,
+  nodes: z.array(structureSetNodeSchemaRaw),
+  storyRanges: z.array(structureSetStoryRangeSchemaRaw),
+  storyRangeMode: z.enum(STRUCTURE_STORY_RANGE_MODES),
+  createdAt: isoDateTimeStringSchema,
+  updatedAt: isoDateTimeStringSchema,
+}).strict().superRefine((set, context) => {
+  if (set.storyRangeMode === 'skipped_by_user' && set.storyRanges.length > 0) {
+    context.addIssue({
+      code: 'custom',
+      path: ['storyRanges'],
+      message: 'Skipped story range mode cannot retain story ranges.',
+    });
+  }
+});
+
+const candidateStructureSetSchemaRaw = structureSetBaseSchema.extend({
+  stage: z.literal(STRUCTURE_SET_STAGES[0]),
+  detectionRunId: structureDetectionRunIdSchema,
+  draftRevision: z.null(),
+  structureEdition: z.null(),
+}).superRefine((candidate, context) => {
+  for (const [collection, items] of [
+    ['nodes', candidate.nodes],
+    ['storyRanges', candidate.storyRanges],
+  ] as const) {
+    items.forEach((item, index) => {
+      if (item.confidence.level === 'unusable') {
+        context.addIssue({
+          code: 'custom',
+          path: [collection, index, 'confidence', 'level'],
+          message: 'Unusable structure items cannot enter ordinary candidate success.',
+        });
+      }
+    });
+  }
+});
+export const candidateStructureSetSchema =
+  candidateStructureSetSchemaRaw as z.ZodType<CandidateStructureSet>;
+
+const draftStructureSetSchemaRaw = structureSetBaseSchema.extend({
+  stage: z.literal(STRUCTURE_SET_STAGES[1]),
+  detectionRunId: z.null(),
+  draftRevision: z.number().int().nonnegative(),
+  structureEdition: z.null(),
+});
+export const draftStructureSetSchema = draftStructureSetSchemaRaw as z.ZodType<DraftStructureSet>;
+
+const frozenStructureSetSchemaRaw = structureSetBaseSchema.extend({
+  stage: z.literal(STRUCTURE_SET_STAGES[2]),
+  detectionRunId: z.null(),
+  draftRevision: z.null(),
+  structureEdition: z.number().int().positive(),
+  frozenAt: isoDateTimeStringSchema,
+});
+export const frozenStructureSetSchema = frozenStructureSetSchemaRaw as z.ZodType<FrozenStructureSet>;
+
+const structureDetectionRunSchemaRaw = z.object({
+  id: structureDetectionRunIdSchema,
+  bookId: breakdownBookIdSchema,
+  job: z.object({
+    jobId: jobIdSchema,
+    checkpointKind: z.literal('structure_draft'),
+  }).strict(),
+  sourceSnapshot: structureSourceSnapshotSchemaRaw,
+  state: z.enum(STRUCTURE_DETECTION_RUN_STATES),
+  failureReason: z.string().min(1).nullable(),
+  createdAt: isoDateTimeStringSchema,
+  updatedAt: isoDateTimeStringSchema,
+}).strict().superRefine((run, context) => {
+  if (run.state === 'failed' && run.failureReason === null) {
+    context.addIssue({
+      code: 'custom',
+      path: ['failureReason'],
+      message: 'Failed structure detection runs require a failure reason.',
+    });
+  }
+
+  if (run.state !== 'failed' && run.failureReason !== null) {
+    context.addIssue({
+      code: 'custom',
+      path: ['failureReason'],
+      message: 'Only failed structure detection runs may carry a failure reason.',
+    });
+  }
+});
+
+export const structureDetectionRunSchema =
+  structureDetectionRunSchemaRaw as z.ZodType<StructureDetectionRun>;
+
+const structureWorkspaceSchemaRaw = z.object({
+  bookId: breakdownBookIdSchema,
+  detectionRun: structureDetectionRunSchemaRaw.nullable(),
+  candidate: candidateStructureSetSchemaRaw.nullable(),
+  draft: draftStructureSetSchemaRaw.nullable(),
+  frozen: frozenStructureSetSchemaRaw.nullable(),
+}).strict().superRefine((workspace, context) => {
+  for (const [key, value] of Object.entries({
+    detectionRun: workspace.detectionRun,
+    candidate: workspace.candidate,
+    draft: workspace.draft,
+    frozen: workspace.frozen,
+  })) {
+    if (value && value.bookId !== workspace.bookId) {
+      context.addIssue({
+        code: 'custom',
+        path: [key, 'bookId'],
+        message: 'Structure workspace records must belong to the requested book.',
+      });
+    }
+  }
+});
+
+export const structureWorkspaceSchema = structureWorkspaceSchemaRaw as z.ZodType<StructureWorkspace>;
 
 export const structureNodeSchema = z.object({
   id: structureNodeIdSchema,
@@ -185,6 +454,63 @@ export const jobSummarySchema = z.object({
   failureReason: z.string().nullable(),
   updatedAt: isoDateTimeStringSchema,
 }).strict() as z.ZodType<JobSummary>;
+
+export const structureDetectionStartResultSchema = z.object({
+  detectionRun: structureDetectionRunSchemaRaw,
+  job: jobSummarySchema,
+}).strict() as z.ZodType<StructureDetectionStartResult>;
+
+export const STRUCTURE_DETECTION_ERROR_REASONS = [
+  'no_current_library',
+  'book_not_found',
+  'source_missing',
+  'source_encoding_invalid',
+  'source_read_failed',
+  'source_decode_failed',
+  'source_hash_mismatch',
+  'library_session_changed',
+  'source_snapshot_stale',
+  'structure_detection_in_progress',
+  'structure_detection_recovery_required',
+  'structure_validation_failed',
+  'candidate_persistence_failed',
+  'structure_worker_failed',
+  'UTILITY_WORKER_TIMEOUT',
+  'UTILITY_WORKER_CRASH',
+  'UTILITY_WORKER_CANCELLED',
+  'UTILITY_WORKER_PROTOCOL',
+  'UTILITY_WORKER_DISPOSED',
+] as const;
+
+export const structureDetectionErrorReasonSchema = z.enum(STRUCTURE_DETECTION_ERROR_REASONS);
+export const structureDetectionErrorDetailsSchema = z.object({
+  reason: structureDetectionErrorReasonSchema,
+}).strict();
+
+const structureDetectionDomainErrorSchema = domainErrorSchema.superRefine((error, context) => {
+  if (error.code !== 'STRUCTURE_ERROR') {
+    return;
+  }
+
+  if (!structureDetectionErrorDetailsSchema.safeParse(error.details).success) {
+    context.addIssue({
+      code: 'custom',
+      path: ['details'],
+      message: 'STRUCTURE_ERROR details must include a stable structure detection reason.',
+    });
+  }
+});
+
+export const structureDetectionResponseSchema = z.discriminatedUnion('ok', [
+  z.object({
+    ok: z.literal(true),
+    data: structureDetectionStartResultSchema,
+  }).strict(),
+  z.object({
+    ok: z.literal(false),
+    error: structureDetectionDomainErrorSchema,
+  }).strict(),
+]);
 
 export const importSourceResultSchema = z.object({
   book: bookSummarySchema,
@@ -311,6 +637,8 @@ export const importSourceRequestSchema = z.union([
 export const bookRequestSchema = z.object({
   bookId: breakdownBookIdSchema,
 }).strict();
+
+export const structureDetectionRequestSchema = bookRequestSchema;
 
 export const updateStructureNodeRequestSchema = z.object({
   nodeId: structureNodeIdSchema,

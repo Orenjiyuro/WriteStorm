@@ -14,6 +14,7 @@ import type {
   LibraryService,
 } from '../library/library-service';
 import { LibraryServiceError as LibraryServiceErrorClass } from '../library/library-service';
+import type { StructureDetectionIpcDependencies } from '../structure/structure-detection-ipc';
 import {
   registerTypedIpcHandlers,
   type IpcMainLike,
@@ -31,6 +32,7 @@ export type LibraryIpcDependencies = {
 };
 
 export type ProductIpcRegistrationOptions = {
+  readonly beforeLibrarySessionChange?: () => MaybePromise<void>;
   readonly library?: LibraryIpcDependencies;
   readonly books?: {
     readonly list?: () => MaybePromise<ContractResponse<'books:list'>>;
@@ -39,6 +41,7 @@ export type ProductIpcRegistrationOptions = {
       request: ContractRequest<'books:import-source'>,
     ) => MaybePromise<ContractResponse<'books:import-source'>>;
   };
+  readonly structure?: StructureDetectionIpcDependencies;
 };
 
 export function registerNotImplementedProductIpcHandlers(
@@ -74,19 +77,28 @@ function createNotImplementedProductHandlers(): TypedIpcHandlerMap {
 function createProductHandlers(options: ProductIpcRegistrationOptions): TypedIpcHandlerMap {
   return {
     ...createNotImplementedProductHandlers(),
-    ...(options.library ? createLibraryProductHandlers(options.library, options.books?.clearPendingImports) : {}),
+    ...(options.library ? createLibraryProductHandlers(
+      options.library,
+      options.beforeLibrarySessionChange,
+      options.books?.clearPendingImports,
+    ) : {}),
     ...(options.books ? createBookProductHandlers(options.books) : {}),
+    ...(options.structure ? createStructureProductHandlers(options.structure) : {}),
   };
 }
 
 function createLibraryProductHandlers(
   library: LibraryIpcDependencies,
+  beforeLibrarySessionChange?: () => MaybePromise<void>,
   onLibrarySessionChanged?: () => void,
 ): TypedIpcHandlerMap {
   const createHandler: TypedIpcHandler<'library:create'> = async () => {
     const selection = await library.selectCreateRoot();
 
     try {
+      if (selection) {
+        await beforeLibrarySessionChange?.();
+      }
       const summary = selection ? library.service.create(selection) : null;
       if (summary) {
         onLibrarySessionChanged?.();
@@ -104,6 +116,9 @@ function createLibraryProductHandlers(
     const rootPath = await library.selectOpenRoot();
 
     try {
+      if (rootPath) {
+        await beforeLibrarySessionChange?.();
+      }
       const summary = rootPath ? library.service.open({ rootPath }) : null;
       if (summary) {
         onLibrarySessionChanged?.();
@@ -140,6 +155,16 @@ function createBookProductHandlers(
   return {
     'books:list': listHandler,
     'books:import-source': importSourceHandler,
+  };
+}
+
+function createStructureProductHandlers(
+  structure: StructureDetectionIpcDependencies,
+): TypedIpcHandlerMap {
+  const detectHandler: TypedIpcHandler<'structure:detect'> = (request) => structure.detect(request);
+
+  return {
+    'structure:detect': detectHandler,
   };
 }
 

@@ -7,11 +7,20 @@ import {
   shouldAllowNavigation,
   shouldUseHeaderContentSecurityPolicy,
 } from './security';
-import { createTrustedDevServerOrigins, registerProductIpc } from './ipc';
+import {
+  createStructureDetectionIpcDependencies,
+  createTrustedDevServerOrigins,
+  registerProductIpc,
+} from './ipc';
 import { runOptionalNativeSqliteProbe } from './db/native-probe';
 import { createBookImportIpcDependencies } from './books/book-import-ipc';
 import { createLibraryEntryIpcDependencies } from './library/library-entry';
 import { LibraryService } from './library/library-service';
+import { createMainLifecycleCoordinator } from './main-lifecycle';
+import { createOptionalStructurePerformanceRecorder } from './structure/performance/structure-performance-recorder';
+import { StructureService } from './structure/structure-service';
+import { createElectronStructureWorkerRunner } from './structure/worker/structure-worker-runner';
+import { runOptionalStructureWorkerProbe } from './structure/worker/structure-worker-probe';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -19,12 +28,38 @@ declare const MAIN_WINDOW_VITE_NAME: string;
 const allowedExternalOrigins = new Set<string>();
 const appProtocol = 'writestorm';
 const appProtocolHost = 'app';
+const structureDetectionTimeoutMs = 30_000;
 const libraryService = new LibraryService({ appVersion: app.getVersion() });
+const structurePerformanceRecorder = createOptionalStructurePerformanceRecorder(process.env);
+const structureWorkerRunner = createElectronStructureWorkerRunner(__dirname, {
+  onDetectionComplete: (sample) => {
+    structurePerformanceRecorder?.record({
+      fixture: sample.input.bookTitle,
+      inputBytes: Buffer.byteLength(sample.input.sourceText, 'utf8'),
+      inputCharacters: sample.input.sourceText.length,
+      mainElapsedMs: sample.mainElapsedMs,
+      workerPid: sample.workerPid,
+      worker: sample.telemetry,
+    });
+  },
+});
+const structureService = new StructureService({
+  libraryService,
+  worker: structureWorkerRunner,
+});
 const books = createBookImportIpcDependencies({
   service: libraryService,
   env: process.env,
   showOpenDialog: (options) => dialog.showOpenDialog(options),
 });
+const mainLifecycle = createMainLifecycleCoordinator({
+  structure: structureService,
+  disposeStructureWorker: () => structureWorkerRunner.dispose(),
+  clearPendingImports: () => books.clearPendingImports(),
+  closeCurrentLibrary: () => libraryService.closeCurrent(),
+});
+let quitCleanupComplete = false;
+let quitCleanupStarted = false;
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -161,20 +196,45 @@ app.whenReady().then(async () => {
   registerAppProtocol();
   registerInternalIpc();
   registerProductIpc(ipcMain, MAIN_WINDOW_VITE_DEV_SERVER_URL, {
+    beforeLibrarySessionChange: mainLifecycle.prepareForLibrarySessionChange,
     library: createLibraryEntryIpcDependencies({
       service: libraryService,
       env: process.env,
       showOpenDialog: (options) => dialog.showOpenDialog(options),
     }),
     books,
+    structure: createStructureDetectionIpcDependencies({
+      service: structureService,
+      timeoutMs: structureDetectionTimeoutMs,
+    }),
   });
   await createWindow();
   await runOptionalNativeSqliteProbe();
+  await runOptionalStructureWorkerProbe({
+    runner: structureWorkerRunner,
+    env: process.env,
+    quitApp: () => app.quit(),
+  });
 });
 
-app.on('before-quit', () => {
-  books.clearPendingImports();
-  libraryService.closeCurrent();
+app.on('before-quit', (event) => {
+  if (quitCleanupComplete) {
+    return;
+  }
+
+  event.preventDefault();
+  if (quitCleanupStarted) {
+    return;
+  }
+  quitCleanupStarted = true;
+  void (async () => {
+    try {
+      await mainLifecycle.shutdown();
+    } finally {
+      quitCleanupComplete = true;
+      app.quit();
+    }
+  })();
 });
 
 app.on('window-all-closed', () => {

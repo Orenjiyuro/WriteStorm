@@ -47,6 +47,48 @@ afterEach(() => {
 });
 
 describe('main library product IPC handlers', () => {
+  it('awaits lifecycle cleanup before changing the library session', async () => {
+    const rootPath = libraryRootPath();
+    const ipcMain = new MockIpcMain();
+    const service = new LibraryService({
+      appVersion: '0.1.0-test',
+      now: () => '2026-07-09T00:00:00.000Z',
+      createLibraryId: () => libraryId,
+    });
+    let releaseCleanup = (): void => undefined;
+    const cleanup = new Promise<void>((resolve) => {
+      releaseCleanup = resolve;
+    });
+    let cleanupStarted = false;
+
+    registerProductIpc(ipcMain, undefined, {
+      library: {
+        service,
+        selectCreateRoot: () => ({ rootPath, name: 'Lifecycle Library' }),
+        selectOpenRoot: () => null,
+      },
+      beforeLibrarySessionChange: async () => {
+        cleanupStarted = true;
+        expect(service.getCurrent()).toBeNull();
+        await cleanup;
+      },
+    });
+
+    try {
+      const creating = ipcMain.invoke('library:create', {});
+      await new Promise((resolve) => setImmediate(resolve));
+
+      expect(cleanupStarted).toBe(true);
+      expect(service.getCurrent()).toBeNull();
+
+      releaseCleanup();
+      await expect(creating).resolves.toMatchObject({ ok: true });
+      expect(service.getCurrent()?.rootPath).toBe(rootPath);
+    } finally {
+      service.closeCurrent();
+    }
+  });
+
   it('creates, opens, and returns current library summaries through main-side root providers', async () => {
     const rootPath = libraryRootPath();
     const ipcMain = new MockIpcMain();

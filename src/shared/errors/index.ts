@@ -9,3 +9,8 @@ export type {
   DomainErrorDetails,
   JsonValue,
 } from './domain-error';
+export {
+  ERROR_RECOVERY_DISPOSITIONS,
+  isRecoverableDisposition,
+} from './recovery-disposition';
+export type { ErrorRecoveryDisposition } from './recovery-disposition';

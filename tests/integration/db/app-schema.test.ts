@@ -18,7 +18,7 @@ afterEach(() => {
 });
 
 describe('WriteStorm app schema migrations', () => {
-  it('creates the Task 6.4 foundation schema tables and relationships', () => {
+  it('creates the foundation tables and the current normalized structure workspace relationships', () => {
     const db = migratedDatabase();
 
     try {
@@ -27,8 +27,11 @@ describe('WriteStorm app schema migrations', () => {
         'library',
         'books',
         'source_texts',
+        'structure_detection_runs',
+        'structure_sets',
         'structure_nodes',
         'story_segment_ranges',
+        'story_segment_range_chapters',
         'jobs',
         'exports',
       ]));
@@ -72,35 +75,73 @@ describe('WriteStorm app schema migrations', () => {
 
       expect(columnNames(db, 'structure_nodes')).toEqual(expect.arrayContaining([
         'id',
-        'book_id',
-        'source_text_id',
+        'structure_set_id',
+        'origin_id',
         'kind',
         'title',
         'parent_id',
         'sort_order',
         'start_offset',
         'end_offset',
-        'structure_edition',
+        'raw_heading_text',
+        'heading_start_offset',
+        'heading_end_offset',
+        'confidence_score',
+        'confidence_level',
+        'low_confidence_resolution',
       ]));
       expect(foreignKeys(db, 'structure_nodes')).toEqual(expect.arrayContaining([
-        { from: 'book_id', table: 'books', to: 'id' },
-        { from: 'source_text_id', table: 'source_texts', to: 'id' },
+        { from: 'structure_set_id', table: 'structure_sets', to: 'id' },
         { from: 'parent_id', table: 'structure_nodes', to: 'id' },
       ]));
 
       expect(columnNames(db, 'story_segment_ranges')).toEqual(expect.arrayContaining([
         'id',
-        'book_id',
-        'source_text_id',
-        'label',
-        'scope_json',
-        'covered_chapter_ids_json',
-        'structure_edition',
+        'structure_set_id',
+        'origin_id',
+        'title',
+        'start_offset',
+        'end_offset',
+        'suggested_function_tags_json',
+        'boundary_evidence_json',
+        'confidence_score',
+        'confidence_level',
+        'low_confidence_resolution',
       ]));
       expect(columnNames(db, 'story_segment_ranges')).not.toContain('parent_id');
       expect(foreignKeys(db, 'story_segment_ranges')).toEqual(expect.arrayContaining([
+        { from: 'structure_set_id', table: 'structure_sets', to: 'id' },
+      ]));
+
+      expect(columnNames(db, 'structure_detection_runs')).toEqual(expect.arrayContaining([
+        'id',
+        'job_id',
+        'book_id',
+        'source_text_id',
+        'state',
+      ]));
+      expect(foreignKeys(db, 'structure_detection_runs')).toEqual(expect.arrayContaining([
+        { from: 'job_id', table: 'jobs', to: 'id' },
         { from: 'book_id', table: 'books', to: 'id' },
         { from: 'source_text_id', table: 'source_texts', to: 'id' },
+      ]));
+
+      expect(columnNames(db, 'structure_sets')).toEqual(expect.arrayContaining([
+        'id',
+        'book_id',
+        'source_text_id',
+        'stage',
+        'detection_run_id',
+        'story_range_mode',
+        'draft_revision',
+        'structure_edition',
+        'frozen_at',
+        'is_current',
+      ]));
+      expect(foreignKeys(db, 'structure_sets')).toEqual(expect.arrayContaining([
+        { from: 'book_id', table: 'books', to: 'id' },
+        { from: 'source_text_id', table: 'source_texts', to: 'id' },
+        { from: 'detection_run_id', table: 'structure_detection_runs', to: 'id' },
       ]));
 
       expect(columnNames(db, 'jobs')).toEqual(expect.arrayContaining([

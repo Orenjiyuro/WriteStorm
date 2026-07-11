@@ -27,6 +27,7 @@ const expectedChannels = [
   'books:list',
   'books:import-source',
   'structure:get',
+  'structure:detect',
   'structure:update-node',
   'structure:update-story-range',
   'structure:freeze',

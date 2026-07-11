@@ -116,6 +116,7 @@ async function invokeEveryProductMethod(api: WritestormApi): Promise<void> {
   await api.books.list();
   await api.books.importSource(importSourceRequest);
   await api.structure.get(bookRequest);
+  await api.structure.detect(bookRequest);
   await api.structure.updateNode(updateNodeRequest);
   await api.structure.updateStoryRange(updateStoryRangeRequest);
   await api.structure.freeze(bookRequest);

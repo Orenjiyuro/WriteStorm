@@ -20,6 +20,7 @@ export type WritestormApi = {
   };
   structure: {
     get(request: ContractRequest<'structure:get'>): Promise<ContractResponse<'structure:get'>>;
+    detect(request: ContractRequest<'structure:detect'>): Promise<ContractResponse<'structure:detect'>>;
     updateNode(request: ContractRequest<'structure:update-node'>): Promise<ContractResponse<'structure:update-node'>>;
     updateStoryRange(
       request: ContractRequest<'structure:update-story-range'>,

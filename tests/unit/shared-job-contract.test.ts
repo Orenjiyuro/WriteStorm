@@ -88,11 +88,10 @@ describe('V1 Job and checkpoint contracts', () => {
     ).toBe(true);
   });
 
-  it('allows only the temporary type-only JobSummary compatibility shim', () => {
+  it('keeps the domain layer independent from IPC contracts', () => {
     const dtos = readFileSync('src/shared/domain/dtos.ts', 'utf8');
     expect(dtos).not.toContain('export type JobSummary = {');
-    expect(dtos).toContain('Task 5 must migrate consumers and delete it');
-    expect(dtos).toContain("export type { JobSummary } from '../contracts/jobs';");
+    expect(dtos).not.toContain('contracts/');
 
     const domainFiles = readdirSync('src/shared/domain').filter((fileName) =>
       fileName.endsWith('.ts'),
@@ -102,6 +101,6 @@ describe('V1 Job and checkpoint contracts', () => {
       return source.includes('contracts/') ? [fileName] : [];
     });
 
-    expect(contractReferences).toEqual(['dtos.ts']);
+    expect(contractReferences).toEqual([]);
   });
 });

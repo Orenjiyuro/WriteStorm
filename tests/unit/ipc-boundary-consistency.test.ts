@@ -107,6 +107,26 @@ describe('IPC boundary consistency gate', () => {
 
     expect(offenders).toEqual([]);
   });
+
+  it('keeps domain code independent from wire contracts after contract decomposition', () => {
+    const domainDir = path.join(sharedDir, 'domain');
+    const contractImports = sourceFiles(domainDir).flatMap((filePath) => {
+      const source = readFileSync(filePath, 'utf8');
+
+      return importSpecifiers(source)
+        .filter((specifier) => specifier.includes('contracts/'))
+        .map((specifier) => `${path.relative(rootDir, filePath)} -> ${specifier}`);
+    });
+
+    expect(contractImports).toEqual([]);
+    const compatibilityBridge = readFileSync(
+      path.join(sharedDir, 'contracts', 'schemas.ts'),
+      'utf8',
+    );
+    expect(compatibilityBridge).toContain('Temporary Block 8 compatibility bridge');
+    expect(compatibilityBridge).not.toContain('z.object');
+    expect(compatibilityBridge).not.toContain('z.ZodType');
+  });
 });
 
 async function invokeEveryProductMethod(api: WritestormApi): Promise<void> {

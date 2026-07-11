@@ -1,22 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import type { JobSummary as CanonicalJobSummary } from '../../src/shared/contracts/jobs';
+import type {
+  BookSummary,
+  ExportStatusDto,
+  JobSummary,
+  LibrarySummary,
+  ModuleInstanceSummary,
+  SourceTextMetadata,
+  StorySegmentRangeDto,
+  StructureNodeDto,
+} from '../../src/shared/contracts';
 import type {
   AnalysisModuleId,
   AnalysisModuleInstanceId,
-  BookSummary,
   BreakdownBookId,
   ExportId,
-  ExportStatusDto,
   JobId,
-  JobSummary,
   LibraryId,
-  LibrarySummary,
-  ModuleInstanceSummary,
   SourceTextId,
-  SourceTextMetadata,
-  StorySegmentRangeDto,
   StorySegmentRangeId,
-  StructureNodeDto,
   StructureNodeId,
 } from '../../src/shared/domain';
 
@@ -112,8 +113,6 @@ const jobSummary = {
   updatedAt: '2026-07-07T00:00:00.000Z',
 } satisfies JobSummary;
 
-const canonicalJobSummary: CanonicalJobSummary = jobSummary;
-
 const exportStatus = {
   exportId,
   bookId,
@@ -150,7 +149,6 @@ describe('shared domain DTO baselines', () => {
   it('keeps module instances, jobs, and export status as summaries only', () => {
     expect(moduleInstanceSummary.scope).toEqual({ kind: 'story_segment_range', rangeId });
     expect(moduleInstanceSummary.analysisRevision).toBe(3);
-    expect(canonicalJobSummary.state).toBe('resumable');
     expect(jobSummary.state).toBe('resumable');
     expect(exportStatus.availability).toBe('blocked');
   });

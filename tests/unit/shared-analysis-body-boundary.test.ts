@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { ModuleInstanceSummary } from '../../src/shared/contracts/modules';
 import {
   ANALYSIS_BODY_BOUNDARY_POLICY,
   ANALYSIS_MODULE_INSTANCE_CONTRACT,
@@ -14,7 +15,6 @@ import {
   type AnalysisReviewAssetKind,
   type AnalysisStructuredFieldKind,
   type BreakdownBookId,
-  type ModuleInstanceSummary,
   type ReviewAssetEnvelope,
   type ReviewAssetId,
   type ReviewAssetStatus,

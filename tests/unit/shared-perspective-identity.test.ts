@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import type { ModuleInstanceSummary } from '../../src/shared/contracts/modules';
 import {
   ANALYSIS_MODULE_DEFINITIONS,
   ANALYSIS_SCOPE_EXCLUDED_TARGETS,
   type AnalysisModuleKey,
   type BreakdownBookId,
-  type ModuleInstanceSummary,
   PERSPECTIVE_IDENTITY_CONTRACT,
   type PerspectiveDefinition,
   type PerspectiveInstance,

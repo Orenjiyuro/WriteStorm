@@ -1,24 +1,18 @@
 import { z } from 'zod';
+import { contractResponseSchema, emptyRequestSchema } from './common';
+import { bookRequestSchema, bookSummarySchema, optionalBookRequestSchema } from './books';
+import { exportStatusSchema } from './exports';
+import { importSourceRequestSchema, importSourceResponseSchema } from './source-import';
+import { jobRequestSchema, jobSummarySchema } from './jobs';
+import { librarySummarySchema } from './library';
+import { moduleInstanceSummarySchema, updateModuleBodyRequestSchema } from './modules';
 import {
-  bookRequestSchema,
-  bookSummarySchema,
-  contractResponseSchema,
-  emptyRequestSchema,
-  exportStatusSchema,
   freezeStructureResponseDataSchema,
-  importSourceRequestSchema,
-  importSourceResponseSchema,
-  jobRequestSchema,
-  jobSummarySchema,
-  librarySummarySchema,
-  moduleInstanceSummarySchema,
-  optionalBookRequestSchema,
   storySegmentRangeSchema,
   structureNodeSchema,
-  updateModuleBodyRequestSchema,
   updateStorySegmentRangeRequestSchema,
   updateStructureNodeRequestSchema,
-} from './schemas';
+} from './structure';
 import type { ProductIpcChannel } from './channels';
 
 export type IpcContract<

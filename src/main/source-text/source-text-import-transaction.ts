@@ -1,8 +1,7 @@
 import type { SqliteDatabase } from '../db/sqlite';
+import type { BookSummary, JobSummary } from '../../shared/contracts';
 import type {
-  BookSummary,
   BreakdownBookId,
-  JobSummary,
   LibraryId,
   SourceTextId,
 } from '../../shared/domain';

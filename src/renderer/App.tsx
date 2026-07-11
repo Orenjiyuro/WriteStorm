@@ -14,7 +14,7 @@ import {
   TECHNIQUE_EVIDENCE_CHAIN_POLICY,
   TECHNIQUE_LIBRARY_MANUAL_CREATE_POLICY,
 } from '../shared/domain';
-import type { BookSummary, ImportSourceResult, LibrarySummary } from '../shared/domain';
+import type { BookSummary, ImportSourceResult, LibrarySummary } from '../shared/contracts';
 import type { ContractRequest } from '../shared/contracts';
 import { rendererText } from './i18n';
 import {

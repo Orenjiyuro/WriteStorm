@@ -9,7 +9,8 @@ import {
 } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
-import type { LibraryId, LibrarySummary } from '../../shared/domain';
+import type { LibrarySummary } from '../../shared/contracts';
+import type { LibraryId } from '../../shared/domain';
 import { APP_MIGRATIONS } from '../db/migrations';
 import {
   getCurrentSchemaVersion,

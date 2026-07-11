@@ -59,6 +59,7 @@ export type {
 } from './source-import';
 export {
   jobCheckpointSchema,
+  jobRequestSchema,
   jobStateSchema,
   jobSummarySchema,
   versionedJobPayloadEnvelopeSchema,
@@ -69,12 +70,39 @@ export type {
   VersionedJobPayloadEnvelope,
 } from './jobs';
 export {
-  exportStatusSchema,
-  jobRequestSchema,
   moduleInstanceSummarySchema,
-  storySegmentRangeSchema,
-  structureNodeSchema,
+  scopeRefSchema,
   updateModuleBodyRequestSchema,
+} from './modules';
+export type { ModuleInstanceSummary } from './modules';
+export { exportStatusSchema } from './exports';
+export type { ExportStatusDto } from './exports';
+export {
+  candidateStructureSetSchema,
+  draftStructureSetSchema,
+  freezeStructureResponseDataSchema,
+  frozenStructureSetSchema,
+  storySegmentRangeSchema,
+  structureConfidenceSchema,
+  structureDetectionRequestSchema,
+  structureDetectionResponseSchema,
+  STRUCTURE_DETECTION_ERROR_REASONS,
+  structureDetectionErrorDetailsSchema,
+  structureDetectionErrorReasonSchema,
+  structureDetectionRunSchema,
+  structureDetectionStartResultSchema,
+  structureHeadingSpanSchema,
+  structureNodeSchema,
+  structureSetNodeSchema,
+  structureSetStoryRangeSchema,
+  structureSourceSnapshotSchema,
+  structureWorkspaceSchema,
   updateStorySegmentRangeRequestSchema,
   updateStructureNodeRequestSchema,
-} from './schemas';
+} from './structure';
+export type {
+  StorySegmentRangeDto,
+  StructureDetectionStartResult,
+  StructureNodeDto,
+  StructureWorkspace,
+} from './structure';

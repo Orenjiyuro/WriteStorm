@@ -1,13 +1,10 @@
 import { z } from 'zod';
 import { JOB_STATES } from '../domain/job';
-import type { BreakdownBookId, JobId } from '../domain/ids';
-
-const jobIdSchema = z.string().min(1).transform((value) => value as JobId);
-const breakdownBookIdSchema = z.string().min(1).transform(
-  (value) => value as BreakdownBookId,
-);
+import { breakdownBookIdSchema, jobIdSchema } from './common';
 
 export const jobStateSchema = z.enum(JOB_STATES);
+
+export const jobRequestSchema = z.object({ jobId: jobIdSchema }).strict();
 
 export const jobSummarySchema = z.object({
   id: jobIdSchema,

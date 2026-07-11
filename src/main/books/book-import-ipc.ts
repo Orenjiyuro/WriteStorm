@@ -1,12 +1,10 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { rmSync } from 'node:fs';
 import path from 'node:path';
-import type { ContractRequest, ContractResponse } from '../../shared/contracts';
+import type { BookSummary, ContractRequest, ContractResponse, JobSummary } from '../../shared/contracts';
 import type {
-  BookSummary,
   BreakdownBookId,
   JobId,
-  JobSummary,
   SourceTextId,
 } from '../../shared/domain';
 import { createDomainError } from '../../shared/errors';

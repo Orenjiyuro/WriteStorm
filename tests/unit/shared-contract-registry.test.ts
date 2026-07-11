@@ -263,6 +263,10 @@ describe('shared contract registry', () => {
       'src/shared/contracts/library.ts',
       'src/shared/contracts/books.ts',
       'src/shared/contracts/source-import.ts',
+      'src/shared/contracts/jobs.ts',
+      'src/shared/contracts/modules.ts',
+      'src/shared/contracts/exports.ts',
+      'src/shared/contracts/structure.ts',
     ]) {
       const source = readFileSync(filePath, 'utf8');
       expect(source).toContain('z.infer');

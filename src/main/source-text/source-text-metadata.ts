@@ -1,10 +1,6 @@
 import path from 'node:path';
-import type {
-  BreakdownBookId,
-  SourceTextFormat,
-  SourceTextId,
-  SourceTextMetadata,
-} from '../../shared/domain';
+import type { SourceTextFormat, SourceTextMetadata } from '../../shared/contracts';
+import type { BreakdownBookId, SourceTextId } from '../../shared/domain';
 
 export type SourceTextsInsertRow = {
   readonly id: string;

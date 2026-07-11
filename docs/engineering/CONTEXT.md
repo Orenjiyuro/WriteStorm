@@ -1,7 +1,15 @@
 # WriteStorm Engineering Context
 
-日期：2026-07-09  
+日期：2026-07-11
 目的：给后续实现线程提供稳定领域语言、工程边界和当前仓库事实。
+
+## Active V1 Foundation Reset
+
+The accepted reset contract is recorded in `docs/adr/0001-pre-release-schema-reset-and-table-admission.md` and the approved global design. Its premise is that no real user library requires compatibility. The unpublished Block 1-7 migration history will be replaced by schema epoch 2 and `001_v1_runtime_baseline`; old development SQLite libraries are rejected with `DEV_SCHEMA_RESET_REQUIRED` rather than migrated in place.
+
+Production tables now require a frozen identity/owner/lifecycle, real write and read paths, a stable error model, and integration-test coverage. Speculative shell tables are not admitted. The canonical source path is `source/{sourceTextId}/{originalFileName}`. The Job/Checkpoint core is frozen early because Block 7 already persists import Jobs. After the first external alpha or release tag, published migrations are immutable and changes are forward-only with pre-migration snapshots.
+
+Block 8 pure detection, confidence, validation, fixtures, performance fixtures, and detection worker protocol remain protected by the ADR hash manifest. Block 8 migration, persistence, Job wiring, and IPC wiring are paused until Task 19 reconnects them. This does not mean Block 8 or the Block 1-7 reset is complete. macOS packaged smoke and release makers remain blocked/not verified.
 
 ## 1. Current Repository State
 

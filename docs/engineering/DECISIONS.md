@@ -195,3 +195,19 @@ Implications:
 - Renderer code cannot pass arbitrary filesystem paths to library IPC.
 - Dialog-stub behavior is acceptable only for Electron packaged smoke tests.
 - Source import, book services, and full Breakdown shelf behavior still require separate authorization.
+
+## D013: Pre-release Schema Reset And Production Table Admission
+
+Decision: Reset the unpublished Block 1-7 development migration history to schema epoch 2 and a single `001_v1_runtime_baseline`. There is no real user library requiring migration compatibility. Existing development SQLite libraries are rejected with `DEV_SCHEMA_RESET_REQUIRED` and recreated explicitly.
+
+Rules:
+
+- A production table is admitted only after its identity, owner, and lifecycle are frozen; real write and read paths exist; stable domain errors exist; and integration tests protect its invariants.
+- Shared contracts and renderer readouts do not justify speculative shell tables.
+- The baseline admits only Library, Book, SourceText, Job, and JobCheckpoint runtime tables.
+- The canonical source path is `source/{sourceTextId}/{originalFileName}`.
+- Job and JobCheckpoint are frozen now because Block 7 already persists real import Jobs; JobService owns transitions.
+- Before the first external alpha or release tag, unpublished migrations may be reset. After that boundary, published migrations are immutable, evolution is forward-only, and pending migrations require a recoverable snapshot.
+- Block 8 pure detection and fixture assets remain protected by the ADR SHA-256 manifest. Its migration, persistence, Job wiring, and IPC wiring stay paused until Task 19.
+
+Full rationale and the preservation manifest: `docs/adr/0001-pre-release-schema-reset-and-table-admission.md`.

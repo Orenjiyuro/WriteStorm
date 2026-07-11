@@ -33,17 +33,21 @@ export type {
   StructureNodeDto,
 } from './dtos';
 export {
-  JOB_STATES,
   MODULE_INSTANCE_STATUSES,
   SCOPE_KINDS,
   STRUCTURE_NODE_KINDS,
 } from './status';
 export type {
-  JobState,
   ModuleInstanceStatus,
   ScopeKind,
   StructureNodeKind,
 } from './status';
+export {
+  JOB_STATES,
+  JOB_TRANSITIONS,
+  canTransitionJob,
+} from './job';
+export type { JobState } from './job';
 export {
   ANALYSIS_AI_CONSTRAINT_DEPENDENCY_POLICY,
   ANALYSIS_AI_CONSTRAINT_PARTICIPATION_POLICY,

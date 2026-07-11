@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { JobSummary as CanonicalJobSummary } from '../../src/shared/contracts/jobs';
 import type {
   AnalysisModuleId,
   AnalysisModuleInstanceId,
@@ -111,6 +112,8 @@ const jobSummary = {
   updatedAt: '2026-07-07T00:00:00.000Z',
 } satisfies JobSummary;
 
+const canonicalJobSummary: CanonicalJobSummary = jobSummary;
+
 const exportStatus = {
   exportId,
   bookId,
@@ -147,6 +150,7 @@ describe('shared domain DTO baselines', () => {
   it('keeps module instances, jobs, and export status as summaries only', () => {
     expect(moduleInstanceSummary.scope).toEqual({ kind: 'story_segment_range', rangeId });
     expect(moduleInstanceSummary.analysisRevision).toBe(3);
+    expect(canonicalJobSummary.state).toBe('resumable');
     expect(jobSummary.state).toBe('resumable');
     expect(exportStatus.availability).toBe('blocked');
   });

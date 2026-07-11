@@ -10,11 +10,11 @@ import type {
   StructureNodeId,
 } from './ids';
 import type {
-  JobState,
   ModuleInstanceStatus,
   ScopeKind,
   StructureNodeKind,
 } from './status';
+import type { JobSummary } from '../contracts/jobs';
 
 export type IsoDateTimeString = string;
 
@@ -106,17 +106,8 @@ export type ModuleInstanceSummary = {
   updatedAt: IsoDateTimeString | null;
 };
 
-export type JobSummary = {
-  id: JobId;
-  bookId: BreakdownBookId | null;
-  state: JobState;
-  title: string;
-  completedUnits: number;
-  totalUnits: number | null;
-  checkpointSummary: string | null;
-  failureReason: string | null;
-  updatedAt: IsoDateTimeString;
-};
+// TEMPORARY Task 3 compatibility shim. Task 5 must migrate consumers and delete it.
+export type { JobSummary } from '../contracts/jobs';
 
 export type ExportStatusDto = {
   exportId: ExportId | null;

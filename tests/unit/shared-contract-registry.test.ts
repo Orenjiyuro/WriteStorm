@@ -3,8 +3,13 @@ import {
   CONTRACT_REGISTRY,
   PRODUCT_IPC_CHANNELS,
   getContract,
+  jobSummarySchema,
 } from '../../src/shared/contracts';
-import type { ContractRequest, ContractResponse } from '../../src/shared/contracts';
+import type {
+  ContractRequest,
+  ContractResponse,
+  JobSummary,
+} from '../../src/shared/contracts';
 import { createNotImplementedError } from '../../src/shared/errors';
 import type {
   AnalysisModuleId,
@@ -12,7 +17,6 @@ import type {
   BreakdownBookId,
   ExportId,
   JobId,
-  JobSummary,
   LibraryId,
   SourceTextId,
   SourceTextMetadata,
@@ -216,6 +220,24 @@ describe('shared contract registry', () => {
         data: completedImportJob,
       }).success,
     ).toBe(false);
+  });
+
+  it('uses the canonical JobSummary schema for Job responses', () => {
+    const estimatingJob = {
+      ...completedImportJob,
+      state: 'estimating',
+    } satisfies JobSummary;
+
+    expect(jobSummarySchema.parse(estimatingJob)).toEqual(estimatingJob);
+    expect(
+      getContract('jobs:get').response.parse({
+        ok: true,
+        data: estimatingJob,
+      }),
+    ).toEqual({
+      ok: true,
+      data: estimatingJob,
+    });
   });
 
   it('requires stable import error reasons for books:import-source failures', () => {

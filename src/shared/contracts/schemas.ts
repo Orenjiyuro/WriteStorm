@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { jobSummarySchema } from './jobs';
+export { jobSummarySchema } from './jobs';
 import {
   DOMAIN_ERROR_CODES,
   type DomainError,
@@ -6,7 +8,6 @@ import {
   type JsonValue,
 } from '../errors';
 import {
-  JOB_STATES,
   MODULE_INSTANCE_STATUSES,
   STRUCTURE_NODE_KINDS,
   type AnalysisModuleId,
@@ -17,7 +18,6 @@ import {
   type ExportStatusDto,
   type ImportSourceResult,
   type JobId,
-  type JobSummary,
   type LibraryId,
   type LibrarySummary,
   type ModuleInstanceSummary,
@@ -173,18 +173,6 @@ export const moduleInstanceSummarySchema = z.object({
   analysisRevision: z.number().int().nonnegative(),
   updatedAt: isoDateTimeStringSchema.nullable(),
 }).strict() as z.ZodType<ModuleInstanceSummary>;
-
-export const jobSummarySchema = z.object({
-  id: jobIdSchema,
-  bookId: breakdownBookIdSchema.nullable(),
-  state: z.enum(JOB_STATES),
-  title: z.string().min(1),
-  completedUnits: z.number().int().nonnegative(),
-  totalUnits: z.number().int().nonnegative().nullable(),
-  checkpointSummary: z.string().nullable(),
-  failureReason: z.string().nullable(),
-  updatedAt: isoDateTimeStringSchema,
-}).strict() as z.ZodType<JobSummary>;
 
 export const importSourceResultSchema = z.object({
   book: bookSummarySchema,

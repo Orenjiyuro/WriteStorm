@@ -19,6 +19,17 @@ export type {
   WritestormApi,
 } from './preload-api';
 export {
+  jobCheckpointSchema,
+  jobStateSchema,
+  jobSummarySchema,
+  versionedJobPayloadEnvelopeSchema,
+} from './jobs';
+export type {
+  JobCheckpointDto,
+  JobSummary,
+  VersionedJobPayloadEnvelope,
+} from './jobs';
+export {
   bookRequestSchema,
   bookSummarySchema,
   breakdownBookIdSchema,
@@ -35,7 +46,6 @@ export {
   importSourceResultSchema,
   jobIdSchema,
   jobRequestSchema,
-  jobSummarySchema,
   jsonValueSchema,
   libraryIdSchema,
   librarySummarySchema,

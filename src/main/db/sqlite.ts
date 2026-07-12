@@ -10,3 +10,10 @@ export function openSqliteDatabase(databasePath: string): SqliteDatabase {
 
   return database;
 }
+
+export function openReadonlySqliteDatabase(databasePath: string): SqliteDatabase {
+  return new Database(databasePath, {
+    readonly: true,
+    fileMustExist: true,
+  });
+}

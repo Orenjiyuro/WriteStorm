@@ -5,6 +5,10 @@
 
 ## Active V1 Foundation Reset
 
+Task 12R-A hardens migration safety before source-worker work: pending migrations are snapshotted from a read-only source before any writable open, retention is ordered by the parsed backup timestamp, and create/open publish a Library session only after a runtime-schema descriptor dynamically derived from the active migration registry matches the resulting database.
+
+`JobService.create(JobRecord)` remains a temporary pre-Task-15 compatibility seam and can still accept a non-`queued` initial state. Task 15 must replace that seam with queued-only creation, require `running` through the transition policy, and complete the Job plus its final checkpoint in the same `LibraryUnitOfWork` transaction. Task 15 cannot pass without tests locking all three rules.
+
 The accepted reset contract is recorded in `docs/adr/0001-pre-release-schema-reset-and-table-admission.md` and the approved global design. Its premise is that no real user library requires compatibility. The unpublished Block 1-7 migration history will be replaced by schema epoch 2 and `001_v1_runtime_baseline`; old development SQLite libraries are rejected with `DEV_SCHEMA_RESET_REQUIRED` rather than migrated in place.
 
 Production tables now require a frozen identity/owner/lifecycle, real write and read paths, a stable error model, and integration-test coverage. Speculative shell tables are not admitted. The canonical source path is `source/{sourceTextId}/{originalFileName}`. The Job/Checkpoint core is frozen early because Block 7 already persists import Jobs. After the first external alpha or release tag, published migrations are immutable and changes are forward-only with pre-migration snapshots.

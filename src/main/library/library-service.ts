@@ -19,6 +19,7 @@ import {
   type Migration,
 } from '../db/migration-runner';
 import { openSqliteDatabase, type SqliteDatabase } from '../db/sqlite';
+import { validateRuntimeSchema } from '../db/runtime-schema-validator';
 import {
   probeLibraryDatabase,
   type LibraryDatabaseProbeResult,
@@ -60,6 +61,7 @@ export type LibraryServiceOptions = {
   readonly openDatabase?: typeof openSqliteDatabase;
   readonly migrateDatabase?: typeof runMigrations;
   readonly backupDatabase?: typeof createPreMigrationBackup;
+  readonly validateSchema?: typeof validateRuntimeSchema;
 };
 
 export type CreateLibraryInput = {
@@ -123,6 +125,7 @@ export class LibraryService {
   private readonly openDatabase: typeof openSqliteDatabase;
   private readonly migrateDatabase: typeof runMigrations;
   private readonly backupDatabase: typeof createPreMigrationBackup;
+  private readonly validateSchema: typeof validateRuntimeSchema;
   private readonly unitOfWork: LibraryUnitOfWork;
 
   constructor(options: LibraryServiceOptions) {
@@ -135,6 +138,7 @@ export class LibraryService {
     this.openDatabase = options.openDatabase ?? openSqliteDatabase;
     this.migrateDatabase = options.migrateDatabase ?? runMigrations;
     this.backupDatabase = options.backupDatabase ?? createPreMigrationBackup;
+    this.validateSchema = options.validateSchema ?? validateRuntimeSchema;
     this.unitOfWork = createLibraryUnitOfWork(() => this.currentSession);
   }
 
@@ -242,6 +246,7 @@ export class LibraryService {
       if (options.createIdentity) {
         writeLibraryIdentity(database, options.createIdentity);
       }
+      assertValidRuntimeSchema(this.validateSchema(database, this.migrations));
       const identity = readLibraryIdentity(database);
       const summary: LibrarySummary = {
         id: identity.id,
@@ -280,6 +285,26 @@ export class LibraryService {
     initialProbe: Extract<LibraryDatabaseProbeResult, { readonly ok: true }>,
   ): Promise<LibrarySessionSummary> {
     const paths = buildGuardedLibraryFolderPaths(rootPath);
+    if (initialProbe.appliedMigrationCount < this.migrations.length) {
+      const targetVersion = this.migrations.at(-1)?.id ?? initialProbe.currentSchemaVersion;
+      const targetPath = buildPreMigrationBackupPath({
+        backupsPath: paths.directories.backups,
+        fromVersion: initialProbe.currentSchemaVersion,
+        toVersion: targetVersion,
+        timestamp: this.now(),
+      });
+      try {
+        await this.backupDatabase(paths.databasePath, targetPath);
+        pruneMigrationBackups(paths.directories.backups, 3);
+      } catch (error) {
+        throw new LibraryServiceError(
+          'migration_backup_failed',
+          'Library migration backup failed.',
+          { recoverable: false, cause: error },
+        );
+      }
+    }
+
     let database: SqliteDatabase;
     try {
       database = this.openDatabase(paths.databasePath);
@@ -291,26 +316,6 @@ export class LibraryService {
     }
 
     try {
-      if (initialProbe.appliedMigrationCount < this.migrations.length) {
-        const targetVersion = this.migrations.at(-1)?.id ?? initialProbe.currentSchemaVersion;
-        const targetPath = buildPreMigrationBackupPath({
-          backupsPath: paths.directories.backups,
-          fromVersion: initialProbe.currentSchemaVersion,
-          toVersion: targetVersion,
-          timestamp: this.now(),
-        });
-        try {
-          await this.backupDatabase(database, targetPath);
-          pruneMigrationBackups(paths.directories.backups, 3);
-        } catch (error) {
-          throw new LibraryServiceError(
-            'migration_backup_failed',
-            'Library migration backup failed.',
-            { recoverable: false, cause: error },
-          );
-        }
-      }
-
       this.migrateDatabase(database, this.migrations);
       const validation = this.probeDatabase(paths.databasePath, this.migrations);
       if (!validation.ok) {
@@ -323,6 +328,7 @@ export class LibraryService {
           { recoverable: false },
         );
       }
+      assertValidRuntimeSchema(this.validateSchema(database, this.migrations));
 
       const identity = readLibraryIdentity(database);
       const summary: LibrarySummary = {
@@ -351,6 +357,18 @@ export class LibraryService {
         cause: error,
       });
     }
+  }
+}
+
+function assertValidRuntimeSchema(
+  validation: ReturnType<typeof validateRuntimeSchema>,
+): void {
+  if (!validation.ok) {
+    throw new LibraryServiceError(
+      'library_schema_incompatible',
+      'Library runtime schema is incompatible.',
+      { recoverable: false },
+    );
   }
 }
 

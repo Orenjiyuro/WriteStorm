@@ -1,28 +1,39 @@
 import { existsSync, readdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
-import type { SqliteDatabase } from '../db/sqlite';
+import { openReadonlySqliteDatabase } from '../db/sqlite';
 
-const MIGRATION_BACKUP_PATTERN = /^pre-migration-\d+-\d+-.+\.sqlite$/;
+const MIGRATION_BACKUP_PATTERN = /^pre-migration-\d+-\d+-(?<timestamp>[0-9A-Za-z]+)\.sqlite$/;
 
 export async function createPreMigrationBackup(
-  database: SqliteDatabase,
+  databasePath: string,
   targetPath: string,
 ): Promise<void> {
+  const database = openReadonlySqliteDatabase(databasePath);
   try {
     await database.backup(targetPath);
   } catch (error) {
     rmSync(targetPath, { force: true });
     throw error;
+  } finally {
+    database.close();
   }
 }
 
 export function pruneMigrationBackups(backupsPath: string, retainCount = 3): void {
   const backups = readdirSync(backupsPath)
-    .filter((fileName) => MIGRATION_BACKUP_PATTERN.test(fileName))
-    .sort()
-    .reverse();
+    .map((fileName) => ({
+      fileName,
+      timestamp: MIGRATION_BACKUP_PATTERN.exec(fileName)?.groups?.timestamp,
+    }))
+    .filter((backup): backup is { fileName: string; timestamp: string } => (
+      backup.timestamp !== undefined
+    ))
+    .sort((left, right) => (
+      right.timestamp.localeCompare(left.timestamp) ||
+      right.fileName.localeCompare(left.fileName)
+    ));
 
-  for (const fileName of backups.slice(retainCount)) {
+  for (const { fileName } of backups.slice(retainCount)) {
     const backupPath = path.join(backupsPath, fileName);
     if (existsSync(backupPath)) rmSync(backupPath, { force: true });
   }

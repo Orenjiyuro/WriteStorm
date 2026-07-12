@@ -1,9 +1,10 @@
-import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { APP_MIGRATIONS } from '../../../src/main/db/migrations';
 import { runMigrations, type Migration } from '../../../src/main/db/migration-runner';
+import { validateRuntimeSchema } from '../../../src/main/db/runtime-schema-validator';
 import { openSqliteDatabase } from '../../../src/main/db/sqlite';
 import {
   createPreMigrationBackup,
@@ -42,13 +43,21 @@ describe('migration backup and safe Library open', () => {
         calls.push(probeCount++ === 0 ? 'probe' : 'validate');
         return probeLibraryDatabase(databasePath, migrations);
       },
-      backupDatabase: async (database, targetPath) => {
+      openDatabase: (databasePath) => {
+        calls.push('writable-open');
+        return openSqliteDatabase(databasePath);
+      },
+      backupDatabase: async (databasePath, targetPath) => {
         calls.push('backup');
-        await createPreMigrationBackup(database, targetPath);
+        await createPreMigrationBackup(databasePath, targetPath);
       },
       migrateDatabase: (database, migrations) => {
         calls.push('migrate');
         runMigrations(database, migrations);
+      },
+      validateSchema: (database, migrations) => {
+        calls.push('validate-schema');
+        return validateRuntimeSchema(database, migrations);
       },
       createLibrarySessionId: () => {
         calls.push('publish-session');
@@ -58,7 +67,15 @@ describe('migration backup and safe Library open', () => {
 
     try {
       await service.open({ rootPath });
-      expect(calls).toEqual(['probe', 'backup', 'migrate', 'validate', 'publish-session']);
+      expect(calls).toEqual([
+        'probe',
+        'backup',
+        'writable-open',
+        'migrate',
+        'validate',
+        'validate-schema',
+        'publish-session',
+      ]);
       expect(service.getCurrent()?.library.schemaVersion).toBe(2);
       expect(readdirSync(path.join(rootPath, 'backups'))).toHaveLength(1);
     } finally {
@@ -78,11 +95,23 @@ describe('migration backup and safe Library open', () => {
         calls.push('backup');
         throw new Error('intentional backup failure');
       },
+      openDatabase: (databasePath) => {
+        calls.push('writable-open');
+        return openSqliteDatabase(databasePath);
+      },
       migrateDatabase: (database, migrations) => {
         calls.push('migrate');
         runMigrations(database, migrations);
       },
     });
+    const backupsPath = path.join(pendingRoot, 'backups');
+    for (let index = 1; index <= 4; index += 1) {
+      writeFileSync(
+        path.join(backupsPath, `pre-migration-1-2-20260712T01020${index}Z.sqlite`),
+        `backup-${index}`,
+      );
+    }
+    const backupsBeforeFailure = readdirSync(backupsPath).sort();
 
     try {
       service.create({ rootPath: currentRoot, name: 'current' });
@@ -93,6 +122,7 @@ describe('migration backup and safe Library open', () => {
         recoverable: false,
       });
       expect(calls).toEqual(['backup']);
+      expect(readdirSync(backupsPath).sort()).toEqual(backupsBeforeFailure);
       expect(service.getCurrent()).toEqual(current);
     } finally {
       service.closeCurrent();
@@ -103,17 +133,11 @@ describe('migration backup and safe Library open', () => {
     const rootPath = await baselineLibrary();
     const databasePath = path.join(rootPath, 'writestorm.sqlite');
     const backupsPath = path.join(rootPath, 'backups');
-    const database = openSqliteDatabase(databasePath);
-
-    try {
-      for (let index = 1; index <= 4; index += 1) {
-        const targetPath = path.join(backupsPath, `pre-migration-1-2-20260712T01020${index}Z.sqlite`);
-        await createPreMigrationBackup(database, targetPath);
-      }
-      pruneMigrationBackups(backupsPath, 3);
-    } finally {
-      database.close();
+    for (let index = 1; index <= 4; index += 1) {
+      const targetPath = path.join(backupsPath, `pre-migration-1-2-20260712T01020${index}Z.sqlite`);
+      await createPreMigrationBackup(databasePath, targetPath);
     }
+    pruneMigrationBackups(backupsPath, 3);
 
     const backups = readdirSync(backupsPath).sort();
     expect(backups).toEqual([
@@ -129,6 +153,66 @@ describe('migration backup and safe Library open', () => {
       } finally {
         snapshot.close();
       }
+    }
+  });
+
+  it('retains newest timestamps across different migration version pairs', () => {
+    const backupsPath = tempDirectory();
+    const backupNames = [
+      'pre-migration-9-10-20260712T010201Z.sqlite',
+      'pre-migration-10-11-20260712T010204Z.sqlite',
+      'pre-migration-2-20-20260712T010203Z.sqlite',
+      'pre-migration-20-21-20260712T010202Z.sqlite',
+    ];
+    for (const backupName of backupNames) {
+      writeFileSync(path.join(backupsPath, backupName), backupName);
+    }
+    writeFileSync(path.join(backupsPath, 'notes.txt'), 'preserve');
+
+    pruneMigrationBackups(backupsPath, 3);
+
+    expect(readdirSync(backupsPath).sort()).toEqual([
+      'notes.txt',
+      'pre-migration-10-11-20260712T010204Z.sqlite',
+      'pre-migration-2-20-20260712T010203Z.sqlite',
+      'pre-migration-20-21-20260712T010202Z.sqlite',
+    ]);
+  });
+
+  it('uses the filename as a stable tie-break for equal timestamps', () => {
+    const backupsPath = tempDirectory();
+    for (const version of ['1-2', '2-3', '3-4', '4-5']) {
+      const name = `pre-migration-${version}-20260712T010204Z.sqlite`;
+      writeFileSync(path.join(backupsPath, name), name);
+    }
+
+    pruneMigrationBackups(backupsPath, 3);
+
+    expect(readdirSync(backupsPath).sort()).toEqual([
+      'pre-migration-2-3-20260712T010204Z.sqlite',
+      'pre-migration-3-4-20260712T010204Z.sqlite',
+      'pre-migration-4-5-20260712T010204Z.sqlite',
+    ]);
+  });
+
+  it('rejects a migrated database whose resulting schema differs from its migration registry', async () => {
+    const rootPath = await baselineLibrary();
+    const service = new LibraryService({
+      appVersion: '0.1.0-test',
+      migrations: pendingRegistry,
+      migrateDatabase: (database, migrations) => {
+        runMigrations(database, migrations);
+        database.exec('DROP TABLE migration_backup_proof');
+      },
+    });
+
+    try {
+      await expect(service.open({ rootPath })).rejects.toMatchObject({
+        reason: 'library_schema_incompatible',
+      });
+      expect(service.getCurrent()).toBeNull();
+    } finally {
+      service.closeCurrent();
     }
   });
 

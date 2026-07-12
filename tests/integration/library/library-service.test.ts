@@ -17,7 +17,7 @@ import {
   LIBRARY_MANIFEST_FILE_NAME,
   libraryManifestSchema,
 } from '../../../src/main/library/folder-contract';
-import type { Migration } from '../../../src/main/db/migration-runner';
+import { runMigrations, type Migration } from '../../../src/main/db/migration-runner';
 import { APP_MIGRATIONS } from '../../../src/main/db/migrations';
 import { openSqliteDatabase } from '../../../src/main/db/sqlite';
 import type { LibraryId } from '../../../src/shared/domain';
@@ -215,6 +215,29 @@ describe('LibraryService create/open/current', () => {
       );
       expect(existsSync(rootPath)).toBe(false);
       expect(service.getCurrent()).toBeNull();
+    } finally {
+      service.closeCurrent();
+    }
+  });
+
+  it('does not publish a created library when resulting-schema validation fails', () => {
+    const rootPath = libraryRootPath();
+    const service = new LibraryService({
+      appVersion,
+      now: () => now,
+      createLibraryId: () => libraryId,
+      migrateDatabase(database, migrations) {
+        runMigrations(database, migrations);
+        database.exec('DROP INDEX idx_jobs_book_id_state');
+      },
+    });
+
+    try {
+      expect(() => service.create({ rootPath, name: 'Invalid Schema' })).toThrow(
+        /runtime schema is incompatible/i,
+      );
+      expect(service.getCurrent()).toBeNull();
+      expect(existsSync(rootPath)).toBe(false);
     } finally {
       service.closeCurrent();
     }

@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -25,6 +25,16 @@ afterEach(() => {
 });
 
 describe('source text import transaction', () => {
+  it('delegates Job and checkpoint persistence instead of owning their SQL', () => {
+    const source = readFileSync(
+      path.resolve('src/main/source-text/source-text-import-transaction.ts'),
+      'utf8',
+    );
+    expect(source).not.toMatch(/INSERT INTO jobs/i);
+    expect(source).not.toMatch(/INSERT INTO job_checkpoints/i);
+    expect(source).toContain('JobService');
+  });
+
   it('inserts the book and source_text metadata in one transaction', () => {
     const db = migratedDatabase();
 

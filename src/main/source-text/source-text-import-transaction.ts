@@ -6,6 +6,7 @@ import type {
   SourceTextId,
 } from '../../shared/domain';
 import type { SourceTextImportMetadata } from './source-text-metadata';
+import { JobService } from '../jobs/job-service';
 
 export type ImportBookWithSourceTextInput = {
   readonly libraryId: LibraryId;
@@ -71,47 +72,30 @@ export function importBookWithSourceText(
     `).run(input.sourceText.dto.id, input.updatedAt, input.bookId);
 
     if (input.job) {
-      database.prepare(`
-        INSERT INTO jobs (
-          id,
-          book_id,
-          kind,
-          state,
-          completed_units,
-          total_units,
-          payload_schema_version,
-          payload_json,
-          error_code,
-          error_details_json,
-          created_at,
-          updated_at
-        )
-        VALUES (?, ?, 'source_import', 'completed', 1, 1, 1, ?, NULL, NULL, ?, ?)
-      `).run(
-        input.job.summary.id,
-        input.job.summary.bookId,
-        JSON.stringify({ sourceTextId: input.job.sourceTextId }),
-        input.job.summary.updatedAt,
-        input.job.summary.updatedAt,
-      );
-
-      database.prepare(`
-        INSERT INTO job_checkpoints (
-          id,
-          job_id,
-          sequence,
-          kind,
-          payload_schema_version,
-          payload_json,
-          created_at
-        )
-        VALUES (?, ?, 1, 'source_import_completed', 1, ?, ?)
-      `).run(
-        `${input.job.summary.id}:1`,
-        input.job.summary.id,
-        JSON.stringify({ sourceTextId: input.job.sourceTextId }),
-        input.job.summary.updatedAt,
-      );
+      const jobs = new JobService({ database });
+      const payload = { sourceTextId: input.job.sourceTextId };
+      jobs.create({
+        id: input.job.summary.id,
+        bookId: input.job.summary.bookId,
+        kind: 'source_import',
+        state: 'completed',
+        completedUnits: 1,
+        totalUnits: 1,
+        payloadSchemaVersion: 1,
+        payload,
+        errorCode: null,
+        errorDetails: null,
+        createdAt: input.job.summary.updatedAt,
+        updatedAt: input.job.summary.updatedAt,
+      });
+      jobs.appendCheckpoint({
+        id: `${input.job.summary.id}:1`,
+        jobId: input.job.summary.id,
+        kind: 'source_import_completed',
+        payloadSchemaVersion: 1,
+        payload,
+        createdAt: input.job.summary.updatedAt,
+      });
     }
   });
 

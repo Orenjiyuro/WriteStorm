@@ -17,6 +17,7 @@ import { LibraryServiceError as LibraryServiceErrorClass } from '../library/libr
 import {
   registerTypedIpcHandlers,
   type IpcMainLike,
+  type IpcSenderIdentity,
   type TypedIpcHandler,
   type TypedIpcHandlerMap,
   type TypedIpcRouterOptions,
@@ -31,6 +32,7 @@ export type LibraryIpcDependencies = {
 };
 
 export type ProductIpcRegistrationOptions = {
+  readonly senderPolicy?: (sender: IpcSenderIdentity) => boolean;
   readonly library?: LibraryIpcDependencies;
   readonly books?: {
     readonly list?: () => MaybePromise<ContractResponse<'books:list'>>;
@@ -55,6 +57,7 @@ export function registerProductIpc(
 ): void {
   registerTypedIpcHandlers(ipcMain, createProductHandlers(options), {
     trustedDevServerOrigins: createTrustedDevServerOrigins(devServerUrl),
+    ...(options.senderPolicy ? { isTrustedSender: options.senderPolicy } : {}),
   });
 }
 

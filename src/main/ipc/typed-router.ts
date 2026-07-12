@@ -23,6 +23,7 @@ export type IpcMainEventLike = {
     url?: string;
     routingId?: number;
     processId?: number;
+    parent?: unknown | null;
   } | null;
 };
 
@@ -59,6 +60,7 @@ export type IpcSenderIdentity = {
   webContentsId?: number;
   frameRoutingId?: number;
   frameProcessId?: number;
+  isMainFrame: boolean;
 };
 
 export function registerTypedIpcHandlers(
@@ -137,6 +139,7 @@ export function registerTypedIpcHandler<TChannel extends ProductIpcChannel>(
 function resolveSenderIdentity(event: IpcMainEventLike): IpcSenderIdentity {
   const identity: IpcSenderIdentity = {
     url: event.senderFrame?.url ?? '',
+    isMainFrame: event.senderFrame?.parent === null,
   };
 
   if (typeof event.sender?.id === 'number') {

@@ -21,6 +21,7 @@ type MockIpcEvent = {
     url?: string;
     routingId?: number;
     processId?: number;
+    parent?: object | null;
   };
 };
 
@@ -113,6 +114,7 @@ describe('main typed IPC router', () => {
       senderUrl: string;
       sender: {
         url: string;
+        isMainFrame: boolean;
       };
     }> = [];
 
@@ -129,6 +131,7 @@ describe('main typed IPC router', () => {
         senderUrl: 'writestorm://app/index.html',
         sender: {
           url: 'writestorm://app/index.html',
+          isMainFrame: false,
         },
       },
     ]);
@@ -232,6 +235,7 @@ describe('main typed IPC router', () => {
             url: 'writestorm://app/index.html',
             routingId: 11,
             processId: 22,
+            parent: null,
           },
         },
       ),
@@ -254,8 +258,40 @@ describe('main typed IPC router', () => {
         webContentsId: 6,
         frameRoutingId: 11,
         frameProcessId: 22,
+        isMainFrame: true,
       },
     ]);
+  });
+
+  it('marks subframe senders as non-main-frame identities', async () => {
+    const ipcMain = new MockIpcMain();
+    const seenSenders: unknown[] = [];
+
+    registerTypedIpcHandler(
+      ipcMain,
+      'books:list',
+      () => booksListResponse,
+      {
+        isTrustedSender: (sender) => {
+          seenSenders.push(sender);
+          return false;
+        },
+      },
+    );
+
+    await ipcMain.invoke('books:list', {}, {
+      sender: { id: 7 },
+      senderFrame: {
+        url: 'writestorm://app/index.html',
+        parent: {},
+      },
+    });
+
+    expect(seenSenders).toEqual([{
+      url: 'writestorm://app/index.html',
+      webContentsId: 7,
+      isMainFrame: false,
+    }]);
   });
 
   it('maps invalid handler responses to INVALID_RESPONSE instead of throwing', async () => {

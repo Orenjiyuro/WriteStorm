@@ -2,9 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain, protocol, session, shell } from 'e
 import path from 'node:path';
 import {
   createContentSecurityPolicy,
-  isAllowedExternalUrl,
   isTrustedSenderUrl,
-  shouldAllowNavigation,
   shouldUseHeaderContentSecurityPolicy,
 } from './security';
 import { createTrustedDevServerOrigins, registerProductIpc } from './ipc';
@@ -12,6 +10,8 @@ import { runOptionalNativeSqliteProbe } from './db/native-probe';
 import { createBookImportIpcDependencies } from './books/book-import-ipc';
 import { createLibraryEntryIpcDependencies } from './library/library-entry';
 import { LibraryService } from './library/library-service';
+import { createProductSenderPolicy } from './ipc/product-sender-policy';
+import { createMainWindow } from './windows/main-window';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -19,6 +19,7 @@ declare const MAIN_WINDOW_VITE_NAME: string;
 const allowedExternalOrigins = new Set<string>();
 const appProtocol = 'writestorm';
 const appProtocolHost = 'app';
+const productSenderPolicy = createProductSenderPolicy(MAIN_WINDOW_VITE_DEV_SERVER_URL);
 const libraryService = new LibraryService({ appVersion: app.getVersion() });
 const books = createBookImportIpcDependencies({
   service: libraryService,
@@ -49,24 +50,15 @@ type HealthResponse = {
 };
 
 const createWindow = async (): Promise<void> => {
-  const mainWindow = new BrowserWindow({
-    width: 1100,
-    height: 760,
-    webPreferences: {
-      preload: path.join(__dirname, 'index.js'),
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: true,
-    },
+  await createMainWindow({
+    createWindow: (options) => new BrowserWindow(options),
+    preloadPath: path.join(__dirname, 'index.js'),
+    appUrl: MAIN_WINDOW_VITE_DEV_SERVER_URL ?? createAppUrl('index.html'),
+    allowedExternalOrigins,
+    openExternal: (url) => shell.openExternal(url),
+    bindSenderPolicy: productSenderPolicy.bindWebContents,
+    unbindSenderPolicy: productSenderPolicy.unbindWebContents,
   });
-
-  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    await mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
-  } else {
-    await mainWindow.loadURL(createAppUrl('index.html'));
-  }
-
-  installNavigationGuards(mainWindow);
 };
 
 function installContentSecurityPolicy(): void {
@@ -124,22 +116,6 @@ function logProtocolDebug(result: string, requestUrl: string, assetPath?: string
   }
 }
 
-function installNavigationGuards(mainWindow: BrowserWindow): void {
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (isAllowedExternalUrl(url, allowedExternalOrigins)) {
-      void shell.openExternal(url);
-    }
-
-    return { action: 'deny' };
-  });
-
-  mainWindow.webContents.on('will-navigate', (event, url) => {
-    if (!shouldAllowNavigation(url, mainWindow.webContents.getURL())) {
-      event.preventDefault();
-    }
-  });
-}
-
 function registerInternalIpc(): void {
   ipcMain.handle('internal:health', (event): HealthResponse => {
     const senderUrl = event.senderFrame?.url ?? '';
@@ -161,6 +137,7 @@ app.whenReady().then(async () => {
   registerAppProtocol();
   registerInternalIpc();
   registerProductIpc(ipcMain, MAIN_WINDOW_VITE_DEV_SERVER_URL, {
+    senderPolicy: productSenderPolicy.isTrustedSender,
     library: createLibraryEntryIpcDependencies({
       service: libraryService,
       env: process.env,

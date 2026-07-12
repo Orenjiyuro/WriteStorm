@@ -59,21 +59,28 @@ describe('Forge Vite scaffold', () => {
 describe('BrowserWindow security wiring', () => {
   it('keeps renderer privileges disabled and installs navigation protections', () => {
     const mainSource = readFileSync(path.join(rootDir, 'src/main/main.ts'), 'utf8');
+    const mainWindowSource = readFileSync(
+      path.join(rootDir, 'src/main/windows/main-window.ts'),
+      'utf8',
+    );
 
     // Static guard: BrowserWindow construction is intentionally not exported
     // just for tests. E2E covers user-observable renderer isolation.
-    expect(mainSource).toMatch(/webPreferences:\s*{[\s\S]*nodeIntegration:\s*false/);
-    expect(mainSource).toMatch(/webPreferences:\s*{[\s\S]*contextIsolation:\s*true/);
-    expect(mainSource).toMatch(/webPreferences:\s*{[\s\S]*sandbox:\s*true/);
+    expect(mainSource).toContain('createMainWindow({');
+    expect(mainWindowSource).toMatch(/webPreferences:\s*{[\s\S]*nodeIntegration:\s*false/);
+    expect(mainWindowSource).toMatch(/webPreferences:\s*{[\s\S]*contextIsolation:\s*true/);
+    expect(mainWindowSource).toMatch(/webPreferences:\s*{[\s\S]*sandbox:\s*true/);
     expect(mainSource).toContain("WRITESTORM_DISABLE_HARDWARE_ACCELERATION === '1'");
     expect(mainSource).toContain('app.disableHardwareAcceleration()');
     expect(mainSource).toContain('protocol.registerSchemesAsPrivileged');
     expect(mainSource).toContain('protocol.registerFileProtocol(appProtocol');
     expect(mainSource).toContain('callback({ path: assetPath })');
-    expect(mainSource).toContain("loadURL(createAppUrl('index.html'))");
+    expect(mainSource).toContain("appUrl: MAIN_WINDOW_VITE_DEV_SERVER_URL ?? createAppUrl('index.html')");
+    expect(mainWindowSource).toContain('await window.loadURL(dependencies.appUrl)');
     expect(mainSource).toContain("path.join(__dirname, 'index.js')");
     expect(mainSource).toContain('installContentSecurityPolicy');
-    expect(mainSource).toContain('installNavigationGuards');
+    expect(mainWindowSource).toContain('setWindowOpenHandler');
+    expect(mainWindowSource).toContain("on('will-navigate'");
   });
 });
 

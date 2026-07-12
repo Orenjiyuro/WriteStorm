@@ -35,8 +35,8 @@ export {
   storySegmentRangeIdSchema,
   structureNodeIdSchema,
 } from './common';
-export { librarySummarySchema } from './library';
-export type { LibrarySummary } from './library';
+export { librarySessionSummarySchema, librarySummarySchema } from './library';
+export type { LibrarySessionSummary, LibrarySummary } from './library';
 export {
   bookRequestSchema,
   bookSummarySchema,

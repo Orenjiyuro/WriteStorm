@@ -59,7 +59,7 @@ describe('migration backup and safe Library open', () => {
     try {
       await service.open({ rootPath });
       expect(calls).toEqual(['probe', 'backup', 'migrate', 'validate', 'publish-session']);
-      expect(service.getCurrent()?.schemaVersion).toBe(2);
+      expect(service.getCurrent()?.library.schemaVersion).toBe(2);
       expect(readdirSync(path.join(rootPath, 'backups'))).toHaveLength(1);
     } finally {
       service.closeCurrent();
@@ -170,7 +170,9 @@ describe('migration backup and safe Library open', () => {
 
     const baselineService = new LibraryService({ appVersion: '0.1.0-test' });
     try {
-      await expect(baselineService.open({ rootPath })).resolves.toMatchObject({ schemaVersion: 1 });
+      await expect(baselineService.open({ rootPath })).resolves.toMatchObject({
+        library: { schemaVersion: 1 },
+      });
     } finally {
       baselineService.closeCurrent();
     }

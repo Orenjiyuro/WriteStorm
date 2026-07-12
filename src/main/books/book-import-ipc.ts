@@ -9,6 +9,7 @@ import type {
 } from '../../shared/domain';
 import { createDomainError } from '../../shared/errors';
 import type { LibraryService } from '../library/library-service';
+import { LibraryUnitOfWorkError } from '../library/library-unit-of-work';
 import {
   type ImportFileDialogOptions,
   type ImportFileDialogResult,
@@ -44,6 +45,7 @@ export type BookImportIpcOptions = {
 };
 
 export function createBookImportIpcDependencies(options: BookImportIpcOptions): BookImportIpcDependencies {
+  const unitOfWork = options.service.getUnitOfWork();
   const now = options.now ?? (() => new Date().toISOString());
   const nowMs = options.nowMs ?? (() => Date.now());
   const createBookId = options.createBookId ?? (() => randomUUID() as BreakdownBookId);
@@ -59,9 +61,9 @@ export function createBookImportIpcDependencies(options: BookImportIpcOptions): 
     list: () => listBooksForCurrentLibrary(options.service),
     clearPendingImports: () => pendingImports.clearAll(),
     importSource: async (request) => {
-      const context = options.service.getCurrentContext();
+      const current = options.service.getCurrent();
 
-      if (!context) {
+      if (!current) {
         return importFailure('no_current_library', 'Open or create a library before importing source text.');
       }
 
@@ -74,8 +76,8 @@ export function createBookImportIpcDependencies(options: BookImportIpcOptions): 
 
       if ('pendingImportId' in request) {
         const pendingImport = pendingImports.resolve(request.pendingImportId, {
-          libraryRootPath: context.rootPath,
-          sessionId: context.sessionId,
+          libraryRootPath: current.library.rootPath,
+          sessionId: current.sessionId,
           now: nowMs(),
         });
 
@@ -94,8 +96,8 @@ export function createBookImportIpcDependencies(options: BookImportIpcOptions): 
           showOpenDialog: options.showOpenDialog,
         });
 
-        const activeContext = options.service.getCurrentContext();
-        if (!activeContext || activeContext.sessionId !== context.sessionId) {
+        const activeSession = options.service.getCurrent();
+        if (!activeSession || activeSession.sessionId !== current.sessionId) {
           return importFailure('library_session_changed', 'The library changed while choosing a source file. Start the import again.');
         }
 
@@ -122,8 +124,8 @@ export function createBookImportIpcDependencies(options: BookImportIpcOptions): 
         const pendingToken = pendingImportId
           ? { pendingImportId }
           : pendingImports.create({
-            libraryRootPath: context.rootPath,
-            sessionId: context.sessionId,
+            libraryRootPath: current.library.rootPath,
+            sessionId: current.sessionId,
             sourcePath: preflight.filePath,
             ...(requestedTitle === undefined ? {} : { title: requestedTitle }),
           });
@@ -135,7 +137,8 @@ export function createBookImportIpcDependencies(options: BookImportIpcOptions): 
       }
 
       const contentHash = `sha256:${createHash('sha256').update(bytes).digest('hex')}`;
-      const duplicate = detectSourceTextDuplicateByHash(context.database, { contentHash });
+      const duplicate = unitOfWork.read((session) =>
+        detectSourceTextDuplicateByHash(session.database, { contentHash }));
       if (!duplicate.ok) {
         return importFailure(duplicate.reason, duplicate.message, {
           existingBookId: duplicate.existingBookId,
@@ -147,7 +150,7 @@ export function createBookImportIpcDependencies(options: BookImportIpcOptions): 
       const sourceTextId = createSourceTextId();
       const importedAt = now();
       const copyResult = copySourceTextToLibrarySource({
-        libraryRootPath: context.rootPath,
+        libraryRootPath: current.library.rootPath,
         sourcePath: preflight.filePath,
         sourceBytes: bytes,
         sourceTextId,
@@ -180,16 +183,21 @@ export function createBookImportIpcDependencies(options: BookImportIpcOptions): 
           bookId,
           now: importedAt,
         });
-        const importResult = importBookWithSourceText(context.database, {
-          libraryId: context.summary.id,
-          bookId,
-          title,
-          sourceText,
-          job: {
-            sourceTextId,
-            summary: job,
-          },
-          updatedAt: importedAt,
+        const importResult = unitOfWork.write((session) => {
+          if (session.sessionId !== current.sessionId) {
+            throw new LibraryUnitOfWorkError('LIBRARY_SESSION_CHANGED');
+          }
+          return importBookWithSourceText(session.database, {
+            libraryId: session.library.id,
+            bookId,
+            title,
+            sourceText,
+            job: {
+              sourceTextId,
+              summary: job,
+            },
+            updatedAt: importedAt,
+          });
         });
 
         return {
@@ -203,7 +211,8 @@ export function createBookImportIpcDependencies(options: BookImportIpcOptions): 
         rmSync(copyResult.targetPath, { force: true });
 
         if (isContentHashUniqueConstraintError(error)) {
-          const duplicate = detectSourceTextDuplicateByHash(context.database, { contentHash });
+          const duplicate = unitOfWork.read((session) =>
+            detectSourceTextDuplicateByHash(session.database, { contentHash }));
           if (!duplicate.ok) {
             return importFailure(duplicate.reason, duplicate.message, {
               existingBookId: duplicate.existingBookId,
@@ -212,6 +221,9 @@ export function createBookImportIpcDependencies(options: BookImportIpcOptions): 
           }
         }
 
+        if (error instanceof LibraryUnitOfWorkError) {
+          return importFailure('library_session_changed', error.message);
+        }
         return importFailure('database_write_failed', 'Source import could not be saved to the library database.');
       } finally {
         if (pendingImportId) {
@@ -229,9 +241,9 @@ function normalizeTitleOverride(title: string | undefined): string | undefined {
 }
 
 function listBooksForCurrentLibrary(service: LibraryService): ContractResponse<'books:list'> {
-  const context = service.getCurrentContext();
+  const current = service.getCurrent();
 
-  if (!context) {
+  if (!current) {
     return {
       ok: false,
       error: createDomainError({
@@ -245,7 +257,8 @@ function listBooksForCurrentLibrary(service: LibraryService): ContractResponse<'
     };
   }
 
-  const rows = context.database.prepare(`
+  return service.getUnitOfWork().read((session) => {
+    const rows = session.database.prepare(`
     SELECT
       books.id AS id,
       books.title AS title,
@@ -263,9 +276,9 @@ function listBooksForCurrentLibrary(service: LibraryService): ContractResponse<'
     updatedAt: string;
   }>;
 
-  const books: BookSummary[] = rows.map((row) => ({
+    const books: BookSummary[] = rows.map((row) => ({
     id: row.id as BreakdownBookId,
-    libraryId: context.summary.id,
+    libraryId: session.library.id,
     title: row.title,
     sourceTextId: row.sourceTextId as SourceTextId | null,
     sourceTextEdition: row.sourceTextEdition,
@@ -273,10 +286,11 @@ function listBooksForCurrentLibrary(service: LibraryService): ContractResponse<'
     updatedAt: row.updatedAt,
   }));
 
-  return {
-    ok: true,
-    data: books,
-  };
+    return {
+      ok: true,
+      data: books,
+    };
+  });
 }
 
 function buildCompletedImportJob(input: {

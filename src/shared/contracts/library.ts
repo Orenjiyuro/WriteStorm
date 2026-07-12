@@ -10,3 +10,10 @@ export const librarySummarySchema = z.object({
 }).strict();
 
 export type LibrarySummary = z.infer<typeof librarySummarySchema>;
+
+export const librarySessionSummarySchema = z.object({
+  sessionId: z.string().uuid(),
+  library: librarySummarySchema,
+}).strict();
+
+export type LibrarySessionSummary = z.infer<typeof librarySessionSummarySchema>;

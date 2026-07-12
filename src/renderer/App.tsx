@@ -14,7 +14,7 @@ import {
   TECHNIQUE_EVIDENCE_CHAIN_POLICY,
   TECHNIQUE_LIBRARY_MANUAL_CREATE_POLICY,
 } from '../shared/domain';
-import type { BookSummary, ImportSourceResult, LibrarySummary } from '../shared/contracts';
+import type { BookSummary, ImportSourceResult, LibrarySessionSummary } from '../shared/contracts';
 import type { ContractRequest } from '../shared/contracts';
 import { rendererText } from './i18n';
 import {
@@ -27,7 +27,7 @@ import {
 type LibraryAction = 'create' | 'open';
 
 export function App(): ReactElement {
-  const [currentLibrary, setCurrentLibrary] = useState<LibrarySummary | null>(null);
+  const [currentLibrary, setCurrentLibrary] = useState<LibrarySessionSummary | null>(null);
   const [pendingLibraryAction, setPendingLibraryAction] = useState<LibraryAction | null>(null);
   const [libraryError, setLibraryError] = useState<string | null>(null);
   const [pendingSourceImport, setPendingSourceImport] = useState(false);
@@ -188,20 +188,20 @@ export function App(): ReactElement {
         <section className="library-shelf" aria-labelledby="app-title">
           <p className="eyebrow">{rendererText.libraryShelf.eyebrow}</p>
           <h1 id="app-title">{rendererText.libraryShelf.title}</h1>
-          <div className="library-summary" aria-label={currentLibrary.name}>
+          <div className="library-summary" aria-label={currentLibrary.library.name}>
             <div>
-              <p className="readout-label">{currentLibrary.name}</p>
+              <p className="readout-label">{currentLibrary.library.name}</p>
               <span className="library-path-label">{rendererText.libraryShelf.rootPathLabel}</span>
-              <code>{currentLibrary.rootPath}</code>
+              <code>{currentLibrary.library.rootPath}</code>
             </div>
             <dl>
               <div>
                 <dt>{rendererText.libraryShelf.schemaVersionLabel}</dt>
-                <dd>{currentLibrary.schemaVersion}</dd>
+                <dd>{currentLibrary.library.schemaVersion}</dd>
               </div>
               <div>
                 <dt>{rendererText.libraryShelf.appVersionLabel}</dt>
-                <dd>{currentLibrary.appVersion}</dd>
+                <dd>{currentLibrary.library.appVersion}</dd>
               </div>
             </dl>
           </div>

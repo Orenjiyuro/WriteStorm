@@ -4,7 +4,7 @@ import { bookRequestSchema, bookSummarySchema, optionalBookRequestSchema } from 
 import { exportStatusSchema } from './exports';
 import { importSourceRequestSchema, importSourceResponseSchema } from './source-import';
 import { jobRequestSchema, jobSummarySchema } from './jobs';
-import { librarySummarySchema } from './library';
+import { librarySessionSummarySchema } from './library';
 import { moduleInstanceSummarySchema, updateModuleBodyRequestSchema } from './modules';
 import {
   freezeStructureResponseDataSchema,
@@ -45,17 +45,17 @@ export const CONTRACT_REGISTRY = {
   'library:create': createContract(
     'library:create',
     emptyRequestSchema,
-    contractResponseSchema(librarySummarySchema.nullable()),
+    contractResponseSchema(librarySessionSummarySchema.nullable()),
   ),
   'library:open': createContract(
     'library:open',
     emptyRequestSchema,
-    contractResponseSchema(librarySummarySchema.nullable()),
+    contractResponseSchema(librarySessionSummarySchema.nullable()),
   ),
   'library:get-current': createContract(
     'library:get-current',
     emptyRequestSchema,
-    contractResponseSchema(librarySummarySchema.nullable()),
+    contractResponseSchema(librarySessionSummarySchema.nullable()),
   ),
   'books:list': createContract(
     'books:list',

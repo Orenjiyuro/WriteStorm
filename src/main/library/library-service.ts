@@ -9,7 +9,7 @@ import {
 } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
-import type { LibrarySummary } from '../../shared/contracts';
+import type { LibrarySessionSummary, LibrarySummary } from '../../shared/contracts';
 import type { LibraryId } from '../../shared/domain';
 import type { DomainErrorCode } from '../../shared/errors';
 import { APP_MIGRATIONS } from '../db/migrations';
@@ -28,6 +28,11 @@ import {
   createPreMigrationBackup,
   pruneMigrationBackups,
 } from './migration-backup';
+import {
+  createLibraryUnitOfWork,
+  type InternalLibrarySession,
+  type LibraryUnitOfWork,
+} from './library-unit-of-work';
 import {
   buildLibraryFolderPaths,
   createLibraryManifest,
@@ -64,15 +69,6 @@ export type CreateLibraryInput = {
 
 export type OpenLibraryInput = {
   readonly rootPath: string;
-};
-
-export type LibraryContext = {
-  readonly sessionId: string;
-  readonly summary: LibrarySummary;
-  readonly rootPath: string;
-  readonly manifestPath: string;
-  readonly databasePath: string;
-  readonly database: SqliteDatabase;
 };
 
 type LibraryIdentity = {
@@ -117,7 +113,7 @@ export class LibraryServiceError extends Error {
 }
 
 export class LibraryService {
-  private currentContext: LibraryContext | null = null;
+  private currentSession: InternalLibrarySession | null = null;
   private readonly appVersion: string;
   private readonly now: () => string;
   private readonly createLibraryId: () => LibraryId;
@@ -127,6 +123,7 @@ export class LibraryService {
   private readonly openDatabase: typeof openSqliteDatabase;
   private readonly migrateDatabase: typeof runMigrations;
   private readonly backupDatabase: typeof createPreMigrationBackup;
+  private readonly unitOfWork: LibraryUnitOfWork;
 
   constructor(options: LibraryServiceOptions) {
     this.appVersion = options.appVersion;
@@ -138,9 +135,10 @@ export class LibraryService {
     this.openDatabase = options.openDatabase ?? openSqliteDatabase;
     this.migrateDatabase = options.migrateDatabase ?? runMigrations;
     this.backupDatabase = options.backupDatabase ?? createPreMigrationBackup;
+    this.unitOfWork = createLibraryUnitOfWork(() => this.currentSession);
   }
 
-  create(input: CreateLibraryInput): LibrarySummary {
+  create(input: CreateLibraryInput): LibrarySessionSummary {
     return withLibraryServiceErrors(() => {
       const rootPath = path.resolve(input.rootPath);
       const paths = buildGuardedLibraryFolderPaths(rootPath);
@@ -179,7 +177,7 @@ export class LibraryService {
     });
   }
 
-  async open(input: OpenLibraryInput): Promise<LibrarySummary> {
+  async open(input: OpenLibraryInput): Promise<LibrarySessionSummary> {
     return withLibraryServiceErrorsAsync(async () => {
       const paths = buildGuardedLibraryFolderPaths(path.resolve(input.rootPath));
       readManifest(paths.manifestPath);
@@ -200,17 +198,17 @@ export class LibraryService {
     });
   }
 
-  getCurrent(): LibrarySummary | null {
-    return this.currentContext?.summary ?? null;
+  getCurrent(): LibrarySessionSummary | null {
+    return this.currentSession ? publicSessionSummary(this.currentSession) : null;
   }
 
-  getCurrentContext(): LibraryContext | null {
-    return this.currentContext;
+  getUnitOfWork(): LibraryUnitOfWork {
+    return this.unitOfWork;
   }
 
   closeCurrent(): void {
-    this.currentContext?.database.close();
-    this.currentContext = null;
+    this.currentSession?.database.close();
+    this.currentSession = null;
   }
 
   private openCreatedOrExisting(
@@ -221,7 +219,7 @@ export class LibraryService {
         readonly now: string;
       };
     },
-  ): LibrarySummary {
+  ): LibrarySessionSummary {
     const paths = buildGuardedLibraryFolderPaths(rootPath);
     if (!options.allowCreateDatabase && !existsSync(paths.databasePath)) {
       throw new LibraryServiceError('database_missing', 'SQLite database is missing for the selected library.', {
@@ -254,16 +252,16 @@ export class LibraryService {
       };
 
       this.closeCurrent();
-      this.currentContext = {
+      this.currentSession = {
         sessionId: this.createLibrarySessionId(),
-        summary,
+        library: summary,
         rootPath: paths.rootPath,
         manifestPath: paths.manifestPath,
         databasePath: paths.databasePath,
         database,
       };
 
-      return summary;
+      return publicSessionSummary(this.currentSession);
     } catch (error) {
       database.close();
       if (error instanceof LibraryServiceError) {
@@ -280,7 +278,7 @@ export class LibraryService {
   private async openExistingSafely(
     rootPath: string,
     initialProbe: Extract<LibraryDatabaseProbeResult, { readonly ok: true }>,
-  ): Promise<LibrarySummary> {
+  ): Promise<LibrarySessionSummary> {
     const paths = buildGuardedLibraryFolderPaths(rootPath);
     let database: SqliteDatabase;
     try {
@@ -336,15 +334,15 @@ export class LibraryService {
       };
 
       this.closeCurrent();
-      this.currentContext = {
+      this.currentSession = {
         sessionId: this.createLibrarySessionId(),
-        summary,
+        library: summary,
         rootPath: paths.rootPath,
         manifestPath: paths.manifestPath,
         databasePath: paths.databasePath,
         database,
       };
-      return summary;
+      return publicSessionSummary(this.currentSession);
     } catch (error) {
       database.close();
       if (error instanceof LibraryServiceError) throw error;
@@ -354,6 +352,13 @@ export class LibraryService {
       });
     }
   }
+}
+
+function publicSessionSummary(session: InternalLibrarySession): LibrarySessionSummary {
+  return {
+    sessionId: session.sessionId,
+    library: session.library,
+  };
 }
 
 function buildGuardedLibraryFolderPaths(rootPath: string) {

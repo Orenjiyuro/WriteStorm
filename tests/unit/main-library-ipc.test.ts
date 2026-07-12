@@ -68,18 +68,24 @@ describe('main library product IPC handlers', () => {
       await expect(ipcMain.invoke('library:create', {})).resolves.toEqual({
         ok: true,
         data: {
-          id: libraryId,
-          name: 'IPC Library',
-          rootPath,
-          schemaVersion: currentAppSchemaVersion,
-          appVersion: '0.1.0-test',
+          sessionId: expect.any(String),
+          library: {
+            id: libraryId,
+            name: 'IPC Library',
+            rootPath,
+            schemaVersion: currentAppSchemaVersion,
+            appVersion: '0.1.0-test',
+          },
         },
       });
       await expect(ipcMain.invoke('library:get-current', {})).resolves.toMatchObject({
         ok: true,
         data: {
-          id: libraryId,
-          rootPath,
+          sessionId: expect.any(String),
+          library: {
+            id: libraryId,
+            rootPath,
+          },
         },
       });
 
@@ -88,10 +94,13 @@ describe('main library product IPC handlers', () => {
       await expect(ipcMain.invoke('library:open', {})).resolves.toMatchObject({
         ok: true,
         data: {
-          id: libraryId,
-          name: 'IPC Library',
-          rootPath,
-          schemaVersion: currentAppSchemaVersion,
+          sessionId: expect.any(String),
+          library: {
+            id: libraryId,
+            name: 'IPC Library',
+            rootPath,
+            schemaVersion: currentAppSchemaVersion,
+          },
         },
       });
     } finally {
@@ -211,7 +220,7 @@ describe('main library product IPC handlers', () => {
       await expect(ipcMain.invoke('library:create', {})).resolves.toMatchObject({
         ok: true,
         data: {
-          rootPath,
+          library: { rootPath },
         },
       });
 

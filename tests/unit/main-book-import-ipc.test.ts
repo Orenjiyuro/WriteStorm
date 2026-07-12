@@ -88,8 +88,11 @@ describe('main book import IPC handlers', () => {
       await expect(ipcMain.invoke('library:create', {})).resolves.toMatchObject({
         ok: true,
         data: {
-          id: libraryId,
-          rootPath,
+          sessionId: expect.any(String),
+          library: {
+            id: libraryId,
+            rootPath,
+          },
         },
       });
 
@@ -286,13 +289,15 @@ describe('main book import IPC handlers', () => {
         }),
       });
       await ipcMain.invoke('library:create', {});
-      service.getCurrentContext()?.database.prepare(`
-        INSERT INTO jobs (
-          id, book_id, kind, state, completed_units, total_units,
-          payload_schema_version, payload_json, error_code, error_details_json, created_at, updated_at
-        )
-        VALUES (?, NULL, 'source_import', 'completed', 1, 1, 1, '{}', NULL, NULL, ?, ?)
-      `).run('job-existing', now, now);
+      service.getUnitOfWork().write((session) => {
+        session.database.prepare(`
+          INSERT INTO jobs (
+            id, book_id, kind, state, completed_units, total_units,
+            payload_schema_version, payload_json, error_code, error_details_json, created_at, updated_at
+          )
+          VALUES (?, NULL, 'source_import', 'completed', 1, 1, 1, '{}', NULL, NULL, ?, ?)
+        `).run('job-existing', now, now);
+      });
 
       await expect(ipcMain.invoke('books:import-source', {})).resolves.toMatchObject({
         ok: false,
@@ -343,12 +348,12 @@ describe('main book import IPC handlers', () => {
           createBookId: () => {
             if (!injected) {
               injected = true;
-              const database = service.getCurrentContext()!.database;
-              database.prepare(`
+              service.getUnitOfWork().write((session) => {
+                session.database.prepare(`
                 INSERT INTO books (id, title, created_at, updated_at)
                 VALUES (?, ?, ?, ?)
               `).run('book-race-existing', 'Existing Concurrent Book', now, now);
-              database.prepare(`
+                session.database.prepare(`
                 INSERT INTO source_texts (
                   id, book_id, format, content_hash, encoding, source_edition,
                   relative_path, imported_at, original_file_name, size_bytes
@@ -362,8 +367,9 @@ describe('main book import IPC handlers', () => {
                 'Concurrent Duplicate.md',
                 sourceBytes.byteLength,
               );
-              database.prepare('UPDATE books SET current_source_text_id = ? WHERE id = ?')
-                .run('source-race-existing', 'book-race-existing');
+                session.database.prepare('UPDATE books SET current_source_text_id = ? WHERE id = ?')
+                  .run('source-race-existing', 'book-race-existing');
+              });
             }
 
             return 'book-race-new' as BreakdownBookId;

@@ -43,11 +43,14 @@ describe('LibraryService create/open/current', () => {
       const summary = service.create({ rootPath, name: 'Local Library' });
 
       expect(summary).toEqual({
-        id: libraryId,
-        name: 'Local Library',
-        rootPath,
-        schemaVersion: currentAppSchemaVersion,
-        appVersion,
+        sessionId: expect.any(String),
+        library: {
+          id: libraryId,
+          name: 'Local Library',
+          rootPath,
+          schemaVersion: currentAppSchemaVersion,
+          appVersion,
+        },
       });
       expect(service.getCurrent()).toEqual(summary);
       expect(existsSync(path.join(rootPath, LIBRARY_MANIFEST_FILE_NAME))).toBe(true);
@@ -103,11 +106,14 @@ describe('LibraryService create/open/current', () => {
       const summary = await opener.open({ rootPath });
 
       expect(summary).toEqual({
-        id: libraryId,
-        name: 'Open Me',
-        rootPath,
-        schemaVersion: currentAppSchemaVersion,
-        appVersion,
+        sessionId: expect.any(String),
+        library: {
+          id: libraryId,
+          name: 'Open Me',
+          rootPath,
+          schemaVersion: currentAppSchemaVersion,
+          appVersion,
+        },
       });
       expect(opener.getCurrent()).toEqual(summary);
     } finally {

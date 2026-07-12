@@ -24,6 +24,11 @@ import {
   type LibraryDatabaseProbeResult,
 } from './library-database-probe';
 import {
+  buildPreMigrationBackupPath,
+  createPreMigrationBackup,
+  pruneMigrationBackups,
+} from './migration-backup';
+import {
   buildLibraryFolderPaths,
   createLibraryManifest,
   LIBRARY_DATABASE_FILE_NAME,
@@ -49,6 +54,7 @@ export type LibraryServiceOptions = {
   ) => LibraryDatabaseProbeResult;
   readonly openDatabase?: typeof openSqliteDatabase;
   readonly migrateDatabase?: typeof runMigrations;
+  readonly backupDatabase?: typeof createPreMigrationBackup;
 };
 
 export type CreateLibraryInput = {
@@ -85,6 +91,7 @@ export type LibraryServiceErrorReason =
   | 'database_open_failed'
   | 'library_identity_missing'
   | 'migration_failed'
+  | 'migration_backup_failed'
   | 'database_not_writestorm'
   | 'dev_schema_reset_required'
   | 'library_schema_incompatible'
@@ -119,6 +126,7 @@ export class LibraryService {
   private readonly probeDatabase: NonNullable<LibraryServiceOptions['probeDatabase']>;
   private readonly openDatabase: typeof openSqliteDatabase;
   private readonly migrateDatabase: typeof runMigrations;
+  private readonly backupDatabase: typeof createPreMigrationBackup;
 
   constructor(options: LibraryServiceOptions) {
     this.appVersion = options.appVersion;
@@ -129,6 +137,7 @@ export class LibraryService {
     this.probeDatabase = options.probeDatabase ?? probeLibraryDatabase;
     this.openDatabase = options.openDatabase ?? openSqliteDatabase;
     this.migrateDatabase = options.migrateDatabase ?? runMigrations;
+    this.backupDatabase = options.backupDatabase ?? createPreMigrationBackup;
   }
 
   create(input: CreateLibraryInput): LibrarySummary {
@@ -170,8 +179,8 @@ export class LibraryService {
     });
   }
 
-  open(input: OpenLibraryInput): LibrarySummary {
-    return withLibraryServiceErrors(() => {
+  async open(input: OpenLibraryInput): Promise<LibrarySummary> {
+    return withLibraryServiceErrorsAsync(async () => {
       const paths = buildGuardedLibraryFolderPaths(path.resolve(input.rootPath));
       readManifest(paths.manifestPath);
 
@@ -187,7 +196,7 @@ export class LibraryService {
         throw probeFailure(probeResult.error.code, probeResult.error.message);
       }
 
-      return this.openCreatedOrExisting(paths.rootPath, { allowCreateDatabase: false });
+      return this.openExistingSafely(paths.rootPath, probeResult);
     });
   }
 
@@ -267,6 +276,84 @@ export class LibraryService {
       });
     }
   }
+
+  private async openExistingSafely(
+    rootPath: string,
+    initialProbe: Extract<LibraryDatabaseProbeResult, { readonly ok: true }>,
+  ): Promise<LibrarySummary> {
+    const paths = buildGuardedLibraryFolderPaths(rootPath);
+    let database: SqliteDatabase;
+    try {
+      database = this.openDatabase(paths.databasePath);
+    } catch (error) {
+      throw new LibraryServiceError('database_open_failed', 'SQLite database could not be opened.', {
+        recoverable: true,
+        cause: error,
+      });
+    }
+
+    try {
+      if (initialProbe.appliedMigrationCount < this.migrations.length) {
+        const targetVersion = this.migrations.at(-1)?.id ?? initialProbe.currentSchemaVersion;
+        const targetPath = buildPreMigrationBackupPath({
+          backupsPath: paths.directories.backups,
+          fromVersion: initialProbe.currentSchemaVersion,
+          toVersion: targetVersion,
+          timestamp: this.now(),
+        });
+        try {
+          await this.backupDatabase(database, targetPath);
+          pruneMigrationBackups(paths.directories.backups, 3);
+        } catch (error) {
+          throw new LibraryServiceError(
+            'migration_backup_failed',
+            'Library migration backup failed.',
+            { recoverable: false, cause: error },
+          );
+        }
+      }
+
+      this.migrateDatabase(database, this.migrations);
+      const validation = this.probeDatabase(paths.databasePath, this.migrations);
+      if (!validation.ok) {
+        throw probeFailure(validation.error.code, validation.error.message);
+      }
+      if (validation.appliedMigrationCount !== this.migrations.length) {
+        throw new LibraryServiceError(
+          'library_schema_incompatible',
+          'Library migration history is incompatible.',
+          { recoverable: false },
+        );
+      }
+
+      const identity = readLibraryIdentity(database);
+      const summary: LibrarySummary = {
+        id: identity.id,
+        name: identity.name,
+        rootPath: paths.rootPath,
+        schemaVersion: getCurrentSchemaVersion(database),
+        appVersion: identity.appVersion,
+      };
+
+      this.closeCurrent();
+      this.currentContext = {
+        sessionId: this.createLibrarySessionId(),
+        summary,
+        rootPath: paths.rootPath,
+        manifestPath: paths.manifestPath,
+        databasePath: paths.databasePath,
+        database,
+      };
+      return summary;
+    } catch (error) {
+      database.close();
+      if (error instanceof LibraryServiceError) throw error;
+      throw new LibraryServiceError('migration_failed', 'Library migration failed.', {
+        recoverable: false,
+        cause: error,
+      });
+    }
+  }
 }
 
 function buildGuardedLibraryFolderPaths(rootPath: string) {
@@ -282,6 +369,7 @@ function buildGuardedLibraryFolderPaths(rootPath: string) {
       logs: resolveLibraryRelativePath(paths.rootPath, 'logs'),
       cache: resolveLibraryRelativePath(paths.rootPath, 'cache'),
       mirrors: resolveLibraryRelativePath(paths.rootPath, 'mirrors'),
+      backups: resolveLibraryRelativePath(paths.rootPath, 'backups'),
     },
   };
 }
@@ -426,6 +514,21 @@ function withLibraryServiceErrors<T>(operation: () => T): T {
       });
     }
 
+    throw error;
+  }
+}
+
+async function withLibraryServiceErrorsAsync<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (error instanceof LibraryServiceError) throw error;
+    if (error instanceof LibraryPathGuardError) {
+      throw new LibraryServiceError('path_guard_rejected', error.message, {
+        recoverable: true,
+        cause: error,
+      });
+    }
     throw error;
   }
 }

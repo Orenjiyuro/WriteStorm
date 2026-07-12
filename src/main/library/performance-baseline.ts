@@ -67,10 +67,11 @@ export const LIBRARY_PERFORMANCE_BASELINE_LIMITS_MS = {
   },
 } as const satisfies Record<LibraryPerformanceFixtureName, LibraryPerformanceOperationTimingsMs>;
 
-export function runLibraryPerformanceBaseline(
+export async function runLibraryPerformanceBaseline(
   options: LibraryPerformanceBaselineOptions,
-): LibraryPerformanceResult[] {
-  return LIBRARY_PERFORMANCE_FIXTURES.map((fixture) => {
+): Promise<LibraryPerformanceResult[]> {
+  const results: LibraryPerformanceResult[] = [];
+  for (const fixture of LIBRARY_PERFORMANCE_FIXTURES) {
     const migrations = createPerformanceFixtureMigrations(fixture);
     const migrationDatabasePath = path.join(
       options.rootParentPath,
@@ -93,7 +94,7 @@ export function runLibraryPerformanceBaseline(
       appVersion: options.appVersion,
       now: options.now,
     });
-    const open = measureDuration(() => opener.open({ rootPath: libraryRootPath }));
+    const open = await measureDurationAsync(() => opener.open({ rootPath: libraryRootPath }));
     opener.closeCurrent();
 
     const libraryDatabase = openSqliteDatabase(path.join(libraryRootPath, 'writestorm.sqlite'));
@@ -105,7 +106,7 @@ export function runLibraryPerformanceBaseline(
     benchmarkDatabase.close();
     libraryDatabase.close();
 
-    return {
+    results.push({
       fixture,
       timingsMs: {
         create,
@@ -114,8 +115,9 @@ export function runLibraryPerformanceBaseline(
         summaryQuery: summary.durationMs,
       },
       summary: summary.value,
-    };
-  });
+    });
+  }
+  return results;
 }
 
 function measureDuration(operation: () => unknown): number {
@@ -203,4 +205,10 @@ function readPerformanceFixtureSummary(
     itemCount: typeof itemCount === 'number' ? itemCount : 0,
     schemaVersion: getCurrentSchemaVersion(libraryDatabase),
   };
+}
+
+async function measureDurationAsync(operation: () => Promise<unknown>): Promise<number> {
+  const start = performance.now();
+  await operation();
+  return Math.max(0, performance.now() - start);
 }

@@ -13,6 +13,7 @@ import Database from 'better-sqlite3';
 import { afterEach, describe, expect, it } from 'vitest';
 import { APP_MIGRATIONS } from '../../../src/main/db/migrations';
 import { runMigrations } from '../../../src/main/db/migration-runner';
+import type { Migration } from '../../../src/main/db/migration-runner';
 import { WRITESTORM_SQLITE_APPLICATION_ID } from '../../../src/main/db/schema-identity';
 import { openSqliteDatabase } from '../../../src/main/db/sqlite';
 import {
@@ -43,6 +44,26 @@ describe('Library database read-only probe', () => {
         appVersion: '0.1.0-test',
         schemaEpoch: 2,
       },
+      appliedMigrationCount: 1,
+      currentSchemaVersion: 1,
+    });
+  });
+
+  it('accepts a strict contiguous migration prefix so pending migrations can be backed up', () => {
+    const databasePath = validBaselineDatabase();
+    const pendingRegistry = [
+      ...APP_MIGRATIONS,
+      {
+        id: 2,
+        name: 'pending_test_migration',
+        up() {},
+      },
+    ] satisfies readonly Migration[];
+
+    expect(probeLibraryDatabase(databasePath, pendingRegistry)).toMatchObject({
+      ok: true,
+      appliedMigrationCount: 1,
+      currentSchemaVersion: 1,
     });
   });
 
@@ -104,7 +125,7 @@ describe('Library database read-only probe', () => {
     expect(JSON.stringify(result)).not.toMatch(/database disk image|SQLITE_/i);
   });
 
-  it('probes before writable open/migration, preserves the current session, and bypasses create', () => {
+  it('probes before writable open/migration, preserves the current session, and bypasses create', async () => {
     const calls: string[] = [];
     const service = new LibraryService({
       appVersion: '0.1.0-test',
@@ -138,7 +159,7 @@ describe('Library database read-only probe', () => {
       other.create({ rootPath: rejectedRoot, name: 'Rejected' });
       other.closeCurrent();
 
-      expect(() => service.open({ rootPath: rejectedRoot })).toThrow(/obsolete schema epoch/i);
+      await expect(service.open({ rootPath: rejectedRoot })).rejects.toThrow(/obsolete schema epoch/i);
       expect(calls).toEqual(['probe']);
       expect(service.getCurrent()).toEqual(current);
     } finally {

@@ -107,7 +107,7 @@ function createLibraryProductHandlers(
     const rootPath = await library.selectOpenRoot();
 
     try {
-      const summary = rootPath ? library.service.open({ rootPath }) : null;
+      const summary = rootPath ? await library.service.open({ rootPath }) : null;
       if (summary) {
         onLibrarySessionChanged?.();
       }

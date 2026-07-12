@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 export const LIBRARY_MANIFEST_FILE_NAME = 'manifest.json';
 export const LIBRARY_DATABASE_FILE_NAME = 'writestorm.sqlite';
-export const LIBRARY_DIRECTORY_NAMES = ['source', 'exports', 'logs', 'cache', 'mirrors'] as const;
+export const LIBRARY_DIRECTORY_NAMES = ['source', 'exports', 'logs', 'cache', 'mirrors', 'backups'] as const;
 export const LIBRARY_MANIFEST_VERSION = 1;
 
 export type LibraryDirectoryName = (typeof LIBRARY_DIRECTORY_NAMES)[number];
@@ -58,6 +58,7 @@ export function buildLibraryFolderPaths(rootPath: string): LibraryFolderPaths {
       logs: path.join(resolvedRoot, 'logs'),
       cache: path.join(resolvedRoot, 'cache'),
       mirrors: path.join(resolvedRoot, 'mirrors'),
+      backups: path.join(resolvedRoot, 'backups'),
     },
   };
 }

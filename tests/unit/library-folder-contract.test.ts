@@ -15,7 +15,7 @@ describe('library folder contract', () => {
   it('defines the V1 library root layout without making manifest authoritative', () => {
     expect(LIBRARY_MANIFEST_FILE_NAME).toBe('manifest.json');
     expect(LIBRARY_DATABASE_FILE_NAME).toBe('writestorm.sqlite');
-    expect(LIBRARY_DIRECTORY_NAMES).toEqual(['source', 'exports', 'logs', 'cache', 'mirrors']);
+    expect(LIBRARY_DIRECTORY_NAMES).toEqual(['source', 'exports', 'logs', 'cache', 'mirrors', 'backups']);
 
     const rootPath = path.resolve('tmp', 'block6-library');
     const paths = buildLibraryFolderPaths(rootPath);
@@ -29,6 +29,7 @@ describe('library folder contract', () => {
       logs: path.join(rootPath, 'logs'),
       cache: path.join(rootPath, 'cache'),
       mirrors: path.join(rootPath, 'mirrors'),
+      backups: path.join(rootPath, 'backups'),
     });
   });
 

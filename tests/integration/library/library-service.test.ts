@@ -78,7 +78,7 @@ describe('LibraryService create/open/current', () => {
     }
   });
 
-  it('opens an existing library, runs migrations, and uses SQLite identity and schema authority', () => {
+  it('opens an existing library, runs migrations, and uses SQLite identity and schema authority', async () => {
     const rootPath = libraryRootPath();
     const creator = testLibraryService();
     creator.create({ rootPath, name: 'Open Me' });
@@ -100,7 +100,7 @@ describe('LibraryService create/open/current', () => {
     const opener = testLibraryService();
 
     try {
-      const summary = opener.open({ rootPath });
+      const summary = await opener.open({ rootPath });
 
       expect(summary).toEqual({
         id: libraryId,
@@ -115,7 +115,7 @@ describe('LibraryService create/open/current', () => {
     }
   });
 
-  it('rejects opening a library with missing contract directories', () => {
+  it('rejects opening a library with missing contract directories', async () => {
     const rootPath = libraryRootPath();
     const creator = testLibraryService();
     creator.create({ rootPath, name: 'Missing Directory' });
@@ -125,14 +125,14 @@ describe('LibraryService create/open/current', () => {
     const opener = testLibraryService();
 
     try {
-      expect(() => opener.open({ rootPath })).toThrow(/library folder is incomplete/i);
+      await expect(opener.open({ rootPath })).rejects.toThrow(/library folder is incomplete/i);
       expect(opener.getCurrent()).toBeNull();
     } finally {
       opener.closeCurrent();
     }
   });
 
-  it('maps read-only probe failures to stable library service errors', () => {
+  it('maps read-only probe failures to stable library service errors', async () => {
     const rootPath = libraryRootPath();
     const creator = testLibraryService();
     creator.create({ rootPath, name: 'Broken Database' });
@@ -144,14 +144,14 @@ describe('LibraryService create/open/current', () => {
     const opener = testLibraryService();
 
     try {
-      expect(() => opener.open({ rootPath })).toThrow(/Library database could not be validated/i);
+      await expect(opener.open({ rootPath })).rejects.toThrow(/Library database could not be validated/i);
       expect(opener.getCurrent()).toBeNull();
     } finally {
       opener.closeCurrent();
     }
   });
 
-  it('rejects opening a manifest-only folder without creating a replacement SQLite database', () => {
+  it('rejects opening a manifest-only folder without creating a replacement SQLite database', async () => {
     const rootPath = libraryRootPath();
     const creator = testLibraryService();
     creator.create({ rootPath, name: 'Broken Library' });
@@ -162,7 +162,7 @@ describe('LibraryService create/open/current', () => {
     const opener = testLibraryService();
 
     try {
-      expect(() => opener.open({ rootPath })).toThrow(/SQLite database is missing/i);
+      await expect(opener.open({ rootPath })).rejects.toThrow(/SQLite database is missing/i);
       expect(existsSync(databasePath)).toBe(false);
       expect(opener.getCurrent()).toBeNull();
     } finally {

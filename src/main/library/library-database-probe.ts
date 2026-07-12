@@ -16,6 +16,8 @@ export type LibraryDatabaseProbeResult =
         readonly appVersion: string;
         readonly schemaEpoch: number;
       };
+      readonly appliedMigrationCount: number;
+      readonly currentSchemaVersion: number;
     }
   | {
       readonly ok: false;
@@ -77,6 +79,8 @@ export function probeLibraryDatabase(
         appVersion: identity.appVersion,
         schemaEpoch: identity.schemaEpoch,
       },
+      appliedMigrationCount: migrationRows.length,
+      currentSchemaVersion: migrationRows.at(-1)?.id as number,
     };
   } catch {
     return rejected('LIBRARY_SCHEMA_INCOMPATIBLE', 'Library database could not be validated.');
@@ -104,7 +108,7 @@ function matchesMigrationRegistry(
   rows: Array<{ id: unknown; name: unknown }>,
   migrations: readonly Migration[],
 ): boolean {
-  return rows.length === migrations.length && rows.every((row, index) => (
+  return rows.length > 0 && rows.length <= migrations.length && rows.every((row, index) => (
     row.id === migrations[index]?.id && row.name === migrations[index]?.name
   ));
 }

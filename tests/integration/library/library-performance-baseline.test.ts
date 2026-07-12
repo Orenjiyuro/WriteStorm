@@ -22,9 +22,9 @@ afterEach(() => {
 });
 
 describe('Block 6 SQLite and migration performance baseline', () => {
-  it('records small and medium create/open/migration/summary-query timings under non-regression limits', () => {
+  it('records small and medium create/open/migration/summary-query timings under non-regression limits', async () => {
     const rootParentPath = tempDirectory('writestorm-library-performance-');
-    const results = runLibraryPerformanceBaseline({
+    const results = await runLibraryPerformanceBaseline({
       rootParentPath,
       appVersion: '0.1.0-test',
       now: () => '2026-07-09T00:00:00.000Z',
@@ -58,7 +58,9 @@ function tempDirectory(prefix: string): string {
   return tempDir;
 }
 
-function writePerformanceEvidence(results: ReturnType<typeof runLibraryPerformanceBaseline>): void {
+function writePerformanceEvidence(
+  results: Awaited<ReturnType<typeof runLibraryPerformanceBaseline>>,
+): void {
   const evidencePath = path.resolve('test-results/block6-performance-baseline/latest.json');
   mkdirSync(path.dirname(evidencePath), { recursive: true });
   writeFileSync(

@@ -211,3 +211,13 @@ Rules:
 - Block 8 pure detection and fixture assets remain protected by the ADR SHA-256 manifest. Its migration, persistence, Job wiring, and IPC wiring stay paused until Task 19.
 
 Full rationale and the preservation manifest: `docs/adr/0001-pre-release-schema-reset-and-table-admission.md`.
+
+## D014: Empty-Database Migration Replay And Deferred Schema Compatibility
+
+Decision: The complete canonical migration registry must support **empty-database migration replay** from a genuinely empty SQLite database with zero business rows. Fresh installation and the runtime-schema validator both depend on this property. A failing replay must identify the migration id and name; successful replay must reach the registry's final version, preserve the WriteStorm application ID and schema epoch, and pass resulting-schema validation without pre-seeded business fixtures or a final-schema projection.
+
+The production validator in Task 12R-A is authoritative only for the same SQLite runtime and canonical registry. **Cross-SQLite compatibility is not yet verified** and must not be claimed.
+
+The deferred **Schema Compatibility Gate** runs after Task 19 finalizes the V1 migration registry and before Task 20 full recertification. It must replace complete `sqlite_schema.sql` text equality as the final cross-version authority and cover structured columns, foreign keys, indexes, uniqueness, admitted tables/views/triggers, and semantically extracted CHECK constraints using real current-version and minimum-supported-version SQLite fixtures. Equivalent DDL formatting must be accepted and real semantic mutations rejected.
+
+No handwritten DDL tokenizer/parser is approved. Before this gate is implemented, the project must investigate a mature SQLite-dialect parser, separately request any dependency installation, or approve a design based on SQLite's own parsing capability or another controlled canonicalization. Regex, simple splitting, whitespace compression, and case folding are prohibited for CHECK parsing.

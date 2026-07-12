@@ -52,11 +52,11 @@ describe('source text import transaction', () => {
         },
         sourceText: sourceText.dto,
       });
-      expect(db.prepare('SELECT id, title, source_text_id FROM books').all()).toEqual([
+      expect(db.prepare('SELECT id, title, current_source_text_id FROM books').all()).toEqual([
         {
           id: 'book-1',
           title: 'Imported Book',
-          source_text_id: 'source-1',
+          current_source_text_id: 'source-1',
         },
       ]);
       expect(db.prepare('SELECT id, book_id, original_file_name, size_bytes FROM source_texts').all()).toEqual([
@@ -112,6 +112,59 @@ describe('source text import transaction', () => {
     }
   });
 
+  it('commits Book, SourceText, completed Job, and checkpoint atomically', () => {
+    const db = migratedDatabase();
+
+    try {
+      importBookWithSourceText(db, {
+        libraryId,
+        bookId: 'book-atomic' as BreakdownBookId,
+        title: 'Atomic Import',
+        sourceText: sourceTextMetadata({
+          bookId: 'book-atomic' as BreakdownBookId,
+          sourceTextId: 'source-atomic' as SourceTextId,
+        }),
+        job: {
+          sourceTextId: 'source-atomic' as SourceTextId,
+          summary: {
+            id: 'job-atomic' as JobId,
+            bookId: 'book-atomic' as BreakdownBookId,
+            state: 'completed',
+            title: 'Import source',
+            completedUnits: 1,
+            totalUnits: 1,
+            checkpointSummary: 'Source imported.',
+            failureReason: null,
+            updatedAt: importedAt,
+          },
+        },
+        updatedAt: importedAt,
+      });
+
+      expect(db.prepare('SELECT id, current_source_text_id FROM books').get()).toEqual({
+        id: 'book-atomic',
+        current_source_text_id: 'source-atomic',
+      });
+      expect(db.prepare('SELECT id, book_id FROM source_texts').get()).toEqual({
+        id: 'source-atomic',
+        book_id: 'book-atomic',
+      });
+      expect(db.prepare('SELECT id, kind, state, completed_units FROM jobs').get()).toEqual({
+        id: 'job-atomic',
+        kind: 'source_import',
+        state: 'completed',
+        completed_units: 1,
+      });
+      expect(db.prepare('SELECT job_id, sequence, kind FROM job_checkpoints').get()).toEqual({
+        job_id: 'job-atomic',
+        sequence: 1,
+        kind: 'source_import_completed',
+      });
+    } finally {
+      db.close();
+    }
+  });
+
   it('rejects duplicate source_text content hashes and rolls back the second book', () => {
     const db = migratedDatabase();
 
@@ -156,8 +209,11 @@ describe('source text import transaction', () => {
 
     try {
       db.prepare(`
-        INSERT INTO jobs (id, book_id, type, state, progress, payload_json, error_json, created_at, updated_at)
-        VALUES (?, NULL, 'source_import', 'completed', 1, '{}', NULL, ?, ?)
+        INSERT INTO jobs (
+          id, book_id, kind, state, completed_units, total_units,
+          payload_schema_version, payload_json, error_code, error_details_json, created_at, updated_at
+        )
+        VALUES (?, NULL, 'source_import', 'completed', 1, 1, 1, '{}', NULL, NULL, ?, ?)
       `).run('job-duplicate', importedAt, importedAt);
 
       expect(() => importBookWithSourceText(db, {

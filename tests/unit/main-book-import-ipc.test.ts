@@ -136,7 +136,7 @@ describe('main book import IPC handlers', () => {
         books: [{
           id: bookId,
           title: 'Fixture Source',
-          source_text_id: sourceTextId,
+          current_source_text_id: sourceTextId,
         }],
         sourceTexts: [{
           id: sourceTextId,
@@ -287,8 +287,11 @@ describe('main book import IPC handlers', () => {
       });
       await ipcMain.invoke('library:create', {});
       service.getCurrentContext()?.database.prepare(`
-        INSERT INTO jobs (id, book_id, type, state, progress, payload_json, error_json, created_at, updated_at)
-        VALUES (?, NULL, 'source_import', 'completed', 1, '{}', NULL, ?, ?)
+        INSERT INTO jobs (
+          id, book_id, kind, state, completed_units, total_units,
+          payload_schema_version, payload_json, error_code, error_details_json, created_at, updated_at
+        )
+        VALUES (?, NULL, 'source_import', 'completed', 1, 1, 1, '{}', NULL, NULL, ?, ?)
       `).run('job-existing', now, now);
 
       await expect(ipcMain.invoke('books:import-source', {})).resolves.toMatchObject({
@@ -359,7 +362,7 @@ describe('main book import IPC handlers', () => {
                 'Concurrent Duplicate.md',
                 sourceBytes.byteLength,
               );
-              database.prepare('UPDATE books SET source_text_id = ? WHERE id = ?')
+              database.prepare('UPDATE books SET current_source_text_id = ? WHERE id = ?')
                 .run('source-race-existing', 'book-race-existing');
             }
 
@@ -385,7 +388,7 @@ describe('main book import IPC handlers', () => {
         books: [{
           id: 'book-race-existing',
           title: 'Existing Concurrent Book',
-          source_text_id: 'source-race-existing',
+          current_source_text_id: 'source-race-existing',
         }],
         sourceTexts: [{
           id: 'source-race-existing',
@@ -610,7 +613,7 @@ function readImportRows(rootPath: string) {
 
   try {
     return {
-      books: database.prepare('SELECT id, title, source_text_id FROM books ORDER BY id').all(),
+      books: database.prepare('SELECT id, title, current_source_text_id FROM books ORDER BY id').all(),
       sourceTexts: database.prepare(`
         SELECT id, book_id, original_file_name, relative_path
         FROM source_texts

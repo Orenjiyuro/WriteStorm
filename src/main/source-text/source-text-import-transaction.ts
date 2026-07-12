@@ -66,7 +66,7 @@ export function importBookWithSourceText(
 
     database.prepare(`
       UPDATE books
-      SET source_text_id = ?, updated_at = ?
+      SET current_source_text_id = ?, updated_at = ?
       WHERE id = ?
     `).run(input.sourceText.dto.id, input.updatedAt, input.bookId);
 
@@ -75,20 +75,41 @@ export function importBookWithSourceText(
         INSERT INTO jobs (
           id,
           book_id,
-          type,
+          kind,
           state,
-          progress,
+          completed_units,
+          total_units,
+          payload_schema_version,
           payload_json,
-          error_json,
+          error_code,
+          error_details_json,
           created_at,
           updated_at
         )
-        VALUES (?, ?, 'source_import', 'completed', 1, ?, NULL, ?, ?)
+        VALUES (?, ?, 'source_import', 'completed', 1, 1, 1, ?, NULL, NULL, ?, ?)
       `).run(
         input.job.summary.id,
         input.job.summary.bookId,
         JSON.stringify({ sourceTextId: input.job.sourceTextId }),
         input.job.summary.updatedAt,
+        input.job.summary.updatedAt,
+      );
+
+      database.prepare(`
+        INSERT INTO job_checkpoints (
+          id,
+          job_id,
+          sequence,
+          kind,
+          payload_schema_version,
+          payload_json,
+          created_at
+        )
+        VALUES (?, ?, 1, 'source_import_completed', 1, ?, ?)
+      `).run(
+        `${input.job.summary.id}:1`,
+        input.job.summary.id,
+        JSON.stringify({ sourceTextId: input.job.sourceTextId }),
         input.job.summary.updatedAt,
       );
     }

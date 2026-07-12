@@ -249,19 +249,17 @@ function listBooksForCurrentLibrary(service: LibraryService): ContractResponse<'
     SELECT
       books.id AS id,
       books.title AS title,
-      books.source_text_id AS sourceTextId,
+      books.current_source_text_id AS sourceTextId,
       source_texts.source_edition AS sourceTextEdition,
-      books.structure_edition AS structureEdition,
       books.updated_at AS updatedAt
     FROM books
-    LEFT JOIN source_texts ON source_texts.id = books.source_text_id
+    LEFT JOIN source_texts ON source_texts.id = books.current_source_text_id
     ORDER BY books.updated_at DESC, books.id ASC
   `).all() as Array<{
     id: string;
     title: string;
     sourceTextId: string | null;
     sourceTextEdition: number | null;
-    structureEdition: number;
     updatedAt: string;
   }>;
 
@@ -271,7 +269,7 @@ function listBooksForCurrentLibrary(service: LibraryService): ContractResponse<'
     title: row.title,
     sourceTextId: row.sourceTextId as SourceTextId | null,
     sourceTextEdition: row.sourceTextEdition,
-    structureEdition: row.structureEdition === 0 ? null : row.structureEdition,
+    structureEdition: null,
     updatedAt: row.updatedAt,
   }));
 

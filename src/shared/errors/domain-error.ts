@@ -5,6 +5,7 @@ export const DOMAIN_ERROR_CODES = [
   'UNTRUSTED_IPC_SENDER',
   'LIBRARY_ERROR',
   'IMPORT_ERROR',
+  'STRUCTURE_ERROR',
   'INTERNAL_ERROR',
 ] as const;
 

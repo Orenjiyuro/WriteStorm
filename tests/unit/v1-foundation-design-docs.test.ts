@@ -25,4 +25,15 @@ describe('V1 foundation decisions', () => {
     expect(adr).toContain('tests/fixtures/structure/structure-detection-fixtures.ts');
     expect(adr).toMatch(/SHA-256/i);
   });
+
+  it('requires both clean HEAD and preserved-snapshot checkpoint verification', () => {
+    const adr = readFileSync(
+      'docs/adr/0001-pre-release-schema-reset-and-table-admission.md',
+      'utf8',
+    );
+
+    expect(adr).toContain('HEAD-only clean archive');
+    expect(adr).toContain('HEAD + preserved snapshot');
+    expect(adr).toContain('cannot prove that the commit is self-contained');
+  });
 });

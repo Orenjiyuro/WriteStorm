@@ -16,6 +16,7 @@ WriteStorm has no real user library that requires compatibility or migration. Th
 - Freeze the minimum complete Job and JobCheckpoint core now because Block 7 already has a real import Job write path. Job transitions belong to JobService, not IPC adapters or repositories.
 - Before the first external alpha or release tag, unpublished migration sources may be reset as a unit. After that publication boundary, **published migrations are immutable** and schema evolution is forward-only with a pre-migration snapshot.
 - Pause Block 8 migration, persistence, Job wiring, and IPC wiring until Task 19 reconnects them through the new foundation. Preserve the pure detection, confidence, validation, fixture, performance-fixture, and detection worker-protocol assets listed below.
+- When an execution worktree contains a preserved dirty snapshot, every checkpoint must verify both a **HEAD-only clean archive** and **HEAD + preserved snapshot**. Verifying only the dirty worktree cannot prove that the commit is self-contained.
 
 ## Consequences
 

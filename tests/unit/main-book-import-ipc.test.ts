@@ -55,6 +55,12 @@ afterEach(() => {
 });
 
 describe('main book import IPC handlers', () => {
+  it('delegates persisted book listing to BookService', () => {
+    const source = readFileSync(path.resolve('src/main/books/book-import-ipc.ts'), 'utf8');
+    expect(source).not.toMatch(/SELECT[\s\S]*FROM books/i);
+    expect(source).toContain('BookService');
+  });
+
   it('imports a txt/md source through a main-side dialog selection and writes SQLite plus copied source', async () => {
     const rootPath = libraryRootPath();
     const sourcePath = fixtureSourceFile('Fixture Source.md', '# Chapter 1\nImported text.\n');

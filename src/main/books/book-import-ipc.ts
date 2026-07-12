@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { rmSync } from 'node:fs';
 import path from 'node:path';
-import type { BookSummary, ContractRequest, ContractResponse, JobSummary } from '../../shared/contracts';
+import type { ContractRequest, ContractResponse, JobSummary } from '../../shared/contracts';
 import type {
   BreakdownBookId,
   JobId,
@@ -10,6 +10,7 @@ import type {
 import { createDomainError } from '../../shared/errors';
 import type { LibraryService } from '../library/library-service';
 import { LibraryUnitOfWorkError } from '../library/library-unit-of-work';
+import { BookService, BookServiceError } from './book-service';
 import {
   type ImportFileDialogOptions,
   type ImportFileDialogResult,
@@ -46,6 +47,7 @@ export type BookImportIpcOptions = {
 
 export function createBookImportIpcDependencies(options: BookImportIpcOptions): BookImportIpcDependencies {
   const unitOfWork = options.service.getUnitOfWork();
+  const bookService = new BookService({ libraryService: options.service });
   const now = options.now ?? (() => new Date().toISOString());
   const nowMs = options.nowMs ?? (() => Date.now());
   const createBookId = options.createBookId ?? (() => randomUUID() as BreakdownBookId);
@@ -58,7 +60,7 @@ export function createBookImportIpcDependencies(options: BookImportIpcOptions): 
   });
 
   return {
-    list: () => listBooksForCurrentLibrary(options.service),
+    list: () => listBooks(bookService),
     clearPendingImports: () => pendingImports.clearAll(),
     importSource: async (request) => {
       const current = options.service.getCurrent();
@@ -240,57 +242,24 @@ function normalizeTitleOverride(title: string | undefined): string | undefined {
   return trimmedTitle ? trimmedTitle : undefined;
 }
 
-function listBooksForCurrentLibrary(service: LibraryService): ContractResponse<'books:list'> {
-  const current = service.getCurrent();
-
-  if (!current) {
+function listBooks(service: BookService): ContractResponse<'books:list'> {
+  try {
+    return {
+      ok: true,
+      data: service.list(),
+    };
+  } catch (error) {
+    if (!(error instanceof BookServiceError)) throw error;
     return {
       ok: false,
       error: createDomainError({
         code: 'LIBRARY_ERROR',
-        message: 'Open or create a library before listing books.',
+        message: error.message,
         recoverable: true,
-        details: {
-          reason: 'no_current_library',
-        },
+        details: { reason: error.reason },
       }),
     };
   }
-
-  return service.getUnitOfWork().read((session) => {
-    const rows = session.database.prepare(`
-    SELECT
-      books.id AS id,
-      books.title AS title,
-      books.current_source_text_id AS sourceTextId,
-      source_texts.source_edition AS sourceTextEdition,
-      books.updated_at AS updatedAt
-    FROM books
-    LEFT JOIN source_texts ON source_texts.id = books.current_source_text_id
-    ORDER BY books.updated_at DESC, books.id ASC
-  `).all() as Array<{
-    id: string;
-    title: string;
-    sourceTextId: string | null;
-    sourceTextEdition: number | null;
-    updatedAt: string;
-  }>;
-
-    const books: BookSummary[] = rows.map((row) => ({
-    id: row.id as BreakdownBookId,
-    libraryId: session.library.id,
-    title: row.title,
-    sourceTextId: row.sourceTextId as SourceTextId | null,
-    sourceTextEdition: row.sourceTextEdition,
-    structureEdition: null,
-    updatedAt: row.updatedAt,
-  }));
-
-    return {
-      ok: true,
-      data: books,
-    };
-  });
 }
 
 function buildCompletedImportJob(input: {

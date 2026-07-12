@@ -132,7 +132,7 @@ describe('LibraryService create/open/current', () => {
     }
   });
 
-  it('maps SQLite open failures to stable library service errors', () => {
+  it('maps read-only probe failures to stable library service errors', () => {
     const rootPath = libraryRootPath();
     const creator = testLibraryService();
     creator.create({ rootPath, name: 'Broken Database' });
@@ -144,7 +144,7 @@ describe('LibraryService create/open/current', () => {
     const opener = testLibraryService();
 
     try {
-      expect(() => opener.open({ rootPath })).toThrow(/SQLite database could not be opened/i);
+      expect(() => opener.open({ rootPath })).toThrow(/Library database could not be validated/i);
       expect(opener.getCurrent()).toBeNull();
     } finally {
       opener.closeCurrent();

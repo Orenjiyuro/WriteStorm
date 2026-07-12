@@ -11,6 +11,7 @@ import {
   LIBRARY_PERFORMANCE_BASELINE_LIMITS_MS,
   runLibraryPerformanceBaseline,
 } from '../../../src/main/library/performance-baseline';
+import { APP_MIGRATIONS } from '../../../src/main/db/migrations';
 
 const tempDirs: string[] = [];
 
@@ -31,6 +32,7 @@ describe('Block 6 SQLite and migration performance baseline', () => {
     writePerformanceEvidence(results);
 
     expect(results.map((result) => result.fixture.name)).toEqual(['small', 'medium']);
+    expect(APP_MIGRATIONS).toHaveLength(1);
 
     for (const result of results) {
       const limits = LIBRARY_PERFORMANCE_BASELINE_LIMITS_MS[result.fixture.name];

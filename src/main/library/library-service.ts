@@ -11,6 +11,7 @@ import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import type { LibrarySummary } from '../../shared/contracts';
 import type { LibraryId } from '../../shared/domain';
+import type { DomainErrorCode } from '../../shared/errors';
 import { APP_MIGRATIONS } from '../db/migrations';
 import {
   getCurrentSchemaVersion,
@@ -18,6 +19,10 @@ import {
   type Migration,
 } from '../db/migration-runner';
 import { openSqliteDatabase, type SqliteDatabase } from '../db/sqlite';
+import {
+  probeLibraryDatabase,
+  type LibraryDatabaseProbeResult,
+} from './library-database-probe';
 import {
   buildLibraryFolderPaths,
   createLibraryManifest,
@@ -38,6 +43,12 @@ export type LibraryServiceOptions = {
   readonly createLibraryId?: () => LibraryId;
   readonly createLibrarySessionId?: () => string;
   readonly migrations?: readonly Migration[];
+  readonly probeDatabase?: (
+    databasePath: string,
+    migrations: readonly Migration[],
+  ) => LibraryDatabaseProbeResult;
+  readonly openDatabase?: typeof openSqliteDatabase;
+  readonly migrateDatabase?: typeof runMigrations;
 };
 
 export type CreateLibraryInput = {
@@ -74,6 +85,9 @@ export type LibraryServiceErrorReason =
   | 'database_open_failed'
   | 'library_identity_missing'
   | 'migration_failed'
+  | 'database_not_writestorm'
+  | 'dev_schema_reset_required'
+  | 'library_schema_incompatible'
   | 'path_guard_rejected';
 
 export class LibraryServiceError extends Error {
@@ -102,6 +116,9 @@ export class LibraryService {
   private readonly createLibraryId: () => LibraryId;
   private readonly createLibrarySessionId: () => string;
   private readonly migrations: readonly Migration[];
+  private readonly probeDatabase: NonNullable<LibraryServiceOptions['probeDatabase']>;
+  private readonly openDatabase: typeof openSqliteDatabase;
+  private readonly migrateDatabase: typeof runMigrations;
 
   constructor(options: LibraryServiceOptions) {
     this.appVersion = options.appVersion;
@@ -109,6 +126,9 @@ export class LibraryService {
     this.createLibraryId = options.createLibraryId ?? (() => randomUUID() as LibraryId);
     this.createLibrarySessionId = options.createLibrarySessionId ?? randomUUID;
     this.migrations = options.migrations ?? APP_MIGRATIONS;
+    this.probeDatabase = options.probeDatabase ?? probeLibraryDatabase;
+    this.openDatabase = options.openDatabase ?? openSqliteDatabase;
+    this.migrateDatabase = options.migrateDatabase ?? runMigrations;
   }
 
   create(input: CreateLibraryInput): LibrarySummary {
@@ -162,6 +182,11 @@ export class LibraryService {
       }
       assertExistingLibraryFolderContract(paths);
 
+      const probeResult = this.probeDatabase(paths.databasePath, this.migrations);
+      if (!probeResult.ok) {
+        throw probeFailure(probeResult.error.code, probeResult.error.message);
+      }
+
       return this.openCreatedOrExisting(paths.rootPath, { allowCreateDatabase: false });
     });
   }
@@ -197,7 +222,7 @@ export class LibraryService {
 
     let database: SqliteDatabase;
     try {
-      database = openSqliteDatabase(paths.databasePath);
+      database = this.openDatabase(paths.databasePath);
     } catch (error) {
       throw new LibraryServiceError('database_open_failed', 'SQLite database could not be opened.', {
         recoverable: true,
@@ -206,7 +231,7 @@ export class LibraryService {
     }
 
     try {
-      runMigrations(database, this.migrations);
+      this.migrateDatabase(database, this.migrations);
       if (options.createIdentity) {
         writeLibraryIdentity(database, options.createIdentity);
       }
@@ -367,6 +392,23 @@ function readManifest(manifestPath: string): LibraryManifest {
 
 function writeManifest(manifestPath: string, manifest: LibraryManifest): void {
   writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+}
+
+function probeFailure(code: DomainErrorCode, message: string): LibraryServiceError {
+  const reasonByCode = {
+    LIBRARY_DATABASE_NOT_WRITESTORM: 'database_not_writestorm',
+    DEV_SCHEMA_RESET_REQUIRED: 'dev_schema_reset_required',
+    LIBRARY_SCHEMA_INCOMPATIBLE: 'library_schema_incompatible',
+  } as const;
+  const reason = reasonByCode[code as keyof typeof reasonByCode];
+
+  if (!reason) {
+    return new LibraryServiceError('library_schema_incompatible', message, { recoverable: false });
+  }
+
+  return new LibraryServiceError(reason, message, {
+    recoverable: code !== 'LIBRARY_SCHEMA_INCOMPATIBLE',
+  });
 }
 
 function withLibraryServiceErrors<T>(operation: () => T): T {

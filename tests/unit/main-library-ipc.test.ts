@@ -232,7 +232,7 @@ describe('main library product IPC handlers', () => {
     }
   });
 
-  it('maps SQLite open failures on library open to LIBRARY_ERROR responses', async () => {
+  it('maps read-only probe failures on library open to LIBRARY_ERROR responses', async () => {
     const ipcMain = new MockIpcMain();
     const rootPath = libraryRootPath();
     const service = new LibraryService({
@@ -260,11 +260,11 @@ describe('main library product IPC handlers', () => {
         ok: false,
         error: {
           code: 'LIBRARY_ERROR',
-          message: 'SQLite database could not be opened.',
-          recoverable: true,
+          message: 'Library database could not be validated.',
+          recoverable: false,
           details: {
             channel: 'library:open',
-            reason: 'database_open_failed',
+            reason: 'library_schema_incompatible',
           },
         },
       });

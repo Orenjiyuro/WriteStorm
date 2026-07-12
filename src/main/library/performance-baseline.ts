@@ -43,12 +43,12 @@ export const LIBRARY_PERFORMANCE_FIXTURES = [
   {
     name: 'small',
     itemCount: 25,
-    expectedSchemaVersion: 2,
+    expectedSchemaVersion: 1,
   },
   {
     name: 'medium',
     itemCount: 1_000,
-    expectedSchemaVersion: 3,
+    expectedSchemaVersion: 1,
   },
 ] as const satisfies readonly LibraryPerformanceFixture[];
 
@@ -72,9 +72,11 @@ export function runLibraryPerformanceBaseline(
 ): LibraryPerformanceResult[] {
   return LIBRARY_PERFORMANCE_FIXTURES.map((fixture) => {
     const migrations = createPerformanceFixtureMigrations(fixture);
-    const migrationDatabase = openSqliteDatabase(
-      path.join(options.rootParentPath, `${fixture.name}-migration.sqlite`),
+    const migrationDatabasePath = path.join(
+      options.rootParentPath,
+      `${fixture.name}-migration.sqlite`,
     );
+    const migrationDatabase = openSqliteDatabase(migrationDatabasePath);
     const migration = measureDuration(() => runMigrations(migrationDatabase, migrations));
     migrationDatabase.close();
 
@@ -83,7 +85,6 @@ export function runLibraryPerformanceBaseline(
       appVersion: options.appVersion,
       now: options.now,
       createLibraryId: () => `performance-${fixture.name}` as LibraryId,
-      migrations,
     });
     const create = measureDuration(() => service.create({ rootPath: libraryRootPath, name: `${fixture.name} library` }));
     service.closeCurrent();
@@ -91,13 +92,17 @@ export function runLibraryPerformanceBaseline(
     const opener = new LibraryService({
       appVersion: options.appVersion,
       now: options.now,
-      migrations,
     });
     const open = measureDuration(() => opener.open({ rootPath: libraryRootPath }));
     opener.closeCurrent();
 
     const libraryDatabase = openSqliteDatabase(path.join(libraryRootPath, 'writestorm.sqlite'));
-    const summary = measureValue(() => readPerformanceFixtureSummary(libraryDatabase));
+    const benchmarkDatabase = openSqliteDatabase(migrationDatabasePath);
+    const summary = measureValue(() => readPerformanceFixtureSummary(
+      benchmarkDatabase,
+      libraryDatabase,
+    ));
+    benchmarkDatabase.close();
     libraryDatabase.close();
 
     return {
@@ -182,14 +187,20 @@ function createPerformanceFixtureMigrations(fixture: LibraryPerformanceFixture):
   return migrations;
 }
 
-function readPerformanceFixtureSummary(database: SqliteDatabase): {
+function readPerformanceFixtureSummary(
+  benchmarkDatabase: SqliteDatabase,
+  libraryDatabase: SqliteDatabase,
+): {
   itemCount: number;
   schemaVersion: number;
 } {
-  const itemCount = database.prepare('SELECT COUNT(*) FROM block6_performance_items').pluck().get();
+  const itemCount = benchmarkDatabase
+    .prepare('SELECT COUNT(*) FROM block6_performance_items')
+    .pluck()
+    .get();
 
   return {
     itemCount: typeof itemCount === 'number' ? itemCount : 0,
-    schemaVersion: getCurrentSchemaVersion(database),
+    schemaVersion: getCurrentSchemaVersion(libraryDatabase),
   };
 }

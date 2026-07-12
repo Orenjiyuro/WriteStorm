@@ -30,12 +30,13 @@ describe('Block 6 native SQLite boundary', () => {
     expect(forgeConfig).toContain("unpack: '**/*.node'");
   });
 
-  it('keeps direct better-sqlite3 imports inside src/main/db only', () => {
+  it('keeps direct better-sqlite3 imports inside DB adapters and the read-only library probe', () => {
+    const readOnlyProbePath = path.join(srcDir, 'main', 'library', 'library-database-probe.ts');
     const offenders = sourceFiles(srcDir).filter((filePath) => {
       const source = readFileSync(filePath, 'utf8');
       const importsBetterSqlite = importSpecifiers(source).some((specifier) => specifier === 'better-sqlite3');
 
-      return importsBetterSqlite && !isInside(filePath, mainDbDir);
+      return importsBetterSqlite && !isInside(filePath, mainDbDir) && filePath !== readOnlyProbePath;
     });
 
     expect(offenders.map((filePath) => path.relative(rootDir, filePath))).toEqual([]);

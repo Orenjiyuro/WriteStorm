@@ -55,12 +55,12 @@ test('imports a txt/md source through the packaged desktop entry using a main-pr
   expect(importRows.books).toEqual([{
     id: expect.any(String),
     title: 'Packaged Fixture',
-    source_text_id: expect.any(String),
+    current_source_text_id: expect.any(String),
   }]);
   expect(importRows.sourceTexts).toEqual([{
-    id: importRows.books[0].source_text_id,
+    id: importRows.books[0].current_source_text_id,
     original_file_name: 'Packaged Fixture.md',
-    relative_path: `source/${importRows.books[0].source_text_id}/Packaged Fixture.md`,
+    relative_path: `source/${importRows.books[0].current_source_text_id}/Packaged Fixture.md`,
   }]);
   const copiedPath = path.join(libraryRoot, importRows.sourceTexts[0].relative_path);
   expect(existsSync(copiedPath)).toBe(true);
@@ -170,7 +170,7 @@ function readImportRows(libraryRoot: string): {
   books: Array<{
     id: string;
     title: string;
-    source_text_id: string;
+    current_source_text_id: string;
   }>;
   sourceTexts: Array<{
     id: string;
@@ -185,10 +185,14 @@ function readImportRows(libraryRoot: string): {
 
   try {
     return {
-      books: database.prepare('SELECT id, title, source_text_id FROM books ORDER BY id').all() as Array<{
+      books: database.prepare(`
+        SELECT id, title, current_source_text_id
+        FROM books
+        ORDER BY id
+      `).all() as Array<{
         id: string;
         title: string;
-        source_text_id: string;
+        current_source_text_id: string;
       }>,
       sourceTexts: database.prepare(`
         SELECT id, original_file_name, relative_path

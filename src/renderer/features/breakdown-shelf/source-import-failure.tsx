@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
-import type { DomainError } from '../shared/errors';
-import { rendererText } from './i18n';
+import type { DomainError } from '../../../shared/errors';
+import { rendererText } from '../../i18n';
 
 export type SourceImportFailureAction =
   | {

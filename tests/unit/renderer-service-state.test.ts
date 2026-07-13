@@ -137,7 +137,7 @@ describe('renderer service state', () => {
   });
 
   it('does not rebuild persisted business state by appending import results locally', () => {
-    const appSource = readFileSync('src/renderer/App.tsx', 'utf8');
+    const appSource = readFileSync('src/renderer/app/AppRouter.tsx', 'utf8');
 
     expect(appSource).not.toContain('useState<ImportSourceResult[]>');
     expect(appSource).not.toMatch(/setSourceImportResults\s*\(\s*\(?.*=>\s*\[\.\.\./s);

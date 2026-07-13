@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createSourceImportFailureViewModel,
   SourceImportFailurePanel,
-} from '../../src/renderer/source-import-failure';
+} from '../../src/renderer/features/breakdown-shelf/source-import-failure';
 import type { DomainError } from '../../src/shared/errors';
 
 describe('source import failure UI', () => {
@@ -153,7 +153,10 @@ describe('source import failure UI', () => {
   });
 
   it('keeps source import and opened-book UI copy in the renderer i18n catalog', () => {
-    const failureSource = readFileSync(path.resolve('src/renderer/source-import-failure.tsx'), 'utf8');
+    const failureSource = readFileSync(
+      path.resolve('src/renderer/features/breakdown-shelf/source-import-failure.tsx'),
+      'utf8',
+    );
     const appSource = readFileSync(path.resolve('src/renderer/App.tsx'), 'utf8');
 
     expect(failureSource).not.toContain('Open existing book');

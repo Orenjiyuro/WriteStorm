@@ -149,12 +149,15 @@ describe('process import boundaries', () => {
 
 describe('renderer a11y and i18n shell baseline', () => {
   it('keeps visible renderer copy in the replaceable resource layer', () => {
-    const appSource = readFileSync(path.join(rootDir, 'src/renderer/App.tsx'), 'utf8');
+    const productRouteSource = readFileSync(
+      path.join(rootDir, 'src/renderer/routes/NoLibraryRoute.tsx'),
+      'utf8',
+    );
     const i18nSource = readFileSync(path.join(rootDir, 'src/renderer/i18n.ts'), 'utf8');
 
-    expect(appSource).toContain('rendererText');
-    expect(appSource).not.toContain('No library open');
-    expect(appSource).not.toContain('Create or open a local library');
+    expect(productRouteSource).toContain('rendererText');
+    expect(productRouteSource).not.toContain('No library open');
+    expect(productRouteSource).not.toContain('Create or open a local library');
     expect(i18nSource).toContain('No library open');
     expect(i18nSource).toContain('rendererFormats');
   });

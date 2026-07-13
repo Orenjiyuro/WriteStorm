@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { App } from '../../src/renderer/App';
+import { DiagnosticsRoute } from '../../src/renderer/routes/DiagnosticsRoute';
 import {
   ANALYSIS_MODULE_DEFINITIONS,
   ANALYSIS_SCOPE_EXCLUDED_TARGETS,
@@ -9,7 +9,7 @@ import {
 
 describe('renderer analysis contract readout', () => {
   it('shows the Block 3 module shell from shared domain contracts', () => {
-    const markup = renderToStaticMarkup(<App />);
+    const markup = renderToStaticMarkup(<DiagnosticsRoute />);
 
     expect(markup).toContain('Analysis module contract readout');
     expect(markup).toContain('Source: shared domain contract');
@@ -22,7 +22,7 @@ describe('renderer analysis contract readout', () => {
   });
 
   it('shows AI constraint summary as a disabled secondary system page placeholder', () => {
-    const markup = renderToStaticMarkup(<App />);
+    const markup = renderToStaticMarkup(<DiagnosticsRoute />);
     const aiConstraintSummary = ANALYSIS_SECONDARY_SYSTEM_PAGES[0];
 
     expect(markup).toContain(aiConstraintSummary.name);
@@ -33,7 +33,7 @@ describe('renderer analysis contract readout', () => {
   });
 
   it('shows unsupported scope and target reasons from the contract exclusions', () => {
-    const markup = renderToStaticMarkup(<App />);
+    const markup = renderToStaticMarkup(<DiagnosticsRoute />);
 
     expect(markup).toContain('Unsupported scope and target exclusions');
 

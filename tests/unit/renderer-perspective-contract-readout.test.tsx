@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { App } from '../../src/renderer/App';
+import { DiagnosticsRoute } from '../../src/renderer/routes/DiagnosticsRoute';
 import {
   PERSPECTIVE_DEFINITIONS,
   PERSPECTIVE_IDENTITY_CONTRACT,
@@ -9,7 +9,7 @@ import {
 
 describe('renderer perspective contract readout', () => {
   it('shows the five built-in perspectives as a no-library contract readout', () => {
-    const markup = renderToStaticMarkup(<App />);
+    const markup = renderToStaticMarkup(<DiagnosticsRoute />);
 
     expect(markup).toContain('Perspective contract readout');
     expect(markup).toContain('Source: shared perspective domain contract');
@@ -23,7 +23,7 @@ describe('renderer perspective contract readout', () => {
   });
 
   it('makes the derived-view boundary visible instead of presenting an eighth module', () => {
-    const markup = renderToStaticMarkup(<App />);
+    const markup = renderToStaticMarkup(<DiagnosticsRoute />);
 
     expect(markup).toContain('Derived view, not an AnalysisModule');
     expect(markup).toContain(PERSPECTIVE_IDENTITY_CONTRACT.definitionKind);
@@ -34,7 +34,7 @@ describe('renderer perspective contract readout', () => {
   });
 
   it('shows missing dependency partial and blocked states from fixtures', () => {
-    const markup = renderToStaticMarkup(<App />);
+    const markup = renderToStaticMarkup(<DiagnosticsRoute />);
 
     expect(markup).toContain('Dependency status shell');
 
@@ -49,7 +49,7 @@ describe('renderer perspective contract readout', () => {
   });
 
   it('does not expose perspective compute, refresh, edit, or module actions', () => {
-    const markup = renderToStaticMarkup(<App />);
+    const markup = renderToStaticMarkup(<DiagnosticsRoute />);
 
     expect(markup).toContain('Blocked shell');
     expect(markup).not.toContain('Run perspective');

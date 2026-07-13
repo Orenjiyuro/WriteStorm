@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { App } from '../../src/renderer/App';
+import { DiagnosticsRoute } from '../../src/renderer/routes/DiagnosticsRoute';
 import {
   TECHNIQUE_EVIDENCE_CHAIN_POLICY,
   TECHNIQUE_LIBRARY_MANUAL_CREATE_POLICY,
@@ -8,7 +8,7 @@ import {
 
 describe('renderer technique library contract readout', () => {
   it('shows the technique library shell from shared domain contracts', () => {
-    const markup = renderToStaticMarkup(<App />);
+    const markup = renderToStaticMarkup(<DiagnosticsRoute />);
 
     expect(markup).toContain('Technique library contract readout');
     expect(markup).toContain('Source: shared technique domain contract');
@@ -17,7 +17,7 @@ describe('renderer technique library contract readout', () => {
   });
 
   it('shows source snapshot as secondary information without fake technique data', () => {
-    const markup = renderToStaticMarkup(<App />);
+    const markup = renderToStaticMarkup(<DiagnosticsRoute />);
 
     expect(markup).toContain('Source snapshot secondary information');
     expect(markup).toContain(TECHNIQUE_EVIDENCE_CHAIN_POLICY.techniqueEntry.sourceSnapshotField);
@@ -28,7 +28,7 @@ describe('renderer technique library contract readout', () => {
   });
 
   it('does not expose manual create, edit, adopt, or merge actions', () => {
-    const markup = renderToStaticMarkup(<App />);
+    const markup = renderToStaticMarkup(<DiagnosticsRoute />);
 
     expect(markup).toContain('Manual primary action unavailable');
     expect(markup).toContain('Future manual creation requires a new product decision.');

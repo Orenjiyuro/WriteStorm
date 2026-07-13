@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  registerProductIpc,
   registerTypedIpcHandler,
   registerTypedIpcHandlers,
 } from '../../src/main/ipc';
+import type { LibraryService } from '../../src/main/library/library-service';
 import type { ContractResponse } from '../../src/shared/contracts';
 import type {
   BreakdownBookId,
@@ -107,6 +109,41 @@ const importSourceResponse: ContractResponse<'books:import-source'> = {
 };
 
 describe('main typed IPC router', () => {
+  it('awaits source-import lifecycle cleanup before replacing the Library session', async () => {
+    const ipcMain = new MockIpcMain();
+    const events: string[] = [];
+    let releaseCleanup!: () => void;
+    const cleanupBarrier = new Promise<void>((resolve) => { releaseCleanup = resolve; });
+    const service = {
+      open: async () => {
+        events.push('open-library');
+        return null;
+      },
+      getCurrent: () => null,
+    } as unknown as LibraryService;
+    registerProductIpc(ipcMain, undefined, {
+      beforeLibrarySessionChange: async () => {
+        events.push('cancel-and-wait-imports');
+        await cleanupBarrier;
+      },
+      afterLibrarySessionChange: () => {
+        events.push('resume-imports');
+      },
+      library: {
+        service,
+        selectCreateRoot: () => null,
+        selectOpenRoot: () => 'C:\\Libraries\\Next',
+      },
+    });
+
+    const opening = ipcMain.invoke('library:open', {});
+    await Promise.resolve();
+    expect(events).toEqual(['cancel-and-wait-imports']);
+    releaseCleanup();
+    await opening;
+    expect(events).toEqual(['cancel-and-wait-imports', 'open-library', 'resume-imports']);
+  });
+
   it('registers typed handlers and returns validated response envelopes', async () => {
     const ipcMain = new MockIpcMain();
     const seenContexts: Array<{

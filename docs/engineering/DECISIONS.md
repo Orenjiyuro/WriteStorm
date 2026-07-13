@@ -265,3 +265,15 @@ Implications:
 - SQLite remains the unique-hash authority. A race after the precheck removes the promoted file, re-queries the winning Book and SourceText, and returns `duplicate_source_hash`.
 - Recovery removes only `source/.staging/{jobId}.tmp` for source-import Jobs it transitions from queued/running to failed. Other staging and non-staging files remain subject to the existing health policy.
 - Task 16 must make the IPC adapter delegate to this service; this decision does not move Task 16 into Task 15.
+
+## D019: IPC Adapters And Main Composition
+
+Decision: Product IPC adapters perform contract-facing selection and envelope mapping only. The Book import adapter captures the current Library session before opening the native dialog and passes that identity with the opaque selected path to the singleton `SourceImportService`; all source validation, worker, filesystem, duplicate, Job, and transaction behavior remains below the adapter.
+
+Implications:
+
+- `book-import-ipc.ts` cannot import privileged filesystem/crypto/SQLite modules or source-import business helpers.
+- Pending encoding retries skip the native dialog and delegate the session-bound token directly.
+- Main constructs the Book service, source worker runner, and SourceImport service once rather than per IPC call.
+- Window close, Library replacement, and app quit pause new import admission, cancel active work, and await an idle barrier before cleanup or connection changes. Pause admission is reference-counted so overlapping lifecycle barriers cannot resume imports early; pending tokens are then cleared.
+- Task 16 does not change renderer/preload contracts and does not reconnect Block 8 persistence or IPC.

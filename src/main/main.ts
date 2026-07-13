@@ -8,10 +8,13 @@ import {
 import { createTrustedDevServerOrigins, registerProductIpc } from './ipc';
 import { runOptionalNativeSqliteProbe } from './db/native-probe';
 import { createBookImportIpcDependencies } from './books/book-import-ipc';
+import { BookService } from './books/book-service';
 import { createLibraryEntryIpcDependencies } from './library/library-entry';
 import { LibraryService } from './library/library-service';
 import { createProductSenderPolicy } from './ipc/product-sender-policy';
 import { createMainWindow } from './windows/main-window';
+import { SourceImportService } from './source-text/source-import-service';
+import { createElectronSourceTextWorkerRunner } from './source-text/worker-runner';
 import { runOptionalSourceTextWorkerProbe } from './source-text/worker-probe';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
@@ -22,11 +25,37 @@ const appProtocol = 'writestorm';
 const appProtocolHost = 'app';
 const productSenderPolicy = createProductSenderPolicy(MAIN_WINDOW_VITE_DEV_SERVER_URL);
 const libraryService = new LibraryService({ appVersion: app.getVersion() });
+const bookService = new BookService({ libraryService });
+const sourceTextWorkerRunner = createElectronSourceTextWorkerRunner(__dirname);
+const sourceImportService = new SourceImportService({
+  libraryService,
+  worker: sourceTextWorkerRunner,
+});
 const books = createBookImportIpcDependencies({
-  service: libraryService,
+  books: bookService,
+  sourceImport: sourceImportService,
+  getCurrentSession: () => libraryService.getCurrent(),
   env: process.env,
   showOpenDialog: (options) => dialog.showOpenDialog(options),
 });
+let quitCleanupComplete = false;
+let quitCleanupStarted = false;
+
+async function prepareForLibrarySessionChange(): Promise<void> {
+  sourceImportService.pauseImports();
+  await sourceImportService.waitForIdle();
+}
+
+async function cleanupSourceImportsForWindowClose(): Promise<void> {
+  books.invalidateWindowSelections();
+  sourceImportService.pauseImports();
+  try {
+    await sourceImportService.waitForIdle();
+    sourceImportService.clearPendingImports();
+  } finally {
+    sourceImportService.resumeImports();
+  }
+}
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -59,6 +88,7 @@ const createWindow = async (): Promise<void> => {
     openExternal: (url) => shell.openExternal(url),
     bindSenderPolicy: productSenderPolicy.bindWebContents,
     unbindSenderPolicy: productSenderPolicy.unbindWebContents,
+    onClosed: cleanupSourceImportsForWindowClose,
   });
 };
 
@@ -139,6 +169,8 @@ app.whenReady().then(async () => {
   registerInternalIpc();
   registerProductIpc(ipcMain, MAIN_WINDOW_VITE_DEV_SERVER_URL, {
     senderPolicy: productSenderPolicy.isTrustedSender,
+    beforeLibrarySessionChange: prepareForLibrarySessionChange,
+    afterLibrarySessionChange: () => sourceImportService.resumeImports(),
     library: createLibraryEntryIpcDependencies({
       service: libraryService,
       env: process.env,
@@ -155,9 +187,27 @@ app.whenReady().then(async () => {
   });
 });
 
-app.on('before-quit', () => {
-  books.clearPendingImports();
-  libraryService.closeCurrent();
+app.on('before-quit', (event) => {
+  if (quitCleanupComplete) {
+    return;
+  }
+
+  event.preventDefault();
+  if (quitCleanupStarted) {
+    return;
+  }
+  quitCleanupStarted = true;
+  sourceImportService.pauseImports();
+  void (async () => {
+    try {
+      await sourceImportService.waitForIdle();
+    } finally {
+      sourceImportService.clearPendingImports();
+      libraryService.closeCurrent();
+      quitCleanupComplete = true;
+      app.quit();
+    }
+  })();
 });
 
 app.on('window-all-closed', () => {

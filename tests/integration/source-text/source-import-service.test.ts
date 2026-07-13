@@ -34,6 +34,72 @@ afterEach(() => {
 });
 
 describe('SourceImportService', () => {
+  it('rejects a stale dialog selection before queueing or starting the worker', async () => {
+    const fixture = sourceImportFixture();
+    const worker = successfulWorker(fixture.sourceBytes);
+    const service = fixture.service({ worker });
+
+    const result = await service.import({
+      sourcePath: fixture.sourcePath,
+      expectedSessionId: 'stale-session',
+    });
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: { details: { reason: 'library_session_changed' } },
+    });
+    expect(worker.prepareImport).not.toHaveBeenCalled();
+    expect(fixture.rows('jobs')).toEqual([]);
+  });
+
+  it('cancels active worker imports and exposes an idle barrier for lifecycle cleanup', async () => {
+    const fixture = sourceImportFixture();
+    let workerStarted!: () => void;
+    const started = new Promise<void>((resolve) => { workerStarted = resolve; });
+    const worker = {
+      prepareImport: vi.fn((_input: PrepareSourceImportInput, _timeout: number, options: { signal?: AbortSignal }) => (
+        new Promise<never>((_resolve, reject) => {
+          workerStarted();
+          options.signal?.addEventListener('abort', () => reject(
+            new SourceTextWorkerRunnerError('cancelled', 'internal cancellation'),
+          ), { once: true });
+        })
+      )),
+    };
+    const service = fixture.service({ worker });
+    const importing = service.import({ sourcePath: fixture.sourcePath });
+    await started;
+
+    expect(service.pauseImports()).toBe(1);
+    await expect(service.import({ sourcePath: fixture.sourcePath })).resolves.toMatchObject({
+      ok: false,
+      error: { details: { reason: 'library_session_changed' } },
+    });
+    expect(worker.prepareImport).toHaveBeenCalledOnce();
+    await service.waitForIdle();
+    await expect(importing).resolves.toMatchObject({
+      ok: false,
+      error: { details: { reason: 'copy_failed' } },
+    });
+    expect(jobRow(fixture.library, 'job-1')).toMatchObject({
+      state: 'failed',
+      error_code: 'SOURCE_IMPORT_WORKER_FAILED',
+    });
+    service.resumeImports();
+    service.pauseImports();
+    service.pauseImports();
+    service.resumeImports();
+    await expect(service.import({ sourcePath: `${fixture.sourcePath}.pdf` })).resolves.toMatchObject({
+      ok: false,
+      error: { details: { reason: 'library_session_changed' } },
+    });
+    service.resumeImports();
+    await expect(service.import({ sourcePath: `${fixture.sourcePath}.pdf` })).resolves.toMatchObject({
+      ok: false,
+      error: { details: { reason: 'invalid_extension' } },
+    });
+  });
+
   it('owns queued -> running -> completed and commits Book, SourceText, Job, and checkpoint', async () => {
     const fixture = sourceImportFixture();
     const observedStates: string[] = [];

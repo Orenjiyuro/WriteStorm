@@ -33,6 +33,8 @@ export type LibraryIpcDependencies = {
 
 export type ProductIpcRegistrationOptions = {
   readonly senderPolicy?: (sender: IpcSenderIdentity) => boolean;
+  readonly beforeLibrarySessionChange?: () => MaybePromise<void>;
+  readonly afterLibrarySessionChange?: () => MaybePromise<void>;
   readonly library?: LibraryIpcDependencies;
   readonly books?: {
     readonly list?: () => MaybePromise<ContractResponse<'books:list'>>;
@@ -77,19 +79,29 @@ function createNotImplementedProductHandlers(): TypedIpcHandlerMap {
 function createProductHandlers(options: ProductIpcRegistrationOptions): TypedIpcHandlerMap {
   return {
     ...createNotImplementedProductHandlers(),
-    ...(options.library ? createLibraryProductHandlers(options.library, options.books?.clearPendingImports) : {}),
+    ...(options.library ? createLibraryProductHandlers(
+      options.library,
+      options.beforeLibrarySessionChange,
+      options.afterLibrarySessionChange,
+      options.books?.clearPendingImports,
+    ) : {}),
     ...(options.books ? createBookProductHandlers(options.books) : {}),
   };
 }
 
 function createLibraryProductHandlers(
   library: LibraryIpcDependencies,
+  beforeLibrarySessionChange?: () => MaybePromise<void>,
+  afterLibrarySessionChange?: () => MaybePromise<void>,
   onLibrarySessionChanged?: () => void,
 ): TypedIpcHandlerMap {
   const createHandler: TypedIpcHandler<'library:create'> = async () => {
     const selection = await library.selectCreateRoot();
 
     try {
+      if (selection) {
+        await beforeLibrarySessionChange?.();
+      }
       const summary = selection ? library.service.create(selection) : null;
       if (summary) {
         onLibrarySessionChanged?.();
@@ -101,12 +113,17 @@ function createLibraryProductHandlers(
       };
     } catch (error) {
       return libraryServiceErrorResponse('library:create', error);
+    } finally {
+      if (selection) await afterLibrarySessionChange?.();
     }
   };
   const openHandler: TypedIpcHandler<'library:open'> = async () => {
     const rootPath = await library.selectOpenRoot();
 
     try {
+      if (rootPath) {
+        await beforeLibrarySessionChange?.();
+      }
       const summary = rootPath ? await library.service.open({ rootPath }) : null;
       if (summary) {
         onLibrarySessionChanged?.();
@@ -118,6 +135,8 @@ function createLibraryProductHandlers(
       };
     } catch (error) {
       return libraryServiceErrorResponse('library:open', error);
+    } finally {
+      if (rootPath) await afterLibrarySessionChange?.();
     }
   };
   const getCurrentHandler: TypedIpcHandler<'library:get-current'> = () => ({

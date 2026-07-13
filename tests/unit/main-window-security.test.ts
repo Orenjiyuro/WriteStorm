@@ -32,6 +32,9 @@ describe('main window security lifecycle', () => {
       openExternal: async () => undefined,
       bindSenderPolicy: () => calls.push('bind-sender-policy'),
       unbindSenderPolicy: () => calls.push('unbind-sender-policy'),
+      onClosed: async () => {
+        calls.push('cleanup-window-imports');
+      },
     });
 
     expect(calls).toEqual([
@@ -50,7 +53,7 @@ describe('main window security lifecycle', () => {
     });
 
     closedListener();
-    expect(calls.at(-1)).toBe('unbind-sender-policy');
+    expect(calls.slice(-2)).toEqual(['unbind-sender-policy', 'cleanup-window-imports']);
   });
 
   it('requires trusted URL, the bound webContents ID, and the main frame', () => {

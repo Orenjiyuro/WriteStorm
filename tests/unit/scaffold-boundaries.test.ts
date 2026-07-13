@@ -18,6 +18,21 @@ const sourceFiles = (dir: string): string[] => {
 };
 
 describe('Forge Vite scaffold', () => {
+  it('composes the source import use case once and injects a shallow book IPC adapter', () => {
+    const mainSource = readFileSync(path.join(rootDir, 'src/main/main.ts'), 'utf8');
+
+    expect(mainSource).toContain('const bookService = new BookService({');
+    expect(mainSource).toContain('const sourceImportService = new SourceImportService({');
+    expect(mainSource).toContain('createElectronSourceTextWorkerRunner(');
+    expect(mainSource).toContain('books: bookService');
+    expect(mainSource).toContain('sourceImport: sourceImportService');
+    expect(mainSource).toContain('getCurrentSession: () => libraryService.getCurrent()');
+    expect(mainSource).toContain('showOpenDialog: (options) => dialog.showOpenDialog(options)');
+    expect(mainSource).toContain('sourceImportService.clearPendingImports();');
+    expect(mainSource).toContain('onClosed: cleanupSourceImportsForWindowClose');
+    expect(mainSource).toContain('books.invalidateWindowSelections();');
+  });
+
   it('uses the Vite build output as Electron main entry', () => {
     const packageJson = JSON.parse(readFileSync(path.join(rootDir, 'package.json'), 'utf8')) as {
       main?: string;

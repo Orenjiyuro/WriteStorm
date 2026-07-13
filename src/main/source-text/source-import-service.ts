@@ -59,6 +59,8 @@ export class SourceImportService {
     readonly contentHash: string;
   }) => void | Promise<void>;
   private readonly pendingImports: PendingImportStore;
+  private readonly activeImports = new Map<Promise<SourceImportServiceResult>, AbortController>();
+  private importPauseDepth = 0;
 
   constructor(options: {
     readonly libraryService: LibraryService;
@@ -87,14 +89,39 @@ export class SourceImportService {
     });
   }
 
-  async import(input: {
-    readonly sourcePath: string;
+  import(input: {
+    readonly sourcePath?: string;
     readonly title?: string;
     readonly pendingImportId?: string;
     readonly encodingOverride?: 'utf-8' | 'gb18030';
+    readonly expectedSessionId?: string;
   }): Promise<SourceImportServiceResult> {
+    if (this.importPauseDepth > 0) {
+      return Promise.resolve(failure(
+        'library_session_changed',
+        'Source imports are paused while the library session changes.',
+      ));
+    }
+    const controller = new AbortController();
+    const operation = this.runImport(input, controller.signal).finally(() => {
+      this.activeImports.delete(operation);
+    });
+    this.activeImports.set(operation, controller);
+    return operation;
+  }
+
+  private async runImport(input: {
+    readonly sourcePath?: string;
+    readonly title?: string;
+    readonly pendingImportId?: string;
+    readonly encodingOverride?: 'utf-8' | 'gb18030';
+    readonly expectedSessionId?: string;
+  }, signal: AbortSignal): Promise<SourceImportServiceResult> {
     const current = this.libraryService.getCurrent();
     if (!current) return failure('no_current_library', 'Open or create a library before importing source text.');
+    if (input.expectedSessionId && input.expectedSessionId !== current.sessionId) {
+      return failure('library_session_changed', 'The library changed while choosing a source file.');
+    }
 
     const pending = input.pendingImportId
       ? this.pendingImports.take(input.pendingImportId, {
@@ -108,6 +135,9 @@ export class SourceImportService {
     }
 
     const sourcePath = pending?.sourcePath ?? input.sourcePath;
+    if (!sourcePath) {
+      return failure('pending_import_not_found', 'The pending source import could not be found.');
+    }
     const titleOverride = pending?.title ?? normalizeTitle(input.title);
     const format = sourceFormat(sourcePath);
     if (!format) return failure('invalid_extension', 'Only .txt and .md source files can be imported.');
@@ -145,7 +175,7 @@ export class SourceImportService {
         libraryRootPath: current.library.rootPath,
         maxSizeBytes: MAX_IMPORT_SOURCE_SIZE_BYTES,
         encoding: input.encodingOverride ?? 'utf-8',
-      }, 30_000);
+      }, 30_000, { signal });
     } catch (error) {
       removeStaging(current.library.rootPath, jobId);
       if (isEncodingRequired(error)) {
@@ -267,6 +297,28 @@ export class SourceImportService {
       recoveredAt: this.now(),
     }));
     return Promise.resolve(result);
+  }
+
+  clearPendingImports(): void {
+    this.pendingImports.clearAll();
+  }
+
+  cancelActiveImports(): number {
+    for (const controller of this.activeImports.values()) controller.abort();
+    return this.activeImports.size;
+  }
+
+  pauseImports(): number {
+    this.importPauseDepth += 1;
+    return this.cancelActiveImports();
+  }
+
+  resumeImports(): void {
+    this.importPauseDepth = Math.max(0, this.importPauseDepth - 1);
+  }
+
+  async waitForIdle(): Promise<void> {
+    await Promise.allSettled([...this.activeImports.keys()]);
   }
 }
 

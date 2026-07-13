@@ -132,7 +132,7 @@ test('shows the no-library empty state in a real Electron window', async () => {
       ok: false,
       error: {
         code: 'LIBRARY_ERROR',
-        message: 'Open or create a library before listing books.',
+        message: 'Open or create a library before reading books.',
         recoverable: true,
         details: {
           reason: 'no_current_library',

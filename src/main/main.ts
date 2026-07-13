@@ -12,6 +12,7 @@ import { createLibraryEntryIpcDependencies } from './library/library-entry';
 import { LibraryService } from './library/library-service';
 import { createProductSenderPolicy } from './ipc/product-sender-policy';
 import { createMainWindow } from './windows/main-window';
+import { runOptionalSourceTextWorkerProbe } from './source-text/worker-probe';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -147,6 +148,11 @@ app.whenReady().then(async () => {
   });
   await createWindow();
   await runOptionalNativeSqliteProbe();
+  await runOptionalSourceTextWorkerProbe({
+    mainBundleDirectory: __dirname,
+    env: process.env,
+    quitApp: () => app.quit(),
+  });
 });
 
 app.on('before-quit', () => {

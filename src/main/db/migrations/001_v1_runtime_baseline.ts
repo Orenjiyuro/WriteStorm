@@ -27,7 +27,8 @@ export const V1_RUNTIME_BASELINE_MIGRATION = {
         current_source_text_id TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
-        FOREIGN KEY (current_source_text_id) REFERENCES source_texts(id) ON DELETE SET NULL
+        FOREIGN KEY (current_source_text_id) REFERENCES source_texts(id) ON DELETE SET NULL,
+        FOREIGN KEY (current_source_text_id, id) REFERENCES source_texts(id, book_id)
       );
 
       CREATE TABLE source_texts (
@@ -42,6 +43,7 @@ export const V1_RUNTIME_BASELINE_MIGRATION = {
         relative_path TEXT NOT NULL,
         imported_at TEXT NOT NULL,
         FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
+        UNIQUE (id, book_id),
         UNIQUE (book_id, source_edition)
       );
 

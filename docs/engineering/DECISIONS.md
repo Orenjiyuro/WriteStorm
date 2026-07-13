@@ -221,3 +221,13 @@ The production validator in Task 12R-A is authoritative only for the same SQLite
 The deferred **Schema Compatibility Gate** runs after Task 19 finalizes the V1 migration registry and before Task 20 full recertification. It must replace complete `sqlite_schema.sql` text equality as the final cross-version authority and cover structured columns, foreign keys, indexes, uniqueness, admitted tables/views/triggers, and semantically extracted CHECK constraints using real current-version and minimum-supported-version SQLite fixtures. Equivalent DDL formatting must be accepted and real semantic mutations rejected.
 
 No handwritten DDL tokenizer/parser is approved. Before this gate is implemented, the project must investigate a mature SQLite-dialect parser, separately request any dependency installation, or approve a design based on SQLite's own parsing capability or another controlled canonicalization. Regex, simple splitting, whitespace compression, and case folding are prohibited for CHECK parsing.
+
+## D015: Book Current-Source Ownership
+
+Decision: A Book may point only to a SourceText owned by that same Book. The runtime baseline enforces `(books.current_source_text_id, books.id) -> source_texts(id, book_id)` and retains the single-column `current_source_text_id -> source_texts.id ON DELETE SET NULL` relationship for pointer cleanup. `BookRepository` also requires both ids in its join as a defensive read boundary for externally corrupted databases or connections that disabled foreign keys.
+
+Implications:
+
+- Cross-Book current-source pointers are rejected at write time.
+- Deleting the current SourceText clears the Book pointer without changing Book identity.
+- A corrupted cross-Book pointer maps to no current SourceText or edition instead of leaking another Book's source metadata.

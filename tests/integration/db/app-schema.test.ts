@@ -59,10 +59,12 @@ describe('V1 runtime baseline', () => {
     }
   });
 
-  it('freezes the four runtime foreign-key relationships', () => {
+  it('freezes runtime foreign keys including Book current-source ownership', () => {
     const db = migratedDatabase();
     try {
       expect(foreignKeys(db, 'books')).toEqual([
+        { from: 'current_source_text_id', table: 'source_texts', to: 'id' },
+        { from: 'id', table: 'source_texts', to: 'book_id' },
         { from: 'current_source_text_id', table: 'source_texts', to: 'id' },
       ]);
       expect(foreignKeys(db, 'source_texts')).toEqual([

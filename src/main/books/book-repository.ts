@@ -26,11 +26,13 @@ const BOOK_SELECT = `
   SELECT
     books.id AS id,
     books.title AS title,
-    books.current_source_text_id AS sourceTextId,
+    source_texts.id AS sourceTextId,
     source_texts.source_edition AS sourceTextEdition,
     books.updated_at AS updatedAt
   FROM books
-  LEFT JOIN source_texts ON source_texts.id = books.current_source_text_id
+  LEFT JOIN source_texts
+    ON source_texts.id = books.current_source_text_id
+    AND source_texts.book_id = books.id
 `;
 
 function normalizeRow(row: PersistedBookRow): PersistedBookRow {

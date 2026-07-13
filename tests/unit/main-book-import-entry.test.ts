@@ -159,4 +159,27 @@ describe('main book import entry providers', () => {
       now: 601_001,
     })).toBeNull();
   });
+
+  it('atomically consumes a pending token so concurrent retries cannot reuse it', () => {
+    const store = new PendingImportStore({
+      createId: () => 'pending-single-use',
+      now: () => 1_000,
+      ttlMs: 600_000,
+    });
+    store.create({
+      libraryRootPath: 'C:\\Libraries\\Story Lab',
+      sessionId: 'session-1',
+      sourcePath: 'C:\\Books\\retry.md',
+      jobId: 'job-1',
+      sourceTextId: 'source-1',
+    });
+    const scope = {
+      libraryRootPath: 'C:\\Libraries\\Story Lab',
+      sessionId: 'session-1',
+      now: 1_500,
+    };
+
+    expect(store.take('pending-single-use', scope)).toMatchObject({ jobId: 'job-1' });
+    expect(store.take('pending-single-use', scope)).toBeNull();
+  });
 });

@@ -1,9 +1,11 @@
 import { createHash } from 'node:crypto';
-import { createReadStream } from 'node:fs';
+import { createReadStream, rmSync } from 'node:fs';
 import { lstat, readdir, rm, stat } from 'node:fs/promises';
 import path from 'node:path';
 import type { PersistedSourceText } from './source-text-repository';
 import { resolveLibraryRelativePath } from '../library/path-guard';
+import type { SqliteDatabase } from '../db/sqlite';
+import { JobService } from '../jobs/job-service';
 
 export type SourceHealthIssue =
   | {
@@ -93,6 +95,35 @@ export async function removeAutoRemovableSourceHealthIssues(
     removed.push(relativePath);
   }
   return removed.sort();
+}
+
+export function recoverAbandonedSourceImports(input: {
+  readonly database: SqliteDatabase;
+  readonly libraryRootPath: string;
+  readonly recoveredAt: string;
+}): { readonly recoveredJobIds: string[] } {
+  const jobs = new JobService({ database: input.database });
+  const abandoned = jobs.list().filter((job) => (
+    job.kind === 'source_import' && (job.state === 'queued' || job.state === 'running')
+  ));
+
+  for (const job of abandoned) {
+    jobs.fail(job.id, input.recoveredAt, {
+      errorCode: 'SOURCE_IMPORT_ABANDONED',
+      errorDetails: { reason: 'startup_recovery' },
+    });
+    const stagingPath = resolveLibraryRelativePath(
+      input.libraryRootPath,
+      `source/.staging/${job.id}.tmp`,
+    );
+    try {
+      rmSync(stagingPath, { force: true });
+    } catch {
+      // Recovery state remains durable; health inspection reports leftover staging.
+    }
+  }
+
+  return { recoveredJobIds: abandoned.map((job) => String(job.id)).sort() };
 }
 
 async function listFiles(rootPath: string): Promise<string[]> {

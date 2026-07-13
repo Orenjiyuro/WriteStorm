@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isDeepStrictEqual } from 'node:util';
 import { canTransitionJob, type JobId, type JobState } from '../../shared/domain';
 import type { SqliteDatabase } from '../db/sqlite';
 import {
@@ -9,6 +10,7 @@ import {
 
 export type JobServiceErrorReason =
   | 'invalid_payload'
+  | 'invalid_progress'
   | 'invalid_transition'
   | 'job_not_found';
 
@@ -23,6 +25,19 @@ export class JobServiceError extends Error {
 }
 
 export type JobPayloadSchemaRegistry = Readonly<Record<string, z.ZodType>>;
+
+export type CreateQueuedJobInput = Omit<
+  JobRecord,
+  'state' | 'completedUnits' | 'errorCode' | 'errorDetails'
+>;
+
+export type CompleteJobInput = {
+  readonly bookId: NonNullable<JobRecord['bookId']>;
+  readonly completedUnits: number;
+  readonly totalUnits: number;
+  readonly updatedAt: string;
+  readonly checkpoint: Omit<JobCheckpointRecord, 'jobId' | 'sequence'>;
+};
 
 const sourceTextIdPayloadSchema = z.object({
   sourceTextId: z.string().min(1),
@@ -48,7 +63,14 @@ export class JobService {
     this.payloadSchemas = options.payloadSchemas ?? JOB_PAYLOAD_SCHEMAS;
   }
 
-  create(job: JobRecord): JobRecord {
+  createQueued(input: CreateQueuedJobInput): JobRecord {
+    const job: JobRecord = {
+      ...input,
+      state: 'queued',
+      completedUnits: 0,
+      errorCode: null,
+      errorDetails: null,
+    };
     this.validatePayload(job.kind, job.payloadSchemaVersion, job.payload);
     return this.repository.insert(this.database, job);
   }
@@ -71,6 +93,12 @@ export class JobService {
     } = {},
   ): JobRecord {
     const current = this.require(jobId);
+    if (nextState === 'completed') {
+      throw new JobServiceError(
+        'invalid_transition',
+        'completed jobs require completeWithCheckpoint',
+      );
+    }
     if (!canTransitionJob(current.state, nextState)) {
       throw new JobServiceError('invalid_transition', `${current.state} -> ${nextState}`);
     }
@@ -83,6 +111,65 @@ export class JobService {
       errorDetails: progress.errorDetails === undefined ? current.errorDetails : progress.errorDetails,
       updatedAt,
     });
+  }
+
+  fail(
+    jobId: JobId,
+    updatedAt: string,
+    failure: {
+      readonly errorCode: string;
+      readonly errorDetails?: unknown | null;
+    },
+  ): JobRecord {
+    return this.transition(jobId, 'failed', updatedAt, {
+      errorCode: failure.errorCode,
+      errorDetails: failure.errorDetails ?? null,
+    });
+  }
+
+  completeWithCheckpoint(
+    jobId: JobId,
+    input: CompleteJobInput,
+  ): { readonly job: JobRecord; readonly checkpoint: JobCheckpointRecord } {
+    this.validatePayload(
+      input.checkpoint.kind,
+      input.checkpoint.payloadSchemaVersion,
+      input.checkpoint.payload,
+    );
+    if (input.totalUnits < 0 || input.completedUnits !== input.totalUnits) {
+      throw new JobServiceError(
+        'invalid_progress',
+        `${input.completedUnits}/${input.totalUnits}`,
+      );
+    }
+
+    return this.database.transaction(() => {
+      const current = this.require(jobId);
+      if (!canTransitionJob(current.state, 'completed')) {
+        throw new JobServiceError('invalid_transition', `${current.state} -> completed`);
+      }
+      if (
+        input.checkpoint.kind !== `${current.kind}_completed` ||
+        !isDeepStrictEqual(input.checkpoint.payload, current.payload)
+      ) {
+        throw new JobServiceError('invalid_payload', 'final checkpoint does not match queued Job');
+      }
+      const job = this.repository.updateState(this.database, {
+        ...current,
+        bookId: input.bookId,
+        state: 'completed',
+        completedUnits: input.completedUnits,
+        totalUnits: input.totalUnits,
+        errorCode: null,
+        errorDetails: null,
+        updatedAt: input.updatedAt,
+      });
+      const checkpoint = this.repository.appendCheckpoint(this.database, {
+        ...input.checkpoint,
+        jobId,
+      });
+      return { job, checkpoint };
+    })();
   }
 
   appendCheckpoint(

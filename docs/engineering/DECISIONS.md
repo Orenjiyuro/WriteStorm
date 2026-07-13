@@ -253,3 +253,15 @@ Implications:
 - Callback code that continues to use its captured old session before returning does not receive a native closed-connection error.
 - A newly created/reopened session may remain published while the old transaction rolls back.
 - The old connection is closed after rollback; deferred cleanup never keeps it as a public session.
+
+## D018: Source Import And Job Completion Ownership
+
+Decision: `SourceImportService` owns the txt/md import application sequence from a session-bound selection through worker staging, duplicate policy, no-overwrite promotion, one final `LibraryUnitOfWork`, filesystem compensation, and abandoned-import recovery. `JobService` exposes queued-only creation; generic transitions cannot enter `completed`, and completion must atomically bind the Book and append the final checkpoint.
+
+Implications:
+
+- A worker encoding rejection preserves only its stable error code and a session-bound pending token; worker messages are not exposed.
+- A Library replacement after staging cannot write through the old session. Its exact staging file is removed, and the durable queued Job is handled when that Library next runs abandoned-import recovery.
+- SQLite remains the unique-hash authority. A race after the precheck removes the promoted file, re-queries the winning Book and SourceText, and returns `duplicate_source_hash`.
+- Recovery removes only `source/.staging/{jobId}.tmp` for source-import Jobs it transitions from queued/running to failed. Other staging and non-staging files remain subject to the existing health policy.
+- Task 16 must make the IPC adapter delegate to this service; this decision does not move Task 16 into Task 15.

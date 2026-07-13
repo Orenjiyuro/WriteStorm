@@ -74,27 +74,31 @@ export function importBookWithSourceText(
     if (input.job) {
       const jobs = new JobService({ database });
       const payload = { sourceTextId: input.job.sourceTextId };
-      jobs.create({
-        id: input.job.summary.id,
-        bookId: input.job.summary.bookId,
-        kind: 'source_import',
-        state: 'completed',
+      if (!jobs.get(input.job.summary.id)) {
+        jobs.createQueued({
+          id: input.job.summary.id,
+          bookId: null,
+          kind: 'source_import',
+          totalUnits: 1,
+          payloadSchemaVersion: 1,
+          payload,
+          createdAt: input.job.summary.updatedAt,
+          updatedAt: input.job.summary.updatedAt,
+        });
+        jobs.transition(input.job.summary.id, 'running', input.job.summary.updatedAt);
+      }
+      jobs.completeWithCheckpoint(input.job.summary.id, {
+        bookId: input.bookId,
         completedUnits: 1,
         totalUnits: 1,
-        payloadSchemaVersion: 1,
-        payload,
-        errorCode: null,
-        errorDetails: null,
-        createdAt: input.job.summary.updatedAt,
         updatedAt: input.job.summary.updatedAt,
-      });
-      jobs.appendCheckpoint({
-        id: `${input.job.summary.id}:1`,
-        jobId: input.job.summary.id,
-        kind: 'source_import_completed',
-        payloadSchemaVersion: 1,
-        payload,
-        createdAt: input.job.summary.updatedAt,
+        checkpoint: {
+          id: `${input.job.summary.id}:1`,
+          kind: 'source_import_completed',
+          payloadSchemaVersion: 1,
+          payload,
+          createdAt: input.job.summary.updatedAt,
+        },
       });
     }
   });

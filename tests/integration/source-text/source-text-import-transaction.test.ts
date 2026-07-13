@@ -126,6 +126,7 @@ describe('source text import transaction', () => {
     const db = migratedDatabase();
 
     try {
+      insertRunningImportJob(db, 'job-atomic' as JobId, 'source-atomic' as SourceTextId);
       importBookWithSourceText(db, {
         libraryId,
         bookId: 'book-atomic' as BreakdownBookId,
@@ -214,17 +215,21 @@ describe('source text import transaction', () => {
     }
   });
 
-  it('rolls back book and source_text when the completed import job cannot be inserted', () => {
+  it('rolls back book, source_text, and Job completion when the final checkpoint conflicts', () => {
     const db = migratedDatabase();
 
     try {
+      insertRunningImportJob(db, 'job-duplicate' as JobId, 'source-job-failure' as SourceTextId);
       db.prepare(`
-        INSERT INTO jobs (
-          id, book_id, kind, state, completed_units, total_units,
-          payload_schema_version, payload_json, error_code, error_details_json, created_at, updated_at
-        )
-        VALUES (?, NULL, 'source_import', 'completed', 1, 1, 1, '{}', NULL, NULL, ?, ?)
-      `).run('job-duplicate', importedAt, importedAt);
+        INSERT INTO job_checkpoints (
+          id, job_id, sequence, kind, payload_schema_version, payload_json, created_at
+        ) VALUES (?, ?, 1, 'source_import_completed', 1, ?, ?)
+      `).run(
+        'job-duplicate:1',
+        'job-duplicate',
+        JSON.stringify({ sourceTextId: 'source-job-failure' }),
+        importedAt,
+      );
 
       expect(() => importBookWithSourceText(db, {
         libraryId,
@@ -253,12 +258,23 @@ describe('source text import transaction', () => {
 
       expect(db.prepare('SELECT id FROM books').all()).toEqual([]);
       expect(db.prepare('SELECT id FROM source_texts').all()).toEqual([]);
-      expect(db.prepare('SELECT id FROM jobs ORDER BY id').pluck().all()).toEqual(['job-duplicate']);
+      expect(db.prepare('SELECT id, state, book_id FROM jobs ORDER BY id').all()).toEqual([
+        { id: 'job-duplicate', state: 'running', book_id: null },
+      ]);
     } finally {
       db.close();
     }
   });
 });
+
+function insertRunningImportJob(db: SqliteDatabase, jobId: JobId, sourceTextId: SourceTextId): void {
+  db.prepare(`
+    INSERT INTO jobs (
+      id, book_id, kind, state, completed_units, total_units,
+      payload_schema_version, payload_json, error_code, error_details_json, created_at, updated_at
+    ) VALUES (?, NULL, 'source_import', 'running', 0, 1, 1, ?, NULL, NULL, ?, ?)
+  `).run(jobId, JSON.stringify({ sourceTextId }), importedAt, importedAt);
+}
 
 function migratedDatabase(): SqliteDatabase {
   const db = openSqliteDatabase(tempDatabasePath());

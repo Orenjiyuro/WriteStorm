@@ -7,6 +7,7 @@ import {
   isSourceTextWorkerResponse,
   type PrepareSourceImportInput,
   type PrepareSourceImportResult,
+  type SourceTextWorkerErrorCode,
   type SourceTextWorkerRequest,
 } from './worker-protocol';
 
@@ -38,11 +39,17 @@ export type SourceTextWorkerFailureReason =
 export class SourceTextWorkerRunnerError extends Error {
   readonly code = 'SOURCE_IMPORT_WORKER_FAILED' as const;
   readonly reason: SourceTextWorkerFailureReason;
+  readonly workerErrorCode?: SourceTextWorkerErrorCode;
 
-  constructor(reason: SourceTextWorkerFailureReason, message: string) {
+  constructor(
+    reason: SourceTextWorkerFailureReason,
+    message: string,
+    workerErrorCode?: SourceTextWorkerErrorCode,
+  ) {
     super(message);
     this.name = 'SourceTextWorkerRunnerError';
     this.reason = reason;
+    this.workerErrorCode = workerErrorCode;
   }
 }
 
@@ -124,7 +131,7 @@ export class SourceTextWorkerRunner {
           return;
         }
         if (!message.ok) {
-          rejectFailure(workerFailure('worker_error'));
+          rejectFailure(workerFailure('worker_error', message.error.code));
           child.kill();
           return;
         }
@@ -147,7 +154,10 @@ export class SourceTextWorkerRunner {
   }
 }
 
-function workerFailure(reason: SourceTextWorkerFailureReason): SourceTextWorkerRunnerError {
+function workerFailure(
+  reason: SourceTextWorkerFailureReason,
+  workerErrorCode?: SourceTextWorkerErrorCode,
+): SourceTextWorkerRunnerError {
   const messages = {
     timeout: 'Source import worker timed out.',
     crash: 'Source import worker exited before responding.',
@@ -155,7 +165,7 @@ function workerFailure(reason: SourceTextWorkerFailureReason): SourceTextWorkerR
     protocol: 'Source import worker returned an invalid response.',
     worker_error: 'Source import worker could not prepare the selected file.',
   } as const;
-  return new SourceTextWorkerRunnerError(reason, messages[reason]);
+  return new SourceTextWorkerRunnerError(reason, messages[reason], workerErrorCode);
 }
 
 function removeIncompleteStaging(stagingPath: string): void {

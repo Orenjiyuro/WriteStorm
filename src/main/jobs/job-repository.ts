@@ -60,10 +60,11 @@ export class JobRepository {
   updateState(database: SqliteDatabase, job: JobRecord): JobRecord {
     database.prepare(`
       UPDATE jobs SET
-        state = ?, completed_units = ?, total_units = ?, error_code = ?,
+        book_id = ?, state = ?, completed_units = ?, total_units = ?, error_code = ?,
         error_details_json = ?, updated_at = ?
       WHERE id = ?
     `).run(
+      job.bookId,
       job.state,
       job.completedUnits,
       job.totalUnits,

@@ -35,6 +35,8 @@ export type PendingImportRecord = {
   readonly sessionId: string;
   readonly sourcePath: string;
   readonly title?: string;
+  readonly jobId?: string;
+  readonly sourceTextId?: string;
   readonly expiresAt: number;
 };
 
@@ -65,6 +67,8 @@ export class PendingImportStore {
     readonly sessionId: string;
     readonly sourcePath: string;
     readonly title?: string;
+    readonly jobId?: string;
+    readonly sourceTextId?: string;
   }): PendingImportToken {
     const pendingImportId = this.createId();
     const expiresAt = this.now() + this.ttlMs;
@@ -74,6 +78,8 @@ export class PendingImportStore {
       sessionId: input.sessionId,
       sourcePath: input.sourcePath,
       ...(input.title === undefined ? {} : { title: input.title }),
+      ...(input.jobId === undefined ? {} : { jobId: input.jobId }),
+      ...(input.sourceTextId === undefined ? {} : { sourceTextId: input.sourceTextId }),
       expiresAt,
     });
 
@@ -106,6 +112,19 @@ export class PendingImportStore {
       return null;
     }
 
+    return record;
+  }
+
+  take(
+    pendingImportId: string,
+    options: {
+      readonly libraryRootPath: string;
+      readonly sessionId: string;
+      readonly now: number;
+    },
+  ): PendingImportRecord | null {
+    const record = this.resolve(pendingImportId, options);
+    if (record) this.records.delete(pendingImportId);
     return record;
   }
 

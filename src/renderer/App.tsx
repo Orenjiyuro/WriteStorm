@@ -1,8 +1,13 @@
 import {
-  useEffect,
   useState,
   type ReactElement,
 } from 'react';
+import {
+  QueryClientProvider,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import {
   ANALYSIS_MODULE_DEFINITIONS,
   ANALYSIS_SCOPE_EXCLUDED_TARGETS,
@@ -14,8 +19,19 @@ import {
   TECHNIQUE_EVIDENCE_CHAIN_POLICY,
   TECHNIQUE_LIBRARY_MANUAL_CREATE_POLICY,
 } from '../shared/domain';
-import type { BookSummary, ImportSourceResult, LibrarySessionSummary } from '../shared/contracts';
+import type { BookSummary, ImportSourceResult } from '../shared/contracts';
 import type { ContractRequest } from '../shared/contracts';
+import type { DomainError } from '../shared/errors';
+import type { WritestormApi } from '../shared/contracts/preload-api';
+import { rendererQueryClient } from './app/query-client';
+import {
+  bookListQueryOptions,
+  createImportSourceMutationOptions,
+} from './features/breakdown-shelf/book-queries';
+import {
+  activateLibrarySession,
+  currentLibraryQueryOptions,
+} from './features/library/library-queries';
 import { rendererText } from './i18n';
 import {
   createSourceImportFailureViewModel,
@@ -25,13 +41,39 @@ import {
 } from './source-import-failure';
 
 type LibraryAction = 'create' | 'open';
+type LastImportPresentation = {
+  readonly sessionId: string;
+  readonly result: ImportSourceResult;
+};
 
 export function App(): ReactElement {
-  const [currentLibrary, setCurrentLibrary] = useState<LibrarySessionSummary | null>(null);
+  return (
+    <QueryClientProvider client={rendererQueryClient}>
+      <AppContent />
+    </QueryClientProvider>
+  );
+}
+
+function AppContent(): ReactElement {
+  const queryClient = useQueryClient();
+  const rendererApi = typeof window === 'undefined' ? null : window.writestorm;
+  const queryApi = rendererApi ?? ({} as WritestormApi);
+  const currentLibraryQuery = useQuery({
+    ...currentLibraryQueryOptions(queryApi),
+    enabled: rendererApi !== null,
+  });
+  const currentLibrary = currentLibraryQuery.data ?? null;
+  const booksQuery = useQuery({
+    ...bookListQueryOptions(currentLibrary?.sessionId ?? 'no-library-session', queryApi),
+    enabled: rendererApi !== null && currentLibrary !== null,
+  });
+  const importMutation = useMutation(createImportSourceMutationOptions(
+    currentLibrary?.sessionId ?? 'no-library-session',
+    queryApi,
+  ));
   const [pendingLibraryAction, setPendingLibraryAction] = useState<LibraryAction | null>(null);
   const [libraryError, setLibraryError] = useState<string | null>(null);
-  const [pendingSourceImport, setPendingSourceImport] = useState(false);
-  const [sourceImportResults, setSourceImportResults] = useState<ImportSourceResult[]>([]);
+  const [lastImport, setLastImport] = useState<LastImportPresentation | null>(null);
   const [sourceImportFailure, setSourceImportFailure] = useState<SourceImportFailureViewModel | null>(null);
   const [openedBook, setOpenedBook] = useState<BookSummary | null>(null);
   const readoutText = rendererText.analysisContractReadout;
@@ -41,40 +83,6 @@ export function App(): ReactElement {
   const techniqueEntryOwnership = TECHNIQUE_ASSET_OWNERSHIP.techniqueEntry;
   const techniqueEvidencePolicy = TECHNIQUE_EVIDENCE_CHAIN_POLICY.techniqueEntry;
   const manualCreatePolicy = TECHNIQUE_LIBRARY_MANUAL_CREATE_POLICY;
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    let isMounted = true;
-
-    void window.writestorm.library.getCurrent()
-      .then((response) => {
-        if (!isMounted) {
-          return;
-        }
-
-        if (response.ok) {
-          setCurrentLibrary(response.data);
-          setSourceImportResults([]);
-          setSourceImportFailure(null);
-          setOpenedBook(null);
-          setLibraryError(null);
-        } else {
-          setLibraryError(response.error.message);
-        }
-      })
-      .catch(() => {
-        if (isMounted) {
-          setLibraryError(rendererText.emptyLibrary.actionError);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   const handleLibraryAction = async (action: LibraryAction): Promise<void> => {
     setPendingLibraryAction(action);
@@ -86,10 +94,12 @@ export function App(): ReactElement {
         : await window.writestorm.library.open();
 
       if (response.ok) {
-        setCurrentLibrary(response.data);
-        setSourceImportResults([]);
-        setSourceImportFailure(null);
-        setOpenedBook(null);
+        if (response.data) {
+          await activateLibrarySession(queryClient, currentLibrary?.sessionId, response.data);
+          setLastImport(null);
+          setSourceImportFailure(null);
+          setOpenedBook(null);
+        }
       } else {
         setLibraryError(response.error.message);
       }
@@ -103,19 +113,15 @@ export function App(): ReactElement {
   const runSourceImport = async (
     request: ContractRequest<'books:import-source'>,
   ): Promise<void> => {
-    setPendingSourceImport(true);
     setSourceImportFailure(null);
 
     try {
-      const response = await window.writestorm.books.importSource(request);
-
-      if (response.ok) {
-        setSourceImportResults((results) => [...results, response.data]);
-      } else {
-        setSourceImportFailure(createSourceImportFailureViewModel(response.error));
+      const result = await importMutation.mutateAsync(request);
+      if (currentLibrary) {
+        setLastImport({ sessionId: currentLibrary.sessionId, result });
       }
-    } catch {
-      setSourceImportFailure(createSourceImportFailureViewModel({
+    } catch (error) {
+      setSourceImportFailure(createSourceImportFailureViewModel(isDomainError(error) ? error : {
         code: 'IMPORT_ERROR',
         message: rendererText.sourceImport.actionError,
         recoverable: true,
@@ -123,8 +129,6 @@ export function App(): ReactElement {
           reason: 'database_write_failed',
         },
       }));
-    } finally {
-      setPendingSourceImport(false);
     }
   };
 
@@ -147,15 +151,9 @@ export function App(): ReactElement {
         });
         return;
       case 'open_existing_book': {
-        setPendingSourceImport(true);
         try {
-          const response = await window.writestorm.books.list();
-          if (!response.ok) {
-            setSourceImportFailure(createSourceImportFailureViewModel(response.error));
-            return;
-          }
-
-          const existingBook = response.data.find((book) => book.id === action.existingBookId);
+          const books = booksQuery.data ?? (await booksQuery.refetch()).data ?? [];
+          const existingBook = books.find((book) => book.id === action.existingBookId);
           if (!existingBook) {
             setSourceImportFailure(createSourceImportFailureViewModel({
               code: 'IMPORT_ERROR',
@@ -175,8 +173,6 @@ export function App(): ReactElement {
             recoverable: true,
             details: { reason: 'database_write_failed' },
           }));
-        } finally {
-          setPendingSourceImport(false);
         }
       }
     }
@@ -208,14 +204,14 @@ export function App(): ReactElement {
           <section className="breakdown-empty-shelf" aria-labelledby="empty-breakdown-shelf-title">
             <div className="breakdown-shelf-header">
               <h2 id="empty-breakdown-shelf-title">
-                {sourceImportResults.length > 0
+                {(booksQuery.data?.length ?? 0) > 0
                   ? rendererText.libraryShelf.importedTitle
                   : rendererText.libraryShelf.emptyTitle}
               </h2>
               <button
                 type="button"
                 onClick={() => void handleSourceImport()}
-                disabled={pendingSourceImport}
+                disabled={importMutation.isPending}
               >
                 {rendererText.sourceImport.button}
               </button>
@@ -231,13 +227,18 @@ export function App(): ReactElement {
                 {rendererText.libraryShelf.openedBookStatus(openedBook.title)}
               </p>
             ) : null}
-            {sourceImportResults.length > 0 ? (
+            {(booksQuery.data?.length ?? 0) > 0 ? (
               <ul className="book-list" aria-label={rendererText.libraryShelf.importedTitle}>
-                {sourceImportResults.map((result) => (
-                  <li key={result.book.id}>
-                    <strong>{result.book.title}</strong>
-                    <span>{result.sourceText.fileName}</span>
-                    <span>{result.job.checkpointSummary}</span>
+                {booksQuery.data?.map((book) => (
+                  <li key={book.id}>
+                    <strong>{book.title}</strong>
+                    {lastImport?.sessionId === currentLibrary.sessionId &&
+                    lastImport.result.book.id === book.id ? (
+                      <>
+                        <span>{lastImport.result.sourceText.fileName}</span>
+                        <span>{lastImport.result.job.checkpointSummary}</span>
+                      </>
+                    ) : null}
                   </li>
                 ))}
               </ul>
@@ -447,4 +448,9 @@ export function App(): ReactElement {
       )}
     </main>
   );
+}
+
+function isDomainError(error: unknown): error is DomainError {
+  return typeof error === 'object' && error !== null &&
+    'code' in error && 'message' in error && 'recoverable' in error;
 }

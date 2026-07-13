@@ -75,8 +75,25 @@ export function buildSourceTextImportMetadata(
   };
 }
 
+export function buildCanonicalSourceTextRelativePath(
+  sourceTextId: SourceTextId,
+  originalFileName: string,
+): string {
+  const id = String(sourceTextId);
+  if (!id || id === '.' || id === '..' || id.includes('/') || id.includes('\\')) {
+    throw new Error('Source text id must be a safe path segment.');
+  }
+  return `source/${id}/${normalizeOriginalFileName(originalFileName)}`;
+}
+
+export function assertSourceTextContentHash(contentHash: string): void {
+  if (!/^sha256:[0-9a-f]{64}$/.test(contentHash)) {
+    throw new Error('Source text content hash must be a lowercase SHA-256 value.');
+  }
+}
+
 function normalizeOriginalFileName(originalFileName: string): string {
-  const fileName = path.basename(originalFileName).trim();
+  const fileName = path.posix.basename(originalFileName.replaceAll('\\', '/')).trim();
 
   if (!fileName) {
     throw new Error('Source text original file name is required.');

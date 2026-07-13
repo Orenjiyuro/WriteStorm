@@ -231,3 +231,14 @@ Implications:
 - Cross-Book current-source pointers are rejected at write time.
 - Deleting the current SourceText clears the Book pointer without changing Book identity.
 - A corrupted cross-Book pointer maps to no current SourceText or edition instead of leaking another Book's source metadata.
+
+## D016: SourceText Ownership And Health
+
+Decision: `SourceTextService` owns SourceText metadata validation, canonical relative paths, per-Book edition calculation, duplicate-hash lookup, persisted mapping, and source health. Repository SQL is not exposed to IPC or renderer code. Canonical copied-source paths are `source/{sourceTextId}/{originalFileName}` and previous SourceText editions are immutable.
+
+Health policy:
+
+- `stale_staging` is the only automatically removable issue and cleanup must remain inside the resolved `source/.staging` directory.
+- `orphan_source`, `missing_source`, and `hash_mismatch` require manual review.
+- Symlinks are not followed as trusted source files.
+- Task 14 does not promote staging files or own the Book/Job completion transaction; those remain Task 15 responsibilities.

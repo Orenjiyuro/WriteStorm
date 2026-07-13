@@ -10,6 +10,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import path from 'node:path';
 import type { SourceTextId } from '../../shared/domain';
 import { resolveLibraryRelativePath } from '../library/path-guard';
+import { buildCanonicalSourceTextRelativePath } from './source-text-metadata';
 
 export type SourceTextCopyFailureReason =
   | 'target_conflict'
@@ -67,7 +68,7 @@ export function copySourceTextToLibrarySource(
 ): SourceTextCopyResult {
   const fileSystem = input.fileSystem ?? defaultFileSystem;
   const safeFileName = safeOriginalFileName(input.originalFileName);
-  const relativePath = toLibrarySourceRelativePath(input.sourceTextId, safeFileName);
+  const relativePath = buildCanonicalSourceTextRelativePath(input.sourceTextId, safeFileName);
   const targetPath = resolveLibraryRelativePath(input.libraryRootPath, relativePath);
   const targetDirectory = path.dirname(targetPath);
   const tempPath = path.join(targetDirectory, input.createTempFileName?.() ?? `.writestorm-copy-${randomUUID()}.tmp`);
@@ -127,10 +128,6 @@ function cleanupTempFile(fileSystem: SourceTextCopyFileSystem, tempPath: string)
 
 function isFileAlreadyExistsError(error: unknown): boolean {
   return typeof error === 'object' && error !== null && 'code' in error && error.code === 'EEXIST';
-}
-
-function toLibrarySourceRelativePath(sourceTextId: SourceTextId, fileName: string): string {
-  return ['source', sourceTextId, fileName].join('/');
 }
 
 function safeOriginalFileName(originalFileName: string): string {

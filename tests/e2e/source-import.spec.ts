@@ -41,6 +41,16 @@ test('imports a txt/md source through the packaged desktop entry using a main-pr
     await expect(page.getByText('Source imported.')).toBeVisible();
   });
 
+  await withPackagedApp(libraryRoot, sourcePath, async (page) => {
+    await expect(page.getByRole('heading', { name: 'No library open' })).toBeVisible();
+    await page.getByRole('button', { name: 'Open library' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Breakdown shelf' })).toBeVisible();
+    await expect(page.getByText('Packaged Fixture', { exact: true })).toBeVisible();
+    await expect(page.getByText('Packaged Fixture.md')).not.toBeVisible();
+    await expect(page.getByText('Source imported.')).not.toBeVisible();
+  });
+
   const importRows = readImportRows(libraryRoot);
   expect(importRows.books).toEqual([{
     id: expect.any(String),

@@ -24,7 +24,7 @@ describe('canonical runtime schema validator', () => {
 
   it('rejects changed CHECK constraints and unadmitted production objects', () => {
     const checkRegistry = [...APP_MIGRATIONS, {
-      id: 2,
+      id: 3,
       name: 'validator_check_fixture',
       up(database) {
         database.exec('CREATE TABLE validator_check (value INTEGER CHECK (value > 0))');

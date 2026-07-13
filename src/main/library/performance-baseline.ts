@@ -43,12 +43,12 @@ export const LIBRARY_PERFORMANCE_FIXTURES = [
   {
     name: 'small',
     itemCount: 25,
-    expectedSchemaVersion: 1,
+    expectedSchemaVersion: 2,
   },
   {
     name: 'medium',
     itemCount: 1_000,
-    expectedSchemaVersion: 1,
+    expectedSchemaVersion: 2,
   },
 ] as const satisfies readonly LibraryPerformanceFixture[];
 

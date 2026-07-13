@@ -5,17 +5,26 @@ import {
   isTrustedSenderUrl,
   shouldUseHeaderContentSecurityPolicy,
 } from './security';
-import { createTrustedDevServerOrigins, registerProductIpc } from './ipc';
+import {
+  createStructureDetectionIpcDependencies,
+  createTrustedDevServerOrigins,
+  registerProductIpc,
+} from './ipc';
 import { runOptionalNativeSqliteProbe } from './db/native-probe';
 import { createBookImportIpcDependencies } from './books/book-import-ipc';
 import { BookService } from './books/book-service';
 import { createLibraryEntryIpcDependencies } from './library/library-entry';
 import { LibraryService } from './library/library-service';
+import { createMainLifecycleCoordinator } from './main-lifecycle';
+import { createOptionalStructurePerformanceRecorder } from './structure/performance/structure-performance-recorder';
+import { StructureService } from './structure/structure-service';
+import { createElectronStructureWorkerRunner } from './structure/worker/structure-worker-runner';
+import { runOptionalStructureWorkerProbe } from './structure/worker/structure-worker-probe';
 import { createProductSenderPolicy } from './ipc/product-sender-policy';
 import { createMainWindow } from './windows/main-window';
+import { runOptionalSourceTextWorkerProbe } from './source-text/worker-probe';
 import { SourceImportService } from './source-text/source-import-service';
 import { createElectronSourceTextWorkerRunner } from './source-text/worker-runner';
-import { runOptionalSourceTextWorkerProbe } from './source-text/worker-probe';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -24,7 +33,25 @@ const allowedExternalOrigins = new Set<string>();
 const appProtocol = 'writestorm';
 const appProtocolHost = 'app';
 const productSenderPolicy = createProductSenderPolicy(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+const structureDetectionTimeoutMs = 30_000;
 const libraryService = new LibraryService({ appVersion: app.getVersion() });
+const structurePerformanceRecorder = createOptionalStructurePerformanceRecorder(process.env);
+const structureWorkerRunner = createElectronStructureWorkerRunner(__dirname, {
+  onDetectionComplete: (sample) => {
+    structurePerformanceRecorder?.record({
+      fixture: sample.input.bookTitle,
+      inputBytes: Buffer.byteLength(sample.input.sourceText, 'utf8'),
+      inputCharacters: sample.input.sourceText.length,
+      mainElapsedMs: sample.mainElapsedMs,
+      workerPid: sample.workerPid,
+      worker: sample.telemetry,
+    });
+  },
+});
+const structureService = new StructureService({
+  libraryService,
+  worker: structureWorkerRunner,
+});
 const bookService = new BookService({ libraryService });
 const sourceTextWorkerRunner = createElectronSourceTextWorkerRunner(__dirname);
 const sourceImportService = new SourceImportService({
@@ -38,12 +65,34 @@ const books = createBookImportIpcDependencies({
   env: process.env,
   showOpenDialog: (options) => dialog.showOpenDialog(options),
 });
+const mainLifecycle = createMainLifecycleCoordinator({
+  structure: structureService,
+  disposeStructureWorker: () => structureWorkerRunner.dispose(),
+  clearPendingImports: () => books.clearPendingImports(),
+  closeCurrentLibrary: () => libraryService.closeCurrent(),
+});
 let quitCleanupComplete = false;
 let quitCleanupStarted = false;
 
+async function shutdownAndExit(): Promise<void> {
+  if (quitCleanupStarted) return;
+  quitCleanupStarted = true;
+  try {
+    sourceImportService.pauseImports();
+    await sourceImportService.waitForIdle();
+    await mainLifecycle.shutdown();
+  } finally {
+    quitCleanupComplete = true;
+    app.exit(0);
+  }
+}
+
 async function prepareForLibrarySessionChange(): Promise<void> {
   sourceImportService.pauseImports();
-  await sourceImportService.waitForIdle();
+  await Promise.all([
+    sourceImportService.waitForIdle(),
+    mainLifecycle.prepareForLibrarySessionChange(),
+  ]);
 }
 
 async function cleanupSourceImportsForWindowClose(): Promise<void> {
@@ -177,6 +226,10 @@ app.whenReady().then(async () => {
       showOpenDialog: (options) => dialog.showOpenDialog(options),
     }),
     books,
+    structure: createStructureDetectionIpcDependencies({
+      service: structureService,
+      timeoutMs: structureDetectionTimeoutMs,
+    }),
   });
   await createWindow();
   await runOptionalNativeSqliteProbe();
@@ -184,6 +237,11 @@ app.whenReady().then(async () => {
     mainBundleDirectory: __dirname,
     env: process.env,
     quitApp: () => app.quit(),
+  });
+  await runOptionalStructureWorkerProbe({
+    runner: structureWorkerRunner,
+    env: process.env,
+    quitApp: () => process.exit(0),
   });
 });
 
@@ -193,21 +251,7 @@ app.on('before-quit', (event) => {
   }
 
   event.preventDefault();
-  if (quitCleanupStarted) {
-    return;
-  }
-  quitCleanupStarted = true;
-  sourceImportService.pauseImports();
-  void (async () => {
-    try {
-      await sourceImportService.waitForIdle();
-    } finally {
-      sourceImportService.clearPendingImports();
-      libraryService.closeCurrent();
-      quitCleanupComplete = true;
-      app.quit();
-    }
-  })();
+  void shutdownAndExit();
 });
 
 app.on('window-all-closed', () => {

@@ -43,9 +43,18 @@ const sourceTextIdPayloadSchema = z.object({
   sourceTextId: z.string().min(1),
 }).strict();
 
+const structureDetectionPayloadSchema = z.object({
+  title: z.literal('Detect structure'),
+  sourceTextId: z.string().min(1),
+  sourceTextEdition: z.number().int().positive(),
+  contentHash: z.string().min(1),
+}).strict();
+
 export const JOB_PAYLOAD_SCHEMAS: JobPayloadSchemaRegistry = {
   'source_import@1': sourceTextIdPayloadSchema,
   'source_import_completed@1': sourceTextIdPayloadSchema,
+  'structure_detection@1': structureDetectionPayloadSchema,
+  'structure_detection_completed@1': structureDetectionPayloadSchema,
 };
 
 export class JobService {

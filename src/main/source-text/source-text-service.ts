@@ -41,6 +41,25 @@ export class SourceTextService {
     });
   }
 
+  getCurrentSourceFile(bookId: BreakdownBookId): {
+    readonly sessionId: string;
+    readonly libraryRootPath: string;
+    readonly source: PersistedSourceText;
+  } | null {
+    return this.libraryService.getUnitOfWork().read((session) => {
+      const source = this.repository.getCurrentForBook(session.database, bookId);
+      return source ? {
+        sessionId: session.sessionId,
+        libraryRootPath: session.rootPath,
+        source,
+      } : null;
+    });
+  }
+
+  isSessionCurrent(sessionId: string): boolean {
+    return this.libraryService.getCurrent()?.sessionId === sessionId;
+  }
+
   prepareImportMetadata(input: {
     readonly sourceTextId: SourceTextId;
     readonly bookId: BreakdownBookId;

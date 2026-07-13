@@ -14,6 +14,7 @@ import type {
   LibraryService,
 } from '../library/library-service';
 import { LibraryServiceError as LibraryServiceErrorClass } from '../library/library-service';
+import type { StructureDetectionIpcDependencies } from '../structure/structure-detection-ipc';
 import {
   registerTypedIpcHandlers,
   type IpcMainLike,
@@ -43,6 +44,7 @@ export type ProductIpcRegistrationOptions = {
       request: ContractRequest<'books:import-source'>,
     ) => MaybePromise<ContractResponse<'books:import-source'>>;
   };
+  readonly structure?: StructureDetectionIpcDependencies;
 };
 
 export function registerNotImplementedProductIpcHandlers(
@@ -86,6 +88,7 @@ function createProductHandlers(options: ProductIpcRegistrationOptions): TypedIpc
       options.books?.clearPendingImports,
     ) : {}),
     ...(options.books ? createBookProductHandlers(options.books) : {}),
+    ...(options.structure ? createStructureProductHandlers(options.structure) : {}),
   };
 }
 
@@ -162,6 +165,16 @@ function createBookProductHandlers(
   return {
     'books:list': listHandler,
     'books:import-source': importSourceHandler,
+  };
+}
+
+function createStructureProductHandlers(
+  structure: StructureDetectionIpcDependencies,
+): TypedIpcHandlerMap {
+  const detectHandler: TypedIpcHandler<'structure:detect'> = (request) => structure.detect(request);
+
+  return {
+    'structure:detect': detectHandler,
   };
 }
 

@@ -9,7 +9,10 @@ import { moduleInstanceSummarySchema, updateModuleBodyRequestSchema } from './mo
 import {
   freezeStructureResponseDataSchema,
   storySegmentRangeSchema,
+  structureDetectionRequestSchema,
+  structureDetectionResponseSchema,
   structureNodeSchema,
+  structureWorkspaceSchema,
   updateStorySegmentRangeRequestSchema,
   updateStructureNodeRequestSchema,
 } from './structure';
@@ -70,11 +73,12 @@ export const CONTRACT_REGISTRY = {
   'structure:get': createContract(
     'structure:get',
     bookRequestSchema,
-    contractResponseSchema(z.object({
-      nodes: z.array(structureNodeSchema),
-      storyRanges: z.array(storySegmentRangeSchema),
-      structureEdition: z.number().int().positive().nullable(),
-    }).strict()),
+    contractResponseSchema(structureWorkspaceSchema),
+  ),
+  'structure:detect': createContract(
+    'structure:detect',
+    structureDetectionRequestSchema,
+    structureDetectionResponseSchema,
   ),
   'structure:update-node': createContract(
     'structure:update-node',

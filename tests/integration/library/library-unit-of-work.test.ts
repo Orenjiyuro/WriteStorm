@@ -36,7 +36,7 @@ describe('LibrarySession and LibraryUnitOfWork boundary', () => {
           id: 'library-unit-of-work',
           name: 'Session Library',
           rootPath,
-          schemaVersion: 1,
+          schemaVersion: 2,
           appVersion: '0.1.0-test',
         },
       });
@@ -70,7 +70,7 @@ describe('LibrarySession and LibraryUnitOfWork boundary', () => {
         id: 'library-unit-of-work',
         name: 'Session Library',
         rootPath: 'C:\\Library',
-        schemaVersion: 1,
+        schemaVersion: 2,
         appVersion: '0.1.0-test',
       },
     };

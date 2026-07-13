@@ -32,7 +32,7 @@ describe('Block 6 SQLite and migration performance baseline', () => {
     writePerformanceEvidence(results);
 
     expect(results.map((result) => result.fixture.name)).toEqual(['small', 'medium']);
-    expect(APP_MIGRATIONS).toHaveLength(1);
+    expect(APP_MIGRATIONS).toHaveLength(2);
 
     for (const result of results) {
       const limits = LIBRARY_PERFORMANCE_BASELINE_LIMITS_MS[result.fixture.name];

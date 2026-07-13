@@ -8,6 +8,13 @@ export type {
   ProductIpcRegistrationOptions,
 } from './not-implemented-handlers';
 export {
+  createStructureDetectionIpcDependencies,
+} from '../structure/structure-detection-ipc';
+export type {
+  StructureDetectionIpcDependencies,
+  StructureDetectionIpcOptions,
+} from '../structure/structure-detection-ipc';
+export {
   registerTypedIpcHandler,
   registerTypedIpcHandlers,
 } from './typed-router';

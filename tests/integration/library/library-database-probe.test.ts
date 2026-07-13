@@ -44,8 +44,8 @@ describe('Library database read-only probe', () => {
         appVersion: '0.1.0-test',
         schemaEpoch: 2,
       },
-      appliedMigrationCount: 1,
-      currentSchemaVersion: 1,
+      appliedMigrationCount: 2,
+      currentSchemaVersion: 2,
     });
   });
 
@@ -54,7 +54,7 @@ describe('Library database read-only probe', () => {
     const pendingRegistry = [
       ...APP_MIGRATIONS,
       {
-        id: 2,
+        id: 3,
         name: 'pending_test_migration',
         up() {},
       },
@@ -62,8 +62,8 @@ describe('Library database read-only probe', () => {
 
     expect(probeLibraryDatabase(databasePath, pendingRegistry)).toMatchObject({
       ok: true,
-      appliedMigrationCount: 1,
-      currentSchemaVersion: 1,
+      appliedMigrationCount: 2,
+      currentSchemaVersion: 2,
     });
   });
 

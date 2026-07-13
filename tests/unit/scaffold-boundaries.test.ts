@@ -33,6 +33,26 @@ describe('Forge Vite scaffold', () => {
     expect(mainSource).toContain('books.invalidateWindowSelections();');
   });
 
+  it('wires real structure detection and an asynchronous quit barrier in the Electron main entry', () => {
+    const mainSource = readFileSync(path.join(rootDir, 'src/main/main.ts'), 'utf8');
+
+    expect(mainSource).toContain('new StructureService({');
+    expect(mainSource).toContain('createStructureDetectionIpcDependencies({');
+    expect(mainSource).toContain('beforeLibrarySessionChange: prepareForLibrarySessionChange');
+    expect(mainSource).toContain("app.on('before-quit', (event) => {");
+    expect(mainSource).toContain('event.preventDefault();');
+    expect(mainSource).toContain('await mainLifecycle.shutdown();');
+  });
+
+  it('keeps structure performance recording explicitly env-gated in the main entry', () => {
+    const mainSource = readFileSync(path.join(rootDir, 'src/main/main.ts'), 'utf8');
+
+    expect(mainSource).toContain('createOptionalStructurePerformanceRecorder(process.env)');
+    expect(mainSource).toContain('onDetectionComplete: (sample) => {');
+    expect(mainSource).toContain('structurePerformanceRecorder?.record({');
+    expect(mainSource).toContain("inputBytes: Buffer.byteLength(sample.input.sourceText, 'utf8')");
+  });
+
   it('uses the Vite build output as Electron main entry', () => {
     const packageJson = JSON.parse(readFileSync(path.join(rootDir, 'package.json'), 'utf8')) as {
       main?: string;
@@ -49,9 +69,17 @@ describe('Forge Vite scaffold', () => {
     // are the behavioral proof and this test guards the expected scaffold wiring.
     expect(forgeConfig).toMatch(/entry:\s*['"]src\/main\/main\.ts['"]/);
     expect(forgeConfig).toMatch(/entry:\s*['"]src\/preload\/index\.ts['"]/);
+    expect(forgeConfig).toMatch(/entry:\s*['"]src\/main\/structure\/worker\/structure-worker-entry\.ts['"]/);
+    expect(forgeConfig).toMatch(/config:\s*['"]vite\.structure-worker\.config\.ts['"]/);
     expect(forgeConfig).toMatch(/name:\s*['"]main_window['"]/);
     expect(forgeConfig).toMatch(/config:\s*['"]vite\.renderer\.config\.ts['"]/);
     expect(forgeConfig).toMatch(/asar:\s*(true|{[\s\S]*unpack:\s*['"]\*\*\/\*\.node['"])/);
+  });
+
+  it('disposes active structure utility workers before the app quits', () => {
+    const mainSource = readFileSync(path.join(rootDir, 'src/main/main.ts'), 'utf8');
+
+    expect(mainSource).toContain('structureWorkerRunner.dispose()');
   });
 
   it('keeps the renderer HTML wired to the Vite module entry', () => {
@@ -79,8 +107,6 @@ describe('BrowserWindow security wiring', () => {
       'utf8',
     );
 
-    // Static guard: BrowserWindow construction is intentionally not exported
-    // just for tests. E2E covers user-observable renderer isolation.
     expect(mainSource).toContain('createMainWindow({');
     expect(mainWindowSource).toMatch(/webPreferences:\s*{[\s\S]*nodeIntegration:\s*false/);
     expect(mainWindowSource).toMatch(/webPreferences:\s*{[\s\S]*contextIsolation:\s*true/);
@@ -160,6 +186,24 @@ describe('renderer a11y and i18n shell baseline', () => {
     expect(productRouteSource).not.toContain('Create or open a local library');
     expect(i18nSource).toContain('No library open');
     expect(i18nSource).toContain('rendererFormats');
+  });
+});
+
+describe('Task 19 Structure ownership seams', () => {
+  it('keeps StructureService behind UnitOfWork and JobService ownership', () => {
+    const serviceSource = readFileSync(
+      path.join(rootDir, 'src/main/structure/structure-service.ts'),
+      'utf8',
+    );
+    const runRepositorySource = readFileSync(
+      path.join(rootDir, 'src/main/structure/persistence/structure-detection-run-repository.ts'),
+      'utf8',
+    );
+
+    expect(serviceSource).toContain('getUnitOfWork()');
+    expect(serviceSource).toContain('new JobService');
+    expect(serviceSource).not.toContain('getCurrentContext');
+    expect(runRepositorySource).not.toMatch(/(?:INSERT\s+INTO|UPDATE)\s+jobs/i);
   });
 });
 

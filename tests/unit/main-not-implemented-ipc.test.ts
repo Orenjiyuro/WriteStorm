@@ -52,6 +52,9 @@ const validRequests = {
   'structure:get': {
     bookId,
   },
+  'structure:detect': {
+    bookId,
+  },
   'structure:update-node': {
     nodeId,
     patch: {

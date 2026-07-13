@@ -37,7 +37,7 @@ describe('preload WriteStorm API', () => {
     expect(Object.keys(api.internal)).toEqual(['health']);
     expect(Object.keys(api.library)).toEqual(['create', 'open', 'getCurrent']);
     expect(Object.keys(api.books)).toEqual(['list', 'importSource']);
-    expect(Object.keys(api.structure)).toEqual(['get', 'updateNode', 'updateStoryRange', 'freeze']);
+    expect(Object.keys(api.structure)).toEqual(['get', 'detect', 'updateNode', 'updateStoryRange', 'freeze']);
     expect(Object.keys(api.modules)).toEqual(['listInstances', 'updateBody']);
     expect(Object.keys(api.jobs)).toEqual(['list', 'get', 'cancel']);
     expect(Object.keys(api.exports)).toEqual(['getStatus']);
@@ -87,6 +87,7 @@ describe('preload WriteStorm API', () => {
     await api.books.list();
     await api.books.importSource(importSourceRequest);
     await api.structure.get(bookRequest);
+    await api.structure.detect(bookRequest);
     await api.structure.updateNode(updateNodeRequest);
     await api.structure.updateStoryRange(updateStoryRangeRequest);
     await api.structure.freeze(bookRequest);
@@ -105,6 +106,7 @@ describe('preload WriteStorm API', () => {
       { channel: 'books:list', request: {} },
       { channel: 'books:import-source', request: importSourceRequest },
       { channel: 'structure:get', request: bookRequest },
+      { channel: 'structure:detect', request: bookRequest },
       { channel: 'structure:update-node', request: updateNodeRequest },
       { channel: 'structure:update-story-range', request: updateStoryRangeRequest },
       { channel: 'structure:freeze', request: bookRequest },

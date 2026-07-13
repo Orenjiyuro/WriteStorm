@@ -26,6 +26,16 @@ export class SourceTextRepository {
     return row ? mapRow(row as SourceTextRow) : null;
   }
 
+  getCurrentForBook(database: SqliteDatabase, bookId: BreakdownBookId): PersistedSourceText | null {
+    const row = database.prepare(`
+      ${SOURCE_TEXT_SELECT}
+      JOIN books ON books.current_source_text_id = source_texts.id
+        AND books.id = source_texts.book_id
+      WHERE books.id = ?
+    `).get(bookId) as SourceTextRow | undefined;
+    return row ? mapRow(row) : null;
+  }
+
   list(database: SqliteDatabase): PersistedSourceText[] {
     return (database.prepare(`${SOURCE_TEXT_SELECT} ORDER BY book_id, source_edition`).all() as SourceTextRow[])
       .map(mapRow);
@@ -54,16 +64,16 @@ type SourceTextRow = {
 
 const SOURCE_TEXT_SELECT = `
   SELECT
-    id,
-    book_id AS bookId,
-    original_file_name AS fileName,
-    format,
-    size_bytes AS sizeBytes,
-    encoding,
-    content_hash AS contentHash,
-    source_edition AS sourceTextEdition,
-    relative_path AS relativePath,
-    imported_at AS importedAt
+    source_texts.id,
+    source_texts.book_id AS bookId,
+    source_texts.original_file_name AS fileName,
+    source_texts.format,
+    source_texts.size_bytes AS sizeBytes,
+    source_texts.encoding,
+    source_texts.content_hash AS contentHash,
+    source_texts.source_edition AS sourceTextEdition,
+    source_texts.relative_path AS relativePath,
+    source_texts.imported_at AS importedAt
   FROM source_texts
 `;
 

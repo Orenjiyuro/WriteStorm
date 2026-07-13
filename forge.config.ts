@@ -57,6 +57,11 @@ const config: ForgeConfig = {
           config: 'vite.source-text-worker.config.ts',
           target: 'main',
         },
+        {
+          entry: 'src/main/structure/worker/structure-worker-entry.ts',
+          config: 'vite.structure-worker.config.ts',
+          target: 'main',
+        },
       ],
       renderer: [
         {

@@ -19,6 +19,11 @@ const PRODUCTION_TABLE_OWNERS = {
   source_texts: 'SourceTextService',
   jobs: 'JobService',
   job_checkpoints: 'JobService',
+  structure_detection_runs: 'StructureService',
+  structure_sets: 'StructureService',
+  structure_nodes: 'StructureService',
+  story_segment_ranges: 'StructureService',
+  story_segment_range_chapters: 'StructureService',
 } as const;
 
 afterEach(() => {
@@ -37,6 +42,11 @@ describe('V1 runtime baseline', () => {
         source_texts: 'SourceTextService',
         jobs: 'JobService',
         job_checkpoints: 'JobService',
+        structure_detection_runs: 'StructureService',
+        structure_sets: 'StructureService',
+        structure_nodes: 'StructureService',
+        story_segment_ranges: 'StructureService',
+        story_segment_range_chapters: 'StructureService',
       });
       expect(db.pragma('application_id', { simple: true })).toBe(0x5753544d);
       expect(WRITESTORM_SQLITE_APPLICATION_ID).toBe(0x5753544d);
@@ -47,13 +57,13 @@ describe('V1 runtime baseline', () => {
     }
   });
 
-  it('registers only the V1 runtime baseline migration', () => {
+  it('registers the V1 runtime baseline and Structure workspace', () => {
     const db = migratedDatabase();
     try {
-      expect(APP_MIGRATIONS).toHaveLength(1);
+      expect(APP_MIGRATIONS).toHaveLength(2);
       expect(APP_MIGRATIONS[0]).toMatchObject({ id: 1, name: 'v1_runtime_baseline' });
-      expect(APP_MIGRATIONS.some(({ name }) => name.includes('structure_workspace'))).toBe(false);
-      expect(getCurrentSchemaVersion(db)).toBe(1);
+      expect(APP_MIGRATIONS[1]).toMatchObject({ id: 2, name: 'structure_workspace' });
+      expect(getCurrentSchemaVersion(db)).toBe(2);
     } finally {
       db.close();
     }
@@ -157,7 +167,6 @@ function migratedDatabase(): SqliteDatabase {
   runMigrations(db, APP_MIGRATIONS);
   return db;
 }
-
 function tableNames(db: SqliteDatabase): string[] {
   return db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").pluck().all() as string[];
 }

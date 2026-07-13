@@ -116,6 +116,8 @@ export class LibraryServiceError extends Error {
 
 export class LibraryService {
   private currentSession: InternalLibrarySession | null = null;
+  private readonly activeWriteDepth = new Map<InternalLibrarySession, number>();
+  private readonly deferredCloseSessions = new Set<InternalLibrarySession>();
   private readonly appVersion: string;
   private readonly now: () => string;
   private readonly createLibraryId: () => LibraryId;
@@ -139,7 +141,12 @@ export class LibraryService {
     this.migrateDatabase = options.migrateDatabase ?? runMigrations;
     this.backupDatabase = options.backupDatabase ?? createPreMigrationBackup;
     this.validateSchema = options.validateSchema ?? validateRuntimeSchema;
-    this.unitOfWork = createLibraryUnitOfWork(() => this.currentSession);
+    this.unitOfWork = createLibraryUnitOfWork(() => this.currentSession, {
+      onWriteStart: (session) => {
+        this.activeWriteDepth.set(session, (this.activeWriteDepth.get(session) ?? 0) + 1);
+      },
+      onWriteEnd: (session) => this.finishLibraryWrite(session),
+    });
   }
 
   create(input: CreateLibraryInput): LibrarySessionSummary {
@@ -211,8 +218,9 @@ export class LibraryService {
   }
 
   closeCurrent(): void {
-    this.currentSession?.database.close();
+    const session = this.currentSession;
     this.currentSession = null;
+    if (session) this.closeOrDeferSession(session);
   }
 
   private openCreatedOrExisting(
@@ -356,6 +364,29 @@ export class LibraryService {
         recoverable: false,
         cause: error,
       });
+    }
+  }
+
+  private closeOrDeferSession(session: InternalLibrarySession): void {
+    if ((this.activeWriteDepth.get(session) ?? 0) > 0) {
+      this.deferredCloseSessions.add(session);
+      return;
+    }
+    session.database.close();
+  }
+
+  private finishLibraryWrite(session: InternalLibrarySession): void {
+    const nextDepth = (this.activeWriteDepth.get(session) ?? 1) - 1;
+    if (nextDepth > 0) {
+      this.activeWriteDepth.set(session, nextDepth);
+      return;
+    }
+    this.activeWriteDepth.delete(session);
+    if (!this.deferredCloseSessions.delete(session)) return;
+    try {
+      session.database.close();
+    } catch {
+      // A lifecycle cleanup failure must not replace the stable UnitOfWork error.
     }
   }
 }

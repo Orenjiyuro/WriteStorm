@@ -108,6 +108,51 @@ describe('LibrarySession and LibraryUnitOfWork boundary', () => {
       new LibraryUnitOfWorkError('LIBRARY_SESSION_REQUIRED'),
     );
   });
+
+  it('rolls back with LIBRARY_SESSION_CHANGED when closeCurrent reenters an active write', () => {
+    const rootPath = path.join(tempDirectory(), 'close-reentry');
+    const service = realService();
+    service.create({ rootPath, name: 'Close Reentry' });
+    service.getUnitOfWork().write((session) => session.database.exec(
+      'CREATE TABLE lifecycle_proof (value TEXT NOT NULL)',
+    ));
+    const oldDatabase = service.getUnitOfWork().read((session) => session.database);
+
+    expect(() => service.getUnitOfWork().write((session) => {
+      service.closeCurrent();
+      session.database.prepare('INSERT INTO lifecycle_proof (value) VALUES (?)').run('rollback-after-close');
+    })).toThrowError(expect.objectContaining({ code: 'LIBRARY_SESSION_CHANGED' }));
+    expect(service.getCurrent()).toBeNull();
+    expect(readProofCount(rootPath)).toBe(0);
+    expect(() => oldDatabase.prepare('SELECT 1')).toThrow(/not open/i);
+  });
+
+  it('publishes the replacement session while rolling the old active write back', () => {
+    const firstRoot = path.join(tempDirectory(), 'first');
+    const secondRoot = path.join(tempDirectory(), 'second');
+    const sessionIds = ['session-first', 'session-second'];
+    const service = realService(() => sessionIds.shift()!);
+    service.create({ rootPath: firstRoot, name: 'First' });
+    service.getUnitOfWork().write((session) => session.database.exec(
+      'CREATE TABLE lifecycle_proof (value TEXT NOT NULL)',
+    ));
+    const oldDatabase = service.getUnitOfWork().read((session) => session.database);
+
+    try {
+      expect(() => service.getUnitOfWork().write((session) => {
+        service.create({ rootPath: secondRoot, name: 'Second' });
+        session.database.prepare('INSERT INTO lifecycle_proof (value) VALUES (?)').run('rollback-after-switch');
+      })).toThrowError(expect.objectContaining({ code: 'LIBRARY_SESSION_CHANGED' }));
+      expect(service.getCurrent()).toMatchObject({
+        sessionId: 'session-second',
+        library: { name: 'Second', rootPath: secondRoot },
+      });
+      expect(readProofCount(firstRoot)).toBe(0);
+      expect(() => oldDatabase.prepare('SELECT 1')).toThrow(/not open/i);
+    } finally {
+      service.closeCurrent();
+    }
+  });
 });
 
 function internalSession(sessionId: string): InternalLibrarySession {
@@ -132,4 +177,21 @@ function tempDirectory(): string {
   const directory = mkdtempSync(path.join(os.tmpdir(), 'writestorm-library-uow-'));
   tempDirs.push(directory);
   return directory;
+}
+
+function realService(createSessionId: () => string = () => sessionId): LibraryService {
+  return new LibraryService({
+    appVersion: '0.1.0-test',
+    createLibraryId: () => 'library-unit-of-work' as LibraryId,
+    createLibrarySessionId: createSessionId,
+  });
+}
+
+function readProofCount(rootPath: string): number {
+  const database = openSqliteDatabase(path.join(rootPath, 'writestorm.sqlite'));
+  try {
+    return database.prepare('SELECT COUNT(*) FROM lifecycle_proof').pluck().get() as number;
+  } finally {
+    database.close();
+  }
 }

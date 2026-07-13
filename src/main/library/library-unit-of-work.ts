@@ -33,6 +33,10 @@ export interface LibraryUnitOfWork {
 
 export function createLibraryUnitOfWork(
   getCurrentSession: () => InternalLibrarySession | null,
+  lifecycle: {
+    readonly onWriteStart?: (session: InternalLibrarySession) => void;
+    readonly onWriteEnd?: (session: InternalLibrarySession) => void;
+  } = {},
 ): LibraryUnitOfWork {
   const requireCurrentSession = (): InternalLibrarySession => {
     const session = getCurrentSession();
@@ -44,13 +48,18 @@ export function createLibraryUnitOfWork(
     read: (operation) => operation(requireCurrentSession()),
     write: (operation) => {
       const session = requireCurrentSession();
-      return session.database.transaction(() => {
-        const result = operation(session);
-        if (getCurrentSession()?.sessionId !== session.sessionId) {
-          throw new LibraryUnitOfWorkError('LIBRARY_SESSION_CHANGED');
-        }
-        return result;
-      })();
+      lifecycle.onWriteStart?.(session);
+      try {
+        return session.database.transaction(() => {
+          const result = operation(session);
+          if (getCurrentSession()?.sessionId !== session.sessionId) {
+            throw new LibraryUnitOfWorkError('LIBRARY_SESSION_CHANGED');
+          }
+          return result;
+        })();
+      } finally {
+        lifecycle.onWriteEnd?.(session);
+      }
     },
   };
 }

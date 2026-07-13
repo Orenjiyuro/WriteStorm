@@ -242,3 +242,14 @@ Health policy:
 - `orphan_source`, `missing_source`, and `hash_mismatch` require manual review.
 - Symlinks are not followed as trusted source files.
 - Task 14 does not promote staging files or own the Book/Job completion transaction; those remain Task 15 responsibilities.
+
+## D017: Library Lifecycle Reentry During Unit Of Work
+
+Decision: Library session identity changes take effect immediately, but an SQLite connection participating in an active `LibraryUnitOfWork.write` is closed only after its outermost transaction exits. Active-write depth is tracked per internal session and lifecycle cleanup is deferred for that session.
+
+Implications:
+
+- Closing or replacing the current Library from inside a write causes `LIBRARY_SESSION_CHANGED` and transaction rollback.
+- Callback code that continues to use its captured old session before returning does not receive a native closed-connection error.
+- A newly created/reopened session may remain published while the old transaction rolls back.
+- The old connection is closed after rollback; deferred cleanup never keeps it as a public session.

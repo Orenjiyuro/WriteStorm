@@ -50,6 +50,12 @@ test('shows the no-library empty state in a real Electron window', async () => {
 
     await expect(page.getByRole('heading', { name: 'No library open' })).toBeVisible();
     await expect(page.getByText('Create or open a local library')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Analysis module contract readout' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Technique library contract readout' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Perspective contract readout' })).toHaveCount(0);
+
+    await page.evaluate(() => { window.location.hash = '#/diagnostics'; });
+    await expect(page.getByRole('heading', { name: 'Engineering contract diagnostics' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Analysis module contract readout' })).toBeVisible();
     await expect(page.locator('[data-contract-source="shared-domain-analysis"]')).toBeVisible();
     await expect(page.getByText('Source: shared domain contract')).toBeVisible();
@@ -88,6 +94,10 @@ test('shows the no-library empty state in a real Electron window', async () => {
     await expect(page.getByText('Source snapshot secondary information')).toBeVisible();
     await expect(page.getByText('Read-only provenance position')).toBeVisible();
     await expect(page.getByText('Manual primary action unavailable')).toBeVisible();
+
+    await page.evaluate(() => { window.location.hash = '#/'; });
+    await expect(page.getByRole('heading', { name: 'No library open' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Analysis module contract readout' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Create library' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Open library' })).toBeVisible();
     await expect(page.getByRole('button')).toHaveCount(2);

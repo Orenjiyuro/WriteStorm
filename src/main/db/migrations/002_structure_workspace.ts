@@ -1,5 +1,13 @@
 import type { Migration } from '../migration-runner';
 
+const BASE_STRUCTURE_WITNESS_SETUP = `
+  INSERT INTO books VALUES ('book', 'Book', NULL, 'now', 'now');
+  INSERT INTO source_texts VALUES ('source', 'book', 'source.txt', 1, 'txt', 'hash', 'utf8', 1, 'source.txt', 'now');
+  INSERT INTO jobs VALUES ('job', 'book', 'structure_detection', 'queued', 0, NULL, 1, '{}', NULL, NULL, 'now', 'now')
+`;
+
+const VALID_DRAFT_SET_SQL = `INSERT INTO structure_sets VALUES ('set', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'draft', NULL, 'included', 1, NULL, NULL, 1, 'now', 'now')`;
+
 export const STRUCTURE_WORKSPACE_MIGRATION = {
   id: 2,
   name: 'structure_workspace',
@@ -262,4 +270,42 @@ export const STRUCTURE_WORKSPACE_MIGRATION = {
       END;
     `);
   },
+  semanticWitnesses: [
+    {
+      name: 'structure_detection_run_state_reason_check',
+      setupSql: BASE_STRUCTURE_WITNESS_SETUP,
+      sql: `INSERT INTO structure_detection_runs VALUES ('run', 'job', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'failed', NULL, 'now', 'now')`,
+      outcome: 'reject',
+    },
+    {
+      name: 'structure_set_stage_shape_check',
+      setupSql: BASE_STRUCTURE_WITNESS_SETUP,
+      sql: `INSERT INTO structure_sets VALUES ('set', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'draft', NULL, 'included', NULL, NULL, NULL, 1, 'now', 'now')`,
+      outcome: 'reject',
+    },
+    {
+      name: 'structure_node_offset_check',
+      setupSql: `${BASE_STRUCTURE_WITNESS_SETUP}; ${VALID_DRAFT_SET_SQL}`,
+      sql: `INSERT INTO structure_nodes VALUES ('node', 'set', NULL, 'chapter', 'Chapter', NULL, 0, 10, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now')`,
+      outcome: 'reject',
+    },
+    {
+      name: 'story_range_offset_check',
+      setupSql: `${BASE_STRUCTURE_WITNESS_SETUP}; ${VALID_DRAFT_SET_SQL}`,
+      sql: `INSERT INTO story_segment_ranges (id, structure_set_id, title, start_offset, end_offset, start_reason, end_reason, confidence_score, confidence_level, created_at, updated_at) VALUES ('range', 'set', 'Range', 5, 5, 'start', 'end', 1, 'high', 'now', 'now')`,
+      outcome: 'reject',
+    },
+    {
+      name: 'story_range_chapter_sort_order_check',
+      setupSql: `${BASE_STRUCTURE_WITNESS_SETUP}; ${VALID_DRAFT_SET_SQL}; INSERT INTO structure_nodes VALUES ('chapter', 'set', NULL, 'chapter', 'Chapter', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now'); INSERT INTO story_segment_ranges (id, structure_set_id, title, start_offset, end_offset, start_reason, end_reason, confidence_score, confidence_level, created_at, updated_at) VALUES ('range', 'set', 'Range', 0, 10, 'start', 'end', 1, 'high', 'now', 'now')`,
+      sql: `INSERT INTO story_segment_range_chapters VALUES ('range', 'chapter', -1)`,
+      outcome: 'reject',
+    },
+    {
+      name: 'current_structure_set_partial_unique_index',
+      setupSql: `${BASE_STRUCTURE_WITNESS_SETUP}; ${VALID_DRAFT_SET_SQL}`,
+      sql: `INSERT INTO structure_sets VALUES ('set-2', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'draft', NULL, 'included', 1, NULL, NULL, 1, 'now', 'now')`,
+      outcome: 'reject',
+    },
+  ],
 } as const satisfies Migration;

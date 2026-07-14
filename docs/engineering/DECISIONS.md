@@ -277,3 +277,13 @@ Implications:
 - Main constructs the Book service, source worker runner, and SourceImport service once rather than per IPC call.
 - Window close, Library replacement, and app quit pause new import admission, cancel active work, and await an idle barrier before cleanup or connection changes. Pause admission is reference-counted so overlapping lifecycle barriers cannot resume imports early; pending tokens are then cleared.
 - Task 16 does not change renderer/preload contracts and does not reconnect Block 8 persistence or IPC.
+
+## D020: SQLite Schema Semantic Compatibility Baseline
+
+Decision: SQLite 3.53.2 is the first and minimum supported WriteStorm SQLite runtime. Schema compatibility at that baseline is established from SQLite's structured introspection plus migration-owned semantic witnesses, never by formatting-sensitive equality of complete `sqlite_schema.sql` text and never by a handwritten SQL parser. Witnesses may write only to an isolated temporary or in-memory database reconstructed from the source schema; the source library remains byte-for-byte unchanged with no sidecars. Partial indexes require an explicit semantic witness and expression indexes are not admitted by the V1 registry.
+
+Implications:
+
+- The project does not claim compatibility with libraries produced by older development SQLite runtimes.
+- A future supported-runtime upgrade retains the real fixture for every previously released baseline and adds cross-version verification before compatibility is claimed.
+- CHECK behavior is owned by the migration that introduces it, rather than inferred by a regex, split-based tokenizer, or duplicated final-schema SQL projection.

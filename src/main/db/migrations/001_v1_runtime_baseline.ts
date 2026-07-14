@@ -83,4 +83,39 @@ export const V1_RUNTIME_BASELINE_MIGRATION = {
       CREATE INDEX idx_job_checkpoints_job_id ON job_checkpoints(job_id);
     `);
   },
+  semanticWitnesses: [
+    {
+      name: 'library_singleton_and_epoch_checks',
+      sql: `INSERT INTO library VALUES (2, 'lib', 'Library', '1.0.0', 2, 'now', 'now')`,
+      outcome: 'reject',
+    },
+    {
+      name: 'source_text_positive_size_check',
+      setupSql: `INSERT INTO books VALUES ('book', 'Book', NULL, 'now', 'now')`,
+      sql: `INSERT INTO source_texts VALUES ('source', 'book', 'source.txt', 0, 'txt', 'hash', 'utf8', 1, 'source.txt', 'now')`,
+      outcome: 'reject',
+    },
+    {
+      name: 'source_text_format_check',
+      setupSql: `INSERT INTO books VALUES ('book', 'Book', NULL, 'now', 'now')`,
+      sql: `INSERT INTO source_texts VALUES ('source', 'book', 'source.txt', 1, 'pdf', 'hash', 'utf8', 1, 'source.txt', 'now')`,
+      outcome: 'reject',
+    },
+    {
+      name: 'job_state_check',
+      sql: `INSERT INTO jobs VALUES ('job', NULL, 'source_import', 'unknown', 0, NULL, 1, '{}', NULL, NULL, 'now', 'now')`,
+      outcome: 'reject',
+    },
+    {
+      name: 'job_progress_check',
+      sql: `INSERT INTO jobs VALUES ('job', NULL, 'source_import', 'queued', -1, NULL, 1, '{}', NULL, NULL, 'now', 'now')`,
+      outcome: 'reject',
+    },
+    {
+      name: 'checkpoint_sequence_check',
+      setupSql: `INSERT INTO jobs VALUES ('job', NULL, 'source_import', 'queued', 0, NULL, 1, '{}', NULL, NULL, 'now', 'now')`,
+      sql: `INSERT INTO job_checkpoints VALUES ('checkpoint', 'job', 0, 'progress', 1, '{}', 'now')`,
+      outcome: 'reject',
+    },
+  ],
 } as const satisfies Migration;

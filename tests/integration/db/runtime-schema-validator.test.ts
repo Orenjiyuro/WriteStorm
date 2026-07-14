@@ -29,6 +29,11 @@ describe('canonical runtime schema validator', () => {
       up(database) {
         database.exec('CREATE TABLE validator_check (value INTEGER CHECK (value > 0))');
       },
+      semanticWitnesses: [{
+        name: 'validator_check_requires_positive_value',
+        sql: 'INSERT INTO validator_check (value) VALUES (0)',
+        outcome: 'reject',
+      }],
     }] satisfies readonly Migration[];
     withCanonicalDatabase((database) => {
       database.exec(`
@@ -40,6 +45,39 @@ describe('canonical runtime schema validator', () => {
     }, checkRegistry);
     withCanonicalDatabase((database) => {
       database.exec('CREATE TABLE unadmitted_product_fact (id TEXT PRIMARY KEY)');
+      expect(validateRuntimeSchema(database, APP_MIGRATIONS).ok).toBe(false);
+    });
+  });
+
+  it('accepts equivalent DDL formatting because sqlite_schema.sql text is not authoritative', () => {
+    const formattingRegistry = [...APP_MIGRATIONS, {
+      id: 3,
+      name: 'validator_formatting_fixture',
+      up(database) {
+        database.exec('CREATE TABLE validator_formatting (id INTEGER PRIMARY KEY, value TEXT NOT NULL)');
+      },
+      semanticWitnesses: [],
+    }] satisfies readonly Migration[];
+    withCanonicalDatabase((database) => {
+      database.exec(`
+        ALTER TABLE validator_formatting RENAME TO validator_formatting_old;
+        CREATE TABLE validator_formatting(
+          id integer primary key,
+          value text not null
+        );
+        DROP TABLE validator_formatting_old;
+      `);
+      expect(validateRuntimeSchema(database, formattingRegistry)).toEqual({ ok: true });
+    }, formattingRegistry);
+  });
+
+  it('rejects partial or expression indexes that are not represented safely', () => {
+    withCanonicalDatabase((database) => {
+      database.exec('CREATE INDEX unexpected_partial ON jobs(state) WHERE state = \'queued\'');
+      expect(validateRuntimeSchema(database, APP_MIGRATIONS).ok).toBe(false);
+    });
+    withCanonicalDatabase((database) => {
+      database.exec('CREATE INDEX unexpected_expression ON jobs(lower(state))');
       expect(validateRuntimeSchema(database, APP_MIGRATIONS).ok).toBe(false);
     });
   });

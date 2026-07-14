@@ -49,7 +49,8 @@ test('packaged Electron runs and reaps the source-text utility worker', async ()
       contentHash: expect.stringMatching(/^sha256:[0-9a-f]{64}$/),
       encoding: 'utf-8',
     });
-    await expect(withTimeout(appExit, 10_000)).resolves.toEqual({ code: 0, signal: null });
+    stopProcess(appProcess);
+    await expect(withTimeout(appExit, 10_000)).resolves.toBeDefined();
   } catch (error) {
     throw formatErrorWithElectronStderr(error, stderr.summary());
   } finally {

@@ -203,3 +203,6 @@ Expected result:
 
 - The first command finds the hard-gate contracts or linked decisions.
 - The second command returns no unresolved placeholders.
+# Task 20 gate record
+
+Schema publication remains pre-release: migrations 001/002 are the current unpublished baseline, SQLite 3.53.2 is the first supported runtime, and semantic schema validation is proven under that runtime. Published migrations become immutable only after the first external alpha/release tag. Windows packaging/e2e can satisfy the current-platform gate; macOS smoke, release makers, and the Codex SDK feasibility gate remain blocked until executed in their required environments.

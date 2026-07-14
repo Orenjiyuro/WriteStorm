@@ -66,7 +66,7 @@ The implementation plan for this task must preserve these object boundaries:
 6. User imports a `.txt` or `.md` file.
 7. App copies the source file and records metadata.
 8. User sees structure review with title tree and story segment range areas.
-9. User can adjust or accept the detected structure shell.
+9. User can adjust or accept the detected structure candidate.
 10. User freezes the structure.
 11. User enters breakdown workbench.
 12. User sees module instance shells for V1 modules and their statuses.

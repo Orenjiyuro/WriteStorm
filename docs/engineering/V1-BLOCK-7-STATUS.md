@@ -30,7 +30,9 @@ Block 7 may continue only as non-AI Foundation work. AI/Codex/prompt/runtime rem
 
 ## Task 7.2 Source Import Metadata Schema
 
-Task 7.2 source import metadata schema is implemented. The static app migration registry now reaches schema version 3 through `003_source_import_metadata`.
+Historical note: Task 7 originally used unpublished migration `003_source_import_metadata`. The global reset deleted that migration; its admitted source-import columns and constraints now belong to migration 001, and the current registry reaches version 2 after migration 002.
+
+Task 20 fresh packaged evidence revalidated the native dialog-stub import path as part of 7/7 Windows Electron e2e tests. Current source import delegates to SourceImportService, persists queued/running/completed Job policy and final checkpoint transactionally, and keeps source paths out of renderer requests. This does not authorize AI or claim macOS packaging.
 
 The migration adds `source_texts.original_file_name`, `source_texts.size_bytes`, unique `idx_source_texts_content_hash`, and insert/update validation triggers that reject missing, blank, or non-positive source import metadata.
 

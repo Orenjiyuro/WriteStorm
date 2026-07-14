@@ -23,13 +23,14 @@ describe('Block 7 deferral documentation gate', () => {
     expect(status).toContain('No structure detection, AI, or module generation');
   });
 
-  it('records Task 7.2 as schema metadata only without import implementation', () => {
+  it('records the unpublished Task 7.2 migration reset into the current baseline', () => {
     const context = readFileSync(path.resolve('docs/engineering/CONTEXT.md'), 'utf8');
     const status = readFileSync(path.resolve('docs/engineering/V1-BLOCK-7-STATUS.md'), 'utf8');
 
     for (const document of [context, status]) {
-      expect(document).toContain('Task 7.2 source import metadata schema is implemented');
-      expect(document).toContain('schema version 3');
+      expect(document).toContain('migration 001');
+      expect(document).toContain('migration 002');
+      expect(document).toMatch(/schema version (?:is )?2|reaches version 2/);
       expect(document).toContain('source_texts.original_file_name');
       expect(document).toContain('source_texts.size_bytes');
       expect(document).toContain('idx_source_texts_content_hash');

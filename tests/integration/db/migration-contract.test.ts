@@ -98,7 +98,7 @@ describe('empty-database migration replay contract', () => {
     expect(validatorSource).not.toMatch(/expected\s*===\s*actual/);
   });
 
-  it('records the replay contract and the deferred cross-SQLite compatibility gate', () => {
+  it('records the replay contract and completed SQLite 3.53.2 compatibility gate', () => {
     const context = readFileSync('docs/engineering/CONTEXT.md', 'utf8');
     const decisions = readFileSync('docs/engineering/DECISIONS.md', 'utf8');
     for (const document of [context, decisions]) {
@@ -106,8 +106,9 @@ describe('empty-database migration replay contract', () => {
       expect(normalized).toContain('empty-database migration replay');
       expect(normalized).toContain('schema compatibility gate');
       expect(normalized).toContain('task 19');
-      expect(normalized).toContain('task 20');
-      expect(normalized).toContain('cross-sqlite compatibility is not yet verified');
+      expect(normalized).toContain('sqlite 3.53.2');
+      expect(normalized).toContain('first and minimum supported');
+      expect(normalized).not.toContain('cross-sqlite compatibility is not yet verified');
     }
   });
 });

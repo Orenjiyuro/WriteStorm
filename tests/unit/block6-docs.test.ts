@@ -20,7 +20,7 @@ describe('Block 6 native-gate documentation', () => {
     );
     expect(technicalDesign).toContain('SQLite `library` row owns library identity');
     expect(technicalDesign).toContain('applied migrations must be a contiguous prefix');
-    expect(technicalDesign).toContain('`books.source_text_id` references `source_texts.id`');
+    expect(technicalDesign).toContain('`books.current_source_text_id` references `source_texts.id`');
     expect(technicalDesign).toContain('`relation_links`');
     expect(technicalDesign).toContain('`work_technique_observations`');
     expect(technicalDesign).toContain('`reusable_technique_candidates`');
@@ -43,9 +43,13 @@ describe('Block 6 native-gate documentation', () => {
     expect(context).toContain('LibraryService reads `LibrarySummary` identity from SQLite `library`');
     expect(context).toContain('LibraryService.open validates source/exports/logs/cache/mirrors');
     expect(context).toContain('SQLite open failures map to `LIBRARY_ERROR` with `database_open_failed`');
-    expect(context).toContain('`books.source_text_id` is constrained by FK to `source_texts.id`');
+    expect(context).toContain(
+      '`books.current_source_text_id` is constrained by FK to `source_texts.id`',
+    );
     expect(context).toContain('Task 6.4 Foundation Schema is implemented');
-    expect(context).toContain('Task 6.5 Content Model Schema shell is implemented');
+    expect(context).toContain(
+      'The unpublished Block 1-7 migration history will be replaced by schema epoch 2',
+    );
     expect(context).toContain('TechniqueEntry and ReusableTechniqueCandidate remain separate tables');
     expect(context).toContain('Perspective views are stored in `perspective_views`, not `analysis_module_instances`');
     expect(context).toContain('LibraryService failures are mapped to `LIBRARY_ERROR`');
@@ -96,10 +100,10 @@ describe('Block 6 native-gate documentation', () => {
     expect(status).toContain('Do not override or upgrade `@electron/rebuild` or node-gyp');
     expect(status).toContain('Visual Studio Build Tools 2022 version');
     expect(status).toContain('Task 6.4 Foundation Schema');
-    expect(status).toContain('Task 6.5 Content Model Schema shell');
+    expect(status).toContain('Historical Task 6.5 speculative content-model migration');
     expect(status).toContain('tests/integration/db/app-schema.test.ts');
     expect(status).toContain('schema version 2');
-    expect(status).toContain('books.source_text_id` FK');
+    expect(status).toContain('books.current_source_text_id` FK');
     expect(status).toContain('Task 6.11 LibraryService');
     expect(status).toContain('Opening an existing library requires `writestorm.sqlite`');
     expect(status).toContain('Creating a library requires an absent or empty root');

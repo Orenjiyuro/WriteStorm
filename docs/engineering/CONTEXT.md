@@ -5,6 +5,8 @@
 
 ## Active V1 Foundation Reset
 
+Task 20 fresh recertification on 2026-07-14 passed `npm run check`: TypeScript passed; unit passed with 86 files / 366 tests; integration passed with 21 files / 133 tests; Windows x64 packaging passed; and all 7 packaged Electron e2e tests passed serially. The serial Playwright policy is intentional because each spec launches the packaged desktop process. This evidence recertifies the current Windows foundation and Block 8A reattachment, not Block 8B/8C, AI feasibility, macOS packaging, makers, signing, notarization, or release readiness.
+
 Task 12R-A hardens migration safety before source-worker work: pending migrations are snapshotted from a read-only source before any writable open, retention is ordered by the parsed backup timestamp, and create/open publish a Library session only after a runtime-schema descriptor dynamically derived from the active migration registry matches the resulting database.
 
 Task 12R-A.1 freezes the **empty-database migration replay** contract: the complete `APP_MIGRATIONS` registry must execute in order from a truly empty SQLite database with zero business rows, identify a failing migration by id and name, produce the registry's final version, preserve the WriteStorm application ID and schema epoch, and pass the current runtime-schema validator. Migrations may transform existing data, but every migration must also accept the zero-business-row case used by fresh installation. No test may pre-seed business fixtures to satisfy this contract.
@@ -21,7 +23,7 @@ Task 14 introduces the persisted `SourceTextService`/`SourceTextRepository` boun
 
 Task 12R-C hardens real Library lifecycle reentry. When `closeCurrent`, `create`, or a later session replacement occurs inside an active `LibraryUnitOfWork.write`, session identity changes immediately but the old SQLite connection remains open until the outermost transaction rolls back. The caller receives stable `LIBRARY_SESSION_CHANGED`, never a native closed-connection error; then the old connection is closed. Nested writes use per-session depth tracking so cleanup cannot run early.
 
-Cross-runtime schema equivalence remains a deferred **Schema Compatibility Gate**, not a completed capability: **cross-SQLite compatibility is not yet verified**. After Task 19 fixes the final V1 migration registry and before Task 20 full recertification, this gate must replace complete `sqlite_schema.sql` text equality as the final cross-version authority. It must structurally validate columns with `table_xinfo`, foreign keys with `foreign_key_list`, indexes and uniqueness with `index_list` plus `index_xinfo`, and exact table/view/trigger admission; it must select a verified semantic CHECK strategy and use real databases produced by the current and minimum-supported SQLite versions. Formatting-only DDL differences must pass, while real column, FK, UNIQUE, CHECK, and index differences must fail. Parser/dependency selection requires a separate decision; regex, simple splitting, whitespace compression, case folding, and an unverified handwritten SQLite parser are not approved.
+The Schema Compatibility Gate is complete for the first supported SQLite baseline, 3.53.2. It does not claim compatibility with older development runtimes. Structured PRAGMA descriptors, exact object admission, two-sided migration-owned semantic boundaries, and a real 3.53.2 fixture reject column/FK/index/CHECK/trigger/partial-index mutations without a handwritten SQL parser.
 
 Task 15 centralizes the source-import application use case behind `SourceImportService`. Import Jobs can only be created through queued-only `JobService.createQueued`; `running` is entered through transition policy, while `completed` is unavailable through the generic transition API and must use `completeWithCheckpoint` so Book binding, final progress, and the final checkpoint share the enclosing `LibraryUnitOfWork` transaction. Worker staging is promoted with a no-overwrite same-filesystem link, database failures remove the promoted SourceText directory, unique-hash races re-query the winning Book/SourceText, and abandoned queued/running import Jobs are recovered with `SOURCE_IMPORT_ABANDONED` while only their exact staging files are removed. Task 16 still owns replacement of the existing IPC orchestration with delegation to this service; Task 15 does not claim that adapter cutover.
 
@@ -31,7 +33,7 @@ The accepted reset contract is recorded in `docs/adr/0001-pre-release-schema-res
 
 Production tables now require a frozen identity/owner/lifecycle, real write and read paths, a stable error model, and integration-test coverage. Speculative shell tables are not admitted. The canonical source path is `source/{sourceTextId}/{originalFileName}`. The Job/Checkpoint core is frozen early because Block 7 already persists import Jobs. After the first external alpha or release tag, published migrations are immutable and changes are forward-only with pre-migration snapshots.
 
-Block 8 pure detection, confidence, validation, fixtures, performance fixtures, and detection worker protocol remain protected by the ADR hash manifest. Block 8 migration, persistence, Job wiring, and IPC wiring are paused until Task 19 reconnects them. This does not mean Block 8 or the Block 1-7 reset is complete. macOS packaged smoke and release makers remain blocked/not verified.
+Task 19 reattached Block 8A detection persistence, Job lifecycle, worker and IPC wiring to migration 002 and the current service/UoW boundaries. The ADR's 19 pure detection/fixture hashes remain unchanged. Block 8A detection is implemented; Block 8B review/freeze and Block 8C invalidation remain separate unfinished work. macOS packaged smoke and release makers remain blocked/not verified.
 
 ## 1. Current Repository State
 
@@ -126,8 +128,8 @@ Current Block 6 native gate facts:
 - Migration runner rejects unknown applied migration ids and applied migration id/name mismatches before running pending migrations. Older apps must not continue on unknown future schemas.
 - Migration runner rejects non-contiguous applied migration histories. Applied rows must be a contiguous prefix of the static registry, so a database with migration 2 but missing migration 1 cannot be opened or repaired by running migration 1 later.
 - Task 6.4 Foundation Schema is implemented as production migration `001_foundation_schema` and brings app schema version to at least 1. It creates `library`, `books`, `source_texts`, `structure_nodes`, `story_segment_ranges`, `jobs`, and `exports` with introspected core columns and relationships.
-- `books.source_text_id` is constrained by FK to `source_texts.id`; the current-source pointer must not reference a nonexistent source text.
-- Task 6.5 Content Model Schema shell is implemented as production migration `002_content_model_shell` and brings app schema version to 2. It creates `analysis_modules`, `analysis_module_instances`, `evidence_anchors`, `relation_links`, `work_technique_observations`, `reusable_technique_candidates`, `source_snapshots`, `technique_entries`, and `perspective_views`.
+- `books.current_source_text_id` is constrained by FK to `source_texts.id`; the current-source pointer must not reference a nonexistent source text.
+- The historical Task 6.5 speculative content-model tables and unpublished migration were removed by the global reset. They are not production objects. The admitted production registry is migration 001 plus structure migration 002.
 - TechniqueEntry and ReusableTechniqueCandidate remain separate tables. `technique_entries` reference `source_snapshots`, not reusable candidates or evidence anchors directly.
 - Perspective views are stored in `perspective_views`, not `analysis_module_instances`; `perspective_views` does not FK to `analysis_module_instances` and does not make perspectives the eighth analysis module.
 - `relation_links` and `evidence_anchors` are independent shell tables. Perspective views may read them later but must not generate relation facts or own evidence state.
@@ -159,7 +161,7 @@ Current Block 7 gate facts:
 - `books:import-source` success response is `ImportSourceResult`; `IMPORT_ERROR` failures must include a stable import `details.reason`.
 - UTF-8 and UTF-8 BOM decode automatically in Task 7.5.
 - GB18030 is available only through the manual retry encoding override before a later authorized task proves a deterministic confidence rule or approved dependency.
-- Task 7.2 source import metadata schema is implemented and brings the static app schema registry to schema version 3.
+- The unpublished Task 7 source-import migration history was reset. Current source-import metadata belongs to migration 001; structure workspace belongs to migration 002, so the current schema version is 2.
 - Task 7.2 adds `source_texts.original_file_name`, `source_texts.size_bytes`, unique `idx_source_texts_content_hash`, and validation triggers that reject missing, blank, or non-positive source import metadata.
 - Task 7.2 does not implement file dialog, preflight, source copy, SQLite import writes, renderer import UI, BookService, or SourceTextService.
 - Task 7.3 main-side file dialog adapter is implemented.

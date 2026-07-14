@@ -121,3 +121,8 @@ Before Block 1 can be marked complete by the total thread:
 2. macOS packaged smoke still needs a macOS runner. Current coverage is Windows smoke plus macOS package path unit tests.
 3. Remote CI remains blocked until a provider/workflow and macOS runner policy are selected.
 4. Production release strategy remains blocked until signing, notarization, and auto-update decisions are made.
+# Task 20 recertification note
+
+The Block 1 security foundation remains active: BrowserWindow guards and product sender identity are installed before first navigation, with Node integration disabled, context isolation enabled and sandbox enabled. Windows packaging/e2e is recertified by Task 20; macOS packaged smoke and release makers remain blocked/not verified.
+
+Task 20 fresh Windows evidence on 2026-07-14: `npm run check` passed with 86 unit files / 366 tests, 21 integration files / 133 tests, successful Windows x64 package, and 7/7 packaged Electron e2e tests. This does not change the blocked macOS, maker, signing or notarization rows above.

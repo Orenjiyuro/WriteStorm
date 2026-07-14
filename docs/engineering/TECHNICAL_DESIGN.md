@@ -8,6 +8,8 @@
 
 WriteStorm V1 采用 Electron + React + TypeScript 构建 Windows 11 和 macOS 双桌面端，不提供 Web 运行版。应用以 SQLite 作为唯一事务性主事实源，JSON/Markdown 只作为导出、镜像或人类可读产物。AI V1 只允许接入 Codex SDK；如果 Codex SDK spike 不能满足结构化输出、取消、日志、鉴权和打包运行要求，V1 AI 能力阻塞，不回退到 `codex exec`、app-server、GUI app 自动化或其他供应商。
 
+Task 20 recertifies the implemented foundation around schema epoch 2 and migrations 001/002. Library open is `readonly probe -> readonly backup when migration is pending -> writable open -> migrate -> resulting-schema validation -> publish session`. Repositories and services receive session-bound Units of Work rather than a public SQLite handle. Imported bytes live at `source/{sourceTextId}/{originalFileName}`. Jobs are created queued, transition through policy, and complete with their final checkpoint in one transaction. Renderer server state uses session-scoped TanStack Query keys.
+
 首个实现增量仍是 `docs/tasks/TASK-001-breakdown-workbench-foundation.md`：资料库、拆解书架、导入、结构校正、模块实例骨架、job 状态和导出阻塞态。
 
 ## 2. Source Basis
@@ -200,7 +202,7 @@ Minimum tables for the first implementation:
 | --- | --- |
 | `schema_migrations` | Applied migrations and timestamps |
 | `library` | Library identity row owned by SQLite, not by manifest |
-| `books` | `BreakdownBook` records and lifecycle state; `books.source_text_id` references `source_texts.id` |
+| `books` | `BreakdownBook` records and lifecycle state; `books.current_source_text_id` references `source_texts.id` |
 | `source_texts` | Imported file metadata, hash, encoding and source edition |
 | `structure_nodes` | Title tree nodes for book/volume/chapter |
 | `story_segment_ranges` | Cross-chapter story segment scopes |

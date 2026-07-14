@@ -154,3 +154,6 @@ state_requirements:
 - 每个工作台叶节点都有当前对象、可看内容、可做动作、写入位置和守卫状态。
 - 空态、错态、恢复态覆盖首次启动、导入、结构校正、任务中断、证据失效和导出阻塞。
 - 本文只声明低保真流程，不声明高保真视觉或交互验收已完成。
+# Task 20 recertified implemented flow
+
+The implemented user path is: create or open Library -> import txt/md through the native dialog -> atomically persist Book, SourceText, completed import Job and checkpoint -> reopen and list persisted Books -> start deterministic structure detection -> observe the persisted Job/run/candidate result. Library switching changes the session-scoped renderer query namespace and removes old-session cache. Structure correction/confirmation/freeze remains Block 8B work and is not represented as an implemented user path.

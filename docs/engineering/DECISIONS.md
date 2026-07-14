@@ -89,7 +89,7 @@ Services:
 
 Implications:
 
-- Renderer receives DTOs, not raw database rows.
+- Renderer receives DTOs, not SQLite records.
 - Main validates paths and owns transactions.
 - Heavy work moves to utility/worker process.
 
@@ -208,19 +208,17 @@ Rules:
 - The canonical source path is `source/{sourceTextId}/{originalFileName}`.
 - Job and JobCheckpoint are frozen now because Block 7 already persists real import Jobs; JobService owns transitions.
 - Before the first external alpha or release tag, unpublished migrations may be reset. After that boundary, published migrations are immutable, evolution is forward-only, and pending migrations require a recoverable snapshot.
-- Block 8 pure detection and fixture assets remain protected by the ADR SHA-256 manifest. Its migration, persistence, Job wiring, and IPC wiring stay paused until Task 19.
+- Block 8 pure detection and fixture assets remain protected by the ADR SHA-256 manifest. Task 19 reattached its migration 002, persistence, Job, worker and IPC wiring without changing the 19 protected hashes.
 
 Full rationale and the preservation manifest: `docs/adr/0001-pre-release-schema-reset-and-table-admission.md`.
 
-## D014: Empty-Database Migration Replay And Deferred Schema Compatibility
+## D014: Empty-Database Migration Replay And Schema Compatibility
 
 Decision: The complete canonical migration registry must support **empty-database migration replay** from a genuinely empty SQLite database with zero business rows. Fresh installation and the runtime-schema validator both depend on this property. A failing replay must identify the migration id and name; successful replay must reach the registry's final version, preserve the WriteStorm application ID and schema epoch, and pass resulting-schema validation without pre-seeded business fixtures or a final-schema projection.
 
-The production validator in Task 12R-A is authoritative only for the same SQLite runtime and canonical registry. **Cross-SQLite compatibility is not yet verified** and must not be claimed.
+The **Schema Compatibility Gate** is complete for SQLite 3.53.2, the first and minimum supported runtime. It uses structured columns, foreign keys, indexes, uniqueness, exact admitted objects, and two-sided migration-owned CHECK/trigger/partial-index witnesses. This is not a claim of compatibility with older development SQLite runtimes; any future supported runtime must retain prior released fixtures and add cross-version evidence.
 
-The deferred **Schema Compatibility Gate** runs after Task 19 finalizes the V1 migration registry and before Task 20 full recertification. It must replace complete `sqlite_schema.sql` text equality as the final cross-version authority and cover structured columns, foreign keys, indexes, uniqueness, admitted tables/views/triggers, and semantically extracted CHECK constraints using real current-version and minimum-supported-version SQLite fixtures. Equivalent DDL formatting must be accepted and real semantic mutations rejected.
-
-No handwritten DDL tokenizer/parser is approved. Before this gate is implemented, the project must investigate a mature SQLite-dialect parser, separately request any dependency installation, or approve a design based on SQLite's own parsing capability or another controlled canonicalization. Regex, simple splitting, whitespace compression, and case folding are prohibited for CHECK parsing.
+No handwritten DDL tokenizer/parser is approved or used. SQLite itself parses and executes the isolated semantic witnesses; regex, simple splitting, whitespace compression, and case folding remain prohibited for CHECK parsing.
 
 ## D015: Book Current-Source Ownership
 

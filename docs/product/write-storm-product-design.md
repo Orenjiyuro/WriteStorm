@@ -12,6 +12,10 @@
 
 本文档是当前产品设计事实源。
 
+## V1 foundation recertification boundary
+
+The recertified foundation provides the real desktop path to create/open a Library, import txt/md source material, reopen persisted Books, and start deterministic structure detection through a packaged utility process. SQLite is the fact source; copied source bytes use `source/{sourceTextId}/{originalFileName}`. This does not claim Block 8B review/freeze, Block 8C invalidation, Codex/AI execution, macOS packaging, or release makers are complete.
+
 ## 2. 产品定位
 
 WriteStorm 是一款面向 Windows 11 和 macOS 的本地优先桌面写作者工具，不提供 Web 运行版。它帮助写作者用 AI 拆解已有小说或资料，得到可审查、可追溯、可复用的创作分析资产；随后将其中的可复用写作原则整理进融合技法库；未来再把拆解资产和技法资产用于原创小说项目。

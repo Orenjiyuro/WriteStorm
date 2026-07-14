@@ -4,7 +4,7 @@ Date: 2026-07-09
 
 Status: Windows native gate verified; Task 6.4/6.5 production schema migrations verified; Task 6.12 desktop entry skeleton verified; Task 6.13 SQLite/migration performance baseline verified; release maker and macOS smoke still blocked/not applicable
 
-Scope: Approved `6-native-gate`, Task 6.4, Task 6.5, Task 6.10, Task 6.11, Task 6.12, and Task 6.13 only. This status file covers native SQLite dependency, integration-test CI gate, folder/manifest contract, migration runner, production foundation schema, production content model shell schema, Vite externalization, package/rebuild/make evidence, LibraryService create/open/current, the minimal desktop library entry skeleton, SQLite/migration performance baseline, and blocked platform smoke notes. The Windows local package, packaged native SQLite smoke, and `npm run check` gates passed after VS 2022 Build Tools were installed. This is not a macOS packaged-smoke pass and not a release-maker pass.
+Scope: historical Block 6 delivery plus the Task 20 recertification override. The unpublished content-model shell migrations were removed; the current runtime baseline is schema epoch 2 with migrations 001/002. LibraryService now probes before writes, backs up pending migrations from a readonly source, validates resulting schema, and publishes session-bound services/UoW. Windows package gates apply; this is not a macOS packaged-smoke or release-maker pass.
 
 ## Authorized Scope
 
@@ -38,11 +38,11 @@ Scope: Approved `6-native-gate`, Task 6.4, Task 6.5, Task 6.10, Task 6.11, Task 
 
 - Task 6.4 Foundation Schema: implemented in production migration `src/main/db/migrations/001_foundation_schema.ts`.
 - Task 6.4 creates `library`, `books`, `source_texts`, `structure_nodes`, `story_segment_ranges`, `jobs`, and `exports`.
-- Task 6.5 Content Model Schema shell: implemented in production migration `src/main/db/migrations/002_content_model_shell.ts`.
+- Historical Task 6.5 speculative content-model migration: superseded and deleted by the global reset; it is not part of the current production registry.
 - Task 6.5 creates `analysis_modules`, `analysis_module_instances`, `evidence_anchors`, `relation_links`, `work_technique_observations`, `reusable_technique_candidates`, `source_snapshots`, `technique_entries`, and `perspective_views`.
 - schema version 2 is now the current app schema version after running `APP_MIGRATIONS`.
 - `tests/integration/db/app-schema.test.ts` introspects tables, columns, and foreign keys for Task 6.4/6.5.
-- `books.source_text_id` FK points to `source_texts(id)` so a book cannot reference a nonexistent current source text.
+- `books.current_source_text_id` FK points to `source_texts(id)` so a book cannot reference a nonexistent current source text.
 - `npm run test:integration`: passed on 2026-07-09 after Task 6.4/6.5 review fixes with 4 files / 17 tests.
 - `npm run check`: passed on 2026-07-09 after Task 6.4/6.5; package again reported `Preparing native dependencies: 1 / 1`.
 - TechniqueEntry and ReusableTechniqueCandidate remain separate tables. `technique_entries` point to `source_snapshots` and do not FK to `reusable_technique_candidates`.
@@ -93,7 +93,9 @@ Scope: Approved `6-native-gate`, Task 6.4, Task 6.5, Task 6.10, Task 6.11, Task 
 
 - Task 6.13 SQLite/migration performance baseline: implemented in `src/main/library/performance-baseline.ts` and verified by `tests/integration/library/library-performance-baseline.test.ts`.
 - Scope: the baseline uses test-only migrations and a `block6_performance_items` probe table. It remains separate from the production Task 6.4/6.5 schema and does not add BookService queries, source import, AI, or renderer behavior.
-- Fixtures: small fixture uses 25 probe rows and schema version 2; medium fixture uses 1,000 probe rows, schema version 3, and one probe index.
+- Current Task 20 fixtures use 25 and 1,000 probe rows; both exercise the canonical schema version 2 registry.
+- Task 20 Windows observation on 2026-07-14: small create/open/migration/query = 78.04/43.86/22.46/1.11 ms; medium = 66.21/43.61/22.07/0.78 ms. Both remained under the existing observation limits. These are local observations, not release promises.
+- Task 20 full Windows recertification passed: typecheck, 86 files / 366 unit tests, 21 files / 133 integration tests, package/build, and 7/7 packaged Electron e2e tests.
 - Summary query: reads only the probe row count and SQLite `schema_migrations` version. This is the authorized substitute until foundation/book summary tables are approved.
 - Observed local Windows evidence on 2026-07-09: small fixture: create 25.23 ms, open 15.18 ms, migration 8.40 ms, summary query 0.71 ms. medium fixture: create 25.11 ms, open 11.59 ms, migration 8.40 ms, summary query 0.72 ms.
 - Non-regression limits: small create <= 750 ms, open <= 250 ms, migration <= 500 ms, summary query <= 50 ms; medium create <= 2,000 ms, open <= 500 ms, migration <= 1,500 ms, summary query <= 100 ms.

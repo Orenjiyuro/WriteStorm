@@ -1122,3 +1122,6 @@ Steps：
 - 内容模型风险：分析模块、技法资产、专题视角先定边界，再做 schema、UI、AI。
 - 技法复刻风险：候选和快照不得保存角色专名、专有设定、原文句子或桥段复刻。
 - 专题视角风险：专题视角只组合和派生，不直接写事实，不当第八个模块。
+# Task 20 recertification note
+
+The Block 1-7 foundation reset and Block 8A reattachment use schema epoch 2 with migration 001 (`v1_runtime_baseline`) and migration 002 (`structure_workspace`). The old unpublished migration numbering and shell-table assumptions are superseded. Task 20 fresh gates recertify the current Windows implementation only; Block 8B/8C, AI feasibility, macOS packaged smoke and release makers remain outside this completion claim.

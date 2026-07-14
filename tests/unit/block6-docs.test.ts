@@ -48,7 +48,7 @@ describe('Block 6 native-gate documentation', () => {
     );
     expect(context).toContain('Task 6.4 Foundation Schema is implemented');
     expect(context).toContain(
-      'The unpublished Block 1-7 migration history will be replaced by schema epoch 2',
+      'The unpublished Block 1-7 migration history was replaced by schema epoch 2',
     );
     expect(context).toContain('TechniqueEntry and ReusableTechniqueCandidate remain separate tables');
     expect(context).toContain('Perspective views are stored in `perspective_views`, not `analysis_module_instances`');

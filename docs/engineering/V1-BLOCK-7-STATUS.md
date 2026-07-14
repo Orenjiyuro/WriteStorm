@@ -2,15 +2,15 @@
 
 Date: 2026-07-09
 
-Status: Task 7.0 through Task 7.12 implemented, with post-7.12 review remediation; implementation of structure detection has not started.
+Status: Historical Task 7.0-7.12 import checkpoint retained below; current override includes completed Book/SourceText services and Task 19 Block 8A structure detection. AI and module generation remain unimplemented.
 
 ## Block 7 6A deferral override
 
 6A has not run and has no recorded Go/No-Go. The total thread authorizes Block 7 to proceed only as non-AI Foundation work because Block 6A.8 and the cross-block No-Go strategy allow non-AI Foundation blocks to continue even when AI feasibility is not yet Go.
 
-Block 7 may continue only as non-AI Foundation work. AI/Codex/prompt/runtime remain blocked. structure detection and module generation remain blocked.
+Block 7 continued only as non-AI Foundation work. AI/Codex/prompt/runtime remain blocked. At this historical checkpoint, structure detection and module generation were blocked; Task 19 later completed Block 8A detection, while module generation remains unimplemented.
 
-## Authorized Scope
+## Historical Authorized Scope
 
 - Authorized scope: Task 7.0 through Task 7.12 only.
 - In scope: record the 6A deferral override in engineering docs; define the import IPC request/response boundary; prove renderer cannot pass arbitrary source paths.
@@ -25,8 +25,8 @@ Block 7 may continue only as non-AI Foundation work. AI/Codex/prompt/runtime rem
 - In scope: source import failure view model and alert panel that provide concrete repair paths.
 - In scope: packaged Electron import smoke through the desktop entry and main-process import dialog stub.
 - In scope: Unicode/newline corpus coverage and GB18030 manual retry through a main-only pending import token.
-- Out of scope: No structure detection, AI, or module generation.
-- Out of scope: no dependency installation, AI/Codex SDK, prompt runtime, structure detection, module generation, BookService implementation, SourceTextService implementation, or additional packaged import e2e beyond the Task 7.11 smoke.
+- Historical Task 7 out of scope: structure detection, AI, and module generation.
+- Historical Task 7 out of scope: dependency installation, AI/Codex SDK, prompt runtime, BookService, SourceTextService, and additional packaged import e2e beyond the Task 7.11 smoke. Later explicitly authorized tasks implemented BookService, SourceTextService, and Block 8A detection.
 
 ## Task 7.2 Source Import Metadata Schema
 

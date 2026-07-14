@@ -2,6 +2,19 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 describe('V1 foundation decisions', () => {
+  it('keeps canonical current-state documentation ahead of historical checkpoint wording', () => {
+    const context = readFileSync('docs/engineering/CONTEXT.md', 'utf8');
+
+    expect(context).toContain('Current-state contradiction scans');
+    expect(context).toContain('persisted Book shelf reads');
+    expect(context).toContain('txt/md import and metadata. Completed');
+    expect(context).toContain('Block 8A detection, persistence, Job lifecycle');
+    expect(context).not.toContain('book shelf content remains empty');
+    expect(context).not.toContain('structure detection and module generation remain blocked');
+    expect(context).not.toContain('Implement txt/md import and metadata. Not started');
+    expect(context).not.toContain('Implement structure/story range shells. Not started');
+  });
+
   it('records schema reset, table admission and immutable migration policy', () => {
     const adr = readFileSync(
       'docs/adr/0001-pre-release-schema-reset-and-table-admission.md',

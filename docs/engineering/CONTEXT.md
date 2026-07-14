@@ -5,7 +5,9 @@
 
 ## Active V1 Foundation Reset
 
-Task 20 fresh recertification on 2026-07-14 passed `npm run check`: TypeScript passed; unit passed with 86 files / 366 tests; integration passed with 21 files / 133 tests; Windows x64 packaging passed; and all 7 packaged Electron e2e tests passed serially. The serial Playwright policy is intentional because each spec launches the packaged desktop process. This evidence recertifies the current Windows foundation and Block 8A reattachment, not Block 8B/8C, AI feasibility, macOS packaging, makers, signing, notarization, or release readiness.
+Task 20 fresh recertification on 2026-07-14 passed `npm run check`: TypeScript passed; unit passed with 86 files / 367 tests; integration passed with 21 files / 133 tests; Windows x64 packaging passed; and all 7 packaged Electron e2e tests passed serially. The serial Playwright policy is intentional because each spec launches the packaged desktop process. This evidence recertifies the current Windows foundation and Block 8A reattachment, not Block 8B/8C, AI feasibility, macOS packaging, makers, signing, notarization, or release readiness.
+
+Current-state contradiction scans treat this Active V1 section and the implementation-status overrides below as authoritative. Files under `docs/voided/` are explicitly voided records; `docs/superpowers/specs/` and task plans retain historical RED states and planned boundaries as implementation evidence rather than current-state claims. Those historical sources may be excluded from a current-state scan, but active `CONTEXT.md` statements may never be excluded.
 
 Task 12R-A hardens migration safety before source-worker work: pending migrations are snapshotted from a read-only source before any writable open, retention is ordered by the parsed backup timestamp, and create/open publish a Library session only after a runtime-schema descriptor dynamically derived from the active migration registry matches the resulting database.
 
@@ -25,11 +27,11 @@ Task 12R-C hardens real Library lifecycle reentry. When `closeCurrent`, `create`
 
 The Schema Compatibility Gate is complete for the first supported SQLite baseline, 3.53.2. It does not claim compatibility with older development runtimes. Structured PRAGMA descriptors, exact object admission, two-sided migration-owned semantic boundaries, and a real 3.53.2 fixture reject column/FK/index/CHECK/trigger/partial-index mutations without a handwritten SQL parser.
 
-Task 15 centralizes the source-import application use case behind `SourceImportService`. Import Jobs can only be created through queued-only `JobService.createQueued`; `running` is entered through transition policy, while `completed` is unavailable through the generic transition API and must use `completeWithCheckpoint` so Book binding, final progress, and the final checkpoint share the enclosing `LibraryUnitOfWork` transaction. Worker staging is promoted with a no-overwrite same-filesystem link, database failures remove the promoted SourceText directory, unique-hash races re-query the winning Book/SourceText, and abandoned queued/running import Jobs are recovered with `SOURCE_IMPORT_ABANDONED` while only their exact staging files are removed. Task 16 still owns replacement of the existing IPC orchestration with delegation to this service; Task 15 does not claim that adapter cutover.
+Task 15 centralized the source-import application use case behind `SourceImportService`. Import Jobs can only be created through queued-only `JobService.createQueued`; `running` is entered through transition policy, while `completed` is unavailable through the generic transition API and must use `completeWithCheckpoint` so Book binding, final progress, and the final checkpoint share the enclosing `LibraryUnitOfWork` transaction. Worker staging is promoted with a no-overwrite same-filesystem link, database failures remove the promoted SourceText directory, unique-hash races re-query the winning Book/SourceText, and abandoned queued/running import Jobs are recovered with `SOURCE_IMPORT_ABANDONED` while only their exact staging files are removed. Task 16 subsequently completed the IPC adapter cutover described below.
 
 Task 16 completes that adapter cutover. `book-import-ipc.ts` owns only native dialog selection, pre-dialog Library session capture, delegation to `BookService`/`SourceImportService`, and stable response-envelope mapping; it cannot import filesystem, crypto, SQLite, source-copy, decoding, duplicate, metadata, preflight, or import-transaction modules. Main composition creates the Book service, source worker runner, and SourceImport service once. Window close, Library replacement, and app quit pause admission, cancel active source imports, and await their idle barrier before cleanup or session replacement; a reference-counted pause gate keeps overlapping lifecycle barriers closed until the last barrier exits. Pending encoding tokens are cleared at window/session/quit boundaries. Renderer/preload contracts do not change in this Task.
 
-The accepted reset contract is recorded in `docs/adr/0001-pre-release-schema-reset-and-table-admission.md` and the approved global design. Its premise is that no real user library requires compatibility. The unpublished Block 1-7 migration history will be replaced by schema epoch 2 and `001_v1_runtime_baseline`; old development SQLite libraries are rejected with `DEV_SCHEMA_RESET_REQUIRED` rather than migrated in place.
+The accepted reset contract is recorded in `docs/adr/0001-pre-release-schema-reset-and-table-admission.md` and the approved global design. Its premise is that no real user library requires compatibility. The unpublished Block 1-7 migration history was replaced by schema epoch 2, migration 001 `v1_runtime_baseline`, and migration 002 `structure_workspace`; old development SQLite libraries are rejected with `DEV_SCHEMA_RESET_REQUIRED` rather than migrated in place.
 
 Production tables now require a frozen identity/owner/lifecycle, real write and read paths, a stable error model, and integration-test coverage. Speculative shell tables are not admitted. The canonical source path is `source/{sourceTextId}/{originalFileName}`. The Job/Checkpoint core is frozen early because Block 7 already persists import Jobs. After the first external alpha or release tag, published migrations are immutable and changes are forward-only with pre-migration snapshots.
 
@@ -71,7 +73,7 @@ Current Block 2 facts:
 - Non-library product IPC calls still return stable `NOT_IMPLEMENTED` envelopes until their services are authorized. `library:create/open/get-current` are now wired through main-side providers in the Task 6.12 desktop entry skeleton.
 - Task 2.10 boundary gates are part of the accepted Block 2 baseline.
 - Total-thread recertification for Block 2 passed `npm run check` before Block 3 authorization.
-- SQLite native gate, real `LibraryService`, and the minimal desktop create/open library entry skeleton have started in Block 6. `BookService`, source import implementation, AI, and full product UI have not started.
+- This list preserves the Block 2 checkpoint boundary. The current implementation has since added `BookService`, source import, persisted renderer book queries, and Block 8A detection; AI and the full product workbench remain outside the completed foundation.
 
 Current Block 3 facts:
 
@@ -145,18 +147,18 @@ Current Block 6 native gate facts:
 - Task 6.11 authorizes only the LibraryService service/IPC minimum loop. It does not authorize renderer library UI, source import, book services, AI, or full product workbench behavior.
 - Task 6.12 desktop entry skeleton is implemented. The renderer exposes only Create library and Open library entry buttons, calls typed preload `library:create/open/get-current`, and switches to an empty Breakdown shelf from a returned `LibrarySummary`.
 - The Task 6.12 directory-selection path stays main-side: production uses Electron directory dialogs, while packaged e2e may set `WRITESTORM_E2E_LIBRARY_DIALOG_STUB=1` plus `WRITESTORM_E2E_LIBRARY_ROOT`/`WRITESTORM_E2E_LIBRARY_NAME`. That stub is read only by the main process at launch, is not exposed through preload/renderer, and renderer still cannot submit arbitrary filesystem paths.
-- Task 6.12 still does not authorize source import, book services, AI/Codex, full workbench UI, technique-library UI, perspective computation, or new non-library IPC channels.
+- Historical Task 6.12 boundary: that checkpoint did not authorize source import, book services, AI/Codex, full workbench UI, technique-library UI, perspective computation, or new non-library IPC channels. Later authorized tasks added Book/source-import services and their existing product IPC without authorizing AI or the full workbench.
 - Task 6.13 SQLite/migration performance baseline is implemented. The small fixture uses 25 probe rows and the medium fixture uses 1,000 probe rows through test-only migrations, then records create/open/migration/summary-query timings against non-regression limits.
-- Task 6.13 stays inside the authorized SQLite/LibraryService boundary. Its performance fixtures remain test-only and separate from the production Task 6.4/6.5 schema; it does not add BookService queries, source import, AI, or renderer behavior.
+- Historical Task 6.13 boundary: its performance fixtures remain test-only and separate from production migrations. Later tasks, rather than this performance checkpoint, added BookService queries, source import, and renderer server-state behavior; AI remains unimplemented.
 
-Current Block 7 gate facts:
+Historical Block 7 gate facts and current override:
 
 - Block 7 6A deferral override: 6A has not run and has no recorded Go/No-Go.
 - Block 7 may continue only as non-AI Foundation work under the total-thread override recorded in `docs/engineering/V1-BLOCK-7-STATUS.md`.
 - AI/Codex/prompt/runtime remain blocked.
-- structure detection and module generation remain blocked.
+- At the Block 7 checkpoint, structure detection and module generation were blocked. Task 19 later completed Block 8A structure detection; module generation remains unimplemented.
 - Task 7.0 through Task 7.12 are authorized only for documentation gate, import IPC contract boundary work, source import metadata schema, main-side file dialog adapter, pending import token helper, source text preflight, source text encoding helper, source text copy helper, source text metadata helper, book + source_text transaction helper, duplicate/conflict policy helper, source import failure UI, packaged Electron import smoke, and Unicode/newline corpus coverage.
-- structure detection, AI, module generation, BookService implementation, SourceTextService implementation, and full workbench UI are not authorized by Task 7.0 through Task 7.12.
+- Tasks 7.0-7.12 did not themselves authorize structure detection, AI, module generation, BookService, SourceTextService, or the full workbench. Later explicit tasks implemented BookService, SourceTextService, and Block 8A detection; AI, module generation, and the full workbench remain outside the completed scope.
 - `books:import-source` must keep source path selection main-side. Renderer requests must not include `sourcePath`, `filePath`, `path`, or `rootPath`.
 - `books:import-source` success response is `ImportSourceResult`; `IMPORT_ERROR` failures must include a stable import `details.reason`.
 - UTF-8 and UTF-8 BOM decode automatically in Task 7.5.
@@ -285,12 +287,12 @@ The V1 implementation path is:
 5. Lock technique asset boundary contracts and expose the technique-library contract readout from the desktop entry. Completed in Block 4.
 6. Lock thematic perspective boundary contracts and expose the perspective contract readout from the desktop entry. Completed in Block 5.
 7. Add SQLite connection and migrations. Windows native gate passed; release maker strategy and macOS packaged SQLite smoke remain blocked/not applicable.
-8. Implement library create/open. Minimal LibraryService + desktop entry skeleton completed in Tasks 6.11-6.12; book shelf content remains empty.
+8. Implement library create/open and persisted Book shelf reads. Completed through LibraryService, BookService, session-scoped renderer queries, and packaged create/open/reopen coverage.
 9. Record SQLite/migration performance baseline. Completed in Task 6.13 for the authorized LibraryService/migration layer.
-10. Implement txt/md import and metadata. Not started.
-11. Implement structure/story range shells. Not started.
+10. Implement txt/md import and metadata. Completed through the source worker, SourceImportService, canonical SourceText storage, Job/checkpoint transaction, IPC adapter, and packaged import smoke.
+11. Implement deterministic structure/story-range detection. Block 8A detection, persistence, Job lifecycle, worker, IPC, and packaged performance/probe evidence completed in Task 19/20; Block 8B review/freeze and Block 8C invalidation remain unfinished.
 12. Implement module instance shell. Not started.
-13. Implement job state shell. Not started.
+13. Implement Job lifecycle foundation. Completed for queued creation, transition policy, atomic completion with final checkpoint, recovery, and source/structure workloads; later business-specific Job kinds remain incremental work.
 14. Implement export blocked state. Not started.
 
 ## 7. Validation Expectations

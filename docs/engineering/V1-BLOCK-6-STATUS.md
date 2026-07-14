@@ -95,7 +95,7 @@ Scope: historical Block 6 delivery plus the Task 20 recertification override. Th
 - Scope: the baseline uses test-only migrations and a `block6_performance_items` probe table. It remains separate from the production Task 6.4/6.5 schema and does not add BookService queries, source import, AI, or renderer behavior.
 - Current Task 20 fixtures use 25 and 1,000 probe rows; both exercise the canonical schema version 2 registry.
 - Task 20 Windows observation on 2026-07-14: small create/open/migration/query = 78.04/43.86/22.46/1.11 ms; medium = 66.21/43.61/22.07/0.78 ms. Both remained under the existing observation limits. These are local observations, not release promises.
-- Task 20 full Windows recertification passed: typecheck, 86 files / 366 unit tests, 21 files / 133 integration tests, package/build, and 7/7 packaged Electron e2e tests.
+- Task 20 full Windows recertification passed: typecheck, 86 files / 367 unit tests, 21 files / 133 integration tests, package/build, and 7/7 packaged Electron e2e tests.
 - Summary query: reads only the probe row count and SQLite `schema_migrations` version. This is the authorized substitute until foundation/book summary tables are approved.
 - Observed local Windows evidence on 2026-07-09: small fixture: create 25.23 ms, open 15.18 ms, migration 8.40 ms, summary query 0.71 ms. medium fixture: create 25.11 ms, open 11.59 ms, migration 8.40 ms, summary query 0.72 ms.
 - Non-regression limits: small create <= 750 ms, open <= 250 ms, migration <= 500 ms, summary query <= 50 ms; medium create <= 2,000 ms, open <= 500 ms, migration <= 1,500 ms, summary query <= 100 ms.

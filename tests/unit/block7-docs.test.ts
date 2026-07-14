@@ -14,13 +14,14 @@ describe('Block 7 deferral documentation gate', () => {
     for (const document of [context, status]) {
       expect(document).toContain('Block 7 6A deferral override');
       expect(document).toContain('6A has not run and has no recorded Go/No-Go');
-      expect(document).toContain('Block 7 may continue only as non-AI Foundation work');
       expect(document).toContain('AI/Codex/prompt/runtime remain blocked');
-      expect(document).toContain('structure detection and module generation remain blocked');
+      expect(document).toContain('Task 19 later completed Block 8A');
+      expect(document).toContain('module generation remains unimplemented');
+      expect(document).not.toContain('structure detection and module generation remain blocked');
     }
 
     expect(status).toContain('Authorized scope: Task 7.0 through Task 7.12 only');
-    expect(status).toContain('No structure detection, AI, or module generation');
+    expect(status).toContain('Historical Task 7 out of scope: structure detection, AI, and module generation');
   });
 
   it('records the unpublished Task 7.2 migration reset into the current baseline', () => {

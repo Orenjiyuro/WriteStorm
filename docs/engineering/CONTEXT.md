@@ -5,7 +5,7 @@
 
 ## Active V1 Foundation Reset
 
-Task 20 fresh recertification on 2026-07-14 passed `npm run check`: TypeScript passed; unit passed with 86 files / 367 tests; integration passed with 21 files / 133 tests; Windows x64 packaging passed; and all 7 packaged Electron e2e tests passed serially. The serial Playwright policy is intentional because each spec launches the packaged desktop process. This evidence recertifies the current Windows foundation and Block 8A reattachment, not Block 8B/8C, AI feasibility, macOS packaging, makers, signing, notarization, or release readiness.
+Task 20 fresh recertification on 2026-07-14 passed `npm run check`: TypeScript passed; unit passed with 87 files / 370 tests; integration passed with 21 files / 133 tests; Windows x64 packaging passed; and all 7 packaged Electron e2e tests passed serially. The serial Playwright policy is intentional because each spec launches the packaged desktop process. This evidence recertifies the current Windows foundation and Block 8A reattachment, not Block 8B/8C, AI feasibility, macOS packaging, makers, signing, notarization, or release readiness.
 
 Current-state contradiction scans treat this Active V1 section and the implementation-status overrides below as authoritative. Files under `docs/voided/` are explicitly voided records; `docs/superpowers/specs/` and task plans retain historical RED states and planned boundaries as implementation evidence rather than current-state claims. Those historical sources may be excluded from a current-state scan, but active `CONTEXT.md` statements may never be excluded.
 
@@ -208,6 +208,17 @@ Historical Block 7 gate facts and current override:
 - Task 7.12 encoding_required returns a pending import token and supported manual encodings.
 - Task 7.12 does not implement structure detection, AI, module generation, BookService, SourceTextService, or full workbench UI.
 - Review remediation after Task 7.12: book, source_text, and completed import job share one SQLite transaction; books:import-source re-queries duplicate ids after a unique hash conflict; actual source reads are bounded by the 20 MiB limit from one opened descriptor; failure actions render executable buttons; books:list reads persisted book summaries for reopen/open-existing actions; pending tokens carry an opaque session ID; pending tokens are cleared when the library session changes or closes and rejected when the session ID does not match; source import and opened-book UI copy is centralized in the renderer i18n catalog.
+
+Current Block 8A gate facts:
+
+- `docs/engineering/V1-BLOCK-8A-STATUS.md` is the durable authority for Block 8A status, numbering reconciliation, passed gates, limitations, and reproduction commands. Readers must not depend on conversation history to interpret internal slice labels.
+- The master Block 8A scope is Tasks 8.1-8.10, 8.12, 8.13, and 8.18. Internal labels are review/execution slices rather than master Task numbers: internal 8A-10 maps to master Task 8.13, while master Task 8.10 is validation.
+- Block 8A local deterministic detection, candidate-side persistence, validation, fixtures, worker/Job lifecycle, and observation-only performance recorder are implemented. Task 8.9 is complete only for candidate persistence and stage-separation foundation.
+- 8B and 8C remain unimplemented. Draft/frozen repository and service transactions, structure review/freeze product UI, the Task 8.17 real journey, and downstream invalidation hooks are not Block 8A deliverables.
+- 6A feasibility remains unexecuted and unrecorded. Block 8A does not record a Codex SDK feasibility decision and does not authorize AI prompt/runtime work.
+- Windows packaged performance results are observation-only and do not establish stable regression thresholds. macOS packaged performance evidence has not been recorded.
+- `startDetection` is the only public structure-detection execution entry. Cancellation persists `run=failed` and `Job=cancelled` before aborting the utility process.
+- The packaged 5 MiB renderer button is an event-loop probe, not a product Detect structure button. Product loading, Job presentation, correction, confirmation, freeze, and repeat-operation UX remain 8B work.
 
 ## 2. Product Domains
 

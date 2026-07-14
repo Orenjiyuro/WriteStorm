@@ -287,3 +287,4 @@ Implications:
 - The project does not claim compatibility with libraries produced by older development SQLite runtimes.
 - A future supported-runtime upgrade retains the real fixture for every previously released baseline and adds cross-version verification before compatibility is claimed.
 - CHECK behavior is owned by the migration that introduces it, rather than inferred by a regex, split-based tokenizer, or duplicated final-schema SQL projection.
+- Semantic witnesses require globally unique ids, exact migration ownership, and exact SQLite extended constraint classifications; an arbitrary SQL error never proves a constraint witness.

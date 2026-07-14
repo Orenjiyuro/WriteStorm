@@ -10,6 +10,7 @@ import {
   WRITESTORM_SQLITE_APPLICATION_ID,
 } from '../../../src/main/db/schema-identity';
 import { openSqliteDatabase, type SqliteDatabase } from '../../../src/main/db/sqlite';
+import { assertSchemaSemanticWitnessRegistry } from '../../../src/main/db/schema-semantic-witness';
 
 const tempDirs: string[] = [];
 
@@ -69,6 +70,17 @@ describe('empty-database migration replay contract', () => {
     } finally {
       database.close();
     }
+  });
+
+  it('requires each canonical migration to own uniquely identified semantic witnesses', () => {
+    expect(() => assertSchemaSemanticWitnessRegistry(APP_MIGRATIONS)).not.toThrow();
+    for (const migration of APP_MIGRATIONS) {
+      expect(migration.semanticWitnesses.length, `migration ${migration.id} witness count`).toBeGreaterThan(0);
+      expect(migration.semanticWitnesses.every(({ migrationId }) => migrationId === migration.id)).toBe(true);
+    }
+    const validatorSource = readFileSync('src/main/db/runtime-schema-validator.ts', 'utf8');
+    expect(validatorSource).not.toContain('normalizeSchemaSql');
+    expect(validatorSource).not.toMatch(/expected\s*===\s*actual/);
   });
 
   it('records the replay contract and the deferred cross-SQLite compatibility gate', () => {

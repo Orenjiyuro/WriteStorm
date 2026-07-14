@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { copyFileSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { copyFileSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import Database from 'better-sqlite3';
@@ -14,11 +14,13 @@ afterEach(() => tempDirs.splice(0).forEach((directory) => rmSync(directory, { re
 
 describe('SQLite 3.53.2 schema compatibility gate', () => {
   it('validates a real baseline fixture with recorded runtime provenance', () => {
-    const metadata = JSON.parse(readFileSync(metadataPath, 'utf8')) as { sqliteVersion: string; sha256: string };
+    const metadata = JSON.parse(readFileSync(metadataPath, 'utf8')) as { sqliteVersion: string; sqliteLibraryVersionNumber: number; sha256: string };
     const database = new Database(fixturePath, { readonly: true, fileMustExist: true });
     try {
       expect(database.prepare('SELECT sqlite_version()').pluck().get()).toBe('3.53.2');
       expect(metadata.sqliteVersion).toBe('3.53.2');
+      expect(metadata.sqliteLibraryVersionNumber).toBe(3_053_002);
+      expect(readFileSync(fixturePath).readUInt32BE(96)).toBe(3_053_002);
       expect(hash(fixturePath)).toBe(metadata.sha256);
       expect(validateRuntimeSchema(database, APP_MIGRATIONS)).toEqual({ ok: true });
     } finally { database.close(); }
@@ -30,12 +32,26 @@ describe('SQLite 3.53.2 schema compatibility gate', () => {
     const sourcePath = path.join(directory, 'library.sqlite');
     copyFileSync(fixturePath, sourcePath);
     const beforeHash = hash(sourcePath);
-    const beforeEntries = readdirSync(directory).sort();
+    const beforeEntries = directorySnapshot(directory);
     const database = new Database(sourcePath, { readonly: true, fileMustExist: true });
     try { expect(validateRuntimeSchema(database, APP_MIGRATIONS)).toEqual({ ok: true }); }
     finally { database.close(); }
     expect(hash(sourcePath)).toBe(beforeHash);
-    expect(readdirSync(directory).sort()).toEqual(beforeEntries);
+    expect(directorySnapshot(directory)).toEqual(beforeEntries);
+  });
+
+  it('does not modify a rejected source library or any directory member', () => {
+    const directory = mkdtempSync(path.join(os.tmpdir(), 'writestorm-schema-gate-rejected-'));
+    tempDirs.push(directory);
+    const sourcePath = path.join(directory, 'library.sqlite');
+    copyFileSync(fixturePath, sourcePath);
+    const writable = new Database(sourcePath);
+    try { writable.exec('DROP INDEX idx_jobs_book_id_state'); } finally { writable.close(); }
+    const beforeEntries = directorySnapshot(directory);
+    const database = new Database(sourcePath, { readonly: true, fileMustExist: true });
+    try { expect(validateRuntimeSchema(database, APP_MIGRATIONS).ok).toBe(false); }
+    finally { database.close(); }
+    expect(directorySnapshot(directory)).toEqual(beforeEntries);
   });
 
   it('admits the canonical partial index and no expression indexes', () => {
@@ -54,4 +70,12 @@ describe('SQLite 3.53.2 schema compatibility gate', () => {
 
 function hash(filePath: string): string {
   return createHash('sha256').update(readFileSync(filePath)).digest('hex');
+}
+
+function directorySnapshot(directory: string) {
+  return readdirSync(directory).sort().map((name) => {
+    const filePath = path.join(directory, name);
+    const stats = statSync(filePath);
+    return { name, size: stats.size, sha256: stats.isFile() ? hash(filePath) : null };
+  });
 }

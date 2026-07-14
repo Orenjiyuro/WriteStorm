@@ -1,7 +1,7 @@
 {
   "sqliteVersion": "3.53.2",
   "sqliteLibraryVersionNumber": 3053002,
-  "sha256": "83d020e73c180cc08b54d00a6bdb3c6a3195ce6024b36739ee24a24db3c8658a",
+  "sha256": "d66eabdf236443ecaf87a3d5bbb4e9d92307fb830a9f4776abdf9476ae0e3054",
   "applicationId": 1465078861,
   "schemaEpoch": 2,
   "migrations": [

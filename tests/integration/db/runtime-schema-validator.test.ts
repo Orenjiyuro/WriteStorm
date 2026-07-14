@@ -143,14 +143,78 @@ describe('canonical runtime schema validator', () => {
     }, uniqueRegistry);
   });
 
-  it('rejects a semantic mutation of the admitted partial-index predicate', () => {
-    withCanonicalDatabase((database) => {
-      database.exec(`DROP INDEX idx_structure_sets_current_stage; CREATE UNIQUE INDEX idx_structure_sets_current_stage ON structure_sets(book_id, stage) WHERE is_current = 0`);
-      expect(validateRuntimeSchema(database, APP_MIGRATIONS)).toMatchObject({
-        ok: false,
-        actual: expect.stringContaining('002.structure_set.current_unique'),
+  it('rejects partial-index deletion, relaxation, and tightening', () => {
+    for (const replacement of [
+      '',
+      `CREATE UNIQUE INDEX idx_structure_sets_current_stage ON structure_sets(book_id, stage) WHERE is_current IN (0, 1)`,
+      `CREATE UNIQUE INDEX idx_structure_sets_current_stage ON structure_sets(book_id, stage) WHERE is_current = 1 AND stage = 'frozen'`,
+    ]) {
+      withCanonicalDatabase((database) => {
+        database.exec(`DROP INDEX idx_structure_sets_current_stage; ${replacement}`);
+        expect(validateRuntimeSchema(database, APP_MIGRATIONS).ok).toBe(false);
       });
-    });
+    }
+  });
+
+  it('rejects CHECK deletion, relaxation, and tightening through both witness directions', () => {
+    const registry = [...APP_MIGRATIONS, {
+      id: 3,
+      name: 'check_boundary_mutation_fixture',
+      up(database: SqliteDatabase) {
+        database.exec('CREATE TABLE check_boundary_fixture (value INTEGER CHECK (value > 0))');
+      },
+      semanticWitnesses: [],
+      semanticBoundaries: [{
+        id: '003.check_boundary.value_positive', migrationId: 3, kind: 'check' as const,
+        accept: { sql: 'INSERT INTO check_boundary_fixture VALUES (1)' },
+        reject: {
+          sql: 'INSERT INTO check_boundary_fixture VALUES (0)',
+          code: 'SQLITE_CONSTRAINT_CHECK' as const,
+        },
+      }],
+    }] satisfies readonly Migration[];
+    for (const replacement of [
+      'CREATE TABLE check_boundary_fixture (value INTEGER)',
+      'CREATE TABLE check_boundary_fixture (value INTEGER CHECK (value >= 0))',
+      'CREATE TABLE check_boundary_fixture (value INTEGER CHECK (value > 1))',
+    ]) {
+      withCanonicalDatabase((database) => {
+        database.exec(`DROP TABLE check_boundary_fixture; ${replacement}`);
+        expect(validateRuntimeSchema(database, registry).ok).toBe(false);
+      }, registry);
+    }
+  });
+
+  it('rejects trigger deletion, relaxation, and tightening through both witness directions', () => {
+    const registry = [...APP_MIGRATIONS, {
+      id: 3,
+      name: 'trigger_boundary_mutation_fixture',
+      up(database: SqliteDatabase) {
+        database.exec(`
+          CREATE TABLE trigger_boundary_fixture (value INTEGER);
+          CREATE TRIGGER trigger_boundary_guard BEFORE INSERT ON trigger_boundary_fixture
+          WHEN NEW.value <= 0 BEGIN SELECT RAISE(ABORT, 'positive required'); END;
+        `);
+      },
+      semanticWitnesses: [],
+      semanticBoundaries: [{
+        id: '003.trigger_boundary.positive', migrationId: 3, kind: 'trigger' as const,
+        accept: { sql: 'INSERT INTO trigger_boundary_fixture VALUES (1)' },
+        reject: {
+          sql: 'INSERT INTO trigger_boundary_fixture VALUES (0)',
+          code: 'SQLITE_CONSTRAINT_TRIGGER' as const,
+        },
+      }],
+    }] satisfies readonly Migration[];
+    for (const replacementWhen of [null, 'NEW.value < 0', 'NEW.value <= 1']) {
+      withCanonicalDatabase((database) => {
+        database.exec('DROP TRIGGER trigger_boundary_guard');
+        if (replacementWhen !== null) {
+          database.exec(`CREATE TRIGGER trigger_boundary_guard BEFORE INSERT ON trigger_boundary_fixture WHEN ${replacementWhen} BEGIN SELECT RAISE(ABORT, 'positive required'); END`);
+        }
+        expect(validateRuntimeSchema(database, registry).ok).toBe(false);
+      }, registry);
+    }
   });
 
   it('requires unique witness ids and exact migration ownership', () => {

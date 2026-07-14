@@ -1,11 +1,12 @@
 import type { SqliteDatabase } from './sqlite';
-import type { SchemaSemanticWitness } from './schema-semantic-witness';
+import type { SchemaSemanticBoundary, SchemaSemanticWitness } from './schema-semantic-witness';
 
 export type Migration = {
   readonly id: number;
   readonly name: string;
   readonly up: (database: SqliteDatabase) => void;
   readonly semanticWitnesses?: readonly SchemaSemanticWitness[];
+  readonly semanticBoundaries?: readonly SchemaSemanticBoundary[];
 };
 
 export function runMigrations(database: SqliteDatabase, migrations: readonly Migration[]): void {

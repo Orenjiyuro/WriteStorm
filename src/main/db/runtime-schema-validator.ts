@@ -4,6 +4,7 @@ import { runMigrations, type Migration } from './migration-runner';
 import {
   assertSchemaSemanticWitnessRegistry,
   executeSchemaSemanticWitness,
+  migrationSemanticWitnesses,
 } from './schema-semantic-witness';
 
 export type RuntimeSchemaValidationResult =
@@ -95,7 +96,7 @@ function validateSemanticWitnesses(
   source: SqliteDatabase,
   migrations: readonly Migration[],
 ): string | null {
-  const witnesses = migrations.flatMap((migration) => migration.semanticWitnesses ?? []);
+  const witnesses = migrationSemanticWitnesses(migrations);
   if (witnesses.length === 0) {
     return null;
   }

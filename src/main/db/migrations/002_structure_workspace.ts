@@ -1,4 +1,5 @@
 import type { Migration } from '../migration-runner';
+import { STRUCTURE_WORKSPACE_SEMANTIC_BOUNDARIES } from './002_structure_workspace_boundaries';
 
 const BASE_STRUCTURE_WITNESS_SETUP = `
   INSERT INTO books VALUES ('book', 'Book', NULL, 'now', 'now');
@@ -453,4 +454,5 @@ export const STRUCTURE_WORKSPACE_MIGRATION = {
       expected: { outcome: 'constraint', code: 'SQLITE_CONSTRAINT_UNIQUE' },
     },
   ],
+  semanticBoundaries: STRUCTURE_WORKSPACE_SEMANTIC_BOUNDARIES,
 } as const satisfies Migration;

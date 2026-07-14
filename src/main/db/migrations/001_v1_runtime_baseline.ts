@@ -3,6 +3,7 @@ import {
   WRITESTORM_SCHEMA_EPOCH,
   WRITESTORM_SQLITE_APPLICATION_ID,
 } from '../schema-identity';
+import { V1_RUNTIME_BASELINE_SEMANTIC_BOUNDARIES } from './001_v1_runtime_baseline_boundaries';
 
 export const V1_RUNTIME_BASELINE_MIGRATION = {
   id: 1,
@@ -169,4 +170,5 @@ export const V1_RUNTIME_BASELINE_MIGRATION = {
       expected: { outcome: 'constraint', code: 'SQLITE_CONSTRAINT_UNIQUE' },
     },
   ],
+  semanticBoundaries: V1_RUNTIME_BASELINE_SEMANTIC_BOUNDARIES,
 } as const satisfies Migration;

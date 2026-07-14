@@ -288,3 +288,4 @@ Implications:
 - A future supported-runtime upgrade retains the real fixture for every previously released baseline and adds cross-version verification before compatibility is claimed.
 - CHECK behavior is owned by the migration that introduces it, rather than inferred by a regex, split-based tokenizer, or duplicated final-schema SQL projection.
 - Semantic witnesses require globally unique ids, exact migration ownership, and exact SQLite extended constraint classifications; an arbitrary SQL error never proves a constraint witness.
+- Every CHECK, trigger, and partial-index predicate owned by a migration must declare a stable two-sided semantic boundary: one legal action that must succeed and one illegal action that must fail with its exact SQLite extended constraint code. Constraint deletion, relaxation, and tightening are mandatory mutation cases.

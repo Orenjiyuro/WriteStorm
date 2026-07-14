@@ -10,7 +10,10 @@ import {
   WRITESTORM_SQLITE_APPLICATION_ID,
 } from '../../../src/main/db/schema-identity';
 import { openSqliteDatabase, type SqliteDatabase } from '../../../src/main/db/sqlite';
-import { assertSchemaSemanticWitnessRegistry } from '../../../src/main/db/schema-semantic-witness';
+import {
+  assertSchemaSemanticWitnessRegistry,
+  migrationSemanticWitnesses,
+} from '../../../src/main/db/schema-semantic-witness';
 
 const tempDirs: string[] = [];
 
@@ -77,6 +80,18 @@ describe('empty-database migration replay contract', () => {
     for (const migration of APP_MIGRATIONS) {
       expect(migration.semanticWitnesses.length, `migration ${migration.id} witness count`).toBeGreaterThan(0);
       expect(migration.semanticWitnesses.every(({ migrationId }) => migrationId === migration.id)).toBe(true);
+      expect(migration.semanticBoundaries.length, `migration ${migration.id} boundary count`).toBeGreaterThan(0);
+      expect(migration.semanticBoundaries.every(({ migrationId }) => migrationId === migration.id)).toBe(true);
+    }
+    expect(APP_MIGRATIONS[0].semanticBoundaries).toHaveLength(12);
+    expect(APP_MIGRATIONS[0].semanticBoundaries.every(({ kind }) => kind === 'check')).toBe(true);
+    expect(APP_MIGRATIONS[1].semanticBoundaries.filter(({ kind }) => kind === 'check')).toHaveLength(32);
+    expect(APP_MIGRATIONS[1].semanticBoundaries.filter(({ kind }) => kind === 'trigger')).toHaveLength(10);
+    expect(APP_MIGRATIONS[1].semanticBoundaries.filter(({ kind }) => kind === 'partial-index')).toHaveLength(1);
+    const expanded = migrationSemanticWitnesses(APP_MIGRATIONS);
+    for (const boundary of APP_MIGRATIONS.flatMap((migration) => migration.semanticBoundaries)) {
+      expect(expanded.some(({ id }) => id === `${boundary.id}.accept`)).toBe(true);
+      expect(expanded.some(({ id }) => id === `${boundary.id}.reject`)).toBe(true);
     }
     const validatorSource = readFileSync('src/main/db/runtime-schema-validator.ts', 'utf8');
     expect(validatorSource).not.toContain('normalizeSchemaSql');

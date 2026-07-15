@@ -176,6 +176,146 @@ body {
   font-size: 0.88rem;
 }
 
+.book-list button {
+  justify-self: start;
+}
+
+.structure-review-panel {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  border-top: 1px solid #d7e0e7;
+  padding-top: 18px;
+}
+
+.structure-review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.structure-candidate-summary dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.structure-candidate-summary dl div {
+  display: grid;
+  gap: 3px;
+}
+
+.structure-node-list {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.structure-node-list li {
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid #e3e9ee;
+  padding-top: 10px;
+}
+
+.structure-node-list li > div,
+.structure-node-list form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.structure-node-actions {
+  display: grid !important;
+  gap: 8px;
+}
+
+.structure-node-list span {
+  color: #52616f;
+  font-size: 0.85rem;
+}
+
+.structure-range-review,
+.structure-range-list,
+.structure-range-list li {
+  display: grid;
+  gap: 10px;
+}
+
+.structure-range-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.structure-range-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.structure-range-list li {
+  border-top: 1px solid #e3e9ee;
+  padding-top: 10px;
+}
+
+.structure-range-list form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.range-geometry-form,
+.add-range-form {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  align-items: end !important;
+  gap: 10px;
+}
+
+.add-range-form {
+  border-top: 1px solid #d7e0e7;
+  padding-top: 12px;
+}
+
+.add-range-form h4 {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.range-geometry-form select[multiple],
+.add-range-form select[multiple] {
+  min-height: 88px;
+}
+
+.structure-review-error {
+  color: #7f1d1d;
+}
+
+.structure-lifecycle-header,
+.structure-frozen-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.structure-frozen-summary {
+  border-top: 1px solid #d7e0e7;
+  padding-top: 14px;
+}
+
+.structure-frozen-summary h3 {
+  flex-basis: 100%;
+  margin: 0;
+}
+
 .source-import-failure {
   border: 1px solid #e0b4b4;
   border-radius: 8px;

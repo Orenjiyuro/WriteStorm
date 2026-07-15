@@ -1,6 +1,6 @@
 import type { SchemaSemanticBoundary } from '../schema-semantic-witness';
 
-const BOOK_SETUP = `INSERT INTO books VALUES ('book', 'Book', NULL, 'now', 'now')`;
+const BOOK_SETUP = `INSERT INTO books (id, title, current_source_text_id, created_at, updated_at) VALUES ('book', 'Book', NULL, 'now', 'now')`;
 const JOB_SETUP = `INSERT INTO jobs VALUES ('job', NULL, 'source_import', 'queued', 0, NULL, 1, '{}', NULL, NULL, 'now', 'now')`;
 
 function check(

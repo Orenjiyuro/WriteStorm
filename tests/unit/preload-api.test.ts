@@ -12,6 +12,7 @@ import type {
   JobId,
   StorySegmentRangeId,
   StructureNodeId,
+  StructureSetId,
 } from '../../src/shared/domain';
 
 const bookId = 'book-1' as BreakdownBookId;
@@ -19,6 +20,7 @@ const nodeId = 'node-1' as StructureNodeId;
 const rangeId = 'range-1' as StorySegmentRangeId;
 const instanceId = 'instance-1' as AnalysisModuleInstanceId;
 const jobId = 'job-1' as JobId;
+const setId = 'set-1' as StructureSetId;
 
 describe('preload WriteStorm API', () => {
   it('exposes narrow grouped namespaces without raw IPC escape hatches', () => {
@@ -37,7 +39,18 @@ describe('preload WriteStorm API', () => {
     expect(Object.keys(api.internal)).toEqual(['health']);
     expect(Object.keys(api.library)).toEqual(['create', 'open', 'getCurrent']);
     expect(Object.keys(api.books)).toEqual(['list', 'importSource']);
-    expect(Object.keys(api.structure)).toEqual(['get', 'detect', 'updateNode', 'updateStoryRange', 'freeze']);
+    expect(Object.keys(api.structure)).toEqual([
+      'get',
+      'detect',
+      'recoverDetection',
+      'createDraft',
+      'createManualDraft',
+      'discardDraft',
+      'updateNode',
+      'updateStoryRange',
+      'freeze',
+      'unfreeze',
+    ]);
     expect(Object.keys(api.modules)).toEqual(['listInstances', 'updateBody']);
     expect(Object.keys(api.jobs)).toEqual(['list', 'get', 'cancel']);
     expect(Object.keys(api.exports)).toEqual(['getStatus']);
@@ -64,17 +77,29 @@ describe('preload WriteStorm API', () => {
     } satisfies ContractRequest<'books:import-source'>;
     const bookRequest = { bookId } satisfies ContractRequest<'structure:get'>;
     const updateNodeRequest = {
-      nodeId,
-      patch: {
-        title: 'Renamed Chapter',
-      },
+      bookId,
+      draftSetId: setId,
+      expectedDraftRevision: 1,
+      command: { type: 'rename-node', nodeId, title: 'Renamed Chapter' },
     } satisfies ContractRequest<'structure:update-node'>;
     const updateStoryRangeRequest = {
-      rangeId,
-      patch: {
-        confidence: 0.75,
-      },
+      bookId,
+      draftSetId: setId,
+      expectedDraftRevision: 1,
+      command: { type: 'accept-range-low-confidence', rangeId },
     } satisfies ContractRequest<'structure:update-story-range'>;
+    const createDraftRequest = { bookId, candidateSetId: setId } satisfies ContractRequest<'structure:create-draft'>;
+    const discardDraftRequest = {
+      bookId,
+      draftSetId: setId,
+      expectedDraftRevision: 1,
+    } satisfies ContractRequest<'structure:discard-draft'>;
+    const freezeRequest = {
+      bookId,
+      draftSetId: setId,
+      expectedDraftRevision: 1,
+    } satisfies ContractRequest<'structure:freeze'>;
+    const unfreezeRequest = { bookId, frozenSetId: setId } satisfies ContractRequest<'structure:unfreeze'>;
     const updateBodyRequest = {
       instanceId,
       body: 'Updated body',
@@ -88,9 +113,17 @@ describe('preload WriteStorm API', () => {
     await api.books.importSource(importSourceRequest);
     await api.structure.get(bookRequest);
     await api.structure.detect(bookRequest);
+    await api.structure.recoverDetection(bookRequest);
+    await api.structure.createDraft(createDraftRequest);
+    await api.structure.createManualDraft({
+      ...bookRequest,
+      expectedFailedDetectionRunId: 'run-failed' as import('../../src/shared/domain').StructureDetectionRunId,
+    });
+    await api.structure.discardDraft(discardDraftRequest);
     await api.structure.updateNode(updateNodeRequest);
     await api.structure.updateStoryRange(updateStoryRangeRequest);
-    await api.structure.freeze(bookRequest);
+    await api.structure.freeze(freezeRequest);
+    await api.structure.unfreeze(unfreezeRequest);
     await api.modules.listInstances(bookRequest);
     await api.modules.updateBody(updateBodyRequest);
     await api.jobs.list({ bookId });
@@ -107,9 +140,17 @@ describe('preload WriteStorm API', () => {
       { channel: 'books:import-source', request: importSourceRequest },
       { channel: 'structure:get', request: bookRequest },
       { channel: 'structure:detect', request: bookRequest },
+      { channel: 'structure:recover-detection', request: bookRequest },
+      { channel: 'structure:create-draft', request: createDraftRequest },
+      { channel: 'structure:create-manual-draft', request: {
+        ...bookRequest,
+        expectedFailedDetectionRunId: 'run-failed',
+      } },
+      { channel: 'structure:discard-draft', request: discardDraftRequest },
       { channel: 'structure:update-node', request: updateNodeRequest },
       { channel: 'structure:update-story-range', request: updateStoryRangeRequest },
-      { channel: 'structure:freeze', request: bookRequest },
+      { channel: 'structure:freeze', request: freezeRequest },
+      { channel: 'structure:unfreeze', request: unfreezeRequest },
       { channel: 'modules:list-instances', request: bookRequest },
       { channel: 'modules:update-body', request: updateBodyRequest },
       { channel: 'jobs:list', request: { bookId } },

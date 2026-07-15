@@ -14,6 +14,8 @@ export type {
   StructureDetectionIpcDependencies,
   StructureDetectionIpcOptions,
 } from '../structure/structure-detection-ipc';
+export { createStructureReviewIpcDependencies } from '../structure/structure-review-ipc';
+export type { StructureReviewIpcDependencies } from '../structure/structure-review-ipc';
 export {
   registerTypedIpcHandler,
   registerTypedIpcHandlers,

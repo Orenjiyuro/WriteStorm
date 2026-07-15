@@ -38,6 +38,8 @@ describe('Forge Vite scaffold', () => {
 
     expect(mainSource).toContain('new StructureService({');
     expect(mainSource).toContain('createStructureDetectionIpcDependencies({');
+    expect(mainSource).toContain('afterImportCommitted: async ({ bookId }) => {');
+    expect(mainSource).toContain('await structureService.startDetection(bookId,');
     expect(mainSource).toContain('beforeLibrarySessionChange: prepareForLibrarySessionChange');
     expect(mainSource).toContain("app.on('before-quit', (event) => {");
     expect(mainSource).toContain('event.preventDefault();');

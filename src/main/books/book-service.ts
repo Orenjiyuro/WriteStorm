@@ -56,7 +56,7 @@ function mapBook(
     title: row.title,
     sourceTextId: row.sourceTextId,
     sourceTextEdition: row.sourceTextEdition,
-    structureEdition: null,
+    structureEdition: row.structureEdition,
     updatedAt: row.updatedAt,
   };
 }

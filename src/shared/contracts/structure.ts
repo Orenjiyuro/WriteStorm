@@ -20,6 +20,8 @@ const STRUCTURE_LOW_CONFIDENCE_RESOLUTIONS = ['unresolved', 'accepted', 'correct
 const STRUCTURE_SET_STAGES = ['candidate', 'draft', 'frozen'] as const;
 const STRUCTURE_STORY_RANGE_MODES = ['included', 'skipped_by_user'] as const;
 const STRUCTURE_DETECTION_RUN_STATES = ['queued', 'running', 'completed', 'failed'] as const;
+const STRUCTURE_FRESHNESS_STATES = ['fresh', 'stale'] as const;
+const structureNonBlankTextSchema = z.string().trim().min(1);
 
 export const structureSourceSnapshotSchema = z.object({
   sourceTextId: sourceTextIdSchema,
@@ -142,6 +144,7 @@ export const structureSetStoryRangeSchema = z.object({
 
 const structureSetBaseSchema = z.object({
   id: structureSetIdSchema,
+  originSetId: structureSetIdSchema.nullable(),
   bookId: breakdownBookIdSchema,
   sourceSnapshot: structureSourceSnapshotSchema,
   nodes: z.array(structureSetNodeSchema),
@@ -184,7 +187,7 @@ export const candidateStructureSetSchema = structureSetBaseSchema.extend({
 export const draftStructureSetSchema = structureSetBaseSchema.extend({
   stage: z.literal(STRUCTURE_SET_STAGES[1]),
   detectionRunId: z.null(),
-  draftRevision: z.number().int().nonnegative(),
+  draftRevision: z.number().int().positive(),
   structureEdition: z.null(),
 });
 
@@ -226,15 +229,58 @@ export const structureDetectionRunSchema = z.object({
   }
 });
 
+const latestStructureDetectionRunReferenceSchema = z.object({
+  id: structureDetectionRunIdSchema,
+  jobId: jobIdSchema,
+  state: z.enum(STRUCTURE_DETECTION_RUN_STATES),
+  failureReason: z.string().min(1).nullable(),
+  updatedAt: isoDateTimeStringSchema,
+}).strict();
+
+const structureFreshnessSummarySchema = z.object({
+  status: z.enum(STRUCTURE_FRESHNESS_STATES),
+  reasons: z.array(z.string().min(1)),
+}).strict();
+
+const structureValidationSummarySchema = z.object({
+  valid: z.boolean(),
+  issues: z.array(z.object({
+    code: z.string().min(1),
+    message: z.string().min(1),
+    path: z.array(z.union([z.string(), z.number().int().nonnegative()])),
+  }).strict()),
+}).strict();
+
 export const structureWorkspaceSchema = z.object({
   bookId: breakdownBookIdSchema,
-  detectionRun: structureDetectionRunSchema.nullable(),
+  latestDetectionRun: latestStructureDetectionRunReferenceSchema.nullable(),
   candidate: candidateStructureSetSchema.nullable(),
   draft: draftStructureSetSchema.nullable(),
   frozen: frozenStructureSetSchema.nullable(),
+  freshness: z.object({
+    candidate: structureFreshnessSummarySchema.nullable(),
+    draft: structureFreshnessSummarySchema.nullable(),
+    frozen: structureFreshnessSummarySchema.nullable(),
+  }).strict(),
+  validation: z.object({
+    candidate: structureValidationSummarySchema.nullable(),
+    draft: structureValidationSummarySchema.nullable(),
+    frozen: structureValidationSummarySchema.nullable(),
+  }).strict(),
+  capabilities: z.object({
+    canDetect: z.boolean(),
+    canRetryDetection: z.boolean(),
+    canCreateDraft: z.boolean(),
+    canCreateReplacementDraft: z.boolean().default(false),
+    canCreateManualDraft: z.boolean().default(false),
+    canDiscardDraft: z.boolean(),
+    canEditDraft: z.boolean(),
+    canFreeze: z.boolean(),
+    canUnfreeze: z.boolean(),
+    blockers: z.array(z.string().min(1)),
+  }).strict(),
 }).strict().superRefine((workspace, context) => {
   for (const [key, value] of Object.entries({
-    detectionRun: workspace.detectionRun,
     candidate: workspace.candidate,
     draft: workspace.draft,
     frozen: workspace.frozen,
@@ -362,53 +408,146 @@ export const structureDetectionResponseSchema = z.discriminatedUnion('ok', [
 
 export const structureDetectionRequestSchema = bookRequestSchema;
 
-export const updateStructureNodeRequestSchema = z.object({
-  nodeId: structureNodeIdSchema,
-  patch: z.object({
-    title: z.string().min(1).optional(),
-    parentId: structureNodeIdSchema.nullable().optional(),
-    order: z.number().int().nonnegative().optional(),
-    startOffset: z.number().int().nonnegative().optional(),
-    endOffset: z.number().int().nonnegative().nullable().optional(),
-  }).strict().superRefine((patch, context) => {
-    if (
-      patch.startOffset !== undefined &&
-      patch.endOffset !== undefined &&
-      patch.endOffset !== null &&
-      patch.endOffset <= patch.startOffset
-    ) {
-      context.addIssue({
-        code: 'custom',
-        path: ['endOffset'],
-        message: 'endOffset must be null or greater than startOffset when both offsets are patched.',
-      });
-    }
-  }),
+const draftMutationEnvelopeSchema = z.object({
+  bookId: breakdownBookIdSchema,
+  draftSetId: structureSetIdSchema,
+  expectedDraftRevision: z.number().int().positive(),
 }).strict();
 
-export const updateStorySegmentRangeRequestSchema = z.object({
-  rangeId: storySegmentRangeIdSchema,
-  patch: z.object({
-    title: z.string().min(1).optional(),
-    startOffset: z.number().int().nonnegative().optional(),
-    endOffset: z.number().int().nonnegative().optional(),
-    coveredChapterIds: z.array(structureNodeIdSchema).min(1).optional(),
-    functionTags: z.array(z.string().min(1)).optional(),
-    confidence: z.number().min(0).max(1).optional(),
-  }).strict().superRefine((patch, context) => {
-    if (
-      patch.startOffset !== undefined &&
-      patch.endOffset !== undefined &&
-      patch.endOffset <= patch.startOffset
-    ) {
-      context.addIssue({
-        code: 'custom',
-        path: ['endOffset'],
-        message: 'endOffset must be greater than startOffset when both offsets are patched.',
-      });
-    }
+const structureNodeCommandSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('add-node'),
+    kind: z.enum(['volume', 'chapter']),
+    title: structureNonBlankTextSchema,
+    parentId: structureNodeIdSchema,
+    order: z.number().int().nonnegative(),
+    startOffset: z.number().int().nonnegative(),
+    endOffset: z.number().int().positive(),
+  }).strict().refine((value) => value.endOffset > value.startOffset, {
+    path: ['endOffset'], message: 'endOffset must be greater than startOffset.',
   }),
+  z.object({ type: z.literal('rename-node'), nodeId: structureNodeIdSchema, title: structureNonBlankTextSchema }).strict(),
+  z.object({ type: z.literal('move-node'), nodeId: structureNodeIdSchema, parentId: structureNodeIdSchema.nullable(), order: z.number().int().nonnegative() }).strict(),
+  z.object({ type: z.literal('set-node-span'), nodeId: structureNodeIdSchema, startOffset: z.number().int().nonnegative(), endOffset: z.number().int().positive() }).strict().refine((value) => value.endOffset > value.startOffset, { path: ['endOffset'], message: 'endOffset must be greater than startOffset.' }),
+  z.object({ type: z.literal('remove-node'), nodeId: structureNodeIdSchema }).strict(),
+  z.object({ type: z.literal('accept-node-low-confidence'), nodeId: structureNodeIdSchema }).strict(),
+]);
+
+export const updateStructureNodeRequestSchema = draftMutationEnvelopeSchema.extend({
+  command: structureNodeCommandSchema,
 }).strict();
+
+const storyRangeCommandSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('add-range'),
+    title: structureNonBlankTextSchema,
+    startOffset: z.number().int().nonnegative(),
+    endOffset: z.number().int().positive(),
+    coveredChapterIds: z.array(structureNodeIdSchema).min(1),
+    functionTags: z.array(z.string().min(1)),
+    boundaryEvidence: z.array(boundaryEvidenceSchema).min(1),
+    startReason: structureNonBlankTextSchema,
+    endReason: structureNonBlankTextSchema,
+  }).strict().refine((value) => value.endOffset > value.startOffset, {
+    path: ['endOffset'], message: 'endOffset must be greater than startOffset.',
+  }),
+  z.object({ type: z.literal('rename-range'), rangeId: storySegmentRangeIdSchema, title: structureNonBlankTextSchema }).strict(),
+  z.object({ type: z.literal('set-range-span'), rangeId: storySegmentRangeIdSchema, startOffset: z.number().int().nonnegative(), endOffset: z.number().int().positive() }).strict().refine((value) => value.endOffset > value.startOffset, { path: ['endOffset'], message: 'endOffset must be greater than startOffset.' }),
+  z.object({ type: z.literal('set-range-coverage'), rangeId: storySegmentRangeIdSchema, coveredChapterIds: z.array(structureNodeIdSchema).min(1) }).strict(),
+  z.object({
+    type: z.literal('set-range-geometry'),
+    rangeId: storySegmentRangeIdSchema,
+    startOffset: z.number().int().nonnegative(),
+    endOffset: z.number().int().positive(),
+    coveredChapterIds: z.array(structureNodeIdSchema).min(1),
+    boundaryEvidence: z.array(boundaryEvidenceSchema).min(1),
+  }).strict().refine((value) => value.endOffset > value.startOffset, {
+    path: ['endOffset'], message: 'endOffset must be greater than startOffset.',
+  }),
+  z.object({ type: z.literal('set-range-function-tags'), rangeId: storySegmentRangeIdSchema, functionTags: z.array(z.string().min(1)) }).strict(),
+  z.object({ type: z.literal('remove-range'), rangeId: storySegmentRangeIdSchema }).strict(),
+  z.object({ type: z.literal('accept-range-low-confidence'), rangeId: storySegmentRangeIdSchema }).strict(),
+  z.object({ type: z.literal('set-story-range-mode'), mode: z.enum(STRUCTURE_STORY_RANGE_MODES) }).strict(),
+]);
+
+export const updateStorySegmentRangeRequestSchema = draftMutationEnvelopeSchema.extend({
+  command: storyRangeCommandSchema,
+}).strict();
+
+export const createStructureDraftRequestSchema = z.object({
+  bookId: breakdownBookIdSchema,
+  candidateSetId: structureSetIdSchema,
+  replacementFrozenSetId: structureSetIdSchema.optional(),
+}).strict();
+
+export const createManualStructureDraftRequestSchema = bookRequestSchema.extend({
+  expectedFailedDetectionRunId: structureDetectionRunIdSchema,
+}).strict();
+
+export const discardStructureDraftRequestSchema = draftMutationEnvelopeSchema;
+
+export const freezeStructureRequestSchema = draftMutationEnvelopeSchema;
+
+export const unfreezeStructureRequestSchema = z.object({
+  bookId: breakdownBookIdSchema,
+  frozenSetId: structureSetIdSchema,
+}).strict();
+
+export const STRUCTURE_REVIEW_ERROR_REASONS = [
+  ...STRUCTURE_DETECTION_ERROR_REASONS,
+  'candidate_not_found',
+  'candidate_stale',
+  'draft_already_exists',
+  'draft_not_found',
+  'draft_stale',
+  'draft_revision_mismatch',
+  'draft_validation_failed',
+  'frozen_not_found',
+  'frozen_stale',
+  'structure_reference_blocked',
+  'node_not_found',
+  'node_not_low_confidence',
+  'range_not_found',
+  'range_not_low_confidence',
+] as const;
+
+const structureReviewErrorDetailsSchema = z.object({
+  reason: z.enum(STRUCTURE_REVIEW_ERROR_REASONS),
+  expectedDraftRevision: z.number().int().positive().optional(),
+  actualDraftRevision: z.number().int().positive().optional(),
+  refreshRequired: z.boolean().optional(),
+  blockers: z.array(z.string().min(1)).optional(),
+}).strict().superRefine((details, context) => {
+  if (details.reason === 'draft_revision_mismatch' && (
+    details.expectedDraftRevision === undefined ||
+    details.actualDraftRevision === undefined ||
+    details.refreshRequired !== true ||
+    details.blockers === undefined
+  )) {
+    context.addIssue({ code: 'custom', message: 'Revision mismatch details must support refresh and retry.' });
+  }
+});
+
+const structureReviewDomainErrorSchema = domainErrorSchema.superRefine((error, context) => {
+  if (error.code === 'STRUCTURE_ERROR' && !structureReviewErrorDetailsSchema.safeParse(error.details).success) {
+    context.addIssue({ code: 'custom', path: ['details'], message: 'STRUCTURE_ERROR details must use the review/freeze vocabulary.' });
+  }
+});
+
+export const structureDraftResponseSchema = z.discriminatedUnion('ok', [
+  z.object({ ok: z.literal(true), data: draftStructureSetSchema }).strict(),
+  z.object({ ok: z.literal(false), error: structureReviewDomainErrorSchema }).strict(),
+]);
+
+export const discardStructureDraftResponseDataSchema = z.object({
+  bookId: breakdownBookIdSchema,
+  discardedDraftSetId: structureSetIdSchema,
+}).strict();
+
+export const structureReviewResponse = <T extends z.ZodTypeAny>(data: T) => z.discriminatedUnion('ok', [
+  z.object({ ok: z.literal(true), data }).strict(),
+  z.object({ ok: z.literal(false), error: structureReviewDomainErrorSchema }).strict(),
+]);
 
 export const freezeStructureResponseDataSchema = z.object({
   bookId: breakdownBookIdSchema,

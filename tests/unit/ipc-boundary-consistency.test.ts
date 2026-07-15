@@ -17,6 +17,7 @@ import type {
   JobId,
   StorySegmentRangeId,
   StructureNodeId,
+  StructureSetId,
 } from '../../src/shared/domain';
 
 type AssertExact<TActual, TExpected> = (<T>() => T extends TActual ? 1 : 2) extends <
@@ -41,22 +42,20 @@ const nodeId = 'node-1' as StructureNodeId;
 const rangeId = 'range-1' as StorySegmentRangeId;
 const instanceId = 'instance-1' as AnalysisModuleInstanceId;
 const jobId = 'job-1' as JobId;
+const setId = 'set-1' as StructureSetId;
 
 const importSourceRequest = {
   title: 'Example Book',
 } satisfies ContractRequest<'books:import-source'>;
 const bookRequest = { bookId } satisfies ContractRequest<'structure:get'>;
+const mutationBase = { bookId, draftSetId: setId, expectedDraftRevision: 1 };
 const updateNodeRequest = {
-  nodeId,
-  patch: {
-    title: 'Renamed Chapter',
-  },
+  ...mutationBase,
+  command: { type: 'rename-node', nodeId, title: 'Renamed Chapter' },
 } satisfies ContractRequest<'structure:update-node'>;
 const updateStoryRangeRequest = {
-  rangeId,
-  patch: {
-    confidence: 0.75,
-  },
+  ...mutationBase,
+  command: { type: 'accept-range-low-confidence', rangeId },
 } satisfies ContractRequest<'structure:update-story-range'>;
 const updateBodyRequest = {
   instanceId,
@@ -137,9 +136,17 @@ async function invokeEveryProductMethod(api: WritestormApi): Promise<void> {
   await api.books.importSource(importSourceRequest);
   await api.structure.get(bookRequest);
   await api.structure.detect(bookRequest);
+  await api.structure.recoverDetection(bookRequest);
+  await api.structure.createDraft({ bookId, candidateSetId: setId });
+  await api.structure.createManualDraft({
+    bookId,
+    expectedFailedDetectionRunId: 'run-failed' as import('../../src/shared/domain').StructureDetectionRunId,
+  });
+  await api.structure.discardDraft(mutationBase);
   await api.structure.updateNode(updateNodeRequest);
   await api.structure.updateStoryRange(updateStoryRangeRequest);
-  await api.structure.freeze(bookRequest);
+  await api.structure.freeze(mutationBase);
+  await api.structure.unfreeze({ bookId, frozenSetId: setId });
   await api.modules.listInstances(bookRequest);
   await api.modules.updateBody(updateBodyRequest);
   await api.jobs.list({ bookId });

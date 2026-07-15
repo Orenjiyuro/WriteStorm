@@ -47,6 +47,24 @@ describe('StructureDetectionRunRepository', () => {
       .toThrow('queued -> completed');
   });
 
+  it('orders latest and active runs by a per-book monotonic sequence when clocks and ids disagree', () => {
+    const database = structureDatabase();
+    createJob(database, 'job-z');
+    createJob(database, 'job-a');
+    const repository = new StructureDetectionRunRepository(database);
+
+    repository.createQueued(createInput('run-z', 'job-z'));
+    repository.createQueued(createInput('run-a', 'job-a'));
+
+    expect(repository.findLatestByBook('book-1' as BreakdownBookId)?.detectionRun.id).toBe('run-a');
+    expect(repository.findActiveByBook('book-1' as BreakdownBookId)?.detectionRun.id).toBe('run-a');
+    expect(database.prepare(`SELECT id, run_sequence FROM structure_detection_runs
+      ORDER BY run_sequence`).all()).toEqual([
+      { id: 'run-z', run_sequence: 1 },
+      { id: 'run-a', run_sequence: 2 },
+    ]);
+  });
+
   it('rejects a source snapshot that does not match current imported source metadata', () => {
     const database = structureDatabase();
     createJob(database);
@@ -95,9 +113,9 @@ function structureDatabase(): SqliteDatabase {
   return database;
 }
 
-function createJob(database: SqliteDatabase): void {
+function createJob(database: SqliteDatabase, id = 'job-1'): void {
   new JobService({ database }).createQueued({
-    id: 'job-1' as JobId,
+    id: id as JobId,
     bookId: 'book-1' as BreakdownBookId,
     kind: 'structure_detection',
     totalUnits: 1,
@@ -108,10 +126,10 @@ function createJob(database: SqliteDatabase): void {
   });
 }
 
-function createInput() {
+function createInput(runId = 'run-1', jobId = 'job-1') {
   return {
-    runId: 'run-1' as StructureDetectionRunId,
-    jobId: 'job-1' as JobId,
+    runId: runId as StructureDetectionRunId,
+    jobId: jobId as JobId,
     bookId: 'book-1' as BreakdownBookId,
     sourceSnapshot: {
       sourceTextId: 'source-1' as SourceTextId,

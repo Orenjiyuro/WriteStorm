@@ -129,7 +129,10 @@ test('shows the no-library empty state in a real Electron window', async () => {
       root: ['internal', 'library', 'books', 'structure', 'modules', 'jobs', 'exports'],
       library: ['create', 'open', 'getCurrent'],
       books: ['list', 'importSource'],
-      structure: ['get', 'detect', 'updateNode', 'updateStoryRange', 'freeze'],
+      structure: [
+        'get', 'detect', 'recoverDetection', 'createDraft', 'createManualDraft', 'discardDraft',
+        'updateNode', 'updateStoryRange', 'freeze', 'unfreeze',
+      ],
       modules: ['listInstances', 'updateBody'],
       jobs: ['list', 'get', 'cancel'],
       exports: ['getStatus'],

@@ -50,11 +50,19 @@ const structureDetectionPayloadSchema = z.object({
   contentHash: z.string().min(1),
 }).strict();
 
+const structureEditionPayloadSchema = z.object({
+  title: z.literal('Freeze structure edition'),
+  structureSetId: z.string().min(1),
+  structureEdition: z.number().int().positive(),
+}).strict();
+
 export const JOB_PAYLOAD_SCHEMAS: JobPayloadSchemaRegistry = {
   'source_import@1': sourceTextIdPayloadSchema,
   'source_import_completed@1': sourceTextIdPayloadSchema,
   'structure_detection@1': structureDetectionPayloadSchema,
   'structure_detection_completed@1': structureDetectionPayloadSchema,
+  'structure_edition@1': structureEditionPayloadSchema,
+  'structure_edition_completed@1': structureEditionPayloadSchema,
 };
 
 export class JobService {

@@ -287,3 +287,26 @@ Implications:
 - CHECK behavior is owned by the migration that introduces it, rather than inferred by a regex, split-based tokenizer, or duplicated final-schema SQL projection.
 - Semantic witnesses require globally unique ids, exact migration ownership, and exact SQLite extended constraint classifications; an arbitrary SQL error never proves a constraint witness.
 - Every CHECK, trigger, and partial-index predicate owned by a migration must declare a stable two-sided semantic boundary: one legal action that must succeed and one illegal action that must fail with its exact SQLite extended constraint code. Constraint deletion, relaxation, and tightening are mandatory mutation cases.
+
+## D021: Structure Edition Invalidation Transaction Seam
+
+Decision: A successful structure freeze calls `StructureEditionChangePort` inside the same `LibraryUnitOfWork.write` transaction that freezes the set, increments `books.structure_edition`, and completes the structure-edition Job/checkpoint. The port is synchronous, DB-only, returns `undefined`, and may abort the entire transaction by throwing.
+
+Rules:
+
+- First and replacement freeze each invoke the port exactly once; draft creation/editing, unfreeze, and discard do not invoke it.
+- The payload instructs affected `AnalysisModuleInstance` consumers to use `needs_rebuild`, Evidence/ReviewAsset consumers to use `stale`, and Perspective consumers to use `needs_refresh`.
+- CompletionGate has no admitted runtime owner. Its payload is `invalidate_for_future_owner` with `persisted: false`; Block 8 must not claim a persisted CompletionGate transition.
+- The default port is no-op. Reset migrations 001/002 do not admit speculative downstream tables, and Task 8.16 does not implement a real rerun.
+- An adapter failure rolls back the frozen set, Book edition, Job, checkpoint, and adapter writes together.
+
+## D022: Persistent Detection Run Order
+
+Decision: Every structure detection run receives a positive `run_sequence` that is unique within its Book. The sequence is allocated from the current per-book maximum inside the same SQLite write transaction that creates the queued run.
+
+Rules:
+
+- Latest-run and active-run selection order by `run_sequence DESC` only.
+- Recovery state, retry capability, and manual-draft authorization consume the repository selection; they must not reconstruct timestamp or UUID ordering.
+- `created_at` and `updated_at` remain display/audit metadata and are not causal ordering keys.
+- Migration 002 owns the positive and per-book uniqueness constraints because it remains unpublished; a released schema would require a forward migration instead.

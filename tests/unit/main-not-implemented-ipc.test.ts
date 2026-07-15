@@ -55,20 +55,39 @@ const validRequests = {
   'structure:detect': {
     bookId,
   },
+  'structure:recover-detection': {
+    bookId,
+  },
+  'structure:create-draft': {
+    bookId,
+    candidateSetId: 'set-1',
+  },
+  'structure:create-manual-draft': { bookId, expectedFailedDetectionRunId: 'run-failed' },
+  'structure:discard-draft': {
+    bookId,
+    draftSetId: 'set-1',
+    expectedDraftRevision: 1,
+  },
   'structure:update-node': {
-    nodeId,
-    patch: {
-      title: 'Renamed Chapter',
-    },
+    bookId,
+    draftSetId: 'set-1',
+    expectedDraftRevision: 1,
+    command: { type: 'rename-node', nodeId, title: 'Renamed Chapter' },
   },
   'structure:update-story-range': {
-    rangeId,
-    patch: {
-      confidence: 0.75,
-    },
+    bookId,
+    draftSetId: 'set-1',
+    expectedDraftRevision: 1,
+    command: { type: 'accept-range-low-confidence', rangeId },
   },
   'structure:freeze': {
     bookId,
+    draftSetId: 'set-1',
+    expectedDraftRevision: 1,
+  },
+  'structure:unfreeze': {
+    bookId,
+    frozenSetId: 'set-1',
   },
   'modules:list-instances': {
     bookId,

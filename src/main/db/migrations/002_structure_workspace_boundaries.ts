@@ -1,12 +1,17 @@
 import type { SchemaSemanticBoundary, SqliteConstraintCode } from '../schema-semantic-witness';
 
 const BASE = `
-  INSERT INTO books VALUES ('book', 'Book', NULL, 'now', 'now');
+  INSERT INTO books VALUES ('book', 'Book', NULL, 'now', 'now', NULL);
   INSERT INTO source_texts VALUES ('source', 'book', 'source.txt', 1, 'txt', 'hash', 'utf8', 1, 'source.txt', 'now');
   INSERT INTO jobs VALUES ('job', 'book', 'structure_detection', 'queued', 0, NULL, 1, '{}', NULL, NULL, 'now', 'now')
 `;
-const DRAFT = `INSERT INTO structure_sets VALUES ('set', 'book', 'source', 1, 'hash', 20, 'utf16_code_unit', 'draft', NULL, 'included', 1, NULL, NULL, 1, 'now', 'now')`;
-const FROZEN = `INSERT INTO structure_sets VALUES ('set', 'book', 'source', 1, 'hash', 20, 'utf16_code_unit', 'frozen', NULL, 'included', NULL, 1, 'now', 1, 'now', 'now')`;
+const STRUCTURE_SET_INSERT_COLUMNS = `(
+  id, book_id, source_text_id, source_text_edition, source_content_hash,
+  decoded_text_length, offset_unit, stage, detection_run_id, story_range_mode,
+  draft_revision, structure_edition, frozen_at, is_current, created_at, updated_at
+)`;
+const DRAFT = `INSERT INTO structure_sets ${STRUCTURE_SET_INSERT_COLUMNS} VALUES ('set', 'book', 'source', 1, 'hash', 20, 'utf16_code_unit', 'draft', NULL, 'included', 1, NULL, NULL, 1, 'now', 'now')`;
+const FROZEN = `INSERT INTO structure_sets ${STRUCTURE_SET_INSERT_COLUMNS} VALUES ('set', 'book', 'source', 1, 'hash', 20, 'utf16_code_unit', 'frozen', NULL, 'included', NULL, 1, 'now', 1, 'now', 'now')`;
 
 function boundary(
   id: string,
@@ -35,14 +40,14 @@ function separateBoundary(
 function detection(values: {
   edition?: number; hash?: string; length?: number; unit?: string; state?: string; reason?: string;
 }): string {
-  return `INSERT INTO structure_detection_runs VALUES ('run', 'job', 'book', 'source', ${values.edition ?? 1}, '${values.hash ?? 'hash'}', ${values.length ?? 1}, '${values.unit ?? 'utf16_code_unit'}', '${values.state ?? 'queued'}', ${values.reason ?? 'NULL'}, 'now', 'now')`;
+  return `INSERT INTO structure_detection_runs VALUES ('run', 'job', 'book', 'source', ${values.edition ?? 1}, '${values.hash ?? 'hash'}', ${values.length ?? 1}, '${values.unit ?? 'utf16_code_unit'}', '${values.state ?? 'queued'}', ${values.reason ?? 'NULL'}, 'now', 'now', 1)`;
 }
 
 function structureSet(values: {
   edition?: number; hash?: string; length?: number; unit?: string; stage?: string;
   storyMode?: string; draftRevision?: string; structureEdition?: string; frozenAt?: string; current?: number;
 }): string {
-  return `INSERT INTO structure_sets VALUES ('set', 'book', 'source', ${values.edition ?? 1}, '${values.hash ?? 'hash'}', ${values.length ?? 20}, '${values.unit ?? 'utf16_code_unit'}', '${values.stage ?? 'draft'}', NULL, '${values.storyMode ?? 'included'}', ${values.draftRevision ?? '1'}, ${values.structureEdition ?? 'NULL'}, ${values.frozenAt ?? 'NULL'}, ${values.current ?? 1}, 'now', 'now')`;
+  return `INSERT INTO structure_sets ${STRUCTURE_SET_INSERT_COLUMNS} VALUES ('set', 'book', 'source', ${values.edition ?? 1}, '${values.hash ?? 'hash'}', ${values.length ?? 20}, '${values.unit ?? 'utf16_code_unit'}', '${values.stage ?? 'draft'}', NULL, '${values.storyMode ?? 'included'}', ${values.draftRevision ?? '1'}, ${values.structureEdition ?? 'NULL'}, ${values.frozenAt ?? 'NULL'}, ${values.current ?? 1}, 'now', 'now')`;
 }
 
 function node(values: {
@@ -114,21 +119,21 @@ export const STRUCTURE_WORKSPACE_SEMANTIC_BOUNDARIES = [
   boundary('trigger.node_parent_same_set_insert', 'trigger',
     `INSERT INTO structure_nodes VALUES ('child', 'set', NULL, 'chapter', 'Child', 'parent-local', 1, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now')`,
     `INSERT INTO structure_nodes VALUES ('child', 'set', NULL, 'chapter', 'Child', 'parent-other', 1, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now')`,
-    `${BASE}; ${DRAFT}; INSERT INTO structure_sets VALUES ('other', 'book', 'source', 1, 'hash', 20, 'utf16_code_unit', 'draft', NULL, 'included', 2, NULL, NULL, 0, 'now', 'now'); INSERT INTO structure_nodes VALUES ('parent-local', 'set', NULL, 'chapter', 'Local', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now'); INSERT INTO structure_nodes VALUES ('parent-other', 'other', NULL, 'chapter', 'Other', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now')`, 'SQLITE_CONSTRAINT_TRIGGER'),
+    `${BASE}; ${DRAFT}; INSERT INTO structure_sets ${STRUCTURE_SET_INSERT_COLUMNS} VALUES ('other', 'book', 'source', 1, 'hash', 20, 'utf16_code_unit', 'draft', NULL, 'included', 2, NULL, NULL, 0, 'now', 'now'); INSERT INTO structure_nodes VALUES ('parent-local', 'set', NULL, 'chapter', 'Local', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now'); INSERT INTO structure_nodes VALUES ('parent-other', 'other', NULL, 'chapter', 'Other', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now')`, 'SQLITE_CONSTRAINT_TRIGGER'),
   boundary('trigger.node_parent_same_set_update', 'trigger',
     `UPDATE structure_nodes SET parent_id = 'parent-local' WHERE id = 'child'`,
     `UPDATE structure_nodes SET parent_id = 'parent-other' WHERE id = 'child'`,
-    `${BASE}; ${DRAFT}; INSERT INTO structure_sets VALUES ('other', 'book', 'source', 1, 'hash', 20, 'utf16_code_unit', 'draft', NULL, 'included', 2, NULL, NULL, 0, 'now', 'now'); INSERT INTO structure_nodes VALUES ('parent-local', 'set', NULL, 'chapter', 'Local', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now'); INSERT INTO structure_nodes VALUES ('parent-other', 'other', NULL, 'chapter', 'Other', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now'); INSERT INTO structure_nodes VALUES ('child', 'set', NULL, 'chapter', 'Child', NULL, 1, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now')`, 'SQLITE_CONSTRAINT_TRIGGER'),
+    `${BASE}; ${DRAFT}; INSERT INTO structure_sets ${STRUCTURE_SET_INSERT_COLUMNS} VALUES ('other', 'book', 'source', 1, 'hash', 20, 'utf16_code_unit', 'draft', NULL, 'included', 2, NULL, NULL, 0, 'now', 'now'); INSERT INTO structure_nodes VALUES ('parent-local', 'set', NULL, 'chapter', 'Local', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now'); INSERT INTO structure_nodes VALUES ('parent-other', 'other', NULL, 'chapter', 'Other', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now'); INSERT INTO structure_nodes VALUES ('child', 'set', NULL, 'chapter', 'Child', NULL, 1, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now')`, 'SQLITE_CONSTRAINT_TRIGGER'),
   separateBoundary('trigger.range_skip_insert', 'trigger',
     { setupSql: `${BASE}; ${DRAFT}`, sql: validRange },
     {
-      setupSql: `${BASE}; INSERT INTO structure_sets VALUES ('set', 'book', 'source', 1, 'hash', 20, 'utf16_code_unit', 'draft', NULL, 'skipped_by_user', 1, NULL, NULL, 1, 'now', 'now')`,
+      setupSql: `${BASE}; INSERT INTO structure_sets ${STRUCTURE_SET_INSERT_COLUMNS} VALUES ('set', 'book', 'source', 1, 'hash', 20, 'utf16_code_unit', 'draft', NULL, 'skipped_by_user', 1, NULL, NULL, 1, 'now', 'now')`,
       sql: validRange, code: 'SQLITE_CONSTRAINT_TRIGGER',
     }),
   boundary('trigger.range_skip_update', 'trigger',
     `UPDATE story_segment_ranges SET structure_set_id = 'set' WHERE id = 'range'`,
     `UPDATE story_segment_ranges SET structure_set_id = 'skipped' WHERE id = 'range'`,
-    `${BASE}; ${DRAFT}; INSERT INTO structure_sets VALUES ('skipped', 'book', 'source', 1, 'hash', 20, 'utf16_code_unit', 'draft', NULL, 'skipped_by_user', 2, NULL, NULL, 0, 'now', 'now'); ${validRange}`, 'SQLITE_CONSTRAINT_TRIGGER'),
+    `${BASE}; ${DRAFT}; INSERT INTO structure_sets ${STRUCTURE_SET_INSERT_COLUMNS} VALUES ('skipped', 'book', 'source', 1, 'hash', 20, 'utf16_code_unit', 'draft', NULL, 'skipped_by_user', 2, NULL, NULL, 0, 'now', 'now'); ${validRange}`, 'SQLITE_CONSTRAINT_TRIGGER'),
   boundary('trigger.set_skip_with_ranges', 'trigger',
     `UPDATE structure_sets SET story_range_mode = 'included' WHERE id = 'set'`,
     `UPDATE structure_sets SET story_range_mode = 'skipped_by_user' WHERE id = 'set'`,
@@ -161,11 +166,11 @@ export const STRUCTURE_WORKSPACE_SEMANTIC_BOUNDARIES = [
     }),
 
   boundary('partial_index.current_structure_set', 'partial-index',
-    `INSERT INTO structure_sets VALUES ('historical', 'book', 'source', 1, 'hash', 20, 'utf16_code_unit', 'draft', NULL, 'included', 2, NULL, NULL, 0, 'now', 'now')`,
-    `INSERT INTO structure_sets VALUES ('current-2', 'book', 'source', 1, 'hash', 20, 'utf16_code_unit', 'draft', NULL, 'included', 2, NULL, NULL, 1, 'now', 'now')`,
+    `INSERT INTO structure_sets ${STRUCTURE_SET_INSERT_COLUMNS} VALUES ('historical', 'book', 'source', 1, 'hash', 20, 'utf16_code_unit', 'draft', NULL, 'included', 2, NULL, NULL, 0, 'now', 'now')`,
+    `INSERT INTO structure_sets ${STRUCTURE_SET_INSERT_COLUMNS} VALUES ('current-2', 'book', 'source', 1, 'hash', 20, 'utf16_code_unit', 'draft', NULL, 'included', 2, NULL, NULL, 1, 'now', 'now')`,
     `${BASE}; ${DRAFT}`, 'SQLITE_CONSTRAINT_UNIQUE'),
 ] as const satisfies readonly SchemaSemanticBoundary[];
 
 function rangeChapterTriggerSetup(): string {
-  return `${BASE}; ${DRAFT}; INSERT INTO structure_sets VALUES ('other', 'book', 'source', 1, 'hash', 20, 'utf16_code_unit', 'draft', NULL, 'included', 2, NULL, NULL, 0, 'now', 'now'); INSERT INTO structure_nodes VALUES ('chapter-local', 'set', NULL, 'chapter', 'Local', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now'); INSERT INTO structure_nodes VALUES ('chapter-other', 'other', NULL, 'chapter', 'Other', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now'); ${validRange}`;
+  return `${BASE}; ${DRAFT}; INSERT INTO structure_sets ${STRUCTURE_SET_INSERT_COLUMNS} VALUES ('other', 'book', 'source', 1, 'hash', 20, 'utf16_code_unit', 'draft', NULL, 'included', 2, NULL, NULL, 0, 'now', 'now'); INSERT INTO structure_nodes VALUES ('chapter-local', 'set', NULL, 'chapter', 'Local', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now'); INSERT INTO structure_nodes VALUES ('chapter-other', 'other', NULL, 'chapter', 'Other', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now'); ${validRange}`;
 }

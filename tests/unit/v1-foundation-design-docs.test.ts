@@ -8,7 +8,10 @@ describe('V1 foundation decisions', () => {
     expect(context).toContain('Current-state contradiction scans');
     expect(context).toContain('persisted Book shelf reads');
     expect(context).toContain('txt/md import and metadata. Completed');
-    expect(context).toContain('Block 8A detection, persistence, Job lifecycle');
+    expect(context).toContain('Completed through Block 8A detection');
+    expect(context).toContain('Block 8B review/freeze');
+    expect(context).toContain('persistent per-book detection-run ordering were repaired and focused-tested');
+    expect(context).toContain('final Windows recertification passed');
     expect(context).not.toContain('book shelf content remains empty');
     expect(context).not.toContain('structure detection and module generation remain blocked');
     expect(context).not.toContain('Implement txt/md import and metadata. Not started');

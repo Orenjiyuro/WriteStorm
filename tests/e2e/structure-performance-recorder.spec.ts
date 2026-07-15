@@ -37,8 +37,13 @@ test('records 50KB/1MB/5MB txt/md detection and keeps the renderer responsive at
       async (page) => {
         await page.getByRole('button', { name: 'Create library' }).click();
         await page.getByRole('button', { name: 'Import source' }).click();
-        await expect(page.getByText(fixture.name, { exact: true })).toBeVisible();
+        await expect(page.locator('.book-list').getByText(fixture.name, { exact: true })).toBeVisible();
         const bookId = readBookId(libraryRoot);
+        await expect.poll(
+          () => readLatestStructureDetectionState(libraryRoot),
+          { timeout: 30_000, intervals: [20, 50, 100] },
+        ).toBe('completed');
+        rmSync(rawResultPath, { force: true });
         const started = await startDetectionHeartbeat(page, bookId);
 
         await expect.poll(
@@ -52,7 +57,7 @@ test('records 50KB/1MB/5MB txt/md detection and keeps the renderer responsive at
           fixture: fixture.name,
           expectedBytes: fixture.sizeBytes,
           heartbeat,
-          recorder: JSON.parse(readFileSync(rawResultPath, 'utf8')),
+          recorder: readLatestRecorderSample(rawResultPath),
         };
       },
     );
@@ -226,6 +231,24 @@ function readJobState(libraryRoot: string, jobId: string): string | undefined {
   } finally {
     database.close();
   }
+}
+
+function readLatestStructureDetectionState(libraryRoot: string): string | undefined {
+  const database = openLibraryDatabase(libraryRoot);
+  try {
+    return database.prepare(`SELECT job.state FROM structure_detection_runs run
+      JOIN jobs job ON job.id = run.job_id
+      ORDER BY run.run_sequence DESC LIMIT 1`).pluck().get() as string | undefined;
+  } finally {
+    database.close();
+  }
+}
+
+function readLatestRecorderSample(rawResultPath: string): PerformanceObservation['recorder'] {
+  const recorder = JSON.parse(readFileSync(rawResultPath, 'utf8')) as PerformanceObservation['recorder'];
+  const latest = recorder.samples.at(-1);
+  if (!latest) throw new Error('Expected a structure performance recorder sample.');
+  return { ...recorder, samples: [latest] };
 }
 
 function openLibraryDatabase(libraryRoot: string): Database.Database {

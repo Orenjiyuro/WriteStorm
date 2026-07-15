@@ -79,8 +79,12 @@ export { exportStatusSchema } from './exports';
 export type { ExportStatusDto } from './exports';
 export {
   candidateStructureSetSchema,
+  createStructureDraftRequestSchema,
+  discardStructureDraftRequestSchema,
+  discardStructureDraftResponseDataSchema,
   draftStructureSetSchema,
   freezeStructureResponseDataSchema,
+  freezeStructureRequestSchema,
   frozenStructureSetSchema,
   storySegmentRangeSchema,
   structureConfidenceSchema,
@@ -97,6 +101,7 @@ export {
   structureSetStoryRangeSchema,
   structureSourceSnapshotSchema,
   structureWorkspaceSchema,
+  unfreezeStructureRequestSchema,
   updateStorySegmentRangeRequestSchema,
   updateStructureNodeRequestSchema,
 } from './structure';

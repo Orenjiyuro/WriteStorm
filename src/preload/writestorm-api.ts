@@ -38,9 +38,14 @@ export function createWritestormPreloadApi(invoke: WritestormIpcInvoke): Writest
     structure: {
       get: (request) => productInvoke('structure:get', request),
       detect: (request) => productInvoke('structure:detect', request),
+      recoverDetection: (request) => productInvoke('structure:recover-detection', request),
+      createDraft: (request) => productInvoke('structure:create-draft', request),
+      createManualDraft: (request) => productInvoke('structure:create-manual-draft', request),
+      discardDraft: (request) => productInvoke('structure:discard-draft', request),
       updateNode: (request) => productInvoke('structure:update-node', request),
       updateStoryRange: (request) => productInvoke('structure:update-story-range', request),
       freeze: (request) => productInvoke('structure:freeze', request),
+      unfreeze: (request) => productInvoke('structure:unfreeze', request),
     },
     modules: {
       listInstances: (request) => productInvoke('modules:list-instances', request),

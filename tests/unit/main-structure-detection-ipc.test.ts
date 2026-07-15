@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { registerProductIpc } from '../../src/main/ipc';
 import type { IpcMainEventLike } from '../../src/main/ipc';
 import { createStructureDetectionIpcDependencies } from '../../src/main/structure/structure-detection-ipc';
+import { createStructureReviewIpcDependencies } from '../../src/main/structure/structure-review-ipc';
 import type { ProductIpcChannel } from '../../src/shared/contracts';
-import type { StructureDetectionStartResult } from '../../src/shared/contracts/structure';
+import type { StructureDetectionStartResult, StructureWorkspace } from '../../src/shared/contracts/structure';
 import { StructureServiceError } from '../../src/main/structure/structure-service';
 import { StructureSourceSnapshotError } from '../../src/main/structure/structure-source-snapshot';
 import type {
@@ -44,6 +45,17 @@ const started: StructureDetectionStartResult = {
     checkpointSummary: null,
     failureReason: null,
     updatedAt: '2026-07-11T00:00:00.000Z',
+  },
+};
+const workspace: StructureWorkspace = {
+  bookId, latestDetectionRun: null, candidate: null, draft: null, frozen: null,
+  freshness: { candidate: null, draft: null, frozen: null },
+  validation: { candidate: null, draft: null, frozen: null },
+  capabilities: {
+    canDetect: true, canRetryDetection: false, canCreateDraft: false,
+    canCreateReplacementDraft: false, canCreateManualDraft: false,
+    canDiscardDraft: false, canEditDraft: false, canFreeze: false, canUnfreeze: false,
+    blockers: [],
   },
 };
 
@@ -134,14 +146,17 @@ describe('structure detection IPC factory', () => {
 
   it('registers the real detect handler without replacing the locked review channel identities', async () => {
     const ipcMain = new MockIpcMain();
-    const structure = createStructureDetectionIpcDependencies({
+    const structure = {
+      ...createStructureDetectionIpcDependencies({
       service: {
         async startDetection() {
           return started;
         },
       },
       timeoutMs: 30_000,
-    });
+      }),
+      ...reviewDependencies(),
+    };
 
     registerProductIpc(ipcMain, undefined, { structure });
 
@@ -149,10 +164,7 @@ describe('structure detection IPC factory', () => {
       ok: true,
       data: started,
     });
-    await expect(ipcMain.invoke('structure:get', { bookId })).resolves.toMatchObject({
-      ok: false,
-      error: { code: 'NOT_IMPLEMENTED' },
-    });
+    await expect(ipcMain.invoke('structure:get', { bookId })).resolves.toEqual({ ok: true, data: workspace });
     for (const channel of [
       'structure:update-node',
       'structure:update-story-range',
@@ -165,14 +177,17 @@ describe('structure detection IPC factory', () => {
   it('keeps typed validation and unknown failure containment around the real detect handler', async () => {
     const ipcMain = new MockIpcMain();
     registerProductIpc(ipcMain, undefined, {
-      structure: createStructureDetectionIpcDependencies({
+      structure: {
+        ...createStructureDetectionIpcDependencies({
         service: {
           async startDetection() {
             throw new Error('sensitive database detail');
           },
         },
         timeoutMs: 30_000,
-      }),
+        }),
+        ...reviewDependencies(),
+      },
     });
 
     await expect(ipcMain.invoke('structure:detect', { rowid: 1 })).resolves.toMatchObject({
@@ -194,4 +209,33 @@ describe('structure detection IPC factory', () => {
       },
     });
   });
+
+  it('recovers an orphan detection through the explicit typed channel', async () => {
+    const dependencies = createStructureDetectionIpcDependencies({
+      service: {
+        async startDetection() { return started; },
+        recoverDetection(requestBookId) {
+          expect(requestBookId).toBe(bookId);
+          return started;
+        },
+      },
+      timeoutMs: 30_000,
+    });
+
+    await expect(dependencies.recoverDetection({ bookId })).resolves.toEqual({ ok: true, data: started });
+  });
 });
+
+function reviewDependencies() {
+  const unused = () => { throw new Error('unused review mutation'); };
+  return createStructureReviewIpcDependencies({
+    async getWorkspace() { return workspace; },
+    createDraft: unused,
+    async createManualDraft() { return unused(); },
+    discardDraft: unused,
+    updateNode: unused,
+    updateStoryRange: unused,
+    async freeze() { return unused(); },
+    unfreeze: unused,
+  });
+}

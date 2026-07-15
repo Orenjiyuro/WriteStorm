@@ -7,12 +7,18 @@ import { jobRequestSchema, jobSummarySchema } from './jobs';
 import { librarySessionSummarySchema } from './library';
 import { moduleInstanceSummarySchema, updateModuleBodyRequestSchema } from './modules';
 import {
+  createStructureDraftRequestSchema,
+  createManualStructureDraftRequestSchema,
+  discardStructureDraftRequestSchema,
+  discardStructureDraftResponseDataSchema,
+  draftStructureSetSchema,
+  freezeStructureRequestSchema,
   freezeStructureResponseDataSchema,
-  storySegmentRangeSchema,
   structureDetectionRequestSchema,
   structureDetectionResponseSchema,
-  structureNodeSchema,
+  structureReviewResponse,
   structureWorkspaceSchema,
+  unfreezeStructureRequestSchema,
   updateStorySegmentRangeRequestSchema,
   updateStructureNodeRequestSchema,
 } from './structure';
@@ -80,20 +86,45 @@ export const CONTRACT_REGISTRY = {
     structureDetectionRequestSchema,
     structureDetectionResponseSchema,
   ),
+  'structure:recover-detection': createContract(
+    'structure:recover-detection',
+    bookRequestSchema,
+    structureDetectionResponseSchema,
+  ),
+  'structure:create-draft': createContract(
+    'structure:create-draft',
+    createStructureDraftRequestSchema,
+    structureReviewResponse(draftStructureSetSchema),
+  ),
+  'structure:create-manual-draft': createContract(
+    'structure:create-manual-draft',
+    createManualStructureDraftRequestSchema,
+    structureReviewResponse(draftStructureSetSchema),
+  ),
+  'structure:discard-draft': createContract(
+    'structure:discard-draft',
+    discardStructureDraftRequestSchema,
+    structureReviewResponse(discardStructureDraftResponseDataSchema),
+  ),
   'structure:update-node': createContract(
     'structure:update-node',
     updateStructureNodeRequestSchema,
-    contractResponseSchema(structureNodeSchema),
+    structureReviewResponse(draftStructureSetSchema),
   ),
   'structure:update-story-range': createContract(
     'structure:update-story-range',
     updateStorySegmentRangeRequestSchema,
-    contractResponseSchema(storySegmentRangeSchema),
+    structureReviewResponse(draftStructureSetSchema),
   ),
   'structure:freeze': createContract(
     'structure:freeze',
-    bookRequestSchema,
-    contractResponseSchema(freezeStructureResponseDataSchema),
+    freezeStructureRequestSchema,
+    structureReviewResponse(freezeStructureResponseDataSchema),
+  ),
+  'structure:unfreeze': createContract(
+    'structure:unfreeze',
+    unfreezeStructureRequestSchema,
+    structureReviewResponse(draftStructureSetSchema),
   ),
   'modules:list-instances': createContract(
     'modules:list-instances',

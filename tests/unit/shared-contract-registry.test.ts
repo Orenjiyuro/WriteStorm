@@ -40,9 +40,14 @@ const expectedChannels = [
   'books:import-source',
   'structure:get',
   'structure:detect',
+  'structure:recover-detection',
+  'structure:create-draft',
+  'structure:create-manual-draft',
+  'structure:discard-draft',
   'structure:update-node',
   'structure:update-story-range',
   'structure:freeze',
+  'structure:unfreeze',
   'modules:list-instances',
   'modules:update-body',
   'jobs:list',
@@ -446,38 +451,32 @@ describe('shared contract registry', () => {
   });
 
   it('validates representative product channel requests', () => {
+    const mutationBase = { bookId, draftSetId: 'set-1', expectedDraftRevision: 1 };
     expect(getContract('structure:get').request.parse({ bookId })).toEqual({ bookId });
+    expect(getContract('structure:create-draft').request.parse({ bookId, candidateSetId: 'set-1' }))
+      .toEqual({ bookId, candidateSetId: 'set-1' });
+    expect(getContract('structure:discard-draft').request.parse(mutationBase)).toEqual(mutationBase);
     expect(
       getContract('structure:update-node').request.parse({
-        nodeId,
-        patch: {
-          title: 'Renamed Chapter',
-          parentId: null,
-        },
+        ...mutationBase,
+        command: { type: 'rename-node', nodeId, title: 'Renamed Chapter' },
       }),
     ).toEqual({
-      nodeId,
-      patch: {
-        title: 'Renamed Chapter',
-        parentId: null,
-      },
+      ...mutationBase,
+      command: { type: 'rename-node', nodeId, title: 'Renamed Chapter' },
     });
     expect(
       getContract('structure:update-story-range').request.parse({
-        rangeId,
-        patch: {
-          coveredChapterIds: [nodeId],
-          confidence: 0.8,
-        },
+        ...mutationBase,
+        command: { type: 'set-range-coverage', rangeId, coveredChapterIds: [nodeId] },
       }),
     ).toEqual({
-      rangeId,
-      patch: {
-        coveredChapterIds: [nodeId],
-        confidence: 0.8,
-      },
+      ...mutationBase,
+      command: { type: 'set-range-coverage', rangeId, coveredChapterIds: [nodeId] },
     });
-    expect(getContract('structure:freeze').request.parse({ bookId })).toEqual({ bookId });
+    expect(getContract('structure:freeze').request.parse(mutationBase)).toEqual(mutationBase);
+    expect(getContract('structure:unfreeze').request.parse({ bookId, frozenSetId: 'set-1' }))
+      .toEqual({ bookId, frozenSetId: 'set-1' });
     expect(getContract('modules:list-instances').request.parse({ bookId })).toEqual({ bookId });
     expect(getContract('modules:update-body').request.parse({ instanceId, body: 'Module body' })).toEqual({
       instanceId,

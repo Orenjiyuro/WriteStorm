@@ -16,6 +16,10 @@ import {
   createImportSourceMutationOptions,
 } from '../features/breakdown-shelf/book-queries';
 import {
+  createStructureActionMutationOptions,
+  structureWorkspaceQueryOptions,
+} from '../features/structure-review/structure-queries';
+import {
   createSourceImportFailureViewModel,
   type SourceImportFailureAction,
   type SourceImportFailureViewModel,
@@ -61,6 +65,19 @@ export function AppRouter(): ReactElement {
   const [sourceImportFailure, setSourceImportFailure] =
     useState<SourceImportFailureViewModel | null>(null);
   const [openedBook, setOpenedBook] = useState<BookSummary | null>(null);
+  const structureWorkspaceQuery = useQuery({
+    ...structureWorkspaceQueryOptions(
+      currentLibrary?.sessionId ?? 'no-library-session',
+      openedBook?.id ?? ('00000000-0000-4000-8000-000000000000' as BookSummary['id']),
+      queryApi,
+    ),
+    enabled: rendererApi !== null && currentLibrary !== null && openedBook !== null,
+  });
+  const structureActionMutation = useMutation(createStructureActionMutationOptions(
+    currentLibrary?.sessionId ?? 'no-library-session',
+    openedBook?.id ?? ('00000000-0000-4000-8000-000000000000' as BookSummary['id']),
+    queryApi,
+  ));
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -101,7 +118,10 @@ export function AppRouter(): ReactElement {
     setSourceImportFailure(null);
     try {
       const result = await importMutation.mutateAsync(request);
-      if (currentLibrary) setLastImport({ sessionId: currentLibrary.sessionId, result });
+      if (currentLibrary) {
+        setLastImport({ sessionId: currentLibrary.sessionId, result });
+        setOpenedBook(result.book);
+      }
     } catch (error) {
       setSourceImportFailure(createSourceImportFailureViewModel(isDomainError(error) ? error : {
         code: 'IMPORT_ERROR',
@@ -163,7 +183,52 @@ export function AppRouter(): ReactElement {
       lastImport={lastImport}
       failure={sourceImportFailure}
       openedBook={openedBook}
+      structureWorkspace={structureWorkspaceQuery.data ?? null}
+      structureLoading={structureWorkspaceQuery.isLoading}
+      structureActionPending={structureActionMutation.isPending}
+      structureError={getQueryErrorMessage(structureWorkspaceQuery.error ?? structureActionMutation.error)}
       onImport={() => void runSourceImport({})}
+      onOpenBook={setOpenedBook}
+      onDetectStructure={() => structureActionMutation.mutate({ type: 'detect' })}
+      onRecoverStructureDetection={() => structureActionMutation.mutate({ type: 'recover-detection' })}
+      onCreateStructureDraft={(replacementFrozenSetId) => {
+        const candidate = structureWorkspaceQuery.data?.candidate;
+        if (candidate) structureActionMutation.mutate({
+          type: 'create-draft',
+          candidateSetId: candidate.id,
+          ...(replacementFrozenSetId === undefined ? {} : { replacementFrozenSetId }),
+        });
+      }}
+      onCreateManualStructureDraft={() => {
+        const run = structureWorkspaceQuery.data?.latestDetectionRun;
+        if (run?.state === 'failed') structureActionMutation.mutate({
+          type: 'create-manual-draft', expectedFailedDetectionRunId: run.id,
+        });
+      }}
+      onUpdateStructureNode={(command) => {
+        const draft = structureWorkspaceQuery.data?.draft;
+        if (draft) structureActionMutation.mutate({ type: 'update-node', draftSetId: draft.id,
+          expectedDraftRevision: draft.draftRevision, command });
+      }}
+      onUpdateStructureRange={(command) => {
+        const draft = structureWorkspaceQuery.data?.draft;
+        if (draft) structureActionMutation.mutate({ type: 'update-range', draftSetId: draft.id,
+          expectedDraftRevision: draft.draftRevision, command });
+      }}
+      onDiscardStructureDraft={() => {
+        const draft = structureWorkspaceQuery.data?.draft;
+        if (draft) structureActionMutation.mutate({ type: 'discard-draft', draftSetId: draft.id,
+          expectedDraftRevision: draft.draftRevision });
+      }}
+      onFreezeStructure={() => {
+        const draft = structureWorkspaceQuery.data?.draft;
+        if (draft) structureActionMutation.mutate({ type: 'freeze', draftSetId: draft.id,
+          expectedDraftRevision: draft.draftRevision });
+      }}
+      onUnfreezeStructure={() => {
+        const frozen = structureWorkspaceQuery.data?.frozen;
+        if (frozen) structureActionMutation.mutate({ type: 'unfreeze', frozenSetId: frozen.id });
+      }}
       onFailureAction={(action) => void handleFailureAction(action)}
     />
   ) : (
@@ -183,8 +248,14 @@ export function resolveAppRoute(hash: string): AppRoute {
   return hash === '#/diagnostics' ? 'diagnostics' : 'product';
 }
 
-function getQueryErrorMessage(error: unknown): string | null {
-  return error instanceof Error ? error.message : null;
+export function getQueryErrorMessage(error: unknown): string | null {
+  if (error instanceof Error) return error.message;
+  if (typeof error !== 'object' || error === null || !('message' in error) ||
+    typeof error.message !== 'string') return null;
+  const blockers = 'details' in error && typeof error.details === 'object' && error.details !== null &&
+    'blockers' in error.details && Array.isArray(error.details.blockers)
+    ? error.details.blockers.filter((value): value is string => typeof value === 'string') : [];
+  return blockers.length > 0 ? `${error.message} (${blockers.join(', ')})` : error.message;
 }
 
 function isDomainError(error: unknown): error is DomainError {

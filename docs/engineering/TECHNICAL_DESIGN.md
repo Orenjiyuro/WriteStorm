@@ -251,6 +251,8 @@ Service rules:
 - Renderer calls services only through typed IPC.
 - Services return domain errors with stable codes.
 - Services never return raw SQLite rows directly to renderer.
+- Structure detection runs receive a positive per-book `run_sequence` inside the aggregate write transaction. Latest-run, active-run, recovery, and manual-fallback authorization order only by this persisted sequence, never by wall-clock timestamps or UUID text.
+- Structure freeze invokes the synchronous DB-only `StructureEditionChangePort` inside its aggregate transaction. The port emits `needs_rebuild`/`stale`/`needs_refresh` plus a non-persisted future CompletionGate invalidation instruction; it never starts downstream work.
 - Long work emits job progress instead of blocking request IPC.
 - `LibraryService.create` is the only flow allowed to create `writestorm.sqlite`; it requires an absent or empty library root and must not adopt an existing database without a valid create flow.
 - `LibraryService.open` requires both `manifest.json` and `writestorm.sqlite`; it must not recreate a missing database for an existing library.

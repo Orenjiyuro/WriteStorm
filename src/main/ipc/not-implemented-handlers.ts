@@ -15,6 +15,7 @@ import type {
 } from '../library/library-service';
 import { LibraryServiceError as LibraryServiceErrorClass } from '../library/library-service';
 import type { StructureDetectionIpcDependencies } from '../structure/structure-detection-ipc';
+import type { StructureReviewIpcDependencies } from '../structure/structure-review-ipc';
 import {
   registerTypedIpcHandlers,
   type IpcMainLike,
@@ -44,7 +45,7 @@ export type ProductIpcRegistrationOptions = {
       request: ContractRequest<'books:import-source'>,
     ) => MaybePromise<ContractResponse<'books:import-source'>>;
   };
-  readonly structure?: StructureDetectionIpcDependencies;
+  readonly structure?: StructureDetectionIpcDependencies & StructureReviewIpcDependencies;
 };
 
 export function registerNotImplementedProductIpcHandlers(
@@ -169,12 +170,21 @@ function createBookProductHandlers(
 }
 
 function createStructureProductHandlers(
-  structure: StructureDetectionIpcDependencies,
+  structure: StructureDetectionIpcDependencies & StructureReviewIpcDependencies,
 ): TypedIpcHandlerMap {
   const detectHandler: TypedIpcHandler<'structure:detect'> = (request) => structure.detect(request);
 
   return {
+    'structure:get': (request) => structure['structure:get'](request),
     'structure:detect': detectHandler,
+    'structure:recover-detection': (request) => structure.recoverDetection(request),
+    'structure:create-draft': (request) => structure['structure:create-draft'](request),
+    'structure:create-manual-draft': (request) => structure['structure:create-manual-draft'](request),
+    'structure:discard-draft': (request) => structure['structure:discard-draft'](request),
+    'structure:update-node': (request) => structure['structure:update-node'](request),
+    'structure:update-story-range': (request) => structure['structure:update-story-range'](request),
+    'structure:freeze': (request) => structure['structure:freeze'](request),
+    'structure:unfreeze': (request) => structure['structure:unfreeze'](request),
   };
 }
 

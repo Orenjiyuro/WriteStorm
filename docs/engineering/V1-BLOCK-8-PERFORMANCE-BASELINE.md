@@ -34,6 +34,21 @@ Re-recorded on 2026-07-14 using Windows x64, Electron 43.0.0 and embedded Node 2
 
 The two 5 MiB samples retained renderer animation frames and accepted the test-button event while the real packaged detection Job was pending. This is the non-blocking hard-gate evidence; the precise frame count and gap are recorded only.
 
+## Block 8 final Windows packaged observation
+
+Re-recorded during final certification on 2026-07-15 using the same Windows x64, Electron 43.0.0, and embedded Node 24.17.0 boundary. All six samples completed without advisories.
+
+| Fixture | Bytes | Main elapsed (ms) | Worker detector (ms) | Worker max RSS (MiB) | Renderer frames | Max frame gap (ms) | Pending click acknowledged | Advisories |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| 50kb-txt | 51,200 | 199.43 | 5.19 | 101.93 | 21 | 16.70 | yes | none |
+| 50kb-md | 51,200 | 197.85 | 5.28 | 102.71 | 15 | 16.70 | yes | none |
+| 1mb-txt | 1,048,576 | 206.66 | 26.91 | 110.27 | 22 | 16.70 | yes | none |
+| 1mb-md | 1,048,576 | 255.56 | 29.95 | 113.02 | 21 | 20.10 | yes | none |
+| 5mb-txt | 5,242,880 | 279.06 | 87.90 | 139.60 | 22 | 16.80 | yes | none |
+| 5mb-md | 5,242,880 | 372.40 | 84.63 | 142.57 | 29 | 16.70 | yes | none |
+
+The recorder waits for automatic post-import detection to finish before starting its measured heartbeat-wrapped detection. It then records the latest recorder sample, preventing automatic and explicitly measured runs from being combined into a misleading baseline.
+
 ## Reproduction and evidence
 
 Run in this order:

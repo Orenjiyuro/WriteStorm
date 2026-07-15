@@ -5,6 +5,7 @@ import type {
   CandidateStructureSet,
   StorySegmentRangeId,
   StructureNodeId,
+  StructureSetId,
   StructureSetNodeDto,
 } from '../../../shared/domain';
 
@@ -19,6 +20,7 @@ type DetectionRunSnapshotRow = {
 
 type CandidateSetRow = {
   id: string;
+  origin_set_id: string | null;
   book_id: string;
   source_text_id: string;
   source_text_edition: number;
@@ -86,7 +88,7 @@ export class StructureCandidateRepository {
   getCurrentCandidate(bookId: BreakdownBookId): CandidateStructureSet | null {
     const set = this.database.prepare(`
       SELECT
-        id, book_id, source_text_id, source_text_edition, source_content_hash,
+        id, origin_set_id, book_id, source_text_id, source_text_edition, source_content_hash,
         decoded_text_length, offset_unit, detection_run_id, story_range_mode,
         created_at, updated_at
       FROM structure_sets
@@ -101,6 +103,7 @@ export class StructureCandidateRepository {
     const storyRanges = this.readStoryRanges(set.id);
     return candidateStructureSetSchema.parse({
       id: set.id,
+      originSetId: set.origin_set_id as StructureSetId | null,
       bookId: set.book_id,
       sourceSnapshot: {
         sourceTextId: set.source_text_id,
@@ -146,13 +149,14 @@ export class StructureCandidateRepository {
     const source = candidate.sourceSnapshot;
     this.database.prepare(`
       INSERT INTO structure_sets (
-        id, book_id, source_text_id, source_text_edition, source_content_hash,
+        id, origin_set_id, book_id, source_text_id, source_text_edition, source_content_hash,
         decoded_text_length, offset_unit, stage, detection_run_id, story_range_mode,
         draft_revision, structure_edition, frozen_at, is_current, created_at, updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, 'candidate', ?, ?, NULL, NULL, NULL, 1, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'candidate', ?, ?, NULL, NULL, NULL, 1, ?, ?)
     `).run(
       candidate.id,
+      candidate.originSetId,
       candidate.bookId,
       source.sourceTextId,
       source.sourceTextEdition,

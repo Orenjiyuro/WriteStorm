@@ -29,7 +29,71 @@ describe('structure workspace migration 002', () => {
         'story_segment_range_chapters',
       ]));
       expect(columnNames(db, 'story_segment_ranges')).toContain('boundary_evidence_json');
+      expect(columnNames(db, 'structure_detection_runs')).toContain('run_sequence');
       expect(columnNames(db, 'structure_sets')).toContain('is_current');
+      expect(columnNames(db, 'structure_sets')).toContain('origin_set_id');
+      expect(columnNames(db, 'books')).toContain('structure_edition');
+    } finally {
+      db.close();
+    }
+  });
+
+  it('keeps Book structure edition nullable before freeze and positive afterwards', () => {
+    const db = migratedDatabase();
+    try {
+      seedBookSourceAndJob(db);
+      expect(db.prepare("SELECT structure_edition FROM books WHERE id = 'book-1'").pluck().get()).toBeNull();
+      expect(() => db.prepare("UPDATE books SET structure_edition = 0 WHERE id = 'book-1'").run())
+        .toThrow(/CHECK constraint failed/i);
+      expect(() => db.prepare("UPDATE books SET structure_edition = 1 WHERE id = 'book-1'").run())
+        .not.toThrow();
+    } finally {
+      db.close();
+    }
+  });
+
+  it('requires a positive detection run sequence that is unique within each book', () => {
+    const db = migratedDatabase();
+    try {
+      seedBookSourceAndJob(db);
+      insertDetectionRun(db, 'run-1', 'job-1', 1);
+      expect(() => db.prepare("UPDATE structure_detection_runs SET run_sequence = 0 WHERE id = 'run-1'").run())
+        .toThrow(/CHECK constraint failed/i);
+      db.prepare(`INSERT INTO jobs (
+        id, book_id, kind, state, completed_units, total_units, payload_schema_version,
+        payload_json, error_code, error_details_json, created_at, updated_at
+      ) VALUES ('job-2', 'book-1', 'structure_detection', 'queued', 0, 1, 1,
+        '{}', NULL, NULL, '2026-07-10T00:00:00.000Z', '2026-07-10T00:00:00.000Z')`).run();
+      expect(() => insertDetectionRun(db, 'run-2', 'job-2', 1)).toThrow(/UNIQUE constraint failed/i);
+      expect(() => insertDetectionRun(db, 'run-2', 'job-2', 2)).not.toThrow();
+    } finally {
+      db.close();
+    }
+  });
+
+  it('requires positive draft revisions and preserves an origin set reference', () => {
+    const db = migratedDatabase();
+    try {
+      seedBookSourceAndJob(db);
+      insertDetectionRun(db, 'run-1', 'job-1');
+      insertCandidateSet(db, 'candidate-current', 'run-1', 1);
+      expect(() => db.prepare(`INSERT INTO structure_sets (
+        id, book_id, source_text_id, source_text_edition, source_content_hash,
+        decoded_text_length, offset_unit, stage, detection_run_id, story_range_mode,
+        draft_revision, structure_edition, frozen_at, is_current, created_at, updated_at, origin_set_id
+      ) VALUES ('draft-zero', 'book-1', 'source-1', 1, 'sha256:source', 24,
+        'utf16_code_unit', 'draft', NULL, 'included', 0, NULL, NULL, 1,
+        '2026-07-10T00:00:00.000Z', '2026-07-10T00:00:00.000Z', 'candidate-current')`).run())
+        .toThrow(/CHECK constraint failed/i);
+      db.prepare(`INSERT INTO structure_sets (
+        id, book_id, source_text_id, source_text_edition, source_content_hash,
+        decoded_text_length, offset_unit, stage, detection_run_id, story_range_mode,
+        draft_revision, structure_edition, frozen_at, is_current, created_at, updated_at, origin_set_id
+      ) VALUES ('draft-1', 'book-1', 'source-1', 1, 'sha256:source', 24,
+        'utf16_code_unit', 'draft', NULL, 'included', 1, NULL, NULL, 1,
+        '2026-07-10T00:00:00.000Z', '2026-07-10T00:00:00.000Z', 'candidate-current')`).run();
+      expect(db.prepare("SELECT origin_set_id FROM structure_sets WHERE id = 'draft-1'").pluck().get())
+        .toBe('candidate-current');
     } finally {
       db.close();
     }
@@ -114,12 +178,12 @@ function columnNames(db: SqliteDatabase, tableName: string): string[] {
   return (db.prepare(`PRAGMA table_info(${tableName})`).all() as Array<{ name: string }>).map(({ name }) => name);
 }
 
-function insertDetectionRun(db: SqliteDatabase, id: string, jobId: string): void {
+function insertDetectionRun(db: SqliteDatabase, id: string, jobId: string, runSequence = 1): void {
   db.prepare(`INSERT INTO structure_detection_runs (
       id, job_id, book_id, source_text_id, source_text_edition, source_content_hash,
-      decoded_text_length, offset_unit, state, failure_reason, created_at, updated_at
+      decoded_text_length, offset_unit, state, failure_reason, created_at, updated_at, run_sequence
     ) VALUES (?, ?, 'book-1', 'source-1', 1, 'sha256:source', 24,
-      'utf16_code_unit', 'queued', NULL, '2026-07-10T00:00:00.000Z', '2026-07-10T00:00:00.000Z')`).run(id, jobId);
+      'utf16_code_unit', 'queued', NULL, '2026-07-10T00:00:00.000Z', '2026-07-10T00:00:00.000Z', ?)`).run(id, jobId, runSequence);
 }
 
 function insertCandidateSet(db: SqliteDatabase, id: string, detectionRunId: string, isCurrent: 0 | 1): void {

@@ -3,7 +3,10 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const statusPath = path.resolve('docs/engineering/V1-BLOCK-8A-STATUS.md');
+const block8StatusPath = path.resolve('docs/engineering/V1-BLOCK-8-STATUS.md');
 const contextPath = path.resolve('docs/engineering/CONTEXT.md');
+const technicalDesignPath = path.resolve('docs/engineering/TECHNICAL_DESIGN.md');
+const decisionsPath = path.resolve('docs/engineering/DECISIONS.md');
 
 describe('Block 8A status record', () => {
   it('locks master status, internal numbering, and authorization boundaries', () => {
@@ -42,7 +45,51 @@ describe('Block 8A status record', () => {
     expect(context).toContain('internal 8A-10 maps to master Task 8.13');
     expect(context).toContain('master Task 8.10 is validation');
     expect(context).toContain('6A feasibility remains unexecuted and unrecorded');
-    expect(context).toContain('8B and 8C remain unimplemented');
-    expect(context).not.toContain('Block 8 is complete');
+    expect(context).toContain('V1-BLOCK-8-STATUS.md');
+    expect(context).toContain('later independent review reopened Block 8 completion');
+  });
+
+  it('records the 8C transaction seam without inventing downstream persistence or completion', () => {
+    const status = readFileSync(block8StatusPath, 'utf8');
+    const technicalDesign = readFileSync(technicalDesignPath, 'utf8');
+    const decisions = readFileSync(decisionsPath, 'utf8');
+
+    for (const phrase of [
+      'StructureEditionChangePort', 'synchronous and DB-only', 'needs_rebuild', 'stale',
+      'needs_refresh', 'invalidate_for_future_owner', 'persisted: false',
+      'Block 8 is complete within the recorded Windows V1 boundary',
+    ]) expect(status).toContain(phrase);
+    expect(status).toContain('No downstream recomputation is started');
+    expect(status).toContain('No real `AnalysisModuleInstance`, ReviewAsset/Evidence, Perspective, or CompletionGate persistence adapter exists');
+    expect(technicalDesign).toContain('synchronous DB-only `StructureEditionChangePort`');
+    expect(decisions).toContain('D021: Structure Edition Invalidation Transaction Seam');
+    expect(decisions).toContain('CompletionGate has no admitted runtime owner');
+  });
+
+  it('reconciles every master Block 8 task and records the final certification evidence', () => {
+    const status = readFileSync(block8StatusPath, 'utf8');
+
+    for (let task = 1; task <= 18; task += 1) {
+      expect(status).toContain(`| 8.${task} |`);
+    }
+    for (const gate of [
+      'npm run check', '19/19 hashes match', 'tests/e2e/source-import.spec.ts',
+      'SQLite 3.53.2', 'git diff --check', 'Inspect current packaged screenshots',
+    ]) expect(status).toContain(gate);
+    expect(status).toContain('90 unit files / 393 tests');
+    expect(status).toContain('22 integration files / 202 tests');
+    expect(status).toContain('11/11 serial packaged Electron tests');
+    expect(status).toContain('The latest worktree passed this final matrix on 2026-07-15');
+    expect(status).toContain('macOS, makers, signing, notarization, and release readiness remain separate unverified boundaries');
+    expect(status).toContain('stale-candidate/manual fallback');
+    expect(status).toContain('stale low-confidence read-only controls');
+    expect(status).toContain('destructive story-range skip confirmation');
+    expect(status).toContain('are now tested');
+    expect(status).toContain('both packaged source-change recovery paths are now tested');
+    expect(status).toContain('Manual draft authorization, monotonic replacement lineage, and persistent monotonic detection-run ordering were repaired and focused-tested');
+    expect(status).toContain('No current Block 8 completion blocker remains');
+    expect(status).toContain('persistent monotonic detection-run ordering were repaired and focused-tested');
+    expect(status).toContain('fixture setup is not claimed as a user-facing source-replace workflow');
+    expect(status).toContain('Block 8 is complete');
   });
 });

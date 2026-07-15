@@ -147,6 +147,40 @@ describe('SourceImportService', () => {
     ]);
   });
 
+  it('starts the post-commit structure hook only after the imported book is readable', async () => {
+    const fixture = sourceImportFixture();
+    const observed: unknown[] = [];
+    const service = fixture.service({
+      worker: successfulWorker(fixture.sourceBytes),
+      afterImportCommitted: ({ bookId, sourceTextId }) => {
+        observed.push({
+          bookId, sourceTextId,
+          bookCount: fixture.rows('books').length,
+          importState: fixture.rows('jobs')[0]?.state,
+        });
+      },
+    });
+    await expect(service.import({ sourcePath: fixture.sourcePath })).resolves.toMatchObject({ ok: true });
+    expect(observed).toEqual([{
+      bookId: 'book-1', sourceTextId: 'source-1', bookCount: 1, importState: 'completed',
+    }]);
+  });
+
+  it('preserves a completed import when the post-commit structure hook fails', async () => {
+    const fixture = sourceImportFixture();
+    const service = fixture.service({
+      worker: successfulWorker(fixture.sourceBytes),
+      afterImportCommitted: () => { throw new Error('structure detection could not start'); },
+    });
+    await expect(service.import({ sourcePath: fixture.sourcePath })).resolves.toMatchObject({
+      ok: true, data: { book: { id: 'book-1' } },
+    });
+    expect(fixture.rows('books')).toHaveLength(1);
+    expect(fixture.rows('source_texts')).toHaveLength(1);
+    expect(fixture.rows('jobs')[0]).toMatchObject({ kind: 'source_import', state: 'completed' });
+    expect(existsSync(fixture.finalPath)).toBe(true);
+  });
+
   it('rejects a duplicate hash before promotion and fails the queued import Job', async () => {
     const fixture = sourceImportFixture();
     seedImportedSource(fixture.library, {
@@ -400,6 +434,7 @@ function sourceImportFixture(sourceBytes = Buffer.from('# Novel\nBody\n', 'utf8'
   const service = (overrides: {
     readonly worker: { readonly prepareImport: (...args: any[]) => Promise<any> };
     readonly beforeFinalWrite?: (...args: any[]) => void | Promise<void>;
+    readonly afterImportCommitted?: (...args: any[]) => void | Promise<void>;
   }) => new SourceImportService({
     libraryService: library,
     worker: overrides.worker,
@@ -410,6 +445,7 @@ function sourceImportFixture(sourceBytes = Buffer.from('# Novel\nBody\n', 'utf8'
     createJobId: () => 'job-1' as JobId,
     createPendingImportId: () => 'pending-1',
     ...(overrides.beforeFinalWrite ? { beforeFinalWrite: overrides.beforeFinalWrite } : {}),
+    ...(overrides.afterImportCommitted ? { afterImportCommitted: overrides.afterImportCommitted } : {}),
   });
 
   return {

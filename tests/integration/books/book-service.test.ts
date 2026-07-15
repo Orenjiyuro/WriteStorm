@@ -33,7 +33,7 @@ describe('BookService persisted reads', () => {
           title: 'Alpha',
           sourceTextId: 'source-a-2',
           sourceTextEdition: 2,
-          structureEdition: null,
+          structureEdition: 2,
           updatedAt: '2026-07-12T03:00:00.000Z',
         },
         {
@@ -49,6 +49,7 @@ describe('BookService persisted reads', () => {
       expect(service.get('book-a' as BreakdownBookId)).toMatchObject({
         id: 'book-a',
         sourceTextEdition: 2,
+        structureEdition: 2,
       });
       expect(service.get('missing' as BreakdownBookId)).toBeNull();
     } finally {
@@ -145,6 +146,7 @@ function seedBooks(service: LibraryService): void {
           'source/source-a-2/a.md', '2026-07-12T02:00:00.000Z', 'a.md', 1);
 
       UPDATE books SET current_source_text_id = 'source-a-2' WHERE id = 'book-a';
+      UPDATE books SET structure_edition = 2 WHERE id = 'book-a';
     `);
   });
 }

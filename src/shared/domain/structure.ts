@@ -145,6 +145,7 @@ export type StructureStoryRangeBoundaryEvidence = {
 
 type StructureSetBase = {
   id: StructureSetId;
+  originSetId: StructureSetId | null;
   bookId: BreakdownBookId;
   sourceSnapshot: StructureSourceSnapshot;
   nodes: StructureSetNodeDto[];

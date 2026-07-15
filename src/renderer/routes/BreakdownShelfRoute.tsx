@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import type {
   BookSummary,
+  ContractRequest,
   ImportSourceResult,
   LibrarySessionSummary,
 } from '../../shared/contracts';
@@ -10,6 +11,8 @@ import {
   type SourceImportFailureAction,
   type SourceImportFailureViewModel,
 } from '../features/breakdown-shelf/source-import-failure';
+import { StructureReviewPanel } from '../features/structure-review/StructureReviewPanel';
+import type { StructureWorkspace } from '../../shared/contracts/structure';
 
 export type LastImportPresentation = {
   readonly sessionId: string;
@@ -23,7 +26,21 @@ export type BreakdownShelfRouteProps = {
   readonly lastImport: LastImportPresentation | null;
   readonly failure: SourceImportFailureViewModel | null;
   readonly openedBook: BookSummary | null;
+  readonly structureWorkspace: StructureWorkspace | null;
+  readonly structureLoading: boolean;
+  readonly structureActionPending: boolean;
+  readonly structureError: string | null;
   readonly onImport: () => void;
+  readonly onOpenBook: (book: BookSummary) => void;
+  readonly onDetectStructure: () => void;
+  readonly onRecoverStructureDetection: () => void;
+  readonly onCreateStructureDraft: (replacementFrozenSetId?: ContractRequest<'structure:create-draft'>['replacementFrozenSetId']) => void;
+  readonly onCreateManualStructureDraft: () => void;
+  readonly onUpdateStructureNode: (command: ContractRequest<'structure:update-node'>['command']) => void;
+  readonly onUpdateStructureRange: (command: ContractRequest<'structure:update-story-range'>['command']) => void;
+  readonly onDiscardStructureDraft: () => void;
+  readonly onFreezeStructure: () => void;
+  readonly onUnfreezeStructure: () => void;
   readonly onFailureAction: (action: SourceImportFailureAction) => void;
 };
 
@@ -74,6 +91,9 @@ export function BreakdownShelfRoute(props: BreakdownShelfRouteProps): ReactEleme
               {props.books.map((book) => (
                 <li key={book.id}>
                   <strong>{book.title}</strong>
+                  <button type="button" onClick={() => props.onOpenBook(book)}>
+                    {rendererText.libraryShelf.reviewStructure}
+                  </button>
                   {props.lastImport?.sessionId === props.library.sessionId &&
                   props.lastImport.result.book.id === book.id ? (
                     <>
@@ -86,6 +106,24 @@ export function BreakdownShelfRoute(props: BreakdownShelfRouteProps): ReactEleme
             </ul>
           ) : null}
         </section>
+        {props.openedBook ? (
+          <StructureReviewPanel
+            book={props.openedBook}
+            workspace={props.structureWorkspace}
+            loading={props.structureLoading}
+            actionPending={props.structureActionPending}
+            error={props.structureError}
+            onDetect={props.onDetectStructure}
+            onRecoverDetection={props.onRecoverStructureDetection}
+            onCreateDraft={props.onCreateStructureDraft}
+            onCreateManualDraft={props.onCreateManualStructureDraft}
+            onUpdateNode={props.onUpdateStructureNode}
+            onUpdateRange={props.onUpdateStructureRange}
+            onDiscardDraft={props.onDiscardStructureDraft}
+            onFreeze={props.onFreezeStructure}
+            onUnfreeze={props.onUnfreezeStructure}
+          />
+        ) : null}
       </section>
     </main>
   );

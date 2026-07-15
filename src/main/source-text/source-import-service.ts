@@ -58,6 +58,10 @@ export class SourceImportService {
     readonly sourceTextId: SourceTextId;
     readonly contentHash: string;
   }) => void | Promise<void>;
+  private readonly afterImportCommitted?: (input: {
+    readonly bookId: BreakdownBookId;
+    readonly sourceTextId: SourceTextId;
+  }) => void | Promise<void>;
   private readonly pendingImports: PendingImportStore;
   private readonly activeImports = new Map<Promise<SourceImportServiceResult>, AbortController>();
   private importPauseDepth = 0;
@@ -73,6 +77,7 @@ export class SourceImportService {
     readonly createPendingImportId?: () => string;
     readonly pendingImportTtlMs?: number;
     readonly beforeFinalWrite?: SourceImportService['beforeFinalWrite'];
+    readonly afterImportCommitted?: SourceImportService['afterImportCommitted'];
   }) {
     this.libraryService = options.libraryService;
     this.worker = options.worker;
@@ -82,6 +87,7 @@ export class SourceImportService {
     this.createJobId = options.createJobId ?? (() => randomUUID() as JobId);
     this.nowMs = options.nowMs ?? (() => Date.now());
     this.beforeFinalWrite = options.beforeFinalWrite;
+    this.afterImportCommitted = options.afterImportCommitted;
     this.pendingImports = new PendingImportStore({
       createId: options.createPendingImportId ?? randomUUID,
       now: this.nowMs,
@@ -261,9 +267,10 @@ export class SourceImportService {
     });
     const job = completedJobSummary(jobId, bookId, importedAt);
 
+    let committed: ReturnType<typeof importBookWithSourceText>;
     try {
       await this.beforeFinalWrite?.({ jobId, bookId, sourceTextId, contentHash: prepared.contentHash });
-      const data = unitOfWork.write((session) => {
+      committed = unitOfWork.write((session) => {
         assertSession(session.sessionId, current.sessionId);
         return importBookWithSourceText(session.database, {
           libraryId: session.library.id,
@@ -274,7 +281,6 @@ export class SourceImportService {
           updatedAt: importedAt,
         });
       });
-      return { ok: true, data: { ...data, job } };
     } catch (error) {
       removePromoted(promoted.targetPath);
       const duplicateAfterRace = readDuplicate(this.libraryService, current.sessionId, prepared.contentHash);
@@ -288,6 +294,12 @@ export class SourceImportService {
       }
       return failure('database_write_failed', 'Source import could not be saved to the library database.');
     }
+    try {
+      await this.afterImportCommitted?.({ bookId, sourceTextId });
+    } catch {
+      // Import is already committed. Structure workspace exposes Detect/Retry recovery separately.
+    }
+    return { ok: true, data: { ...committed, job } };
   }
 
   recoverAbandonedImports(): Promise<{ readonly recoveredJobIds: string[] }> {

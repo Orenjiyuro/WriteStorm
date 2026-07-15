@@ -76,12 +76,14 @@ export class StructureDetectionRunRepository {
     const input = createQueuedInputSchema.parse(inputValue);
     const create = this.database.transaction(() => {
       this.assertSourceSnapshotMatchesImport(input.bookId, input.sourceSnapshot);
+      const runSequence = this.database.prepare(`SELECT COALESCE(MAX(run_sequence), 0) + 1
+        FROM structure_detection_runs WHERE book_id = ?`).pluck().get(input.bookId) as number;
       this.database.prepare(`
         INSERT INTO structure_detection_runs (
           id, job_id, book_id, source_text_id, source_text_edition,
           source_content_hash, decoded_text_length, offset_unit, state,
-          failure_reason, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'utf16_code_unit', 'queued', NULL, ?, ?)
+          failure_reason, created_at, updated_at, run_sequence
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'utf16_code_unit', 'queued', NULL, ?, ?, ?)
       `).run(
         input.runId,
         input.jobId,
@@ -92,6 +94,7 @@ export class StructureDetectionRunRepository {
         input.sourceSnapshot.decodedTextLength,
         input.createdAt,
         input.createdAt,
+        runSequence,
       );
     });
 
@@ -156,7 +159,39 @@ export class StructureDetectionRunRepository {
       WHERE run.book_id = ?
         AND run.state IN ('queued', 'running')
         AND job.kind = 'structure_detection'
-      ORDER BY run.created_at DESC, run.id DESC
+      ORDER BY run.run_sequence DESC
+      LIMIT 1
+    `).get(bookId) as DetectionRunJobRow | undefined;
+
+    return row ? mapStartResult(row) : null;
+  }
+
+  findLatestByBook(bookId: BreakdownBookId): StructureDetectionStartResult | null {
+    const row = this.database.prepare(`
+      SELECT
+        run.id AS run_id,
+        run.book_id AS run_book_id,
+        run.job_id AS run_job_id,
+        run.source_text_id,
+        run.source_text_edition,
+        run.source_content_hash,
+        run.decoded_text_length,
+        run.offset_unit,
+        run.state AS run_state,
+        run.failure_reason AS run_failure_reason,
+        run.created_at AS run_created_at,
+        run.updated_at AS run_updated_at,
+        job.book_id AS job_book_id,
+        job.state AS job_state,
+        job.completed_units AS job_completed_units,
+        job.total_units AS job_total_units,
+        job.payload_json AS job_payload_json,
+        job.error_code AS job_error_code,
+        job.updated_at AS job_updated_at
+      FROM structure_detection_runs run
+      JOIN jobs job ON job.id = run.job_id
+      WHERE run.book_id = ? AND job.kind = 'structure_detection'
+      ORDER BY run.run_sequence DESC
       LIMIT 1
     `).get(bookId) as DetectionRunJobRow | undefined;
 

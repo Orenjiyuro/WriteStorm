@@ -7,6 +7,7 @@ import {
 } from './security';
 import {
   createStructureDetectionIpcDependencies,
+  createStructureReviewIpcDependencies,
   createTrustedDevServerOrigins,
   registerProductIpc,
 } from './ipc';
@@ -57,6 +58,9 @@ const sourceTextWorkerRunner = createElectronSourceTextWorkerRunner(__dirname);
 const sourceImportService = new SourceImportService({
   libraryService,
   worker: sourceTextWorkerRunner,
+  afterImportCommitted: async ({ bookId }) => {
+    await structureService.startDetection(bookId, { timeoutMs: structureDetectionTimeoutMs });
+  },
 });
 const books = createBookImportIpcDependencies({
   books: bookService,
@@ -226,10 +230,13 @@ app.whenReady().then(async () => {
       showOpenDialog: (options) => dialog.showOpenDialog(options),
     }),
     books,
-    structure: createStructureDetectionIpcDependencies({
-      service: structureService,
-      timeoutMs: structureDetectionTimeoutMs,
-    }),
+    structure: {
+      ...createStructureDetectionIpcDependencies({
+        service: structureService,
+        timeoutMs: structureDetectionTimeoutMs,
+      }),
+      ...createStructureReviewIpcDependencies(structureService),
+    },
   });
   await createWindow();
   await runOptionalNativeSqliteProbe();

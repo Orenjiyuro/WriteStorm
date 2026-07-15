@@ -35,7 +35,7 @@ The accepted reset contract is recorded in `docs/adr/0001-pre-release-schema-res
 
 Production tables now require a frozen identity/owner/lifecycle, real write and read paths, a stable error model, and integration-test coverage. Speculative shell tables are not admitted. The canonical source path is `source/{sourceTextId}/{originalFileName}`. The Job/Checkpoint core is frozen early because Block 7 already persists import Jobs. After the first external alpha or release tag, published migrations are immutable and changes are forward-only with pre-migration snapshots.
 
-Task 19 reattached Block 8A detection persistence, Job lifecycle, worker and IPC wiring to migration 002 and the current service/UoW boundaries. The ADR's 19 pure detection/fixture hashes remain unchanged. Block 8A detection is implemented; Block 8B review/freeze and Block 8C invalidation remain separate unfinished work. macOS packaged smoke and release makers remain blocked/not verified.
+Task 19 reattached Block 8A detection persistence, Job lifecycle, worker and IPC wiring to migration 002 and the current service/UoW boundaries. The ADR's 19 pure detection/fixture hashes remain unchanged. At that checkpoint, Block 8B review/freeze and Block 8C invalidation were separate unfinished work; their later implementation status is recorded in `V1-BLOCK-8-STATUS.md`. macOS packaged smoke and release makers remain blocked/not verified.
 
 ## 1. Current Repository State
 
@@ -214,11 +214,11 @@ Current Block 8A gate facts:
 - `docs/engineering/V1-BLOCK-8A-STATUS.md` is the durable authority for Block 8A status, numbering reconciliation, passed gates, limitations, and reproduction commands. Readers must not depend on conversation history to interpret internal slice labels.
 - The master Block 8A scope is Tasks 8.1-8.10, 8.12, 8.13, and 8.18. Internal labels are review/execution slices rather than master Task numbers: internal 8A-10 maps to master Task 8.13, while master Task 8.10 is validation.
 - Block 8A local deterministic detection, candidate-side persistence, validation, fixtures, worker/Job lifecycle, and observation-only performance recorder are implemented. Task 8.9 is complete only for candidate persistence and stage-separation foundation.
-- 8B and 8C remain unimplemented. Draft/frozen repository and service transactions, structure review/freeze product UI, the Task 8.17 real journey, and downstream invalidation hooks are not Block 8A deliverables.
+- `V1-BLOCK-8-STATUS.md` is the current authority for Block 8 status. A later independent review reopened Block 8 completion; manual aggregate authorization, monotonic replacement lineage, and persistent per-book detection-run ordering were repaired and focused-tested, and the final Windows recertification passed on 2026-07-15. Task 8.16 remains a synchronous DB-only invalidation port; macOS and release boundaries remain unverified.
 - 6A feasibility remains unexecuted and unrecorded. Block 8A does not record a Codex SDK feasibility decision and does not authorize AI prompt/runtime work.
 - Windows packaged performance results are observation-only and do not establish stable regression thresholds. macOS packaged performance evidence has not been recorded.
 - `startDetection` is the only public structure-detection execution entry. Cancellation persists `run=failed` and `Job=cancelled` before aborting the utility process.
-- The packaged 5 MiB renderer button is an event-loop probe, not a product Detect structure button. Product loading, Job presentation, correction, confirmation, freeze, and repeat-operation UX remain 8B work.
+- At the 8A checkpoint, the packaged 5 MiB renderer button was an event-loop probe rather than the later product Detect structure control. Product loading, recovery, correction, confirmation, freeze, and repeat-operation UX are recorded separately in `V1-BLOCK-8-STATUS.md`.
 
 ## 2. Product Domains
 
@@ -301,7 +301,7 @@ The V1 implementation path is:
 8. Implement library create/open and persisted Book shelf reads. Completed through LibraryService, BookService, session-scoped renderer queries, and packaged create/open/reopen coverage.
 9. Record SQLite/migration performance baseline. Completed in Task 6.13 for the authorized LibraryService/migration layer.
 10. Implement txt/md import and metadata. Completed through the source worker, SourceImportService, canonical SourceText storage, Job/checkpoint transaction, IPC adapter, and packaged import smoke.
-11. Implement deterministic structure/story-range detection. Block 8A detection, persistence, Job lifecycle, worker, IPC, and packaged performance/probe evidence completed in Task 19/20; Block 8B review/freeze and Block 8C invalidation remain unfinished.
+11. Implement deterministic structure/story-range detection. Completed through Block 8A detection, Block 8B review/freeze, Block 8C invalidation seam, focused review remediation, and final Windows recertification recorded in `V1-BLOCK-8-STATUS.md`.
 12. Implement module instance shell. Not started.
 13. Implement Job lifecycle foundation. Completed for queued creation, transition policy, atomic completion with final checkpoint, recovery, and source/structure workloads; later business-specific Job kinds remain incremental work.
 14. Implement export blocked state. Not started.

@@ -213,6 +213,7 @@ function createFixture(): { sourceText: string; structureSet: CandidateStructure
     sourceText,
     structureSet: {
       id: 'set-1' as StructureSetId,
+      originSetId: null,
       bookId: 'book-1' as BreakdownBookId,
       sourceSnapshot: {
         sourceTextId: 'source-1' as SourceTextId,

@@ -125,6 +125,8 @@ function seedDetectionRun(
   contentHash: string,
 ): void {
   const now = '2026-07-10T00:00:00.000Z';
+  const runSequence = database.prepare(`SELECT COALESCE(MAX(run_sequence), 0) + 1
+    FROM structure_detection_runs WHERE book_id = 'book-1'`).pluck().get() as number;
   database.prepare(`
     INSERT INTO jobs (
       id, book_id, kind, state, completed_units, total_units, payload_schema_version,
@@ -137,11 +139,11 @@ function seedDetectionRun(
     INSERT INTO structure_detection_runs (
       id, job_id, book_id, source_text_id, source_text_edition,
       source_content_hash, decoded_text_length, offset_unit, state,
-      failure_reason, created_at, updated_at
+      failure_reason, created_at, updated_at, run_sequence
     )
     VALUES (?, ?, 'book-1', 'source-1', 1, ?, 120,
-      'utf16_code_unit', 'completed', NULL, ?, ?)
-  `).run(runId, jobId, contentHash, now, now);
+      'utf16_code_unit', 'completed', NULL, ?, ?, ?)
+  `).run(runId, jobId, contentHash, now, now, runSequence);
 }
 
 function seedCurrentReviewStages(database: SqliteDatabase): void {
@@ -153,7 +155,7 @@ function seedCurrentReviewStages(database: SqliteDatabase): void {
       draft_revision, structure_edition, frozen_at, is_current, created_at, updated_at
     ) VALUES (
       'draft-current', 'book-1', 'source-1', 1, 'sha256:source', 120,
-      'utf16_code_unit', 'draft', NULL, 'included', 0, NULL, NULL, 1, ?, ?
+      'utf16_code_unit', 'draft', NULL, 'included', 1, NULL, NULL, 1, ?, ?
     )
   `).run(now, now);
   database.prepare(`
@@ -181,6 +183,7 @@ function candidateFixture(
 
   return {
     id: setId as StructureSetId,
+    originSetId: null,
     bookId: 'book-1' as BreakdownBookId,
     sourceSnapshot: {
       sourceTextId: 'source-1' as SourceTextId,

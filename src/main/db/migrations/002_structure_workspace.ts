@@ -2,19 +2,28 @@ import type { Migration } from '../migration-runner';
 import { STRUCTURE_WORKSPACE_SEMANTIC_BOUNDARIES } from './002_structure_workspace_boundaries';
 
 const BASE_STRUCTURE_WITNESS_SETUP = `
-  INSERT INTO books VALUES ('book', 'Book', NULL, 'now', 'now');
+  INSERT INTO books VALUES ('book', 'Book', NULL, 'now', 'now', NULL);
   INSERT INTO source_texts VALUES ('source', 'book', 'source.txt', 1, 'txt', 'hash', 'utf8', 1, 'source.txt', 'now');
   INSERT INTO jobs VALUES ('job', 'book', 'structure_detection', 'queued', 0, NULL, 1, '{}', NULL, NULL, 'now', 'now')
 `;
 
-const VALID_DRAFT_SET_SQL = `INSERT INTO structure_sets VALUES ('set', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'draft', NULL, 'included', 1, NULL, NULL, 1, 'now', 'now')`;
-const VALID_FROZEN_SET_SQL = `INSERT INTO structure_sets VALUES ('set', 'book', 'source', 1, 'hash', 20, 'utf16_code_unit', 'frozen', NULL, 'included', NULL, 1, 'now', 1, 'now', 'now')`;
+const STRUCTURE_SET_INSERT_COLUMNS = `(
+  id, book_id, source_text_id, source_text_edition, source_content_hash,
+  decoded_text_length, offset_unit, stage, detection_run_id, story_range_mode,
+  draft_revision, structure_edition, frozen_at, is_current, created_at, updated_at
+)`;
+
+const VALID_DRAFT_SET_SQL = `INSERT INTO structure_sets ${STRUCTURE_SET_INSERT_COLUMNS} VALUES ('set', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'draft', NULL, 'included', 1, NULL, NULL, 1, 'now', 'now')`;
+const VALID_FROZEN_SET_SQL = `INSERT INTO structure_sets ${STRUCTURE_SET_INSERT_COLUMNS} VALUES ('set', 'book', 'source', 1, 'hash', 20, 'utf16_code_unit', 'frozen', NULL, 'included', NULL, 1, 'now', 1, 'now', 'now')`;
 
 export const STRUCTURE_WORKSPACE_MIGRATION = {
   id: 2,
   name: 'structure_workspace',
   up(database) {
     database.exec(`
+      ALTER TABLE books
+        ADD COLUMN structure_edition INTEGER CHECK (structure_edition IS NULL OR structure_edition > 0);
+
       CREATE TABLE structure_detection_runs (
         id TEXT PRIMARY KEY,
         job_id TEXT NOT NULL UNIQUE,
@@ -28,13 +37,15 @@ export const STRUCTURE_WORKSPACE_MIGRATION = {
         failure_reason TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
+        run_sequence INTEGER NOT NULL CHECK (run_sequence > 0),
         CHECK (
           (state = 'failed' AND failure_reason IS NOT NULL AND length(trim(failure_reason)) > 0) OR
           (state <> 'failed' AND failure_reason IS NULL)
         ),
         FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,
         FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
-        FOREIGN KEY (source_text_id) REFERENCES source_texts(id) ON DELETE CASCADE
+        FOREIGN KEY (source_text_id) REFERENCES source_texts(id) ON DELETE CASCADE,
+        UNIQUE (book_id, run_sequence)
       );
 
       CREATE TABLE structure_sets (
@@ -54,14 +65,16 @@ export const STRUCTURE_WORKSPACE_MIGRATION = {
         is_current INTEGER NOT NULL DEFAULT 1 CHECK (is_current IN (0, 1)),
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
+        origin_set_id TEXT,
         CHECK (
           (stage = 'candidate' AND detection_run_id IS NOT NULL AND draft_revision IS NULL AND structure_edition IS NULL AND frozen_at IS NULL) OR
-          (stage = 'draft' AND detection_run_id IS NULL AND draft_revision IS NOT NULL AND draft_revision >= 0 AND structure_edition IS NULL AND frozen_at IS NULL) OR
+          (stage = 'draft' AND detection_run_id IS NULL AND draft_revision IS NOT NULL AND draft_revision > 0 AND structure_edition IS NULL AND frozen_at IS NULL) OR
           (stage = 'frozen' AND detection_run_id IS NULL AND draft_revision IS NULL AND structure_edition IS NOT NULL AND structure_edition > 0 AND frozen_at IS NOT NULL)
         ),
         FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
         FOREIGN KEY (source_text_id) REFERENCES source_texts(id) ON DELETE CASCADE,
         FOREIGN KEY (detection_run_id) REFERENCES structure_detection_runs(id) ON DELETE CASCADE,
+        FOREIGN KEY (origin_set_id) REFERENCES structure_sets(id) ON DELETE RESTRICT,
         UNIQUE (book_id, structure_edition)
       );
 
@@ -276,55 +289,55 @@ export const STRUCTURE_WORKSPACE_MIGRATION = {
     {
       id: '002.detection.source_edition', migrationId: 2,
       setupSql: BASE_STRUCTURE_WITNESS_SETUP,
-      sql: `INSERT INTO structure_detection_runs VALUES ('run', 'job', 'book', 'source', 0, 'hash', 1, 'utf16_code_unit', 'queued', NULL, 'now', 'now')`,
+      sql: `INSERT INTO structure_detection_runs VALUES ('run', 'job', 'book', 'source', 0, 'hash', 1, 'utf16_code_unit', 'queued', NULL, 'now', 'now', 1)`,
       expected: { outcome: 'constraint', code: 'SQLITE_CONSTRAINT_CHECK' },
     },
     {
       id: '002.detection.content_hash', migrationId: 2,
       setupSql: BASE_STRUCTURE_WITNESS_SETUP,
-      sql: `INSERT INTO structure_detection_runs VALUES ('run', 'job', 'book', 'source', 1, ' ', 1, 'utf16_code_unit', 'queued', NULL, 'now', 'now')`,
+      sql: `INSERT INTO structure_detection_runs VALUES ('run', 'job', 'book', 'source', 1, ' ', 1, 'utf16_code_unit', 'queued', NULL, 'now', 'now', 1)`,
       expected: { outcome: 'constraint', code: 'SQLITE_CONSTRAINT_CHECK' },
     },
     {
       id: '002.detection.decoded_length', migrationId: 2,
       setupSql: BASE_STRUCTURE_WITNESS_SETUP,
-      sql: `INSERT INTO structure_detection_runs VALUES ('run', 'job', 'book', 'source', 1, 'hash', -1, 'utf16_code_unit', 'queued', NULL, 'now', 'now')`,
+      sql: `INSERT INTO structure_detection_runs VALUES ('run', 'job', 'book', 'source', 1, 'hash', -1, 'utf16_code_unit', 'queued', NULL, 'now', 'now', 1)`,
       expected: { outcome: 'constraint', code: 'SQLITE_CONSTRAINT_CHECK' },
     },
     {
       id: '002.detection.offset_unit', migrationId: 2,
       setupSql: BASE_STRUCTURE_WITNESS_SETUP,
-      sql: `INSERT INTO structure_detection_runs VALUES ('run', 'job', 'book', 'source', 1, 'hash', 1, 'bytes', 'queued', NULL, 'now', 'now')`,
+      sql: `INSERT INTO structure_detection_runs VALUES ('run', 'job', 'book', 'source', 1, 'hash', 1, 'bytes', 'queued', NULL, 'now', 'now', 1)`,
       expected: { outcome: 'constraint', code: 'SQLITE_CONSTRAINT_CHECK' },
     },
     {
       id: '002.detection.state_reason', migrationId: 2,
       setupSql: BASE_STRUCTURE_WITNESS_SETUP,
-      sql: `INSERT INTO structure_detection_runs VALUES ('run', 'job', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'failed', NULL, 'now', 'now')`,
+      sql: `INSERT INTO structure_detection_runs VALUES ('run', 'job', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'failed', NULL, 'now', 'now', 1)`,
       expected: { outcome: 'constraint', code: 'SQLITE_CONSTRAINT_CHECK' },
     },
     {
       id: '002.detection.state', migrationId: 2,
       setupSql: BASE_STRUCTURE_WITNESS_SETUP,
-      sql: `INSERT INTO structure_detection_runs VALUES ('run', 'job', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'paused', NULL, 'now', 'now')`,
+      sql: `INSERT INTO structure_detection_runs VALUES ('run', 'job', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'paused', NULL, 'now', 'now', 1)`,
       expected: { outcome: 'constraint', code: 'SQLITE_CONSTRAINT_CHECK' },
     },
     {
       id: '002.structure_set.stage_shape', migrationId: 2,
       setupSql: BASE_STRUCTURE_WITNESS_SETUP,
-      sql: `INSERT INTO structure_sets VALUES ('set', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'draft', NULL, 'included', NULL, NULL, NULL, 1, 'now', 'now')`,
+      sql: `INSERT INTO structure_sets ${STRUCTURE_SET_INSERT_COLUMNS} VALUES ('set', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'draft', NULL, 'included', NULL, NULL, NULL, 1, 'now', 'now')`,
       expected: { outcome: 'constraint', code: 'SQLITE_CONSTRAINT_CHECK' },
     },
     {
       id: '002.structure_set.snapshot', migrationId: 2,
       setupSql: BASE_STRUCTURE_WITNESS_SETUP,
-      sql: `INSERT INTO structure_sets VALUES ('set', 'book', 'source', 0, ' ', -1, 'bytes', 'draft', NULL, 'bad', 1, NULL, NULL, 2, 'now', 'now')`,
+      sql: `INSERT INTO structure_sets ${STRUCTURE_SET_INSERT_COLUMNS} VALUES ('set', 'book', 'source', 0, ' ', -1, 'bytes', 'draft', NULL, 'bad', 1, NULL, NULL, 2, 'now', 'now')`,
       expected: { outcome: 'constraint', code: 'SQLITE_CONSTRAINT_CHECK' },
     },
     {
       id: '002.structure_set.historical_same_stage', migrationId: 2,
       setupSql: `${BASE_STRUCTURE_WITNESS_SETUP}; ${VALID_DRAFT_SET_SQL}`,
-      sql: `INSERT INTO structure_sets VALUES ('set-2', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'draft', NULL, 'included', 2, NULL, NULL, 0, 'now', 'now')`,
+      sql: `INSERT INTO structure_sets ${STRUCTURE_SET_INSERT_COLUMNS} VALUES ('set-2', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'draft', NULL, 'included', 2, NULL, NULL, 0, 'now', 'now')`,
       expected: { outcome: 'accept' },
     },
     {
@@ -365,13 +378,13 @@ export const STRUCTURE_WORKSPACE_MIGRATION = {
     },
     {
       id: '002.node.parent_same_set_insert', migrationId: 2,
-      setupSql: `${BASE_STRUCTURE_WITNESS_SETUP}; ${VALID_DRAFT_SET_SQL}; INSERT INTO structure_sets VALUES ('other-set', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'draft', NULL, 'included', 2, NULL, NULL, 0, 'now', 'now'); INSERT INTO structure_nodes VALUES ('parent', 'other-set', NULL, 'chapter', 'Parent', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now')`,
+      setupSql: `${BASE_STRUCTURE_WITNESS_SETUP}; ${VALID_DRAFT_SET_SQL}; INSERT INTO structure_sets ${STRUCTURE_SET_INSERT_COLUMNS} VALUES ('other-set', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'draft', NULL, 'included', 2, NULL, NULL, 0, 'now', 'now'); INSERT INTO structure_nodes VALUES ('parent', 'other-set', NULL, 'chapter', 'Parent', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now')`,
       sql: `INSERT INTO structure_nodes VALUES ('child', 'set', NULL, 'chapter', 'Child', 'parent', 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now')`,
       expected: { outcome: 'constraint', code: 'SQLITE_CONSTRAINT_TRIGGER' },
     },
     {
       id: '002.node.parent_same_set_update', migrationId: 2,
-      setupSql: `${BASE_STRUCTURE_WITNESS_SETUP}; ${VALID_DRAFT_SET_SQL}; INSERT INTO structure_sets VALUES ('other-set', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'draft', NULL, 'included', 2, NULL, NULL, 0, 'now', 'now'); INSERT INTO structure_nodes VALUES ('parent', 'other-set', NULL, 'chapter', 'Parent', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now'); INSERT INTO structure_nodes VALUES ('child', 'set', NULL, 'chapter', 'Child', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now')`,
+      setupSql: `${BASE_STRUCTURE_WITNESS_SETUP}; ${VALID_DRAFT_SET_SQL}; INSERT INTO structure_sets ${STRUCTURE_SET_INSERT_COLUMNS} VALUES ('other-set', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'draft', NULL, 'included', 2, NULL, NULL, 0, 'now', 'now'); INSERT INTO structure_nodes VALUES ('parent', 'other-set', NULL, 'chapter', 'Parent', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now'); INSERT INTO structure_nodes VALUES ('child', 'set', NULL, 'chapter', 'Child', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now')`,
       sql: `UPDATE structure_nodes SET parent_id = 'parent' WHERE id = 'child'`,
       expected: { outcome: 'constraint', code: 'SQLITE_CONSTRAINT_TRIGGER' },
     },
@@ -395,13 +408,13 @@ export const STRUCTURE_WORKSPACE_MIGRATION = {
     },
     {
       id: '002.range.skip_mode_insert_trigger', migrationId: 2,
-      setupSql: `${BASE_STRUCTURE_WITNESS_SETUP}; INSERT INTO structure_sets VALUES ('set', 'book', 'source', 1, 'hash', 10, 'utf16_code_unit', 'draft', NULL, 'skipped_by_user', 1, NULL, NULL, 1, 'now', 'now')`,
+      setupSql: `${BASE_STRUCTURE_WITNESS_SETUP}; INSERT INTO structure_sets ${STRUCTURE_SET_INSERT_COLUMNS} VALUES ('set', 'book', 'source', 1, 'hash', 10, 'utf16_code_unit', 'draft', NULL, 'skipped_by_user', 1, NULL, NULL, 1, 'now', 'now')`,
       sql: `INSERT INTO story_segment_ranges (id, structure_set_id, title, start_offset, end_offset, start_reason, end_reason, confidence_score, confidence_level, created_at, updated_at) VALUES ('range', 'set', 'Range', 0, 5, 'start', 'end', 1, 'high', 'now', 'now')`,
       expected: { outcome: 'constraint', code: 'SQLITE_CONSTRAINT_TRIGGER' },
     },
     {
       id: '002.range.skip_mode_update_trigger', migrationId: 2,
-      setupSql: `${BASE_STRUCTURE_WITNESS_SETUP}; ${VALID_DRAFT_SET_SQL}; INSERT INTO structure_sets VALUES ('skipped-set', 'book', 'source', 1, 'hash', 10, 'utf16_code_unit', 'draft', NULL, 'skipped_by_user', 2, NULL, NULL, 0, 'now', 'now'); INSERT INTO story_segment_ranges (id, structure_set_id, title, start_offset, end_offset, start_reason, end_reason, confidence_score, confidence_level, created_at, updated_at) VALUES ('range', 'set', 'Range', 0, 5, 'start', 'end', 1, 'high', 'now', 'now')`,
+      setupSql: `${BASE_STRUCTURE_WITNESS_SETUP}; ${VALID_DRAFT_SET_SQL}; INSERT INTO structure_sets ${STRUCTURE_SET_INSERT_COLUMNS} VALUES ('skipped-set', 'book', 'source', 1, 'hash', 10, 'utf16_code_unit', 'draft', NULL, 'skipped_by_user', 2, NULL, NULL, 0, 'now', 'now'); INSERT INTO story_segment_ranges (id, structure_set_id, title, start_offset, end_offset, start_reason, end_reason, confidence_score, confidence_level, created_at, updated_at) VALUES ('range', 'set', 'Range', 0, 5, 'start', 'end', 1, 'high', 'now', 'now')`,
       sql: `UPDATE story_segment_ranges SET structure_set_id = 'skipped-set' WHERE id = 'range'`,
       expected: { outcome: 'constraint', code: 'SQLITE_CONSTRAINT_TRIGGER' },
     },
@@ -437,20 +450,20 @@ export const STRUCTURE_WORKSPACE_MIGRATION = {
     },
     {
       id: '002.range_chapter.same_set_trigger', migrationId: 2,
-      setupSql: `${BASE_STRUCTURE_WITNESS_SETUP}; ${VALID_DRAFT_SET_SQL}; INSERT INTO structure_sets VALUES ('other-set', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'draft', NULL, 'included', 2, NULL, NULL, 0, 'now', 'now'); INSERT INTO structure_nodes VALUES ('chapter', 'other-set', NULL, 'chapter', 'Chapter', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now'); INSERT INTO story_segment_ranges (id, structure_set_id, title, start_offset, end_offset, start_reason, end_reason, confidence_score, confidence_level, created_at, updated_at) VALUES ('range', 'set', 'Range', 0, 10, 'start', 'end', 1, 'high', 'now', 'now')`,
+      setupSql: `${BASE_STRUCTURE_WITNESS_SETUP}; ${VALID_DRAFT_SET_SQL}; INSERT INTO structure_sets ${STRUCTURE_SET_INSERT_COLUMNS} VALUES ('other-set', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'draft', NULL, 'included', 2, NULL, NULL, 0, 'now', 'now'); INSERT INTO structure_nodes VALUES ('chapter', 'other-set', NULL, 'chapter', 'Chapter', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now'); INSERT INTO story_segment_ranges (id, structure_set_id, title, start_offset, end_offset, start_reason, end_reason, confidence_score, confidence_level, created_at, updated_at) VALUES ('range', 'set', 'Range', 0, 10, 'start', 'end', 1, 'high', 'now', 'now')`,
       sql: `INSERT INTO story_segment_range_chapters VALUES ('range', 'chapter', 0)`,
       expected: { outcome: 'constraint', code: 'SQLITE_CONSTRAINT_TRIGGER' },
     },
     {
       id: '002.range_chapter.same_set_update_trigger', migrationId: 2,
-      setupSql: `${BASE_STRUCTURE_WITNESS_SETUP}; ${VALID_DRAFT_SET_SQL}; INSERT INTO structure_sets VALUES ('other-set', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'draft', NULL, 'included', 2, NULL, NULL, 0, 'now', 'now'); INSERT INTO structure_nodes VALUES ('chapter-1', 'set', NULL, 'chapter', 'One', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now'); INSERT INTO structure_nodes VALUES ('chapter-2', 'other-set', NULL, 'chapter', 'Two', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now'); INSERT INTO story_segment_ranges (id, structure_set_id, title, start_offset, end_offset, start_reason, end_reason, confidence_score, confidence_level, created_at, updated_at) VALUES ('range', 'set', 'Range', 0, 10, 'start', 'end', 1, 'high', 'now', 'now'); INSERT INTO story_segment_range_chapters VALUES ('range', 'chapter-1', 0)`,
+      setupSql: `${BASE_STRUCTURE_WITNESS_SETUP}; ${VALID_DRAFT_SET_SQL}; INSERT INTO structure_sets ${STRUCTURE_SET_INSERT_COLUMNS} VALUES ('other-set', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'draft', NULL, 'included', 2, NULL, NULL, 0, 'now', 'now'); INSERT INTO structure_nodes VALUES ('chapter-1', 'set', NULL, 'chapter', 'One', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now'); INSERT INTO structure_nodes VALUES ('chapter-2', 'other-set', NULL, 'chapter', 'Two', NULL, 0, 0, 10, NULL, NULL, NULL, 1, 'high', NULL, 'now', 'now'); INSERT INTO story_segment_ranges (id, structure_set_id, title, start_offset, end_offset, start_reason, end_reason, confidence_score, confidence_level, created_at, updated_at) VALUES ('range', 'set', 'Range', 0, 10, 'start', 'end', 1, 'high', 'now', 'now'); INSERT INTO story_segment_range_chapters VALUES ('range', 'chapter-1', 0)`,
       sql: `UPDATE story_segment_range_chapters SET chapter_id = 'chapter-2' WHERE story_segment_range_id = 'range'`,
       expected: { outcome: 'constraint', code: 'SQLITE_CONSTRAINT_TRIGGER' },
     },
     {
       id: '002.structure_set.current_unique', migrationId: 2,
       setupSql: `${BASE_STRUCTURE_WITNESS_SETUP}; ${VALID_DRAFT_SET_SQL}`,
-      sql: `INSERT INTO structure_sets VALUES ('set-2', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'draft', NULL, 'included', 1, NULL, NULL, 1, 'now', 'now')`,
+      sql: `INSERT INTO structure_sets ${STRUCTURE_SET_INSERT_COLUMNS} VALUES ('set-2', 'book', 'source', 1, 'hash', 1, 'utf16_code_unit', 'draft', NULL, 'included', 1, NULL, NULL, 1, 'now', 'now')`,
       expected: { outcome: 'constraint', code: 'SQLITE_CONSTRAINT_UNIQUE' },
     },
   ],

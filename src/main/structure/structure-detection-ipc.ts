@@ -1,13 +1,15 @@
 import type { ContractRequest, ContractResponse } from '../../shared/contracts';
 import type { StructureDetectionStartResult } from '../../shared/contracts/structure';
-import { createDomainError } from '../../shared/errors';
-import { StructureServiceError, type DetectStructureOptions } from './structure-service';
-import { StructureSourceSnapshotError } from './structure-source-snapshot';
+import { type DetectStructureOptions } from './structure-service';
+import { structureIpcErrorResponse } from './structure-review-ipc';
 
 export type StructureDetectionIpcDependencies = {
   readonly detect: (
     request: ContractRequest<'structure:detect'>,
   ) => Promise<ContractResponse<'structure:detect'>>;
+  readonly recoverDetection: (
+    request: ContractRequest<'structure:recover-detection'>,
+  ) => Promise<ContractResponse<'structure:recover-detection'>>;
 };
 
 export type StructureDetectionIpcOptions = {
@@ -16,6 +18,9 @@ export type StructureDetectionIpcOptions = {
       bookId: ContractRequest<'structure:detect'>['bookId'],
       options: DetectStructureOptions,
     ): Promise<StructureDetectionStartResult>;
+    recoverDetection?(
+      bookId: ContractRequest<'structure:recover-detection'>['bookId'],
+    ): StructureDetectionStartResult;
   };
   readonly timeoutMs: number;
 };
@@ -33,22 +38,15 @@ export function createStructureDetectionIpcDependencies(
           }),
         };
       } catch (error) {
-        if (!(error instanceof StructureServiceError) &&
-          !(error instanceof StructureSourceSnapshotError)) {
-          throw error;
-        }
-
-        return {
-          ok: false,
-          error: createDomainError({
-            code: 'STRUCTURE_ERROR',
-            message: error.message,
-            recoverable: true,
-            details: {
-              reason: error.reason,
-            },
-          }),
-        };
+        return structureIpcErrorResponse<'structure:detect'>(error);
+      }
+    },
+    recoverDetection: async (request) => {
+      try {
+        if (!options.service.recoverDetection) throw new Error('Structure detection recovery is unavailable.');
+        return { ok: true, data: options.service.recoverDetection(request.bookId) };
+      } catch (error) {
+        return structureIpcErrorResponse<'structure:recover-detection'>(error);
       }
     },
   };

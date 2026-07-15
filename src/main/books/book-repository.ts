@@ -6,6 +6,7 @@ export type PersistedBookRow = {
   readonly title: string;
   readonly sourceTextId: SourceTextId | null;
   readonly sourceTextEdition: number | null;
+  readonly structureEdition: number | null;
   readonly updatedAt: string;
 };
 
@@ -28,6 +29,7 @@ const BOOK_SELECT = `
     books.title AS title,
     source_texts.id AS sourceTextId,
     source_texts.source_edition AS sourceTextEdition,
+    books.structure_edition AS structureEdition,
     books.updated_at AS updatedAt
   FROM books
   LEFT JOIN source_texts

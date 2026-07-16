@@ -6,6 +6,7 @@ import {
   AnalysisModuleWorkbench,
 } from '../../src/renderer/features/module-workbench/AnalysisModuleWorkbench';
 import { BreakdownShelfRoute } from '../../src/renderer/routes/BreakdownShelfRoute';
+import type { JobRecoveryPanelProps } from '../../src/renderer/features/job-recovery/JobRecoveryPanel';
 import type {
   BookSummary,
   LibrarySessionSummary,
@@ -48,6 +49,10 @@ const instances: ModuleInstanceSummary[] = ANALYSIS_MODULE_DEFINITIONS.map((defi
   analysisRevision: 0,
   updatedAt: '2026-07-15T00:00:00.000Z',
 }));
+const emptyJobRecovery: JobRecoveryPanelProps = {
+  jobs: [], selectedJobId: null, detail: null, loading: false, detailLoading: false,
+  error: null, cancelPending: false, onSelectJob: vi.fn(), onCancelJob: vi.fn(),
+};
 
 describe('AnalysisModuleWorkbench', () => {
   it('shows the authoritative module list and a selected detail with scope, status, and body placeholder', () => {
@@ -99,6 +104,7 @@ describe('AnalysisModuleWorkbench', () => {
       structureLoading: false,
       structureActionPending: false,
       structureError: null,
+      jobRecovery: emptyJobRecovery,
       moduleInstances: instances,
       onImport: vi.fn(),
       onOpenBook: vi.fn(),
@@ -165,6 +171,7 @@ describe('AnalysisModuleWorkbench', () => {
       structureLoading: false,
       structureActionPending: false,
       structureError: null,
+      jobRecovery: emptyJobRecovery,
       onImport: vi.fn(), onOpenBook: vi.fn(), onDetectStructure: vi.fn(),
       onRecoverStructureDetection: vi.fn(), onCreateStructureDraft: vi.fn(),
       onCreateManualStructureDraft: vi.fn(), onUpdateStructureNode: vi.fn(),

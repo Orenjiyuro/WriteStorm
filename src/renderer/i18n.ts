@@ -2,6 +2,7 @@ export const rendererLocale = 'en-US';
 
 export const rendererFormats = {
   date: new Intl.DateTimeFormat(rendererLocale, { dateStyle: 'medium' }),
+  dateTime: new Intl.DateTimeFormat(rendererLocale, { dateStyle: 'medium', timeStyle: 'short' }),
 } as const;
 
 export const rendererText = {
@@ -24,6 +25,57 @@ export const rendererText = {
     appVersionLabel: 'App version',
     openedBookStatus: (title: string) => `Opened book: ${title}`,
     reviewStructure: 'Review structure',
+  },
+  jobRecovery: {
+    eyebrow: 'Library activity',
+    title: 'Jobs & recovery',
+    jobCount: (count: number) => `${count} ${count === 1 ? 'job' : 'jobs'}`,
+    listLabel: 'Library jobs',
+    loading: 'Loading jobs…',
+    empty: 'No jobs have been recorded in this library yet.',
+    selectJob: 'Select a job to inspect checkpoints and recovery actions.',
+    detailLoading: 'Loading job detail…',
+    detailUnavailable: 'Job detail is unavailable.',
+    unboundBook: 'Library-level / unbound',
+    progressLabel: 'Progress',
+    updatedLabel: 'Updated',
+    bookLabel: 'Book',
+    knownProgress: (completed: number, total: number) => `${completed} / ${total} units`,
+    unknownTotalProgress: (completed: number) => `${completed} units completed`,
+    failureReasonTitle: 'Failure reason',
+    checkpointsTitle: 'Durable checkpoints',
+    noCheckpoints: 'No durable checkpoints recorded.',
+    checkpointSequence: (sequence: number) => `Checkpoint ${sequence}`,
+    schemaVersion: (version: number) => `Schema v${version}`,
+    actionsTitle: 'Recovery actions',
+    cancel: 'Cancel job',
+    cancelling: 'Cancelling…',
+    resume: 'Resume',
+    resumeDisabledReason: 'Resume is not implemented in this recovery shell.',
+    keepDraft: 'Keep draft',
+    keepDraftDisabledReason: 'Structure draft recovery is not implemented for this Job type.',
+    recoveryState: (state: 'failed' | 'resumable') => state === 'failed'
+      ? 'This job failed. Review its failure reason and durable checkpoints.'
+      : 'This job is marked resumable, but automatic and manual resume remain disabled.',
+    stateLabels: {
+      queued: 'QUEUED',
+      estimating: 'ESTIMATING',
+      waiting_confirmation: 'WAITING',
+      running: 'RUNNING',
+      paused: 'PAUSED',
+      failed: 'FAILED',
+      resumable: 'RESUMABLE',
+      cancelled: 'CANCELLED',
+      completed: 'COMPLETED',
+    },
+    typeLabels: {
+      source_import: 'Source import',
+      structure_detection: 'Structure detection',
+      structure_edition: 'Structure edition',
+      analysis_module_shell_creation: 'Analysis module shell creation',
+      analysis_module_instance_analysis: 'Analysis module instance analysis',
+      export: 'Export',
+    },
   },
   structureReview: {
     eyebrow: 'Structure workspace',

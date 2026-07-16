@@ -2,6 +2,7 @@ import { mutationOptions, queryOptions, type QueryClient } from '@tanstack/react
 import type { ContractRequest } from '../../../shared/contracts';
 import type { StructureWorkspace } from '../../../shared/contracts/structure';
 import type { WritestormApi } from '../../../shared/contracts/preload-api';
+import { jobKeys } from '../job-recovery/job-queries';
 import { moduleInstanceKeys } from '../module-workbench/module-instance-queries';
 
 export const structureKeys = {
@@ -98,9 +99,11 @@ export function createStructureActionMutationOptions(
       });
     },
     onSettled: async (_data, _error, _action, _context, mutation) => {
-      await (mutation.client as QueryClient).invalidateQueries({
-        queryKey: structureKeys.workspace(sessionId, bookId),
-      });
+      const queryClient = mutation.client as QueryClient;
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: structureKeys.workspace(sessionId, bookId) }),
+        queryClient.invalidateQueries({ queryKey: jobKeys.all(sessionId) }),
+      ]);
     },
   });
 }

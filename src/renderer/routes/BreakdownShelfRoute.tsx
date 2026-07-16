@@ -15,6 +15,10 @@ import {
 import { StructureReviewPanel } from '../features/structure-review/StructureReviewPanel';
 import type { StructureWorkspace } from '../../shared/contracts/structure';
 import { AnalysisModuleWorkbench } from '../features/module-workbench/AnalysisModuleWorkbench';
+import {
+  JobRecoveryPanel,
+  type JobRecoveryPanelProps,
+} from '../features/job-recovery/JobRecoveryPanel';
 
 export type LastImportPresentation = {
   readonly sessionId: string;
@@ -35,6 +39,7 @@ export type BreakdownShelfRouteProps = {
   readonly moduleInstances?: readonly ModuleInstanceSummary[];
   readonly moduleInstancesLoading?: boolean;
   readonly moduleInstancesError?: string | null;
+  readonly jobRecovery: JobRecoveryPanelProps;
   readonly onImport: () => void;
   readonly onOpenBook: (book: BookSummary) => void;
   readonly onDetectStructure: () => void;
@@ -111,6 +116,10 @@ export function BreakdownShelfRoute(props: BreakdownShelfRouteProps): ReactEleme
             </ul>
           ) : null}
         </section>
+        <JobRecoveryPanel
+          {...props.jobRecovery}
+          bookTitles={Object.fromEntries(props.books.map((book) => [book.id, book.title]))}
+        />
         {props.openedBook ? (
           <>
             <StructureReviewPanel

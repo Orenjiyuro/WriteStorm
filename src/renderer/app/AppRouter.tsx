@@ -9,6 +9,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import type { BookSummary, ContractRequest } from '../../shared/contracts';
+import type { JobId } from '../../shared/domain';
 import type { DomainError } from '../../shared/errors';
 import type { WritestormApi } from '../../shared/contracts/preload-api';
 import {
@@ -20,6 +21,11 @@ import {
   structureWorkspaceQueryOptions,
 } from '../features/structure-review/structure-queries';
 import { moduleInstancesQueryOptions } from '../features/module-workbench/module-instance-queries';
+import {
+  createCancelJobMutationOptions,
+  jobDetailQueryOptions,
+  jobListQueryOptions,
+} from '../features/job-recovery/job-queries';
 import {
   createSourceImportFailureViewModel,
   type SourceImportFailureAction,
@@ -66,6 +72,33 @@ export function AppRouter(props: AppRouterProps = {}): ReactElement {
     currentLibrary?.sessionId ?? 'no-library-session',
     queryApi,
   ));
+  const jobsQuery = useQuery({
+    ...jobListQueryOptions(currentLibrary?.sessionId ?? 'no-library-session', queryApi),
+    enabled: rendererApi !== null && currentLibrary !== null,
+  });
+  const [selectedJobId, setSelectedJobId] = useState<JobId | null>(null);
+  useEffect(() => {
+    const jobs = jobsQuery.data;
+    if (!currentLibrary || !jobs) {
+      setSelectedJobId(null);
+      return;
+    }
+    setSelectedJobId((selected) => selected && jobs.some((job) => job.id === selected)
+      ? selected
+      : jobs[0]?.id ?? null);
+  }, [currentLibrary?.sessionId, jobsQuery.data]);
+  const jobDetailQuery = useQuery({
+    ...jobDetailQueryOptions(
+      currentLibrary?.sessionId ?? 'no-library-session',
+      selectedJobId ?? ('00000000-0000-4000-8000-000000000000' as JobId),
+      queryApi,
+    ),
+    enabled: rendererApi !== null && currentLibrary !== null && selectedJobId !== null,
+  });
+  const cancelJobMutation = useMutation(createCancelJobMutationOptions(
+    currentLibrary?.sessionId ?? 'no-library-session',
+    queryApi,
+  ));
   const [pendingLibraryAction, setPendingLibraryAction] = useState<LibraryAction | null>(null);
   const [libraryError, setLibraryError] = useState<string | null>(null);
   const [lastImport, setLastImport] = useState<LastImportPresentation | null>(null);
@@ -76,6 +109,7 @@ export function AppRouter(props: AppRouterProps = {}): ReactElement {
     setLastImport(null);
     setSourceImportFailure(null);
     setOpenedBook(null);
+    setSelectedJobId(null);
   }, [currentLibrary?.sessionId]);
   const structureWorkspaceQuery = useQuery({
     ...structureWorkspaceQueryOptions(
@@ -212,6 +246,22 @@ export function AppRouter(props: AppRouterProps = {}): ReactElement {
       moduleInstances={moduleInstancesQuery.data}
       moduleInstancesLoading={moduleInstancesQuery.isLoading}
       moduleInstancesError={getQueryErrorMessage(moduleInstancesQuery.error)}
+      jobRecovery={{
+        jobs: jobsQuery.data ?? [],
+        selectedJobId,
+        detail: jobDetailQuery.data ?? null,
+        loading: jobsQuery.isLoading,
+        detailLoading: jobDetailQuery.isLoading,
+        error: getQueryErrorMessage(
+          jobsQuery.error ?? jobDetailQuery.error ?? cancelJobMutation.error,
+        ),
+        cancelPending: cancelJobMutation.isPending && cancelJobMutation.variables === selectedJobId,
+        onSelectJob: (jobId) => {
+          cancelJobMutation.reset();
+          setSelectedJobId(jobId);
+        },
+        onCancelJob: (jobId) => cancelJobMutation.mutate(jobId),
+      }}
       onImport={() => void runSourceImport({})}
       onOpenBook={setOpenedBook}
       onDetectStructure={() => structureActionMutation.mutate({ type: 'detect' })}

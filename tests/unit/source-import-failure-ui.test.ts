@@ -23,6 +23,11 @@ describe('source import failure UI', () => {
         expectedAction: 'choose_file',
       },
       {
+        reason: 'cancelled',
+        expectedRepair: 'Select a .txt or .md file',
+        expectedAction: 'choose_file',
+      },
+      {
         reason: 'invalid_extension',
         expectedRepair: 'Save or convert the source as .txt or .md',
         expectedAction: 'choose_file',

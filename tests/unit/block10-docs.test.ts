@@ -102,4 +102,20 @@ describe('Block 10 durable engineering status', () => {
     }
     expect(decisions).toContain('D038: Typed Job IPC And Runtime-Owner Cancellation');
   });
+
+  it('records Task 10.6 natural-entry recovery UI and honest disabled actions', () => {
+    const context = readFileSync('docs/engineering/CONTEXT.md', 'utf8');
+    const decisions = readFileSync('docs/engineering/DECISIONS.md', 'utf8');
+
+    for (const document of [context, decisions]) {
+      expect(document).toContain('Task 10.6');
+      expect(document).toContain('Breakdown shelf');
+      expect(document).toContain('Library-wide');
+      expect(document).toContain('Jobs & recovery');
+      expect(document).toContain('Keep draft');
+      expect(document).toContain('Resume');
+      expect(document).toContain('Task 10.7');
+    }
+    expect(decisions).toContain('D039: Natural-Entry Job Recovery UI');
+  });
 });

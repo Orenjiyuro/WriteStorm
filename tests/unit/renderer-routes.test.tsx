@@ -17,6 +17,7 @@ import {
   resolveAppRoute,
 } from '../../src/renderer/app/AppRouter';
 import { BreakdownShelfRoute } from '../../src/renderer/routes/BreakdownShelfRoute';
+import type { JobRecoveryPanelProps } from '../../src/renderer/features/job-recovery/JobRecoveryPanel';
 import {
   requestStoryRangeModeChange,
   StructureReviewPanel,
@@ -45,6 +46,10 @@ const book: BookSummary = {
   sourceTextEdition: null,
   structureEdition: null,
   updatedAt: '2026-07-13T00:00:00.000Z',
+};
+const emptyJobRecovery: JobRecoveryPanelProps = {
+  jobs: [], selectedJobId: null, detail: null, loading: false, detailLoading: false,
+  error: null, cancelPending: false, onSelectJob: vi.fn(), onCancelJob: vi.fn(),
 };
 
 describe('renderer product routes', () => {
@@ -83,6 +88,7 @@ describe('renderer product routes', () => {
       structureLoading: false,
       structureActionPending: false,
       structureError: null,
+      jobRecovery: emptyJobRecovery,
       onImport: vi.fn(),
       onOpenBook: vi.fn(),
       onDetectStructure: vi.fn(),
@@ -122,6 +128,7 @@ describe('renderer product routes', () => {
       structureLoading: false,
       structureActionPending: false,
       structureError: null,
+      jobRecovery: emptyJobRecovery,
       onImport: vi.fn(),
       onOpenBook: vi.fn(),
       onDetectStructure: vi.fn(),

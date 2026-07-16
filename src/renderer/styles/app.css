@@ -180,6 +180,246 @@ body {
   justify-self: start;
 }
 
+.job-recovery-panel {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  border: 1px solid #d7e0e8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.job-recovery-header,
+.job-recovery-detail > header,
+.job-recovery-list-title {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.job-recovery-header .eyebrow {
+  margin-bottom: 6px;
+}
+
+.job-recovery-header > span,
+.job-recovery-list button > span,
+.job-recovery-list time,
+.job-checkpoints span,
+.job-checkpoints time {
+  color: #52616f;
+  font-size: 0.82rem;
+}
+
+.job-recovery-layout {
+  display: grid;
+  grid-template-columns: minmax(250px, 0.85fr) minmax(320px, 1.15fr);
+  align-items: start;
+  gap: 16px;
+}
+
+.job-recovery-list {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.job-recovery-list button {
+  width: 100%;
+  display: grid;
+  gap: 4px;
+  border: 1px solid #d7e0e8;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1f2933;
+  cursor: pointer;
+  font: inherit;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.job-recovery-list button[aria-pressed="true"] {
+  border-color: #1f6f5b;
+  box-shadow: inset 3px 0 0 #1f6f5b;
+  background: #f3faf7;
+}
+
+.job-state-badge {
+  border: 1px solid #aebbc6;
+  border-radius: 999px;
+  color: #52616f;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 3px 7px;
+  white-space: nowrap;
+}
+
+.job-state-badge[data-state="completed"] {
+  border-color: #81ad9f;
+  background: #edf8f4;
+  color: #175c4a;
+}
+
+.job-state-badge[data-state="failed"] {
+  border-color: #d59b9b;
+  background: #fff2f2;
+  color: #8b2929;
+}
+
+.job-state-badge[data-state="resumable"],
+.job-state-badge[data-state="paused"] {
+  border-color: #d3b36c;
+  background: #fff8e6;
+  color: #72540d;
+}
+
+.job-state-badge[data-state="running"],
+.job-state-badge[data-state="queued"] {
+  border-color: #8aaecb;
+  background: #eff7fd;
+  color: #245b82;
+}
+
+.job-recovery-detail,
+.job-recovery-detail-state {
+  border: 1px solid #d7e0e8;
+  border-radius: 8px;
+  background: #fbfcfd;
+  padding: 14px;
+}
+
+.job-recovery-detail {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.job-recovery-detail .readout-label,
+.job-recovery-detail-state,
+.job-recovery-state,
+.job-recovery-error {
+  margin: 0;
+}
+
+.job-recovery-detail dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.job-recovery-detail dl div {
+  display: grid;
+  gap: 3px;
+}
+
+.job-recovery-detail dt {
+  color: #52616f;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.job-recovery-detail dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.job-recovery-notice,
+.job-failure-reason,
+.job-checkpoints,
+.job-recovery-actions {
+  border-top: 1px solid #e3e9ee;
+  margin: 0;
+  padding-top: 12px;
+}
+
+.job-recovery-notice {
+  color: #72540d;
+}
+
+.job-failure-reason,
+.job-checkpoints,
+.job-recovery-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.job-failure-reason h4,
+.job-checkpoints h4,
+.job-recovery-actions h4 {
+  margin: 0;
+}
+
+.job-failure-reason code {
+  color: #8b2929;
+  overflow-wrap: anywhere;
+}
+
+.job-checkpoints p {
+  color: #52616f;
+  margin: 0;
+}
+
+.job-checkpoints ol,
+.job-recovery-actions ul {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.job-checkpoints li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 6px 10px;
+}
+
+.job-checkpoints li time {
+  grid-column: 2 / -1;
+}
+
+.job-recovery-actions li {
+  display: grid;
+  grid-template-columns: minmax(120px, auto) 1fr;
+  align-items: start;
+  gap: 10px;
+}
+
+.job-recovery-actions button {
+  min-height: 36px;
+  border: 1px solid #1f6f5b;
+  border-radius: 8px;
+  background: #1f6f5b;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 7px 12px;
+}
+
+.job-recovery-actions button:disabled {
+  border-color: #b8c5cf;
+  background: #eef2f5;
+  color: #667785;
+  cursor: not-allowed;
+}
+
+.job-recovery-actions p {
+  color: #52616f;
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.job-recovery-error {
+  color: #8b2929;
+}
+
 .structure-review-panel {
   display: grid;
   gap: 14px;
@@ -482,6 +722,10 @@ body {
 }
 
 @media (max-width: 720px) {
+  .job-recovery-layout,
+  .job-recovery-detail dl,
+  .job-checkpoints li,
+  .job-recovery-actions li,
   .analysis-workbench-layout,
   .analysis-module-detail dl,
   .analysis-module-actions li {

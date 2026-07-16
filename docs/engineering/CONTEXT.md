@@ -81,6 +81,12 @@ Cancellation is owner-first. Active source imports are indexed by Job id and sto
 
 Task 10.5 changes no migration or database schema and adds no renderer, recovery panel, automatic resume, keep-draft action, AI runtime, queue, or export execution. The natural Library/Breakdown-shelf discovery and recovery UI remain Task 10.6.
 
+Task 10.6 mounts one always-visible, Library-wide `Jobs & recovery` panel on the real Breakdown shelf between the Book list and opened-Book workspace. It reads all Jobs for the current Library session, including failed imports with no Book, preserves `updatedAt DESC` list order, selects persisted `JobDetail`, and shows status badges, progress, failure reason, and ordered durable checkpoint metadata without rendering checkpoint payload bodies. Queued/estimating/waiting/running list and detail data poll while work may actively progress; dormant and terminal states do not poll, and import/structure mutations invalidate the same session-scoped Job cache.
+
+Cancellation remains the Task 10.5 owner-first IPC operation. The renderer enables Cancel only when the selected persisted JobType has runtime-owner-first cancellation and its state admits a cancelled transition, disables it while the request is pending, and refreshes list and detail after success. Resume remains visibly disabled with an implementation reason. Keep draft is shown only for structure JobTypes and remains disabled with a structure-specific reason; it is absent for import and module-shell Jobs where it is not applicable. A cancelled source import maps to the existing explicit cancelled-import repair presentation instead of a generic failure.
+
+Task 10.6 creates no alternate Diagnostics route, migration, schema, Job state, checkpoint, runtime queue, automatic resume, executable Keep draft, restart recovery, AI analysis, or export behavior. Task 10.7 owns abandoned-runtime restart recovery and its reopen semantics; persisted failed/resumable fixtures used to exercise this UI are test establishment, not evidence that users can naturally create resumable Jobs.
+
 ## 1. Current Repository State
 
 The repository now contains the first Electron application scaffold plus the Block 1 security and e2e baseline. It is no longer docs-only.

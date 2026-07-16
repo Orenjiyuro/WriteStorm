@@ -57,6 +57,16 @@ test('imports a txt/md source through the packaged desktop entry using a main-pr
     await expect(page.locator('.book-list strong', { hasText: 'Packaged Fixture' })).toBeVisible();
     await expect(page.getByText('Packaged Fixture.md')).toBeVisible();
     await expect(page.getByText('Source imported.')).toBeVisible();
+    const jobPanel = page.getByRole('region', { name: 'Jobs & recovery' });
+    await expect(jobPanel).toBeVisible();
+    const completedImport = jobPanel.locator('.job-recovery-list button')
+      .filter({ hasText: 'Import source' }).filter({ hasText: 'COMPLETED' });
+    await expect(completedImport).toHaveCount(1);
+    await completedImport.click();
+    await expect(jobPanel.locator('.job-recovery-detail')).toContainText('Source import');
+    await expect(jobPanel.getByText('source_import_completed')).toBeVisible();
+    await expect(jobPanel.getByRole('button', { name: 'Resume' })).toBeDisabled();
+    await expect(jobPanel.getByRole('button', { name: 'Keep draft' })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Detection candidate' })).toBeVisible({ timeout: 15_000 });
     await page.screenshot({ path: path.join(evidenceRoot, 'candidate.png'), fullPage: true });
 
@@ -73,8 +83,15 @@ test('imports a txt/md source through the packaged desktop entry using a main-pr
     await page.getByRole('button', { name: 'Freeze structure' }).click();
     await expect(page.getByText('Structure edition 1 is frozen and current.')).toBeVisible();
     await expectFrozenAnalysisWorkbench(page);
+    const moduleShellJob = jobPanel.locator('.job-recovery-list button')
+      .filter({ hasText: 'Create analysis module shells' }).filter({ hasText: 'COMPLETED' });
+    await expect(moduleShellJob).toHaveCount(1);
+    await moduleShellJob.click();
+    await expect(jobPanel.getByText('analysis_module_shell_creation_completed')).toBeVisible();
     await page.screenshot({ path: path.join(evidenceRoot, 'frozen.png'), fullPage: true });
   });
+
+  insertRecoveryUiFixtures(libraryRoot);
 
   await withPackagedApp(libraryRoot, sourcePath, async (page) => {
     await expect(page.getByRole('heading', { name: 'No library open' })).toBeVisible();
@@ -84,6 +101,28 @@ test('imports a txt/md source through the packaged desktop entry using a main-pr
     await expect(page.locator('.book-list strong', { hasText: 'Packaged Fixture' })).toBeVisible();
     await expect(page.getByText('Packaged Fixture.md')).not.toBeVisible();
     await expect(page.getByText('Source imported.')).not.toBeVisible();
+    const jobPanel = page.getByRole('region', { name: 'Jobs & recovery' });
+    const failedImport = jobPanel.locator('.job-recovery-list button')
+      .filter({ hasText: 'Import source' }).filter({ hasText: 'FAILED' });
+    await failedImport.click();
+    await expect(jobPanel.getByText('E2E_IMPORT_FAILED')).toBeVisible();
+    await expect(jobPanel.getByText('Library-level / unbound').first()).toBeVisible();
+
+    const resumableStructure = jobPanel.locator('.job-recovery-list button')
+      .filter({ hasText: 'Detect structure' }).filter({ hasText: 'RESUMABLE' });
+    await resumableStructure.click();
+    await expect(jobPanel.getByRole('button', { name: 'Resume' })).toBeDisabled();
+    await expect(jobPanel.getByRole('button', { name: 'Keep draft' })).toBeDisabled();
+    await expect(jobPanel.getByRole('button', { name: 'Cancel job' })).toBeVisible();
+    await page.screenshot({ path: path.join(evidenceRoot, 'job-recovery-resumable.png'), fullPage: true });
+
+    const queuedImport = jobPanel.locator('.job-recovery-list button')
+      .filter({ hasText: 'Import source' }).filter({ hasText: 'QUEUED' });
+    await queuedImport.click();
+    await jobPanel.getByRole('button', { name: 'Cancel job' }).click();
+    await expect(jobPanel.locator('.job-recovery-detail')).toContainText('CANCELLED');
+    await expect(jobPanel.getByRole('button', { name: 'Cancel job' })).toHaveCount(0);
+    await jobPanel.screenshot({ path: path.join(evidenceRoot, 'job-recovery-cancelled.png') });
     await page.getByRole('button', { name: 'Review structure' }).click();
     await expect(page.getByText('Structure edition 1 is frozen and current.')).toBeVisible();
     await expectFrozenAnalysisWorkbench(page);
@@ -309,7 +348,7 @@ test('recovers a stale frozen edition through a fresh candidate replacement draf
     await page.getByRole('button', { name: 'Open library' }).click();
     await page.getByRole('button', { name: 'Review structure' }).click();
     await expect(page.getByText(/frozen is stale:/)).toBeVisible();
-    await page.getByRole('button', { name: 'Detect structure' }).click();
+    await page.getByRole('button', { name: 'Detect structure', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Create replacement draft' }))
       .toBeVisible({ timeout: 15_000 });
     await page.screenshot({ path: path.join(evidenceRoot, 'replacement-available.png'), fullPage: true });
@@ -351,7 +390,7 @@ test('recovers from failed detection with a stale candidate through a manual dra
     await page.getByRole('button', { name: 'Open library' }).click();
     await page.getByRole('button', { name: 'Review structure' }).click();
     await expect(page.getByText(/candidate is stale:/)).toBeVisible();
-    await page.getByRole('button', { name: 'Detect structure' }).click();
+    await page.getByRole('button', { name: 'Detect structure', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Create manual draft' }))
       .toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole('heading', { name: 'Detection candidate' })).toBeVisible();
@@ -514,6 +553,51 @@ function readImportRows(libraryRoot: string): {
         relative_path: string;
       }>,
     };
+  } finally {
+    database.close();
+  }
+}
+
+function insertRecoveryUiFixtures(libraryRoot: string): void {
+  const database = new Database(path.join(libraryRoot, 'writestorm.sqlite'));
+  try {
+    const source = database.prepare(`SELECT b.id AS book_id, s.id AS source_text_id,
+      s.source_edition, s.content_hash
+      FROM books b JOIN source_texts s ON s.id = b.current_source_text_id LIMIT 1`).get() as {
+        book_id: string;
+        source_text_id: string;
+        source_edition: number;
+        content_hash: string;
+      } | undefined;
+    if (!source) throw new Error('Expected an imported Book before inserting recovery UI fixtures.');
+    const fixtureTime = Date.now();
+    const timestamp = (offset: number): string => new Date(fixtureTime + offset).toISOString();
+    const insert = database.prepare(`INSERT INTO jobs (
+      id, book_id, kind, state, completed_units, total_units, payload_schema_version,
+      payload_json, error_code, error_details_json, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, NULL, ?, ?)`);
+    database.transaction(() => {
+      insert.run(
+        'e2e-job-failed-import', null, 'source_import', 'failed', 0, 1,
+        JSON.stringify({ sourceTextId: 'e2e-failed-source' }), 'E2E_IMPORT_FAILED',
+        timestamp(0), timestamp(1),
+      );
+      insert.run(
+        'e2e-job-resumable-structure', source.book_id, 'structure_detection', 'resumable', 1, 3,
+        JSON.stringify({
+          title: 'Detect structure',
+          sourceTextId: source.source_text_id,
+          sourceTextEdition: source.source_edition,
+          contentHash: source.content_hash,
+        }), 'E2E_STRUCTURE_INTERRUPTED',
+        timestamp(2), timestamp(3),
+      );
+      insert.run(
+        'e2e-job-queued-import', null, 'source_import', 'queued', 0, 1,
+        JSON.stringify({ sourceTextId: 'e2e-queued-source' }), null,
+        timestamp(4), timestamp(5),
+      );
+    })();
   } finally {
     database.close();
   }

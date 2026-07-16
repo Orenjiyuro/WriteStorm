@@ -7,18 +7,16 @@ import type {
   BookSummary,
   ContractRequest,
   ImportSourceResult,
-  JobSummary,
 } from '../../../shared/contracts';
 import type { WritestormApi } from '../../../shared/contracts/preload-api';
+import { jobKeys } from '../job-recovery/job-queries';
+
+export { jobKeys } from '../job-recovery/job-queries';
 
 export const bookKeys = {
   all: (sessionId: string) => ['library-session', sessionId, 'books'] as const,
   detail: (sessionId: string, bookId: string) =>
     ['library-session', sessionId, 'book', bookId] as const,
-};
-
-export const jobKeys = {
-  all: (sessionId: string) => ['library-session', sessionId, 'jobs'] as const,
 };
 
 export function bookListQueryOptions(
@@ -29,20 +27,6 @@ export function bookListQueryOptions(
     queryKey: bookKeys.all(sessionId),
     queryFn: async (): Promise<BookSummary[]> => {
       const response = await api.books.list();
-      if (!response.ok) throw new Error(response.error.message);
-      return response.data;
-    },
-  });
-}
-
-export function jobListQueryOptions(
-  sessionId: string,
-  api: Pick<WritestormApi, 'jobs'>,
-) {
-  return queryOptions({
-    queryKey: jobKeys.all(sessionId),
-    queryFn: async (): Promise<JobSummary[]> => {
-      const response = await api.jobs.list();
       if (!response.ok) throw new Error(response.error.message);
       return response.data;
     },

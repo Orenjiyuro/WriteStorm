@@ -67,6 +67,7 @@ export function createSourceImportFailureViewModel(error: DomainError): SourceIm
         actions: [{ kind: 'open_library', label: text.openLibraryAction }],
       };
     case 'dialog_cancelled':
+    case 'cancelled':
       return {
         title: text.cancelledTitle,
         message: error.message,

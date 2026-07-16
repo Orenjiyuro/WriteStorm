@@ -19,9 +19,11 @@ The one canonical command for Windows packaged screenshot/display acceptance is:
 npm run test:e2e:secondary-display
 ```
 
-Do not launch the executable directly for screenshot acceptance. A screenshot spec must include the `@secondary-display` title tag and use `spawnPackagedAppOnSecondary`. That wrapper is the only E2E entry that sets the main-process test contract `WRITESTORM_E2E_DISPLAY_TARGET=secondary`; normal packaged specs explicitly remove that variable from the child environment.
+Do not launch the executable directly for screenshot acceptance. A screenshot spec must include the `@secondary-display` title tag and use `spawnPackagedAppOnSecondary` when it needs to request the policy explicitly.
 
-This mode exists only in automated test process environments. `npm start`, installed/packaged product launches, and the ordinary `npm run test:e2e` path do not set the variable and retain the existing product window behavior. The test position is never persisted to product settings.
+`playwright.config.ts` applies a hard local-development gate: every local Playwright run sets the main-process test contract `WRITESTORM_E2E_DISPLAY_TARGET=secondary` before any spec or launcher executes. `spawnPackagedApp` propagates that inherited contract, so an individual spec cannot silently lose secondary placement by choosing the ordinary helper. Even a legacy direct child-process launch inherits the contract when it spreads `process.env`.
+
+An environment with a truthy `CI` value does not receive the local default, so ordinary headless/virtual-display CI remains unchanged; CI can still request secondary placement explicitly. `npm start` and installed/packaged product launches do not load Playwright configuration, retain the existing product window behavior, and never persist the test position to product settings.
 
 After Electron is ready, main process selection works entirely in Electron DIP coordinates:
 

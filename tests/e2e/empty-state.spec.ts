@@ -11,8 +11,10 @@ import {
   createElectronStderrBuffer,
   formatErrorWithElectronStderr,
   isSupportedPackagedPlatform,
+  parseTestDisplayDiagnostics,
   spawnPackagedApp,
 } from './electron-app';
+import { TEST_DISPLAY_TARGET_ENV, type DisplaySnapshot } from '../../src/main/windows/test-display-placement';
 
 test.skip(!isSupportedPackagedPlatform(), 'Packaged Electron smoke currently targets Windows and macOS.');
 
@@ -42,6 +44,19 @@ test('shows the no-library empty state in a real Electron window', async () => {
 
     await expect(page.getByRole('heading', { name: 'No library open' })).toBeVisible();
     await expect(page.getByText('Create or open a local library')).toBeVisible();
+    if (process.env[TEST_DISPLAY_TARGET_ENV] === 'secondary') {
+      const placement = parseTestDisplayDiagnostics(electronStderr.summary()).find(
+        (record) => record.event === 'window-placement',
+      );
+      expect(
+        placement,
+        `Expected local Playwright secondary-display evidence:\n${electronStderr.summary()}`,
+      ).toBeDefined();
+      expect((placement?.targetDisplay as DisplaySnapshot).id).not.toBe(
+        (placement?.primaryDisplay as DisplaySnapshot).id,
+      );
+      expect(placement?.centerDisplayId).toBe((placement?.targetDisplay as DisplaySnapshot).id);
+    }
     await expect(page.getByRole('heading', { name: 'Analysis module contract readout' })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Technique library contract readout' })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Perspective contract readout' })).toHaveCount(0);

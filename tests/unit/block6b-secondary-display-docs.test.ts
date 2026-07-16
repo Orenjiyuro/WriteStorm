@@ -36,4 +36,10 @@ describe('Block 6B secondary-display test gate', () => {
 
     expect(directSpawnSpecs).toEqual([]);
   });
+
+  it('applies the local secondary-display policy from Playwright configuration', () => {
+    const playwrightConfig = readFileSync(path.join(rootDir, 'playwright.config.ts'), 'utf8');
+
+    expect(playwrightConfig).toContain('configureLocalE2EDisplayPolicy(process.env)');
+  });
 });

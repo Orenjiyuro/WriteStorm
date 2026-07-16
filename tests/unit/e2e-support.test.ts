@@ -8,6 +8,7 @@ import {
   resolvePackagedAppPath,
 } from '../e2e/electron-app';
 import { TEST_DISPLAY_TARGET_ENV } from '../../src/main/windows/test-display-placement';
+import { configureLocalE2EDisplayPolicy } from '../e2e/display-policy';
 
 describe('Electron e2e support', () => {
   it('resolves the packaged app executable for Windows', () => {
@@ -39,8 +40,8 @@ describe('Electron e2e support', () => {
     expect(error.message).toContain('GPU process failed');
   });
 
-  it('enables secondary placement only when the packaged launcher explicitly requests it', () => {
-    const normal = createPackagedAppEnvironment({
+  it('propagates the Playwright display policy through the packaged launcher', () => {
+    const inherited = createPackagedAppEnvironment({
       INHERITED: 'yes',
       [TEST_DISPLAY_TARGET_ENV]: 'secondary',
     });
@@ -49,12 +50,42 @@ describe('Electron e2e support', () => {
       { testDisplayTarget: 'secondary' },
     );
 
-    expect(normal).toMatchObject({
+    expect(inherited).toMatchObject({
       INHERITED: 'yes',
       WRITESTORM_DISABLE_HARDWARE_ACCELERATION: '1',
+      [TEST_DISPLAY_TARGET_ENV]: 'secondary',
     });
-    expect(normal[TEST_DISPLAY_TARGET_ENV]).toBeUndefined();
     expect(screenshot[TEST_DISPLAY_TARGET_ENV]).toBe('secondary');
+  });
+
+  it('defaults every local Playwright run to secondary display isolation', () => {
+    const environment: NodeJS.ProcessEnv = {};
+
+    configureLocalE2EDisplayPolicy(environment);
+
+    expect(environment[TEST_DISPLAY_TARGET_ENV]).toBe('secondary');
+  });
+
+  it('leaves ordinary CI runs disabled while preserving an explicit CI request', () => {
+    const ordinaryCi: NodeJS.ProcessEnv = { CI: 'true' };
+    const explicitCi: NodeJS.ProcessEnv = {
+      CI: 'true',
+      [TEST_DISPLAY_TARGET_ENV]: 'secondary',
+    };
+
+    configureLocalE2EDisplayPolicy(ordinaryCi);
+    configureLocalE2EDisplayPolicy(explicitCi);
+
+    expect(ordinaryCi[TEST_DISPLAY_TARGET_ENV]).toBeUndefined();
+    expect(explicitCi[TEST_DISPLAY_TARGET_ENV]).toBe('secondary');
+  });
+
+  it('preserves invalid explicit values so Electron fails closed instead of masking typos', () => {
+    const environment: NodeJS.ProcessEnv = { [TEST_DISPLAY_TARGET_ENV]: 'primary' };
+
+    configureLocalE2EDisplayPolicy(environment);
+
+    expect(environment[TEST_DISPLAY_TARGET_ENV]).toBe('primary');
   });
 
   it('parses structured main-process display evidence from stderr', () => {

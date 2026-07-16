@@ -64,10 +64,12 @@ export function createPackagedAppEnvironment(
     ...inheritedEnvironment,
     WRITESTORM_DISABLE_HARDWARE_ACCELERATION: '1',
   };
+  const inheritedTarget = environment[TEST_DISPLAY_TARGET_ENV];
   delete environment[TEST_DISPLAY_TARGET_ENV];
 
-  if (options.testDisplayTarget) {
-    environment[TEST_DISPLAY_TARGET_ENV] = options.testDisplayTarget;
+  const target = options.testDisplayTarget ?? inheritedTarget;
+  if (target !== undefined) {
+    environment[TEST_DISPLAY_TARGET_ENV] = target;
   }
 
   return environment;

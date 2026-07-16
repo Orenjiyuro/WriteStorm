@@ -34,4 +34,20 @@ describe('Block 10 durable engineering status', () => {
     expect(decisions).toContain('D034: Existing Job Persistence Read Boundary');
     expect(migrations).not.toContain('006_');
   });
+
+  it('records the Task 10.3 JobService policy without claiming runtime cancellation', () => {
+    const context = readFileSync('docs/engineering/CONTEXT.md', 'utf8');
+    const decisions = readFileSync('docs/engineering/DECISIONS.md', 'utf8');
+
+    for (const document of [context, decisions]) {
+      expect(document).toContain('Task 10.3');
+      expect(document).toContain("runtimeOwner: 'none' | 'confirmed_stopped'");
+      expect(document).toContain('invalid_checkpoint_state');
+      expect(document).toContain('invalid_progress');
+      expect(document).toContain('invalid_failure');
+      expect(document).toContain('Task 10.5');
+      expect(document).toContain('runtime owner');
+    }
+    expect(decisions).toContain('D035: JobService Progress, Checkpoint, And Cancellation Policy');
+  });
 });

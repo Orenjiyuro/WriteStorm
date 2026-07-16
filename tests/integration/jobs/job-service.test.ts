@@ -63,6 +63,15 @@ describe('JobService', () => {
         sequence: 1,
         kind: 'source_import_completed',
       });
+      expect(service.getWithCheckpoints(jobId)).toMatchObject({
+        job: { id: jobId, state: 'completed' },
+        checkpoints: [{ id: `${jobId}:completed`, sequence: 1 }],
+      });
+      expect(() => service.appendCheckpoint({
+        ...completedCheckpoint(),
+        id: `${jobId}:after-completion`,
+        jobId,
+      })).toThrowError(expect.objectContaining({ reason: 'invalid_checkpoint_state' }));
     } finally {
       database.close();
     }
@@ -96,6 +105,7 @@ describe('JobService', () => {
     const service = new JobService({ database });
     try {
       service.createQueued(sourceImportJob());
+      service.transition(jobId, 'running', runningAt);
       const first = service.appendCheckpoint({
         id: `${jobId}:first`,
         jobId,
@@ -118,6 +128,21 @@ describe('JobService', () => {
     }
   });
 
+  it('rejects queued checkpoints when the Job type has no preparation-checkpoint policy', () => {
+    const database = migratedDatabase();
+    const service = new JobService({ database });
+    try {
+      service.createQueued(sourceImportJob());
+      expect(() => service.appendCheckpoint({
+        ...completedCheckpoint(),
+        jobId,
+      })).toThrowError(expect.objectContaining({ reason: 'invalid_checkpoint_state' }));
+      expect(service.getWithCheckpoints(jobId)?.checkpoints).toEqual([]);
+    } finally {
+      database.close();
+    }
+  });
+
   it('rejects unregistered or malformed versioned payloads before persistence', () => {
     const database = migratedDatabase();
     const service = new JobService({ database });
@@ -131,6 +156,104 @@ describe('JobService', () => {
         payloadSchemaVersion: 2,
       })).toThrowError(expect.objectContaining({ reason: 'invalid_payload' }));
       expect(service.list()).toEqual([]);
+    } finally {
+      database.close();
+    }
+  });
+
+  it('enforces monotonic progress and one-way total discovery', () => {
+    const database = migratedDatabase();
+    const service = new JobService({ database });
+    try {
+      expect(() => service.createQueued({
+        ...sourceImportJob(),
+        totalUnits: -1,
+      })).toThrowError(expect.objectContaining({ reason: 'invalid_progress' }));
+      expect(() => service.createQueued({
+        ...sourceImportJob(),
+        totalUnits: 0.5,
+      })).toThrowError(expect.objectContaining({ reason: 'invalid_progress' }));
+
+      service.createQueued({ ...sourceImportJob(), totalUnits: null });
+      service.transition(jobId, 'running', runningAt);
+      expect(service.transition(jobId, 'paused', completedAt, {
+        completedUnits: 1,
+        totalUnits: 3,
+      })).toMatchObject({ completedUnits: 1, totalUnits: 3 });
+      expect(() => service.transition(jobId, 'running', completedAt, {
+        completedUnits: 0,
+      })).toThrowError(expect.objectContaining({ reason: 'invalid_progress' }));
+      expect(() => service.transition(jobId, 'running', completedAt, {
+        completedUnits: 4,
+      })).toThrowError(expect.objectContaining({ reason: 'invalid_progress' }));
+      expect(() => service.transition(jobId, 'running', completedAt, {
+        completedUnits: 1.5,
+      })).toThrowError(expect.objectContaining({ reason: 'invalid_progress' }));
+      expect(() => service.transition(jobId, 'running', completedAt, {
+        totalUnits: 4,
+      })).toThrowError(expect.objectContaining({ reason: 'invalid_progress' }));
+      expect(() => service.transition(jobId, 'running', completedAt, {
+        totalUnits: null,
+      })).toThrowError(expect.objectContaining({ reason: 'invalid_progress' }));
+      expect(service.get(jobId)).toMatchObject({
+        state: 'paused',
+        completedUnits: 1,
+        totalUnits: 3,
+      });
+    } finally {
+      database.close();
+    }
+  });
+
+  it('cancels dormant Jobs but requires runtime-owner confirmation for running work', () => {
+    const dormantDatabase = migratedDatabase();
+    try {
+      const dormant = new JobService({ database: dormantDatabase });
+      dormant.createQueued(sourceImportJob());
+      expect(dormant.cancel(jobId, completedAt, { runtimeOwner: 'none' })).toMatchObject({
+        state: 'cancelled',
+      });
+    } finally {
+      dormantDatabase.close();
+    }
+
+    const runningDatabase = migratedDatabase();
+    try {
+      const running = new JobService({ database: runningDatabase });
+      running.createQueued(sourceImportJob());
+      running.transition(jobId, 'running', runningAt);
+      expect(() => running.cancel(jobId, completedAt, { runtimeOwner: 'none' }))
+        .toThrowError(expect.objectContaining({ reason: 'runtime_owner_not_stopped' }));
+      expect(running.get(jobId)?.state).toBe('running');
+      expect(running.cancel(jobId, completedAt, { runtimeOwner: 'confirmed_stopped' }))
+        .toMatchObject({ state: 'cancelled' });
+    } finally {
+      runningDatabase.close();
+    }
+  });
+
+  it('rejects cancellation for transaction-owned Job types', () => {
+    const database = migratedDatabase();
+    const service = new JobService({ database });
+    try {
+      service.createQueued({
+        id: jobId,
+        bookId: null,
+        kind: 'structure_edition',
+        totalUnits: 1,
+        payloadSchemaVersion: 1,
+        payload: {
+          title: 'Freeze structure edition',
+          structureSetId: 'structure-set-1',
+          structureEdition: 1,
+        },
+        createdAt,
+        updatedAt: createdAt,
+      });
+      expect(() => service.cancel(jobId, completedAt, {
+        runtimeOwner: 'confirmed_stopped',
+      })).toThrowError(expect.objectContaining({ reason: 'job_not_cancellable' }));
+      expect(service.get(jobId)?.state).toBe('queued');
     } finally {
       database.close();
     }
@@ -219,6 +342,41 @@ describe('JobService', () => {
       expect(() => service.fail(jobId, completedAt, {
         errorCode: 'SOURCE_IMPORT_ABANDONED',
       })).toThrowError(expect.objectContaining({ reason: 'invalid_transition' }));
+    } finally {
+      database.close();
+    }
+  });
+
+  it('rejects blank failure codes and preserves checkpoints across failed -> resumable', () => {
+    const database = migratedDatabase();
+    const service = new JobService({ database });
+    try {
+      service.createQueued(sourceImportJob());
+      service.transition(jobId, 'running', runningAt);
+      service.appendCheckpoint({
+        ...completedCheckpoint(),
+        id: `${jobId}:before-failure`,
+        jobId,
+      });
+      expect(() => service.fail(jobId, completedAt, {
+        errorCode: '   ',
+      })).toThrowError(expect.objectContaining({ reason: 'invalid_failure' }));
+      service.fail(jobId, completedAt, { errorCode: 'SOURCE_IMPORT_FAILED' });
+      expect(() => service.appendCheckpoint({
+        ...completedCheckpoint(),
+        id: `${jobId}:while-failed`,
+        jobId,
+      })).toThrowError(expect.objectContaining({ reason: 'invalid_checkpoint_state' }));
+      service.transition(jobId, 'resumable', completedAt);
+      expect(service.appendCheckpoint({
+        ...completedCheckpoint(),
+        id: `${jobId}:after-resumable`,
+        jobId,
+      })).toMatchObject({ sequence: 2 });
+      expect(service.getWithCheckpoints(jobId)?.checkpoints.map(({ id }) => id)).toEqual([
+        `${jobId}:before-failure`,
+        `${jobId}:after-resumable`,
+      ]);
     } finally {
       database.close();
     }

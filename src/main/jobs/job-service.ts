@@ -1,17 +1,31 @@
 import { z } from 'zod';
 import { isDeepStrictEqual } from 'node:util';
-import { canTransitionJob, type JobId, type JobState } from '../../shared/domain';
+import {
+  JOB_CAPABILITIES,
+  JOB_CANCELLATION_POLICY,
+  JOB_CHECKPOINT_APPEND_STATES,
+  JOB_PROGRESS_POLICY,
+  canTransitionJob,
+  type BreakdownBookId,
+  type JobId,
+  type JobState,
+} from '../../shared/domain';
 import type { SqliteDatabase } from '../db/sqlite';
 import {
   JobRepository,
   type JobCheckpointRecord,
   type JobRecord,
+  type PersistedJobDetail,
 } from './job-repository';
 
 export type JobServiceErrorReason =
   | 'invalid_payload'
   | 'invalid_progress'
   | 'invalid_transition'
+  | 'invalid_checkpoint_state'
+  | 'invalid_failure'
+  | 'job_not_cancellable'
+  | 'runtime_owner_not_stopped'
   | 'job_not_found';
 
 export class JobServiceError extends Error {
@@ -37,6 +51,10 @@ export type CompleteJobInput = {
   readonly totalUnits: number;
   readonly updatedAt: string;
   readonly checkpoint: Omit<JobCheckpointRecord, 'jobId' | 'sequence'>;
+};
+
+export type CancelJobInput = {
+  readonly runtimeOwner: 'none' | 'confirmed_stopped';
 };
 
 const sourceTextIdPayloadSchema = z.object({
@@ -81,6 +99,7 @@ export class JobService {
   }
 
   createQueued(input: CreateQueuedJobInput): JobRecord {
+    this.validateProgress({ completedUnits: 0, totalUnits: null }, 0, input.totalUnits);
     const job: JobRecord = {
       ...input,
       state: 'queued',
@@ -96,6 +115,24 @@ export class JobService {
     const job = this.repository.get(this.database, jobId);
     if (job) this.validatePayload(job.kind, job.payloadSchemaVersion, job.payload);
     return job;
+  }
+
+  getWithCheckpoints(jobId: JobId): PersistedJobDetail | null {
+    const detail = this.repository.getWithCheckpoints(this.database, jobId);
+    if (!detail) return null;
+    this.validatePayload(
+      detail.job.kind,
+      detail.job.payloadSchemaVersion,
+      detail.job.payload,
+    );
+    for (const checkpoint of detail.checkpoints) {
+      this.validatePayload(
+        checkpoint.kind,
+        checkpoint.payloadSchemaVersion,
+        checkpoint.payload,
+      );
+    }
+    return detail;
   }
 
   transition(
@@ -119,11 +156,14 @@ export class JobService {
     if (!canTransitionJob(current.state, nextState)) {
       throw new JobServiceError('invalid_transition', `${current.state} -> ${nextState}`);
     }
+    const completedUnits = progress.completedUnits ?? current.completedUnits;
+    const totalUnits = progress.totalUnits === undefined ? current.totalUnits : progress.totalUnits;
+    this.validateProgress(current, completedUnits, totalUnits);
     return this.repository.updateState(this.database, {
       ...current,
       state: nextState,
-      completedUnits: progress.completedUnits ?? current.completedUnits,
-      totalUnits: progress.totalUnits === undefined ? current.totalUnits : progress.totalUnits,
+      completedUnits,
+      totalUnits,
       errorCode: progress.errorCode === undefined ? current.errorCode : progress.errorCode,
       errorDetails: progress.errorDetails === undefined ? current.errorDetails : progress.errorDetails,
       updatedAt,
@@ -138,10 +178,31 @@ export class JobService {
       readonly errorDetails?: unknown | null;
     },
   ): JobRecord {
+    if (failure.errorCode.trim().length === 0) {
+      throw new JobServiceError('invalid_failure', 'errorCode must be non-blank');
+    }
     return this.transition(jobId, 'failed', updatedAt, {
       errorCode: failure.errorCode,
       errorDetails: failure.errorDetails ?? null,
     });
+  }
+
+  cancel(jobId: JobId, updatedAt: string, input: CancelJobInput): JobRecord {
+    const current = this.require(jobId);
+    if (!canTransitionJob(current.state, 'cancelled')) {
+      throw new JobServiceError('invalid_transition', `${current.state} -> cancelled`);
+    }
+    if (JOB_CAPABILITIES[current.kind].cancellation !== 'runtime_owner_first') {
+      throw new JobServiceError('job_not_cancellable', current.kind);
+    }
+    if (
+      input.runtimeOwner === 'none' &&
+      !(JOB_CANCELLATION_POLICY.dormantStateCandidates as readonly JobState[])
+        .includes(current.state)
+    ) {
+      throw new JobServiceError('runtime_owner_not_stopped', current.state);
+    }
+    return this.transition(jobId, 'cancelled', updatedAt);
   }
 
   completeWithCheckpoint(
@@ -165,6 +226,7 @@ export class JobService {
       if (!canTransitionJob(current.state, 'completed')) {
         throw new JobServiceError('invalid_transition', `${current.state} -> completed`);
       }
+      this.validateProgress(current, input.completedUnits, input.totalUnits);
       if (
         input.checkpoint.kind !== `${current.kind}_completed` ||
         !isDeepStrictEqual(input.checkpoint.payload, current.payload)
@@ -192,7 +254,15 @@ export class JobService {
   appendCheckpoint(
     checkpoint: Omit<JobCheckpointRecord, 'sequence'>,
   ): JobCheckpointRecord {
-    this.require(checkpoint.jobId);
+    const current = this.require(checkpoint.jobId);
+    const allowsCurrentState = (JOB_CHECKPOINT_APPEND_STATES as readonly JobState[])
+      .includes(current.state) || (
+        current.state === 'queued' &&
+        JOB_CAPABILITIES[current.kind].allowsQueuedPreparationCheckpoint
+      );
+    if (!allowsCurrentState) {
+      throw new JobServiceError('invalid_checkpoint_state', current.state);
+    }
     this.validatePayload(
       checkpoint.kind,
       checkpoint.payloadSchemaVersion,
@@ -202,8 +272,8 @@ export class JobService {
       this.repository.appendCheckpoint(this.database, checkpoint))();
   }
 
-  list(): JobRecord[] {
-    const jobs = this.repository.list(this.database);
+  list(bookId?: BreakdownBookId): JobRecord[] {
+    const jobs = this.repository.list(this.database, bookId);
     for (const job of jobs) {
       this.validatePayload(job.kind, job.payloadSchemaVersion, job.payload);
     }
@@ -220,6 +290,39 @@ export class JobService {
     const schema = this.payloadSchemas[`${kind}@${version}`];
     if (!schema || !schema.safeParse(payload).success) {
       throw new JobServiceError('invalid_payload', `${kind}@${version}`);
+    }
+  }
+
+  private validateProgress(
+    current: Pick<JobRecord, 'completedUnits' | 'totalUnits'>,
+    completedUnits: number,
+    totalUnits: number | null,
+  ): void {
+    const invalidCompleted = !Number.isInteger(completedUnits) ||
+      completedUnits < JOB_PROGRESS_POLICY.minimumCompletedUnits;
+    const invalidTotal = totalUnits !== null && (
+      !Number.isInteger(totalUnits) ||
+      totalUnits < JOB_PROGRESS_POLICY.minimumKnownTotalUnits
+    );
+    const completedRegressed = JOB_PROGRESS_POLICY.completedUnitsMonotonic &&
+      completedUnits < current.completedUnits;
+    const completedExceedsTotal = !JOB_PROGRESS_POLICY.completedUnitsMayExceedKnownTotal &&
+      totalUnits !== null && completedUnits > totalUnits;
+    const unknownTotalBecameKnown = current.totalUnits === null && totalUnits !== null;
+    const knownTotalBecameUnknown = current.totalUnits !== null && totalUnits === null;
+    const knownTotalChanged = current.totalUnits !== null && totalUnits !== null &&
+      totalUnits !== current.totalUnits;
+    if (
+      invalidCompleted || invalidTotal || completedRegressed ||
+      completedExceedsTotal ||
+      (unknownTotalBecameKnown && !JOB_PROGRESS_POLICY.totalUnitsMayBecomeKnownOnce) ||
+      (knownTotalBecameUnknown && !JOB_PROGRESS_POLICY.totalUnitsMayReturnToUnknown) ||
+      (knownTotalChanged && !JOB_PROGRESS_POLICY.totalUnitsMayChangeOnceKnown)
+    ) {
+      throw new JobServiceError(
+        'invalid_progress',
+        `${current.completedUnits}/${String(current.totalUnits)} -> ${completedUnits}/${String(totalUnits)}`,
+      );
     }
   }
 }

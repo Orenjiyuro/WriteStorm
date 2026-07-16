@@ -471,7 +471,7 @@ describe('JobService', () => {
     }
   });
 
-  it('rejects blank failure codes and preserves checkpoints across failed -> resumable', () => {
+  it('fails closed for persisted checkpoint history that violates Job type or state', () => {
     const database = migratedDatabase();
     const service = new JobService({ database });
     try {
@@ -479,8 +479,74 @@ describe('JobService', () => {
       service.transition(jobId, 'running', runningAt);
       database.prepare(`INSERT INTO job_checkpoints (
         id, job_id, sequence, kind, payload_schema_version, payload_json, created_at
-      ) VALUES (?, ?, 1, 'source_import_completed', 1, ?, ?)`)
-        .run(`${jobId}:before-failure`, jobId, JSON.stringify({ sourceTextId }), createdAt);
+      ) VALUES (?, ?, 1, 'structure_detection_completed', 1, ?, ?)`).run(
+        `${jobId}:cross-type`,
+        jobId,
+        JSON.stringify({
+          title: 'Detect structure',
+          sourceTextId,
+          sourceTextEdition: 1,
+          contentHash: 'sha256:source',
+        }),
+        createdAt,
+      );
+      expect(() => service.getWithCheckpoints(jobId)).toThrowError(
+        expect.objectContaining({ reason: 'invalid_checkpoint_kind' }),
+      );
+
+      database.prepare('DELETE FROM job_checkpoints WHERE job_id = ?').run(jobId);
+      database.prepare(`INSERT INTO job_checkpoints (
+        id, job_id, sequence, kind, payload_schema_version, payload_json, created_at
+      ) VALUES (?, ?, 1, 'source_import_completed', 1, ?, ?)`).run(
+        `${jobId}:premature-final`,
+        jobId,
+        JSON.stringify({ sourceTextId }),
+        createdAt,
+      );
+      expect(() => service.getWithCheckpoints(jobId)).toThrowError(
+        expect.objectContaining({ reason: 'invalid_checkpoint_history' }),
+      );
+
+      database.prepare('DELETE FROM job_checkpoints WHERE job_id = ?').run(jobId);
+      insertBook(database);
+      database.prepare(`UPDATE jobs SET
+        book_id = ?, state = 'completed', completed_units = 1, total_units = 1
+        WHERE id = ?`).run(bookId, jobId);
+      expect(() => service.getWithCheckpoints(jobId)).toThrowError(
+        expect.objectContaining({ reason: 'invalid_checkpoint_history' }),
+      );
+
+      database.prepare(`INSERT INTO job_checkpoints (
+        id, job_id, sequence, kind, payload_schema_version, payload_json, created_at
+      ) VALUES (?, ?, 1, 'source_import_completed', 1, ?, ?)`).run(
+        `${jobId}:final-1`,
+        jobId,
+        JSON.stringify({ sourceTextId }),
+        createdAt,
+      );
+      expect(service.getWithCheckpoints(jobId)?.checkpoints).toHaveLength(1);
+      database.prepare(`INSERT INTO job_checkpoints (
+        id, job_id, sequence, kind, payload_schema_version, payload_json, created_at
+      ) VALUES (?, ?, 2, 'source_import_completed', 1, ?, ?)`).run(
+        `${jobId}:final-2`,
+        jobId,
+        JSON.stringify({ sourceTextId }),
+        completedAt,
+      );
+      expect(() => service.getWithCheckpoints(jobId)).toThrowError(
+        expect.objectContaining({ reason: 'invalid_checkpoint_history' }),
+      );
+    } finally {
+      database.close();
+    }
+  });
+
+  it('rejects blank failure codes and checkpoint appends across failed -> resumable', () => {
+    const database = migratedDatabase();
+    const service = new JobService({ database });
+    try {
+      service.createQueued(sourceImportJob());
+      service.transition(jobId, 'running', runningAt);
       expect(() => service.fail(jobId, completedAt, {
         errorCode: '   ',
       })).toThrowError(expect.objectContaining({ reason: 'invalid_failure' }));
@@ -496,9 +562,7 @@ describe('JobService', () => {
         id: `${jobId}:after-resumable`,
         jobId,
       })).toThrowError(expect.objectContaining({ reason: 'invalid_checkpoint_kind' }));
-      expect(service.getWithCheckpoints(jobId)?.checkpoints.map(({ id }) => id)).toEqual([
-        `${jobId}:before-failure`,
-      ]);
+      expect(service.getWithCheckpoints(jobId)?.checkpoints).toEqual([]);
     } finally {
       database.close();
     }

@@ -131,6 +131,27 @@ describe('JobApplicationService', () => {
     databaseA.close();
     databaseB.close();
   });
+
+  it('fails closed when jobs:get encounters a cross-type persisted checkpoint', () => {
+    const fixture = jobApplicationFixture({ transitionToRunning: false });
+    const application = new JobApplicationService({
+      libraryService: fixture.libraryService,
+      sourceImports: { cancelImport: async () => false },
+      structure: { cancelDetectionAndWait: async () => false },
+    });
+    fixture.database.prepare(`INSERT INTO job_checkpoints (
+      id, job_id, sequence, kind, payload_schema_version, payload_json, created_at
+    ) VALUES ('cross-type-checkpoint', ?, 1, 'source_import_completed', 1, ?, ?)`).run(
+      structureJobId,
+      JSON.stringify({ sourceTextId: 'source-job-app' }),
+      createdAt,
+    );
+
+    expect(() => application.get(structureJobId)).toThrowError(
+      expect.objectContaining({ reason: 'invalid_checkpoint_kind' }),
+    );
+    fixture.database.close();
+  });
 });
 
 function jobApplicationFixture(options: { readonly transitionToRunning?: boolean } = {}) {

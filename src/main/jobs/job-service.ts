@@ -25,6 +25,7 @@ export type JobServiceErrorReason =
   | 'invalid_transition'
   | 'invalid_checkpoint_state'
   | 'invalid_checkpoint_kind'
+  | 'invalid_checkpoint_history'
   | 'invalid_book_ownership'
   | 'invalid_failure'
   | 'job_not_creatable'
@@ -151,6 +152,7 @@ export class JobService {
         checkpoint.payload,
       );
     }
+    this.validatePersistedCheckpointHistory(detail);
     return detail;
   }
 
@@ -328,6 +330,62 @@ export class JobService {
       throw new JobServiceError(
         'invalid_book_ownership',
         `${current.kind}: ${String(current.bookId)} -> ${completedBookId}`,
+      );
+    }
+  }
+
+  private validatePersistedCheckpointHistory(detail: PersistedJobDetail): void {
+    const policy = JOB_CHECKPOINT_POLICIES[detail.job.kind];
+    const intermediateKinds = policy.intermediateKinds as readonly string[];
+    let finalCount = 0;
+    for (const checkpoint of detail.checkpoints) {
+      const isFinal = checkpoint.kind === policy.finalKind;
+      if (!isFinal && !intermediateKinds.includes(checkpoint.kind)) {
+        throw new JobServiceError(
+          'invalid_checkpoint_kind',
+          `${detail.job.kind} -> ${checkpoint.kind}`,
+        );
+      }
+      if (isFinal) {
+        finalCount += 1;
+        if (!isDeepStrictEqual(checkpoint.payload, detail.job.payload)) {
+          throw new JobServiceError(
+            'invalid_checkpoint_history',
+            `${detail.job.id}: final checkpoint payload mismatch`,
+          );
+        }
+      }
+    }
+
+    const lastCheckpoint = detail.checkpoints.at(-1);
+    if (detail.job.state === 'completed') {
+      if (
+        policy.finalKind === null ||
+        finalCount !== 1 ||
+        lastCheckpoint?.kind !== policy.finalKind
+      ) {
+        throw new JobServiceError(
+          'invalid_checkpoint_history',
+          `${detail.job.id}: completed Job requires exactly one trailing final checkpoint`,
+        );
+      }
+      return;
+    }
+
+    if (finalCount > 0) {
+      throw new JobServiceError(
+        'invalid_checkpoint_history',
+        `${detail.job.id}: ${detail.job.state} Job cannot contain a final checkpoint`,
+      );
+    }
+    if (
+      detail.checkpoints.length > 0 &&
+      ['queued', 'estimating', 'waiting_confirmation'].includes(detail.job.state) &&
+      !JOB_CAPABILITIES[detail.job.kind].allowsQueuedPreparationCheckpoint
+    ) {
+      throw new JobServiceError(
+        'invalid_checkpoint_history',
+        `${detail.job.id}: ${detail.job.state} Job cannot contain checkpoints`,
       );
     }
   }

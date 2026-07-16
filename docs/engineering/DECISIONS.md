@@ -511,3 +511,41 @@ The regression gate also requires four race/recovery cases: cancel a restarted o
 The completion authority is `docs/engineering/V1-BLOCK-10-STATUS.md`. A fresh `npm run check` must pass typecheck, all unit and integration tests, Windows x64 packaging, and the serialized packaged Electron suite through the unified local secondary-display gate. The natural product acceptance path remains the real Library/Breakdown shelf and its `Jobs & recovery` panel; Diagnostics, service-only tests, fixture-only URLs, or IPC calls cannot substitute for that path.
 
 Block 10 is complete only for the persisted Job/recovery shell. A resumable fixture proves that restart preserves and displays the state, but there is no natural resumable producer. Resume and Keep draft remain disabled, future `analysis_module_instance_analysis` remains contract-only, `export` cannot create a Job, and no background queue, Codex SDK, AI content/runtime, automatic recovery execution, export execution, or migration 006 is authorized.
+
+## D042: Export Blocked Status Contract And Owner Boundary
+
+Decision: Block 11 defines export as a read-only readiness projection, not an Export record or execution lifecycle. The ordered targets are `markdown_package` and `machine_package`. Their runtime availability matrix is fixed: Markdown is `blocked`, machine is `unavailable`, and neither can report executable availability. Every target always includes `export_execution_not_admitted`.
+
+Rules:
+
+- The preview reads only admitted current facts: Book existence, current frozen structure edition, the authoritative ordered seven-module definition/instance set, module status, and whether each `body_markdown` is non-empty.
+- Before structure freeze the preview is exactly expected `7`, actual `0`, non-empty `0`, and every module status count is zero. After freeze it is exactly expected `7`, actual `7`; an incomplete or altered set fails closed.
+- Markdown and machine targets describe the same Book snapshot and must carry identical preview facts. Target-specific availability does not permit target-specific SQLite truth.
+- Review assets, evidence anchors, technique assets, perspective views, and the completion gate are not admitted owners. Runtime emits only their stable `*_owner_unavailable` blockers and never treats missing tables as zero assets or emits future fact blockers.
+- Future blocker vocabulary may exist in the shared domain, but runtime schemas reject blockers that cannot currently be produced.
+- `ExportStatusDto` contains no Export id, Job id, path, timestamp, credential, token, key, secure-storage content, log body, original content body, or execution metadata.
+
+## D043: Read-Only Export Status Path And Natural Entry
+
+Decision: `exports:get-status` is the only implemented Export IPC channel in Block 11. The main service uses a narrow Library read port and the existing authoritative module workspace gate. Ordinary content blockers return a successful status DTO; missing Library/Book or persisted-contract damage returns the typed error boundary. No Export Job is created.
+
+Rules:
+
+- Renderer requests contain only `bookId`; strict request validation rejects `rootPath`, `outputPath`, `directoryPath`, `targetPath`, and every other extra field before service invocation.
+- The Export runtime dependency graph cannot import filesystem or Electron APIs and cannot read environment credentials, authentication tokens, secret keys, secure storage, or full sensitive logs.
+- The real Breakdown shelf shows both targets, blockers, preview summaries, excluded-content markers, and permanently disabled execution controls whenever a Book is open, including before freeze.
+- `Jobs & recovery` may show an `Export readiness (not a Job)` subsection using the same status query. It remains outside the Job list/detail model, does not extend `JobSummary`, does not add a virtual row, and does not create a Job or checkpoint.
+- Structure freeze/unfreeze invalidates the status query so the read projection follows the current Book facts. No renderer callback can execute export, choose a directory, submit a path, or write content.
+
+## D044: Block 11 No-Write Gate And Completion Boundary
+
+Decision: Block 11 completion requires combined logical and filesystem evidence rather than a database-file hash alone. `exports:get-status` is certified only when business-table snapshots and `database.totalChanges` remain unchanged, `jobs WHERE kind = 'export'` remains zero, existing `exports/` and `mirrors/` trees remain byte-identical, and all Library Markdown/JSON hashes remain unchanged.
+
+Rules:
+
+- The no-write gate preserves existing files; it does not require export or mirror directories to be empty.
+- The packaged natural-entry smoke starts through the real Library/Breakdown shelf, imports and opens a Book, observes Markdown blocked and machine unavailable states, permanent execution blockers, disabled controls, the non-Job status summary, and zero Export Jobs.
+- Diagnostics, a bypass URL, isolated component rendering, service-only tests, or direct IPC calls cannot substitute for the packaged natural user entry.
+- The completion authority is `docs/engineering/V1-BLOCK-11-STATUS.md`. Final certification at commit `ddde1a1` passed 527 unit tests, 256 integration tests, Windows x64 packaging, and 13 packaged Electron E2E tests.
+- Secondary-display placement is unified E2E infrastructure evidence, not a product acceptance blocker for Export readiness.
+- Completion authorizes no real export package, filesystem write, directory selector, arbitrary path, migration, Export record, Export Job/checkpoint, Markdown/JSON back-write, Codex SDK, AI content, evidence extraction, future owner table, or Block 12 capability.

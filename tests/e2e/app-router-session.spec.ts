@@ -1,5 +1,5 @@
 import { chromium, expect, test } from '@playwright/test';
-import { spawn, type ChildProcess } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
 import { mkdirSync, rmSync } from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
@@ -8,7 +8,7 @@ import {
   createElectronStderrBuffer,
   formatErrorWithElectronStderr,
   isSupportedPackagedPlatform,
-  resolvePackagedAppPath,
+  spawnPackagedApp,
 } from './electron-app';
 
 test.skip(!isSupportedPackagedPlatform(), 'AppRouter renderer mount targets packaged Electron Chromium.');
@@ -21,14 +21,9 @@ test('does not display Library A module instances after an in-place switch to Li
   const electronStderr = createElectronStderrBuffer();
   rmSync(userDataDir, { recursive: true, force: true });
   mkdirSync(userDataDir, { recursive: true });
-  const appProcess = spawn(
-    resolvePackagedAppPath(),
-    [`--remote-debugging-port=${port}`, `--user-data-dir=${userDataDir}`],
-    {
-      env: { ...process.env, WRITESTORM_DISABLE_HARDWARE_ACCELERATION: '1' },
-      stdio: ['ignore', 'ignore', 'pipe'],
-    },
-  );
+  const appProcess = spawnPackagedApp({
+    args: [`--remote-debugging-port=${port}`, `--user-data-dir=${userDataDir}`],
+  });
   let appExit: { code: number | null; signal: NodeJS.Signals | null } | undefined;
   appProcess.stderr?.on('data', (chunk: Buffer) => electronStderr.push(chunk));
   appProcess.once('exit', (code, signal) => { appExit = { code, signal }; });

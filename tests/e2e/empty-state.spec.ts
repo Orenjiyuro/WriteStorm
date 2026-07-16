@@ -1,5 +1,5 @@
 import { chromium, expect, test } from '@playwright/test';
-import { spawn, type ChildProcess } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
@@ -11,7 +11,7 @@ import {
   createElectronStderrBuffer,
   formatErrorWithElectronStderr,
   isSupportedPackagedPlatform,
-  resolvePackagedAppPath,
+  spawnPackagedApp,
 } from './electron-app';
 
 test.skip(!isSupportedPackagedPlatform(), 'Packaged Electron smoke currently targets Windows and macOS.');
@@ -22,17 +22,9 @@ test('shows the no-library empty state in a real Electron window', async () => {
   const electronStderr = createElectronStderrBuffer();
   mkdirSync(userDataDir, { recursive: true });
 
-  const appProcess = spawn(
-    resolvePackagedAppPath(),
-    [`--remote-debugging-port=${port}`, `--user-data-dir=${userDataDir}`],
-    {
-      env: {
-        ...process.env,
-        WRITESTORM_DISABLE_HARDWARE_ACCELERATION: '1',
-      },
-      stdio: ['ignore', 'ignore', 'pipe'],
-    },
-  );
+  const appProcess = spawnPackagedApp({
+    args: [`--remote-debugging-port=${port}`, `--user-data-dir=${userDataDir}`],
+  });
   let appExit: { code: number | null; signal: NodeJS.Signals | null } | undefined;
 
   appProcess.stderr?.on('data', (chunk: Buffer) => {

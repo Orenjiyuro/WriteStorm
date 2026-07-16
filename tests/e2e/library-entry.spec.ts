@@ -1,5 +1,5 @@
 import { chromium, expect, test, type Page } from '@playwright/test';
-import { spawn, type ChildProcess } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
 import {
   existsSync,
   mkdirSync,
@@ -13,7 +13,7 @@ import {
   createElectronStderrBuffer,
   formatErrorWithElectronStderr,
   isSupportedPackagedPlatform,
-  resolvePackagedAppPath,
+  spawnPackagedApp,
 } from './electron-app';
 
 test.skip(!isSupportedPackagedPlatform(), 'Packaged Electron library entry smoke targets Windows and macOS.');
@@ -63,20 +63,14 @@ async function withPackagedApp(
   const electronStderr = createElectronStderrBuffer();
   mkdirSync(userDataDir, { recursive: true });
 
-  const appProcess = spawn(
-    resolvePackagedAppPath(),
-    [`--remote-debugging-port=${port}`, `--user-data-dir=${userDataDir}`],
-    {
-      env: {
-        ...process.env,
-        WRITESTORM_DISABLE_HARDWARE_ACCELERATION: '1',
-        WRITESTORM_E2E_LIBRARY_DIALOG_STUB: '1',
-        WRITESTORM_E2E_LIBRARY_ROOT: libraryRoot,
-        WRITESTORM_E2E_LIBRARY_NAME: libraryName,
-      },
-      stdio: ['ignore', 'ignore', 'pipe'],
+  const appProcess = spawnPackagedApp({
+    args: [`--remote-debugging-port=${port}`, `--user-data-dir=${userDataDir}`],
+    env: {
+      WRITESTORM_E2E_LIBRARY_DIALOG_STUB: '1',
+      WRITESTORM_E2E_LIBRARY_ROOT: libraryRoot,
+      WRITESTORM_E2E_LIBRARY_NAME: libraryName,
     },
-  );
+  });
   let appExit: { code: number | null; signal: NodeJS.Signals | null } | undefined;
 
   appProcess.stderr?.on('data', (chunk: Buffer) => {

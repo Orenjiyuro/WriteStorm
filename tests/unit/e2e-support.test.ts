@@ -1,10 +1,13 @@
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  createPackagedAppEnvironment,
   createElectronStderrBuffer,
   formatErrorWithElectronStderr,
+  parseTestDisplayDiagnostics,
   resolvePackagedAppPath,
 } from '../e2e/electron-app';
+import { TEST_DISPLAY_TARGET_ENV } from '../../src/main/windows/test-display-placement';
 
 describe('Electron e2e support', () => {
   it('resolves the packaged app executable for Windows', () => {
@@ -34,5 +37,34 @@ describe('Electron e2e support', () => {
     expect(error.message).toContain('connect failed');
     expect(error.message).toContain('Electron stderr');
     expect(error.message).toContain('GPU process failed');
+  });
+
+  it('enables secondary placement only when the packaged launcher explicitly requests it', () => {
+    const normal = createPackagedAppEnvironment({
+      INHERITED: 'yes',
+      [TEST_DISPLAY_TARGET_ENV]: 'secondary',
+    });
+    const screenshot = createPackagedAppEnvironment(
+      { INHERITED: 'yes' },
+      { testDisplayTarget: 'secondary' },
+    );
+
+    expect(normal).toMatchObject({
+      INHERITED: 'yes',
+      WRITESTORM_DISABLE_HARDWARE_ACCELERATION: '1',
+    });
+    expect(normal[TEST_DISPLAY_TARGET_ENV]).toBeUndefined();
+    expect(screenshot[TEST_DISPLAY_TARGET_ENV]).toBe('secondary');
+  });
+
+  it('parses structured main-process display evidence from stderr', () => {
+    const stderr = [
+      'ordinary Electron diagnostic',
+      'WRITESTORM_E2E_DISPLAY {"event":"window-placement","centerDisplayId":2}',
+    ].join('\n');
+
+    expect(parseTestDisplayDiagnostics(stderr)).toEqual([
+      { event: 'window-placement', centerDisplayId: 2 },
+    ]);
   });
 });

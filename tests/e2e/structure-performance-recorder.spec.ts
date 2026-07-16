@@ -1,5 +1,5 @@
 import { chromium, expect, test, type Page } from '@playwright/test';
-import { spawn, type ChildProcess } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
@@ -13,7 +13,7 @@ import {
   createElectronStderrBuffer,
   formatErrorWithElectronStderr,
   isSupportedPackagedPlatform,
-  resolvePackagedAppPath,
+  spawnPackagedApp,
 } from './electron-app';
 
 test.skip(!isSupportedPackagedPlatform(), 'Packaged structure performance recorder targets Windows and macOS.');
@@ -182,13 +182,12 @@ async function withPackagedApp<T>(
   const stderr = createElectronStderrBuffer();
   const userDataDir = path.join(options.resultRoot, 'user-data', options.fixtureName);
   mkdirSync(userDataDir, { recursive: true });
-  const appProcess = spawn(resolvePackagedAppPath(), [
-    `--remote-debugging-port=${port}`,
-    `--user-data-dir=${userDataDir}`,
-  ], {
+  const appProcess = spawnPackagedApp({
+    args: [
+      `--remote-debugging-port=${port}`,
+      `--user-data-dir=${userDataDir}`,
+    ],
     env: {
-      ...process.env,
-      WRITESTORM_DISABLE_HARDWARE_ACCELERATION: '1',
       WRITESTORM_E2E_LIBRARY_DIALOG_STUB: '1',
       WRITESTORM_E2E_LIBRARY_ROOT: options.libraryRoot,
       WRITESTORM_E2E_LIBRARY_NAME: `Performance ${options.fixtureName}`,
@@ -197,7 +196,6 @@ async function withPackagedApp<T>(
       WRITESTORM_STRUCTURE_PERFORMANCE_RECORDER: '1',
       WRITESTORM_STRUCTURE_PERFORMANCE_RESULT: options.rawResultPath,
     },
-    stdio: ['ignore', 'ignore', 'pipe'],
   });
   appProcess.stderr?.on('data', (chunk: Buffer) => stderr.push(chunk));
   let browser: Awaited<ReturnType<typeof connectToElectron>> | undefined;

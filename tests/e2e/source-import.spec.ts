@@ -301,17 +301,24 @@ test('recovers a persisted orphan detection after packaged app restart and retri
   await withPackagedApp(libraryRoot, sourcePath, async (page) => {
     await page.getByRole('button', { name: 'Open library' }).click();
     await expect(page.getByRole('heading', { name: 'Breakdown shelf' })).toBeVisible();
-    await page.getByRole('button', { name: 'Review structure' }).click();
-    await expect(page.getByRole('button', { name: 'Recover detection' })).toBeVisible();
+    const jobPanel = page.getByRole('region', { name: 'Jobs & recovery' });
+    const orphanJob = jobPanel.locator('.job-recovery-list button')
+      .filter({ hasText: 'Detect structure' }).filter({ hasText: 'RUNNING' });
+    await expect(orphanJob).toHaveCount(1);
+    await orphanJob.click();
+    await expect(jobPanel.getByRole('button', { name: 'Cancel job' })).toBeVisible();
     await page.screenshot({ path: path.join(evidenceRoot, 'orphan-after-restart.png'), fullPage: true });
 
-    await page.getByRole('button', { name: 'Recover detection' }).click();
-    await expect(page.getByRole('button', { name: 'Retry detection' })).toBeVisible();
+    await jobPanel.getByRole('button', { name: 'Cancel job' }).click();
+    await expect(jobPanel.locator('.job-recovery-detail')).toContainText('CANCELLED');
     await expect.poll(() => latestDetectionStates(libraryRoot)).toEqual({ run: 'failed', job: 'cancelled' });
+    await page.getByRole('button', { name: 'Review structure' }).click();
+    await expect(page.getByRole('button', { name: 'Recover detection' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Retry detection' })).toBeVisible();
     await page.screenshot({ path: path.join(evidenceRoot, 'orphan-recovered.png'), fullPage: true });
 
     await page.getByRole('button', { name: 'Retry detection' }).click();
-    await expect.poll(() => detectionRunCount(libraryRoot)).toBe(2);
+    await expect.poll(() => detectionRunCount(libraryRoot)).toBe(3);
     await expect.poll(() => latestDetectionStates(libraryRoot)).toEqual({ run: 'completed', job: 'completed' });
     await expect(page.getByRole('heading', { name: 'Detection candidate' })).toBeVisible();
     await page.screenshot({ path: path.join(evidenceRoot, 'retry-completed.png'), fullPage: true });
@@ -702,18 +709,54 @@ function markLatestDetectionOrphan(libraryRoot: string): void {
   const database = new Database(path.join(libraryRoot, 'writestorm.sqlite'));
   try {
     database.transaction(() => {
-      const latest = database.prepare(`SELECT id, job_id FROM structure_detection_runs
-        ORDER BY run_sequence DESC LIMIT 1`).get() as {
-          id: string;
-          job_id: string;
+      const latest = database.prepare(`SELECT
+          run.book_id,
+          run.source_text_id,
+          run.source_text_edition,
+          run.source_content_hash,
+          run.decoded_text_length,
+          run.offset_unit,
+          run.run_sequence,
+          job.payload_json
+        FROM structure_detection_runs run
+        JOIN jobs job ON job.id = run.job_id
+        ORDER BY run.run_sequence DESC LIMIT 1`).get() as {
+          book_id: string;
+          source_text_id: string;
+          source_text_edition: number;
+          source_content_hash: string;
+          decoded_text_length: number;
+          offset_unit: string;
+          run_sequence: number;
+          payload_json: string;
         } | undefined;
       if (!latest) throw new Error('Expected a completed detection run before orphan simulation.');
-      database.prepare(`UPDATE structure_detection_runs
-        SET state = 'running', failure_reason = NULL
-        WHERE id = ?`).run(latest.id);
-      database.prepare(`UPDATE jobs
-        SET state = 'running', error_code = NULL, error_details_json = NULL
-        WHERE id = ?`).run(latest.job_id);
+      const now = new Date().toISOString();
+      database.prepare(`INSERT INTO jobs (
+        id, book_id, kind, state, completed_units, total_units, payload_schema_version,
+        payload_json, error_code, error_details_json, created_at, updated_at
+      ) VALUES (
+        'e2e-orphan-detection-job', ?, 'structure_detection', 'running', 0, 1, 1,
+        ?, NULL, NULL, ?, ?
+      )`).run(latest.book_id, latest.payload_json, now, now);
+      database.prepare(`INSERT INTO structure_detection_runs (
+        id, job_id, book_id, source_text_id, source_text_edition, source_content_hash,
+        decoded_text_length, offset_unit, state, failure_reason, created_at, updated_at,
+        run_sequence
+      ) VALUES (
+        'e2e-orphan-detection-run', 'e2e-orphan-detection-job', ?, ?, ?, ?, ?, ?,
+        'running', NULL, ?, ?, ?
+      )`).run(
+        latest.book_id,
+        latest.source_text_id,
+        latest.source_text_edition,
+        latest.source_content_hash,
+        latest.decoded_text_length,
+        latest.offset_unit,
+        now,
+        now,
+        latest.run_sequence + 1,
+      );
     })();
   } finally {
     database.close();

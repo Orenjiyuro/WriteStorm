@@ -16,8 +16,8 @@ This verdict does not authorize a real background queue, Codex SDK, AI analysis,
 | 10.2 | Complete | Reuses migration 001 `jobs`/`job_checkpoints`; Library-wide newest-first reads, optional Book filter, durable detail reads, and fail-closed persisted type/JSON mapping are covered without migration 006. |
 | 10.3 | Complete | Existing `JobService` owns queued creation, legal transitions, fail/cancel policy, monotonic progress, checkpoint safety, and atomic final completion. |
 | 10.4 | Complete | Existing import, structure detection, and structure edition records remain authoritative; first runtime freeze atomically records one seven-instance module-shell batch Job/checkpoint, while migration 004 fabricates none. |
-| 10.5 | Complete | Typed `jobs:list/get/cancel` returns Library-wide summary/detail data and performs exact runtime-owner-first cancellation before persisting `cancelled`. |
-| 10.6 | Complete | The real Breakdown shelf exposes Library-wide status badges, progress, failure reason, checkpoints, Cancel, disabled Resume, and type-appropriate disabled/absent Keep draft. |
+| 10.5 | Complete | Typed `jobs:list/get/cancel` returns Library-wide summary/detail data, pins Library session identity, and performs exact runtime-owner-first cancellation, including paired orphan structure runs and pending encoding imports. |
+| 10.6 | Complete | The real Breakdown shelf exposes Library-wide status badges, progress, failure reason, validated checkpoints, and a natural Cancel path for active or restarted orphan runtime-owned work, plus disabled Resume and type-appropriate Keep draft. |
 | 10.7 | Complete | Successful Library activation awaits abandoned-import recovery before returning success; failed/resumable states remain discoverable after reopen. |
 | 10.8 | Complete | The state machine, checkpoint safety, invalid payload, import guards, natural recovery entry, packaging, and restart smoke are certified through the focused matrix and fresh `npm run check`. |
 
@@ -43,9 +43,11 @@ The executable state machine gate is distributed across:
 Checkpoint safety requires all of the following:
 
 - No current JobType admits a queued preparation checkpoint.
-- Failed, cancelled, and completed Jobs retain prior checkpoints but reject new ones.
+- Failed, cancelled, and completed Jobs retain legal prior checkpoints but reject new ones.
 - Generic append rejects final checkpoints, repeated final checkpoints, cross-type checkpoints, and every currently unadmitted intermediate kind.
 - A final checkpoint belongs to the persisted JobType and is written only by `completeWithCheckpoint`.
+- Persisted detail rejects cross-type checkpoint history with `invalid_checkpoint_kind`; invalid final state/cardinality/order/payload fails with `invalid_checkpoint_history`.
+- A completed Job has exactly one trailing final checkpoint whose payload equals the Job payload; a non-completed Job has no final checkpoint.
 - Job state, Book binding, progress, and the final checkpoint commit atomically; checkpoint persistence failure rolls all completion changes back.
 - Only `source_import` may bind `null -> importedBookId`; every other completion must retain the exact existing Book.
 - The first-freeze module-shell Job/checkpoint, seven instances, structure freeze, Book edition, and structure-edition Job share one transaction.
@@ -67,11 +69,13 @@ Block 10 preserves the previously accepted source import guards while adding Job
 
 - Renderer requests cannot contain `sourcePath`, `filePath`, `path`, or `rootPath`; initial selection remains main-side.
 - Manual encoding retry uses a main-only, Library-session-scoped pending token and cannot rename the import or submit a path.
+- Cancelling an encoding-required Job persists `cancelled` and clears only pending records matching its Job id, Library root, and session; retrying the old token returns `pending_import_not_found`.
 - The import adapter captures the current session before opening the dialog and rejects a stale dialog/window/session before service execution.
 - Source import records queued/running/completed through the existing `JobService`; the completed response DTO is mapped from the persisted JobRecord rather than synthesized separately.
 - Worker reads remain bounded, staging uses an exact per-Job file, cancellation removes incomplete staging, promotion refuses overwrite, and database failure compensates the promoted source.
 - Duplicate hash races re-query the winning Book/SourceText and never publish a duplicate Book.
-- Library replacement pauses admission, stops active imports, awaits cleanup, clears pending tokens, and only then publishes the replacement session.
+- Library replacement pauses import and Job-cancellation admission, stops active imports/detections, awaits cleanup and every in-flight Job cancellation, clears pending tokens, and only then publishes the replacement session.
+- `jobs:cancel` pins the original session across owner await and every final read/write, so a same-id Job in a replacement Library remains untouched.
 - Restart recovery changes only abandoned queued/running `source_import` Jobs to `failed` with `SOURCE_IMPORT_ABANDONED` and removes only `source/.staging/{jobId}.tmp`; unrelated staging and existing failed/resumable Jobs remain intact.
 
 ## Typed IPC, recovery UI, and natural entry
@@ -87,7 +91,8 @@ The user-visible acceptance path is:
 5. Create/review/freeze structure and observe detection, structure-edition, and seven-instance module-shell Jobs.
 6. Reopen the Library with persisted failed/resumable records and an abandoned running import.
 7. Observe the abandoned import as `SOURCE_IMPORT_ABANDONED`, the previous failed/resumable entries still discoverable, checkpoint/failure detail, and executable owner-first Cancel.
-8. Confirm the exact abandoned staging file is gone while the frozen structure and module workbench remain available.
+8. Reopen with a persisted running orphan structure detection, select it from `Jobs & recovery`, cancel it, observe the paired run=`failed/cancelled_by_user` and Job=`cancelled`, then Retry detection successfully.
+9. Confirm the exact abandoned staging file is gone while the frozen structure and module workbench remain available.
 
 This is a real Library/Breakdown-shelf path. Diagnostics, a bypass URL, service-only tests, IPC-only tests, or isolated component rendering do not count as the natural product acceptance.
 
@@ -107,10 +112,10 @@ Resume remains visibly disabled. Keep draft is disabled with a structure-specifi
 The focused regression command is:
 
 ```powershell
-npx vitest run tests/unit/shared-job-contract.test.ts tests/unit/main-job-ipc.test.ts tests/unit/renderer-job-recovery.test.tsx tests/unit/main-library-restart-recovery.test.ts tests/unit/block10-docs.test.ts tests/integration/jobs/job-repository.test.ts tests/integration/jobs/job-service.test.ts tests/integration/jobs/job-application-service.test.ts tests/integration/source-text/source-import-service.test.ts
+npx vitest run tests/unit/shared-job-contract.test.ts tests/unit/main-job-ipc.test.ts tests/unit/renderer-job-recovery.test.tsx tests/unit/main-library-restart-recovery.test.ts tests/unit/main-lifecycle.test.ts tests/unit/main-book-import-entry.test.ts tests/unit/block10-docs.test.ts tests/integration/jobs/job-repository.test.ts tests/integration/jobs/job-service.test.ts tests/integration/jobs/job-application-service.test.ts tests/integration/source-text/source-import-service.test.ts tests/integration/structure/structure-service.test.ts
 ```
 
-The matrix covers state machine vocabulary/transitions, checkpoint safety and atomicity, invalid payload rejection across contract/IPC/service/persistence, owner-first cancellation, import guards, restart activation semantics, persisted failed/resumable preservation, and the documented completion boundary.
+The matrix covers state machine vocabulary/transitions, checkpoint safety and atomicity, cross-type and invalid final checkpoint history, invalid payload rejection across contract/IPC/service/persistence, paired orphan cancellation, in-flight Job cancellation session pin/barrier, pending encoding token cancellation, import guards, restart activation semantics, persisted failed/resumable preservation, and the documented completion boundary.
 
 ## Final certification matrix
 
@@ -118,7 +123,7 @@ The fresh Windows certification on 2026-07-16 is:
 
 | Gate | Command or observable evidence | Result |
 | --- | --- | --- |
-| Full static/unit/integration/packaged suite | `npm run check` | Passed: TypeScript; 106 unit files / 491 tests; 28 integration files / 246 tests; Windows x64 Forge package; 13/13 serialized packaged Electron tests. |
+| Full static/unit/integration/packaged suite | `npm run check` | Passed: TypeScript; 106 unit files / 493 tests; 28 integration files / 251 tests; Windows x64 Forge package; 13/13 serialized packaged Electron tests. |
 | Natural recovery entry | `tests/e2e/source-import.spec.ts` | Passed through create/import/freeze/reopen: completed existing-flow Jobs, failure/checkpoint detail, abandoned-import failure, persisted failed/resumable discovery, owner-first Cancel, and exact staging cleanup. |
 | Secondary-display hard gate | `tests/e2e/secondary-display.spec.ts` plus Playwright default policy | Passed: local packaged windows were placed on the non-primary display before showing; CI and normal product launch remain unaffected. |
 | State and checkpoint focused gate | Shared Job contract plus Job repository/service/application integration tests | Passed: legal transitions, progress, Book ownership, per-type checkpoint ownership, terminal append rejection, completion atomicity, and owner-first cancellation. |

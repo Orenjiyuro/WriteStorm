@@ -155,6 +155,11 @@ describe('Block 10 durable engineering status', () => {
     expect(status).toContain('13/13');
     expect(status).toContain('resumable fixture');
     expect(status).toContain('no natural resumable producer');
+    expect(status).toContain('orphan structure detection');
+    expect(status).toContain('in-flight Job cancellation');
+    expect(status).toContain('pending_import_not_found');
+    expect(status).toContain('invalid_checkpoint_history');
+    expect(status).toContain('cross-type');
     expect(decisions).toContain('D041: Block 10 Regression Gate And Completion Boundary');
   });
 });

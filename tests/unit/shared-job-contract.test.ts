@@ -52,8 +52,8 @@ describe('V1 Job and checkpoint contracts', () => {
     ]);
 
     expect(JOB_CAPABILITIES.analysis_module_shell_creation).toMatchObject({
-      implementation: 'planned',
-      creatable: false,
+      implementation: 'implemented',
+      creatable: true,
       checkpointUnit: 'analysis_module_instance_batch',
     });
     expect(JOB_CAPABILITIES.analysis_module_instance_analysis).toMatchObject({

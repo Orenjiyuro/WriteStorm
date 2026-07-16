@@ -137,8 +137,8 @@ export const JOB_CAPABILITIES = {
     keepDraft: 'structure_disabled',
   },
   analysis_module_shell_creation: {
-    implementation: 'planned',
-    creatable: false,
+    implementation: 'implemented',
+    creatable: true,
     checkpointUnit: 'analysis_module_instance_batch',
     runtimeOwner: 'analysis_module_instance_edition_change_port',
     cancellation: 'transactional_not_cancellable',

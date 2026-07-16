@@ -50,4 +50,20 @@ describe('Block 10 durable engineering status', () => {
     }
     expect(decisions).toContain('D035: JobService Progress, Checkpoint, And Cancellation Policy');
   });
+
+  it('records the Task 10.4 runtime-only module-shell Job boundary', () => {
+    const context = readFileSync('docs/engineering/CONTEXT.md', 'utf8');
+    const decisions = readFileSync('docs/engineering/DECISIONS.md', 'utf8');
+
+    for (const document of [context, decisions]) {
+      expect(document).toContain('Task 10.4');
+      expect(document).toContain('analysis_module_shell_creation');
+      expect(document).toContain('seven-instance batch');
+      expect(document).toContain('migration 004');
+      expect(document).toContain('must not fabricate');
+      expect(document).toContain('same freeze transaction');
+      expect(document).toContain('Task 10.5');
+    }
+    expect(decisions).toContain('D036: Existing Flow Job Records And Runtime Module Shell Audit');
+  });
 });

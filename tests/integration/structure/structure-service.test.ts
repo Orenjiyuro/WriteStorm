@@ -914,6 +914,7 @@ describe('StructureService', () => {
     let draftIndex = 0;
     const instancePort = new AnalysisModuleInstanceEditionChangePort({
       createInstanceId: () => `runtime-instance-${++instanceIndex}` as import('../../../src/shared/domain').AnalysisModuleInstanceId,
+      createJobId: () => 'runtime-shell-job' as JobId,
       now: () => '2026-07-15T12:00:00.000Z',
     });
     const { service, candidate, draft, fixture } = await detectedDraftFixture('instance-first-freeze', {
@@ -939,6 +940,37 @@ describe('StructureService', () => {
       structureEdition: 1,
       status: 'not_generated',
     }]);
+    const shellJob = fixture.database.prepare(`
+      SELECT id, book_id AS bookId, kind, state, completed_units AS completedUnits,
+        total_units AS totalUnits, payload_json AS payloadJson
+      FROM jobs WHERE kind = 'analysis_module_shell_creation'
+    `).get() as {
+      id: string; bookId: string; kind: string; state: string;
+      completedUnits: number; totalUnits: number; payloadJson: string;
+    };
+    expect(shellJob).toMatchObject({
+      id: 'runtime-shell-job',
+      bookId: candidate.bookId,
+      kind: 'analysis_module_shell_creation',
+      state: 'completed',
+      completedUnits: 7,
+      totalUnits: 7,
+    });
+    expect(JSON.parse(shellJob.payloadJson)).toEqual({
+      title: 'Create analysis module shells',
+      structureSetId: draft.id,
+      structureEdition: 1,
+      instanceIds: Array.from({ length: 7 }, (_, index) => `runtime-instance-${index + 1}`),
+    });
+    expect(fixture.database.prepare(`
+      SELECT job_id AS jobId, sequence, kind, payload_json AS payloadJson
+      FROM job_checkpoints WHERE job_id = ?
+    `).get(shellJob.id)).toEqual({
+      jobId: 'runtime-shell-job',
+      sequence: 1,
+      kind: 'analysis_module_shell_creation_completed',
+      payloadJson: shellJob.payloadJson,
+    });
     instancePort.apply(createStructureEditionChange({
       bookId: candidate.bookId,
       frozenSetId: draft.id,
@@ -946,11 +978,17 @@ describe('StructureService', () => {
       structureEdition: 1,
     }), { database: fixture.database });
     expect(instanceIndex).toBe(7);
+    expect(fixture.database.prepare(`
+      SELECT COUNT(*) FROM jobs WHERE kind = 'analysis_module_shell_creation'
+    `).pluck().get()).toBe(1);
 
     const replacement = service.unfreeze(candidate.bookId, draft.id);
     await service.freeze(candidate.bookId, replacement.id, replacement.draftRevision);
 
     expect(instanceIndex).toBe(7);
+    expect(fixture.database.prepare(`
+      SELECT COUNT(*) FROM jobs WHERE kind = 'analysis_module_shell_creation'
+    `).pluck().get()).toBe(1);
     expect(fixture.database.prepare(`
       SELECT COUNT(*) FROM analysis_module_instances WHERE book_id = ?
     `).pluck().get(candidate.bookId)).toBe(7);
@@ -963,6 +1001,44 @@ describe('StructureService', () => {
       structureEdition: 1,
       status: 'needs_rebuild',
     }]);
+  });
+
+  it('rolls the freeze and seven-shell batch back when its final checkpoint fails', async () => {
+    let jobIndex = 0;
+    let instanceIndex = 0;
+    const instancePort = new AnalysisModuleInstanceEditionChangePort({
+      createInstanceId: () => `checkpoint-instance-${++instanceIndex}` as import('../../../src/shared/domain').AnalysisModuleInstanceId,
+      createJobId: () => 'checkpoint-shell-job' as JobId,
+      now: () => '2026-07-15T13:00:00.000Z',
+    });
+    const { service, candidate, draft, fixture } = await detectedDraftFixture('checkpoint-shell-draft', {
+      createJobId: () => `checkpoint-freeze-job-${++jobIndex}` as JobId,
+      structureEditionChangePort: instancePort,
+    });
+    fixtureReviewAcceptAll(service, candidate.bookId, draft);
+    const ready = await service.getWorkspace(candidate.bookId);
+    fixture.database.exec(`CREATE TRIGGER reject_module_shell_checkpoint
+      BEFORE INSERT ON job_checkpoints
+      WHEN NEW.kind = 'analysis_module_shell_creation_completed'
+      BEGIN SELECT RAISE(ABORT, 'reject module shell checkpoint'); END`);
+
+    await expect(service.freeze(candidate.bookId, draft.id, ready.draft!.draftRevision))
+      .rejects.toThrow('reject module shell checkpoint');
+    expect(fixture.database.prepare('SELECT COUNT(*) FROM analysis_module_instances').pluck().get()).toBe(0);
+    expect(fixture.database.prepare("SELECT COUNT(*) FROM jobs WHERE kind = 'analysis_module_shell_creation'")
+      .pluck().get()).toBe(0);
+    expect(fixture.database.prepare("SELECT COUNT(*) FROM jobs WHERE kind = 'structure_edition'")
+      .pluck().get()).toBe(0);
+    expect(fixture.database.prepare('SELECT structure_edition FROM books WHERE id = ?')
+      .pluck().get(candidate.bookId)).toBeNull();
+    expect(fixture.database.prepare('SELECT stage FROM structure_sets WHERE id = ?')
+      .pluck().get(draft.id)).toBe('draft');
+
+    fixture.database.exec('DROP TRIGGER reject_module_shell_checkpoint');
+    await service.freeze(candidate.bookId, draft.id, ready.draft!.draftRevision);
+    expect(fixture.database.prepare('SELECT COUNT(*) FROM analysis_module_instances').pluck().get()).toBe(7);
+    expect(fixture.database.prepare("SELECT COUNT(*) FROM jobs WHERE kind = 'analysis_module_shell_creation'")
+      .pluck().get()).toBe(1);
   });
 
   it('rolls back a partial shell insert when the ID factory throws and retries atomically', async () => {

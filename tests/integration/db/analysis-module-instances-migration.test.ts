@@ -57,6 +57,9 @@ describe('analysis module instances migration 004', () => {
         })));
       expect(database.prepare("PRAGMA table_xinfo('analysis_module_instances')").all())
         .not.toContainEqual(expect.objectContaining({ name: 'body_markdown' }));
+      expect(database.prepare(`
+        SELECT COUNT(*) FROM jobs WHERE kind = 'analysis_module_shell_creation'
+      `).pluck().get()).toBe(0);
     } finally {
       database.close();
     }

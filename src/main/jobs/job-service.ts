@@ -74,6 +74,16 @@ const structureEditionPayloadSchema = z.object({
   structureEdition: z.number().int().positive(),
 }).strict();
 
+const analysisModuleShellCreationPayloadSchema = z.object({
+  title: z.literal('Create analysis module shells'),
+  structureSetId: z.string().min(1),
+  structureEdition: z.number().int().positive(),
+  instanceIds: z.array(z.string().min(1)).length(7).refine(
+    (instanceIds) => new Set(instanceIds).size === instanceIds.length,
+    'instanceIds must be unique',
+  ),
+}).strict();
+
 export const JOB_PAYLOAD_SCHEMAS: JobPayloadSchemaRegistry = {
   'source_import@1': sourceTextIdPayloadSchema,
   'source_import_completed@1': sourceTextIdPayloadSchema,
@@ -81,6 +91,8 @@ export const JOB_PAYLOAD_SCHEMAS: JobPayloadSchemaRegistry = {
   'structure_detection_completed@1': structureDetectionPayloadSchema,
   'structure_edition@1': structureEditionPayloadSchema,
   'structure_edition_completed@1': structureEditionPayloadSchema,
+  'analysis_module_shell_creation@1': analysisModuleShellCreationPayloadSchema,
+  'analysis_module_shell_creation_completed@1': analysisModuleShellCreationPayloadSchema,
 };
 
 export class JobService {

@@ -1,9 +1,13 @@
+import { randomUUID } from 'node:crypto';
 import type {
   AnalysisModuleDefinition,
+  AnalysisModuleInstanceId,
   BreakdownBookId,
+  JobId,
   StructureSetId,
 } from '../../shared/domain';
 import type { SqliteDatabase } from '../db/sqlite';
+import { JobService } from '../jobs/job-service';
 import type {
   StructureEditionChange,
   StructureEditionChangeContext,
@@ -30,6 +34,7 @@ export class AnalysisModuleInstanceEditionChangeError extends Error {
 
 export type AnalysisModuleInstanceEditionChangePortOptions = {
   readonly createInstanceId?: AnalysisModuleInstanceIdFactory;
+  readonly createJobId?: () => JobId;
   readonly now?: () => string;
 };
 
@@ -41,10 +46,12 @@ type PersistedBookScopeInstance = {
 
 export class AnalysisModuleInstanceEditionChangePort implements StructureEditionChangePort {
   private readonly createInstanceId: AnalysisModuleInstanceIdFactory;
+  private readonly createJobId: () => JobId;
   private readonly now: () => string;
 
   constructor(options: AnalysisModuleInstanceEditionChangePortOptions = {}) {
     this.createInstanceId = options.createInstanceId ?? createAnalysisModuleInstanceId;
+    this.createJobId = options.createJobId ?? (() => randomUUID() as JobId);
     this.now = options.now ?? (() => new Date().toISOString());
   }
 
@@ -57,7 +64,7 @@ export class AnalysisModuleInstanceEditionChangePort implements StructureEdition
 
     if (change.previousStructureEdition === null) {
       if (existing.length === 0) {
-        this.createInitialBookScopeInstances(change, context.database, definitions);
+        this.createInitialBookScopeInstancesWithJob(change, context.database, definitions);
         return undefined;
       }
 
@@ -86,39 +93,78 @@ export class AnalysisModuleInstanceEditionChangePort implements StructureEdition
     return undefined;
   }
 
-  private createInitialBookScopeInstances(
+  private createInitialBookScopeInstancesWithJob(
     change: StructureEditionChange,
     database: SqliteDatabase,
     definitions: readonly AnalysisModuleDefinition[],
   ): void {
-    const insert = database.prepare(`
-      INSERT INTO analysis_module_instances (
-        id, book_id, module_id, scope_kind, book_scope_book_id,
-        volume_node_id, chapter_node_id, story_segment_range_id,
-        source_structure_set_id, structure_edition, analysis_revision,
-        status, created_at, updated_at
-      ) VALUES (?, ?, ?, 'book', ?, NULL, NULL, NULL, ?, ?, 0,
-        'not_generated', ?, ?)
-    `);
+    database.transaction(() => {
+      const insert = database.prepare(`
+        INSERT INTO analysis_module_instances (
+          id, book_id, module_id, scope_kind, book_scope_book_id,
+          volume_node_id, chapter_node_id, story_segment_range_id,
+          source_structure_set_id, structure_edition, analysis_revision,
+          status, created_at, updated_at
+        ) VALUES (?, ?, ?, 'book', ?, NULL, NULL, NULL, ?, ?, 0,
+          'not_generated', ?, ?)
+      `);
+      const instanceIds: AnalysisModuleInstanceId[] = [];
 
-    for (const definition of definitions) {
-      const identity = {
-        bookId: change.bookId,
-        moduleId: definition.id,
-        scope: { kind: 'book' as const, bookId: change.bookId },
-      };
+      for (const definition of definitions) {
+        const identity = {
+          bookId: change.bookId,
+          moduleId: definition.id,
+          scope: { kind: 'book' as const, bookId: change.bookId },
+        };
+        const instanceId = this.createInstanceId(identity);
+        const timestamp = this.now();
+        insert.run(
+          instanceId,
+          change.bookId,
+          definition.id,
+          change.bookId,
+          change.frozenSetId,
+          change.structureEdition,
+          timestamp,
+          timestamp,
+        );
+        instanceIds.push(instanceId);
+      }
+
+      const jobs = new JobService({ database });
+      const jobId = this.createJobId();
       const timestamp = this.now();
-      insert.run(
-        this.createInstanceId(identity),
-        change.bookId,
-        definition.id,
-        change.bookId,
-        change.frozenSetId,
-        change.structureEdition,
-        timestamp,
-        timestamp,
-      );
-    }
+      const payload = {
+        title: 'Create analysis module shells' as const,
+        structureSetId: change.frozenSetId,
+        structureEdition: change.structureEdition,
+        instanceIds,
+      };
+      jobs.createQueued({
+        id: jobId,
+        bookId: change.bookId,
+        kind: 'analysis_module_shell_creation',
+        totalUnits: instanceIds.length,
+        payloadSchemaVersion: 1,
+        payload,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      });
+      jobs.transition(jobId, 'running', timestamp);
+      jobs.completeWithCheckpoint(jobId, {
+        bookId: change.bookId,
+        completedUnits: instanceIds.length,
+        totalUnits: instanceIds.length,
+        updatedAt: timestamp,
+        checkpoint: {
+          id: `${jobId}:completed`,
+          kind: 'analysis_module_shell_creation_completed',
+          payloadSchemaVersion: 1,
+          payload,
+          createdAt: timestamp,
+        },
+      });
+    })();
   }
 }
 

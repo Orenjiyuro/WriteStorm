@@ -78,9 +78,9 @@ test('imports a txt/md source through the packaged desktop entry using a main-pr
       await accept.first().click();
       await expect(accept).toHaveCount(previous - 1);
     }
-    await expect(page.getByRole('button', { name: 'Freeze structure' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Freeze structure', exact: true })).toBeVisible();
     await page.screenshot({ path: path.join(evidenceRoot, 'draft-ready.png'), fullPage: true });
-    await page.getByRole('button', { name: 'Freeze structure' }).click();
+    await page.getByRole('button', { name: 'Freeze structure', exact: true }).click();
     await expect(page.getByText('Structure edition 1 is frozen and current.')).toBeVisible();
     await expectFrozenAnalysisWorkbench(page);
     const moduleShellJob = jobPanel.locator('.job-recovery-list button')
@@ -261,9 +261,9 @@ test('shows packaged detection failure and lets the user retry from the structur
     await expect(page.getByLabel('Draft structure nodes').locator('strong', {
       hasText: 'Manual Chapter',
     })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Freeze structure' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Freeze structure', exact: true })).toBeVisible();
     await page.screenshot({ path: path.join(evidenceRoot, 'manual-draft-ready.png'), fullPage: true });
-    await page.getByRole('button', { name: 'Freeze structure' }).click();
+    await page.getByRole('button', { name: 'Freeze structure', exact: true }).click();
     await expect(page.getByText('Structure edition 1 is frozen and current.')).toBeVisible();
     await page.screenshot({ path: path.join(evidenceRoot, 'manual-draft-frozen.png'), fullPage: true });
   });
@@ -342,7 +342,7 @@ test('recovers a stale frozen edition through a fresh candidate replacement draf
     await expect(page.getByRole('heading', { name: 'Detection candidate' })).toBeVisible({ timeout: 15_000 });
     await page.getByRole('button', { name: 'Create draft' }).click();
     await acceptAllLowConfidence(page);
-    await page.getByRole('button', { name: 'Freeze structure' }).click();
+    await page.getByRole('button', { name: 'Freeze structure', exact: true }).click();
     await expect(page.getByText('Structure edition 1 is frozen and current.')).toBeVisible();
   });
 
@@ -367,7 +367,7 @@ test('recovers a stale frozen edition through a fresh candidate replacement draf
     await page.getByRole('button', { name: 'Create replacement draft' }).click();
     await expect(page.getByText('Draft revision 1 is ready for review.')).toBeVisible();
     await acceptAllLowConfidence(page);
-    await page.getByRole('button', { name: 'Freeze structure' }).click();
+    await page.getByRole('button', { name: 'Freeze structure', exact: true }).click();
     await expect(page.getByText('Structure edition 2 is frozen and current.')).toBeVisible();
     await page.screenshot({ path: path.join(evidenceRoot, 'replacement-frozen.png'), fullPage: true });
   });
@@ -415,8 +415,8 @@ test('recovers from failed detection with a stale candidate through a manual dra
     await addNode.getByLabel('Start offset').fill('0');
     await addNode.getByLabel('End offset').fill(String(replacementText.length));
     await addNode.getByRole('button', { name: 'Add node' }).click();
-    await expect(page.getByRole('button', { name: 'Freeze structure' })).toBeVisible();
-    await page.getByRole('button', { name: 'Freeze structure' }).click();
+    await expect(page.getByRole('button', { name: 'Freeze structure', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Freeze structure', exact: true }).click();
     await expect(page.getByText('Structure edition 1 is frozen and current.')).toBeVisible();
     await page.screenshot({ path: path.join(evidenceRoot, 'stale-candidate-manual-frozen.png'), fullPage: true });
   });

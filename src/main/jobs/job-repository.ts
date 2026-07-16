@@ -1,11 +1,26 @@
 import type { BreakdownBookId, JobId } from '../../shared/domain';
-import type { JobState } from '../../shared/domain/job';
+import { JOB_TYPES, type JobState, type JobType } from '../../shared/domain/job';
 import type { SqliteDatabase } from '../db/sqlite';
+
+export type JobRepositoryErrorReason =
+  | 'invalid_persisted_job_type'
+  | 'invalid_persisted_json';
+
+export class JobRepositoryError extends Error {
+  constructor(
+    readonly reason: JobRepositoryErrorReason,
+    readonly recordId: string,
+    readonly field: 'kind' | 'payload_json' | 'error_details_json',
+  ) {
+    super(`${reason}: ${recordId}.${field}`);
+    this.name = 'JobRepositoryError';
+  }
+}
 
 export type JobRecord = {
   readonly id: JobId;
   readonly bookId: BreakdownBookId | null;
-  readonly kind: string;
+  readonly kind: JobType;
   readonly state: JobState;
   readonly completedUnits: number;
   readonly totalUnits: number | null;
@@ -25,6 +40,11 @@ export type JobCheckpointRecord = {
   readonly payloadSchemaVersion: number;
   readonly payload: unknown;
   readonly createdAt: string;
+};
+
+export type PersistedJobDetail = {
+  readonly job: JobRecord;
+  readonly checkpoints: readonly JobCheckpointRecord[];
 };
 
 export class JobRepository {
@@ -55,6 +75,11 @@ export class JobRepository {
   get(database: SqliteDatabase, jobId: JobId): JobRecord | null {
     const row = database.prepare(`${JOB_SELECT} WHERE id = ?`).get(jobId) as JobRow | undefined;
     return row ? mapJob(row) : null;
+  }
+
+  getWithCheckpoints(database: SqliteDatabase, jobId: JobId): PersistedJobDetail | null {
+    const job = this.get(database, jobId);
+    return job ? { job, checkpoints: this.listCheckpoints(database, jobId) } : null;
   }
 
   updateState(database: SqliteDatabase, job: JobRecord): JobRecord {
@@ -100,9 +125,20 @@ export class JobRepository {
     return { ...checkpoint, sequence };
   }
 
-  list(database: SqliteDatabase): JobRecord[] {
-    return (database.prepare(`${JOB_SELECT} ORDER BY created_at ASC, id ASC`).all() as JobRow[])
-      .map(mapJob);
+  listCheckpoints(database: SqliteDatabase, jobId: JobId): JobCheckpointRecord[] {
+    return (database.prepare(`
+      ${JOB_CHECKPOINT_SELECT}
+      WHERE job_id = ?
+      ORDER BY sequence ASC, id ASC
+    `).all(jobId) as JobCheckpointRow[]).map(mapCheckpoint);
+  }
+
+  list(database: SqliteDatabase, bookId?: BreakdownBookId): JobRecord[] {
+    const rows = bookId === undefined
+      ? database.prepare(`${JOB_SELECT} ORDER BY updated_at DESC, id DESC`).all()
+      : database.prepare(`${JOB_SELECT} WHERE book_id = ? ORDER BY updated_at DESC, id DESC`)
+        .all(bookId);
+    return (rows as JobRow[]).map(mapJob);
   }
 }
 
@@ -123,24 +159,74 @@ const JOB_SELECT = `
   FROM jobs
 `;
 
-type JobRow = Omit<JobRecord, 'payload' | 'errorDetails'> & {
+const JOB_CHECKPOINT_SELECT = `
+  SELECT
+    id,
+    job_id AS jobId,
+    sequence,
+    kind,
+    payload_schema_version AS payloadSchemaVersion,
+    payload_json AS payloadJson,
+    created_at AS createdAt
+  FROM job_checkpoints
+`;
+
+type JobRow = Omit<JobRecord, 'kind' | 'payload' | 'errorDetails'> & {
+  readonly kind: string;
   readonly payloadJson: string;
   readonly errorDetailsJson: string | null;
+};
+
+type JobCheckpointRow = Omit<JobCheckpointRecord, 'payload'> & {
+  readonly payloadJson: string;
 };
 
 function mapJob(row: JobRow): JobRecord {
   return {
     id: row.id as JobId,
     bookId: row.bookId as BreakdownBookId | null,
-    kind: row.kind,
+    kind: parseJobType(row.kind, row.id),
     state: row.state,
     completedUnits: row.completedUnits,
     totalUnits: row.totalUnits,
     payloadSchemaVersion: row.payloadSchemaVersion,
-    payload: JSON.parse(row.payloadJson),
+    payload: parsePersistedJson(row.payloadJson, row.id, 'payload_json'),
     errorCode: row.errorCode,
-    errorDetails: row.errorDetailsJson === null ? null : JSON.parse(row.errorDetailsJson),
+    errorDetails: row.errorDetailsJson === null
+      ? null
+      : parsePersistedJson(row.errorDetailsJson, row.id, 'error_details_json'),
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
+}
+
+function mapCheckpoint(row: JobCheckpointRow): JobCheckpointRecord {
+  return {
+    id: row.id,
+    jobId: row.jobId as JobId,
+    sequence: row.sequence,
+    kind: row.kind,
+    payloadSchemaVersion: row.payloadSchemaVersion,
+    payload: parsePersistedJson(row.payloadJson, row.id, 'payload_json'),
+    createdAt: row.createdAt,
+  };
+}
+
+function parseJobType(kind: string, recordId: string): JobType {
+  if (!JOB_TYPES.includes(kind as JobType)) {
+    throw new JobRepositoryError('invalid_persisted_job_type', recordId, 'kind');
+  }
+  return kind as JobType;
+}
+
+function parsePersistedJson(
+  json: string,
+  recordId: string,
+  field: 'payload_json' | 'error_details_json',
+): unknown {
+  try {
+    return JSON.parse(json);
+  } catch {
+    throw new JobRepositoryError('invalid_persisted_json', recordId, field);
+  }
 }

@@ -5,7 +5,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { APP_MIGRATIONS } from '../../../src/main/db/migrations';
 import { runMigrations } from '../../../src/main/db/migration-runner';
 import { openSqliteDatabase, type SqliteDatabase } from '../../../src/main/db/sqlite';
-import { JobService } from '../../../src/main/jobs/job-service';
+import {
+  JobService,
+  type CreateQueuedJobInput,
+} from '../../../src/main/jobs/job-service';
 import type { BreakdownBookId, JobId, SourceTextId } from '../../../src/shared/domain';
 
 const tempDirs: string[] = [];
@@ -222,7 +225,7 @@ describe('JobService', () => {
   });
 });
 
-function sourceImportJob() {
+function sourceImportJob(): CreateQueuedJobInput {
   return {
     id: jobId,
     bookId: null,

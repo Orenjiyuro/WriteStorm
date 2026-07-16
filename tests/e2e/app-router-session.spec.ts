@@ -43,6 +43,16 @@ test('does not display Library A module instances after an in-place switch to Li
 
     await expect(page.getByText('Library A', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Review structure' }).click();
+    const jobRecoveryPanel = page.locator('.job-recovery-panel');
+    await expect(jobRecoveryPanel).toContainText('0 jobs');
+    await expect(jobRecoveryPanel.locator('[data-not-job="true"]')).toHaveCount(1);
+    await expect(jobRecoveryPanel).toContainText('Export readiness (not a Job)');
+    await expect(jobRecoveryPanel).toContainText('Markdown package');
+    await expect(jobRecoveryPanel).toContainText('Blocked');
+    await expect(jobRecoveryPanel).toContainText('Machine package');
+    await expect(jobRecoveryPanel).toContainText('Unavailable');
+    await expect(jobRecoveryPanel).toContainText('analysis_module_not_generated');
+    await expect(jobRecoveryPanel.locator('.job-recovery-list')).toHaveCount(0);
     const workbench = page.locator('.analysis-module-workbench');
     await expect(workbench.locator('.analysis-module-list > li')).toHaveCount(7);
     await expect(workbench).toContainText('Not generated');
@@ -56,6 +66,10 @@ test('does not display Library A module instances after an in-place switch to Li
     await expect(page.getByText('Session A book', { exact: true })).toHaveCount(0);
     await expect(workbench).toHaveCount(0);
     await page.getByRole('button', { name: 'Review structure' }).click();
+    await expect(jobRecoveryPanel.locator('[data-not-job="true"]')).toHaveCount(1);
+    await expect(jobRecoveryPanel).toContainText('analysis_module_needs_rebuild');
+    await expect(jobRecoveryPanel).not.toContainText('analysis_module_not_generated');
+    await expect(jobRecoveryPanel.locator('.job-recovery-list')).toHaveCount(0);
     const libraryBWorkbench = page.locator('.analysis-module-workbench');
     await expect(libraryBWorkbench.locator('.analysis-module-list > li')).toHaveCount(7);
     await expect(libraryBWorkbench).toContainText('Needs rebuild');

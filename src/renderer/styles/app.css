@@ -420,6 +420,82 @@ body {
   color: #8b2929;
 }
 
+.job-export-readiness {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid #d7e0e8;
+  padding-top: 14px;
+}
+
+.job-export-readiness > header,
+.job-export-readiness li > span {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.job-export-readiness .readout-label,
+.job-export-readiness h3,
+.job-export-readiness-state,
+.job-export-readiness-error {
+  margin: 0;
+}
+
+.job-export-readiness > header > strong {
+  color: #52616f;
+  font-size: 0.82rem;
+}
+
+.job-export-readiness ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.job-export-readiness li {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #d7e0e8;
+  border-radius: 8px;
+  background: #fbfcfd;
+  padding: 10px 12px;
+}
+
+.job-export-readiness code {
+  color: #52616f;
+  font-size: 0.76rem;
+  overflow-wrap: anywhere;
+}
+
+.job-export-availability {
+  border: 1px solid #d3b36c;
+  border-radius: 999px;
+  background: #fff8e6;
+  color: #72540d;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 3px 7px;
+  white-space: nowrap;
+}
+
+.job-export-availability[data-availability="unavailable"] {
+  border-color: #aebbc6;
+  background: #eef2f5;
+  color: #52616f;
+}
+
+.job-export-readiness-state {
+  color: #52616f;
+}
+
+.job-export-readiness-error {
+  color: #8b2929;
+}
+
 .structure-review-panel {
   display: grid;
   gap: 14px;
@@ -721,14 +797,162 @@ body {
   margin: 0;
 }
 
+.export-status-panel {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  border: 1px solid #d7e0e8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.export-status-header,
+.export-target-card > header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.export-status-header .eyebrow {
+  margin-bottom: 6px;
+}
+
+.export-status-header > span,
+.export-disabled-reason,
+.export-status-state {
+  color: #52616f;
+  font-size: 0.82rem;
+}
+
+.export-status-state,
+.export-status-error,
+.export-disabled-reason,
+.export-exclusions p {
+  margin: 0;
+}
+
+.export-status-error {
+  color: #8b2929;
+}
+
+.export-target-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.export-target-card {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  border: 1px solid #d7e0e8;
+  border-radius: 8px;
+  background: #fbfcfd;
+  padding: 14px;
+}
+
+.export-target-card h3,
+.export-target-card h4,
+.export-exclusions h3 {
+  margin: 0;
+}
+
+.export-availability {
+  border: 1px solid #d3b36c;
+  border-radius: 999px;
+  background: #fff8e6;
+  color: #72540d;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  text-transform: uppercase;
+}
+
+.export-availability[data-availability="unavailable"] {
+  border-color: #b8c5cf;
+  background: #eef2f5;
+  color: #52616f;
+}
+
+.export-target-card dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.export-target-card dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.export-target-card dt {
+  color: #52616f;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.export-target-card dd {
+  margin: 0;
+  text-align: right;
+}
+
+.export-blockers,
+.export-exclusions {
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid #e3e9ee;
+  padding-top: 12px;
+}
+
+.export-blockers ul,
+.export-exclusions ul {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.export-blockers li,
+.export-exclusions li {
+  display: grid;
+  gap: 3px;
+}
+
+.export-blockers li span,
+.export-exclusions li span {
+  font-size: 0.88rem;
+}
+
+.export-blockers code,
+.export-exclusions code {
+  overflow-wrap: anywhere;
+}
+
+.export-target-card button {
+  min-height: 36px;
+  border: 1px solid #b8c5cf;
+  border-radius: 8px;
+  background: #eef2f5;
+  color: #667785;
+  cursor: not-allowed;
+  font: inherit;
+  font-weight: 700;
+  padding: 7px 12px;
+}
+
 @media (max-width: 720px) {
   .job-recovery-layout,
   .job-recovery-detail dl,
   .job-checkpoints li,
   .job-recovery-actions li,
-  .analysis-workbench-layout,
-  .analysis-module-detail dl,
-  .analysis-module-actions li {
+    .analysis-workbench-layout,
+    .analysis-module-detail dl,
+    .analysis-module-actions li,
+    .export-target-grid {
     grid-template-columns: 1fr;
   }
 }

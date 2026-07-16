@@ -4,6 +4,7 @@ import type { StructureWorkspace } from '../../../shared/contracts/structure';
 import type { WritestormApi } from '../../../shared/contracts/preload-api';
 import { jobKeys } from '../job-recovery/job-queries';
 import { moduleInstanceKeys } from '../module-workbench/module-instance-queries';
+import { exportStatusKeys } from '../export-status/export-status-queries';
 
 export const structureKeys = {
   workspace: (sessionId: string, bookId: string) =>
@@ -93,10 +94,19 @@ export function createStructureActionMutationOptions(
       if (!response.ok) throw response.error;
     },
     onSuccess: async (_data, action, _context, mutation) => {
-      if (action.type !== 'freeze') return;
-      await (mutation.client as QueryClient).invalidateQueries({
-        queryKey: moduleInstanceKeys.instances(sessionId, bookId),
-      });
+      const queryClient = mutation.client as QueryClient;
+      const invalidations: Promise<unknown>[] = [];
+      if (action.type === 'freeze') {
+        invalidations.push(queryClient.invalidateQueries({
+          queryKey: moduleInstanceKeys.instances(sessionId, bookId),
+        }));
+      }
+      if (action.type === 'freeze' || action.type === 'unfreeze') {
+        invalidations.push(queryClient.invalidateQueries({
+          queryKey: exportStatusKeys.status(sessionId, bookId),
+        }));
+      }
+      await Promise.all(invalidations);
     },
     onSettled: async (_data, _error, _action, _context, mutation) => {
       const queryClient = mutation.client as QueryClient;

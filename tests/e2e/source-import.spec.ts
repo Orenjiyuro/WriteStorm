@@ -59,6 +59,22 @@ test('imports a txt/md source through the packaged desktop entry using a main-pr
     await expect(page.getByText('Source imported.')).toBeVisible();
     const jobPanel = page.getByRole('region', { name: 'Jobs & recovery' });
     await expect(jobPanel).toBeVisible();
+    const exportPanel = page.getByRole('region', { name: 'Export readiness', exact: true });
+    await expect(exportPanel).toBeVisible();
+    await expect(exportPanel).toContainText('Markdown package');
+    await expect(exportPanel).toContainText('Blocked');
+    await expect(exportPanel).toContainText('Machine package');
+    await expect(exportPanel).toContainText('Unavailable');
+    await expect(exportPanel).toContainText('structure_not_frozen');
+    await expect(exportPanel).toContainText('export_execution_not_admitted');
+    await expect(exportPanel.getByRole('button', { name: 'Export unavailable' })).toHaveCount(2);
+    await expect(exportPanel.getByRole('button', { name: 'Export unavailable' }).first())
+      .toBeDisabled();
+    const exportJobSummary = jobPanel.locator('[data-not-job="true"]');
+    await expect(exportJobSummary).toContainText('Export readiness (not a Job)');
+    await expect(exportJobSummary).toContainText('structure_not_frozen');
+    await expect(jobPanel.locator('.job-recovery-list button').filter({ hasText: 'Export' }))
+      .toHaveCount(0);
     const completedImport = jobPanel.locator('.job-recovery-list button')
       .filter({ hasText: 'Import source' }).filter({ hasText: 'COMPLETED' });
     await expect(completedImport).toHaveCount(1);
@@ -90,6 +106,7 @@ test('imports a txt/md source through the packaged desktop entry using a main-pr
     await expect(jobPanel.getByText('analysis_module_shell_creation_completed')).toBeVisible();
     await page.screenshot({ path: path.join(evidenceRoot, 'frozen.png'), fullPage: true });
   });
+  expect(exportJobCount(libraryRoot)).toBe(0);
 
   insertRecoveryUiFixtures(libraryRoot);
   const abandonedImportStaging = path.join(
@@ -566,6 +583,22 @@ function readImportRows(libraryRoot: string): {
         relative_path: string;
       }>,
     };
+  } finally {
+    database.close();
+  }
+}
+
+function exportJobCount(libraryRoot: string): number {
+  const database = new Database(path.join(libraryRoot, 'writestorm.sqlite'), {
+    readonly: true,
+    fileMustExist: true,
+  });
+  try {
+    return database.prepare(`
+      SELECT COUNT(*)
+      FROM jobs
+      WHERE kind = 'export'
+    `).pluck().get() as number;
   } finally {
     database.close();
   }

@@ -5,6 +5,7 @@ import type {
   ImportSourceResult,
   LibrarySessionSummary,
   ModuleInstanceSummary,
+  ExportStatusDto,
 } from '../../shared/contracts';
 import { rendererText } from '../i18n';
 import {
@@ -19,6 +20,7 @@ import {
   JobRecoveryPanel,
   type JobRecoveryPanelProps,
 } from '../features/job-recovery/JobRecoveryPanel';
+import { ExportStatusPanel } from '../features/export-status/ExportStatusPanel';
 
 export type LastImportPresentation = {
   readonly sessionId: string;
@@ -32,6 +34,9 @@ export type BreakdownShelfRouteProps = {
   readonly lastImport: LastImportPresentation | null;
   readonly failure: SourceImportFailureViewModel | null;
   readonly openedBook: BookSummary | null;
+  readonly exportStatus?: ExportStatusDto | null;
+  readonly exportStatusLoading?: boolean;
+  readonly exportStatusError?: string | null;
   readonly structureWorkspace: StructureWorkspace | null;
   readonly structureLoading: boolean;
   readonly structureActionPending: boolean;
@@ -122,6 +127,11 @@ export function BreakdownShelfRoute(props: BreakdownShelfRouteProps): ReactEleme
         />
         {props.openedBook ? (
           <>
+            <ExportStatusPanel
+              status={props.exportStatus ?? null}
+              loading={props.exportStatusLoading ?? props.exportStatus === undefined}
+              error={props.exportStatusError ?? null}
+            />
             <StructureReviewPanel
               book={props.openedBook}
               workspace={props.structureWorkspace}

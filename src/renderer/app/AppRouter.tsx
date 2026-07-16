@@ -27,6 +27,9 @@ import {
   jobListQueryOptions,
 } from '../features/job-recovery/job-queries';
 import {
+  exportStatusQueryOptions,
+} from '../features/export-status/export-status-queries';
+import {
   createSourceImportFailureViewModel,
   type SourceImportFailureAction,
   type SourceImportFailureViewModel,
@@ -134,6 +137,14 @@ export function AppRouter(props: AppRouterProps = {}): ReactElement {
       structureWorkspaceQuery.data?.frozen !== null &&
       structureWorkspaceQuery.data?.frozen !== undefined,
   });
+  const exportStatusQuery = useQuery({
+    ...exportStatusQueryOptions(
+      currentLibrary?.sessionId ?? 'no-library-session',
+      openedBook?.id ?? ('00000000-0000-4000-8000-000000000000' as BookSummary['id']),
+      queryApi,
+    ),
+    enabled: rendererApi !== null && currentLibrary !== null && openedBook !== null,
+  });
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -239,6 +250,9 @@ export function AppRouter(props: AppRouterProps = {}): ReactElement {
       lastImport={lastImport}
       failure={sourceImportFailure}
       openedBook={openedBook}
+      exportStatus={exportStatusQuery.data ?? null}
+      exportStatusLoading={exportStatusQuery.isLoading}
+      exportStatusError={getQueryErrorMessage(exportStatusQuery.error)}
       structureWorkspace={structureWorkspaceQuery.data ?? null}
       structureLoading={structureWorkspaceQuery.isLoading}
       structureActionPending={structureActionMutation.isPending}
@@ -248,6 +262,12 @@ export function AppRouter(props: AppRouterProps = {}): ReactElement {
       moduleInstancesError={getQueryErrorMessage(moduleInstancesQuery.error)}
       jobRecovery={{
         jobs: jobsQuery.data ?? [],
+        exportReadiness: openedBook ? {
+          bookTitle: openedBook.title,
+          status: exportStatusQuery.data ?? null,
+          loading: exportStatusQuery.isLoading,
+          error: getQueryErrorMessage(exportStatusQuery.error),
+        } : null,
         selectedJobId,
         detail: jobDetailQuery.data ?? null,
         loading: jobsQuery.isLoading,

@@ -70,6 +70,20 @@ describe('IPC boundary consistency gate', () => {
     expect(typeGate).toBe(true);
   });
 
+  it('exposes exports:get-status only through the typed preload method', async () => {
+    const calls: unknown[] = [];
+    const api = createWritestormPreloadApi(async (channel, request) => {
+      calls.push([channel, request]);
+      return {
+        ok: false,
+        error: createNotImplementedError(channel),
+      };
+    });
+
+    await api.exports.getStatus({ bookId });
+    expect(calls).toEqual([['exports:get-status', { bookId }]]);
+  });
+
   it('keeps the registry allowlist and preload product methods in lockstep', async () => {
     const calls: Array<{ channel: ProductIpcChannel; request: unknown }> = [];
     const api = createWritestormPreloadApi(async (channel, request) => {

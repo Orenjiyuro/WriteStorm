@@ -9,6 +9,7 @@ import {
   createStructureDetectionIpcDependencies,
   createStructureReviewIpcDependencies,
   createAnalysisModuleInstanceIpcDependencies,
+  createExportStatusIpcDependencies,
   createJobIpcDependencies,
   createTrustedDevServerOrigins,
   registerProductIpc,
@@ -43,6 +44,7 @@ import {
 import { AnalysisModuleInstanceEditionChangePort } from './modules/analysis-module-instance-edition-change-port';
 import { AnalysisModuleInstanceService } from './modules/analysis-module-instance-service';
 import { JobApplicationService } from './jobs/job-application-service';
+import { ExportStatusService } from './exports/export-status-service';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -68,6 +70,7 @@ const structureWorkerRunner = createElectronStructureWorkerRunner(__dirname, {
 });
 const moduleInstanceEditionChangePort = new AnalysisModuleInstanceEditionChangePort();
 const moduleInstanceService = new AnalysisModuleInstanceService({ libraryService });
+const exportStatusService = new ExportStatusService({ libraryService });
 const structureService = new StructureService({
   libraryService,
   worker: structureWorkerRunner,
@@ -389,6 +392,7 @@ app.whenReady().then(async () => {
     },
     modules: createAnalysisModuleInstanceIpcDependencies(moduleInstanceService),
     jobs: createJobIpcDependencies(jobApplicationService),
+    exports: createExportStatusIpcDependencies(exportStatusService),
   });
   await createWindow();
   await runOptionalNativeSqliteProbe();

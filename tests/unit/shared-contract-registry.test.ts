@@ -24,7 +24,6 @@ import type {
   AnalysisModuleId,
   AnalysisModuleInstanceId,
   BreakdownBookId,
-  ExportId,
   JobId,
   LibraryId,
   SourceTextId,
@@ -64,7 +63,6 @@ const rangeId = 'range-1' as StorySegmentRangeId;
 const moduleId = 'module-1' as AnalysisModuleId;
 const instanceId = 'instance-1' as AnalysisModuleInstanceId;
 const jobId = 'job-1' as JobId;
-const exportId = 'export-1' as ExportId;
 
 const bookSummary = {
   id: bookId,
@@ -509,12 +507,102 @@ describe('shared contract registry', () => {
       getContract('exports:get-status').response.parse({
         ok: true,
         data: {
-          exportId,
           bookId,
-          availability: 'blocked',
-          blockers: ['missing_confirmed_modules'],
-          latestJobId: jobId,
-          updatedAt: '2026-07-07T00:00:00.000Z',
+          targets: [
+            {
+              kind: 'markdown_package',
+              availability: 'blocked',
+              blockers: [
+                'export_execution_not_admitted',
+                'structure_not_frozen',
+                'review_asset_owner_unavailable',
+                'evidence_anchor_owner_unavailable',
+                'technique_asset_owner_unavailable',
+                'perspective_view_owner_unavailable',
+                'completion_gate_owner_unavailable',
+              ],
+              preview: {
+                structure: { status: 'not_frozen', structureEdition: null },
+                moduleInstances: {
+                  expectedCount: 7,
+                  actualCount: 0,
+                  nonEmptyBodyCount: 0,
+                  statusCounts: {
+                    not_generated: 0,
+                    generated_pending_review: 0,
+                    confirmed: 0,
+                    stale: 0,
+                    needs_rebuild: 0,
+                  },
+                },
+              },
+            },
+            {
+              kind: 'machine_package',
+              availability: 'unavailable',
+              blockers: [
+                'export_execution_not_admitted',
+                'structure_not_frozen',
+                'review_asset_owner_unavailable',
+                'evidence_anchor_owner_unavailable',
+                'technique_asset_owner_unavailable',
+                'perspective_view_owner_unavailable',
+                'completion_gate_owner_unavailable',
+              ],
+              preview: {
+                structure: { status: 'not_frozen', structureEdition: null },
+                moduleInstances: {
+                  expectedCount: 7,
+                  actualCount: 0,
+                  nonEmptyBodyCount: 0,
+                  statusCounts: {
+                    not_generated: 0,
+                    generated_pending_review: 0,
+                    confirmed: 0,
+                    stale: 0,
+                    needs_rebuild: 0,
+                  },
+                },
+              },
+            },
+          ],
+          owners: [
+            { ownerKind: 'book', availability: 'available', reason: null },
+            { ownerKind: 'structure', availability: 'available', reason: null },
+            { ownerKind: 'analysis_modules', availability: 'available', reason: null },
+            {
+              ownerKind: 'review_assets',
+              availability: 'unavailable',
+              reason: 'review_asset_owner_unavailable',
+            },
+            {
+              ownerKind: 'evidence_anchors',
+              availability: 'unavailable',
+              reason: 'evidence_anchor_owner_unavailable',
+            },
+            {
+              ownerKind: 'technique_assets',
+              availability: 'unavailable',
+              reason: 'technique_asset_owner_unavailable',
+            },
+            {
+              ownerKind: 'perspective_views',
+              availability: 'unavailable',
+              reason: 'perspective_view_owner_unavailable',
+            },
+            {
+              ownerKind: 'completion_gate',
+              availability: 'unavailable',
+              reason: 'completion_gate_owner_unavailable',
+            },
+          ],
+          excludedContent: [
+            'credentials',
+            'authentication_tokens',
+            'secret_keys',
+            'secure_storage',
+            'full_sensitive_logs',
+          ],
         },
       }).ok,
     ).toBe(true);

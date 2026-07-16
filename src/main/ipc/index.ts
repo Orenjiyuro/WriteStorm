@@ -24,6 +24,11 @@ export type {
 } from '../modules/analysis-module-instance-ipc';
 export { createJobIpcDependencies } from '../jobs/job-ipc';
 export type { JobIpcDependencies, JobIpcService } from '../jobs/job-ipc';
+export { createExportStatusIpcDependencies } from '../exports/export-status-ipc';
+export type {
+  ExportStatusIpcDependencies,
+  ExportStatusIpcService,
+} from '../exports/export-status-ipc';
 export {
   registerTypedIpcHandler,
   registerTypedIpcHandlers,

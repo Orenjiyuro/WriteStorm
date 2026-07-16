@@ -1,5 +1,9 @@
 import type { ReactElement } from 'react';
-import type { JobDetail, JobSummary } from '../../../shared/contracts';
+import type {
+  ExportStatusDto,
+  JobDetail,
+  JobSummary,
+} from '../../../shared/contracts';
 import {
   JOB_CAPABILITIES,
   canTransitionJob,
@@ -16,6 +20,12 @@ export type JobRecoveryPanelProps = {
   readonly error: string | null;
   readonly cancelPending: boolean;
   readonly bookTitles?: Readonly<Record<string, string>>;
+  readonly exportReadiness?: {
+    readonly bookTitle: string;
+    readonly status: ExportStatusDto | null;
+    readonly loading: boolean;
+    readonly error: string | null;
+  } | null;
   readonly onSelectJob: (jobId: JobId) => void;
   readonly onCancelJob: (jobId: JobId) => void;
 };
@@ -42,6 +52,55 @@ export function JobRecoveryPanel(props: JobRecoveryPanelProps): ReactElement {
           <JobList {...props} />
           <JobDetailPanel {...props} />
         </div>
+      )}
+      {props.exportReadiness ? (
+        <ExportReadinessSummary {...props.exportReadiness} />
+      ) : null}
+    </section>
+  );
+}
+
+function ExportReadinessSummary(
+  summary: NonNullable<JobRecoveryPanelProps['exportReadiness']>,
+): ReactElement {
+  const text = rendererText.jobRecovery.exportReadiness;
+
+  return (
+    <section
+      className="job-export-readiness"
+      aria-labelledby="job-export-readiness-title"
+      data-not-job="true"
+    >
+      <header>
+        <div>
+          <p className="readout-label">{text.eyebrow}</p>
+          <h3 id="job-export-readiness-title">{text.title}</h3>
+        </div>
+        <strong>{summary.bookTitle}</strong>
+      </header>
+      {summary.error ? (
+        <p className="job-export-readiness-error" role="alert">{summary.error}</p>
+      ) : summary.loading ? (
+        <p className="job-export-readiness-state" role="status">{text.loading}</p>
+      ) : summary.status === null ? (
+        <p className="job-export-readiness-state">{text.unavailable}</p>
+      ) : (
+        <ul aria-label={text.targetListLabel}>
+          {summary.status.targets.map((target) => (
+            <li key={target.kind}>
+              <span>
+                <strong>{rendererText.exportStatus.targetLabels[target.kind]}</strong>
+                <span
+                  className="job-export-availability"
+                  data-availability={target.availability}
+                >
+                  {rendererText.exportStatus.availabilityLabels[target.availability]}
+                </span>
+              </span>
+              <code>{target.blockers.join(', ')}</code>
+            </li>
+          ))}
+        </ul>
       )}
     </section>
   );

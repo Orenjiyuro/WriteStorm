@@ -20,6 +20,9 @@ import {
   moduleInstancesQueryOptions,
 } from '../../src/renderer/features/module-workbench/module-instance-queries';
 import {
+  exportStatusKeys,
+} from '../../src/renderer/features/export-status/export-status-queries';
+import {
   createStructureActionMutationOptions,
   structureKeys,
 } from '../../src/renderer/features/structure-review/structure-queries';
@@ -88,6 +91,9 @@ describe('renderer module instance queries', () => {
     expect(invalidateQueries).toHaveBeenCalledWith({
       queryKey: moduleInstanceKeys.instances(sessionB, bookId),
     });
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: exportStatusKeys.status(sessionB, bookId),
+    });
   });
 
   it('does not invalidate module instances when freeze fails', async () => {
@@ -117,6 +123,34 @@ describe('renderer module instance queries', () => {
 
     expect(invalidateQueries).toHaveBeenCalledWith({
       queryKey: structureKeys.workspace(sessionB, bookId),
+    });
+    expect(invalidateQueries).not.toHaveBeenCalledWith({
+      queryKey: moduleInstanceKeys.instances(sessionB, bookId),
+    });
+  });
+
+  it('refreshes Export readiness after unfreeze without touching module instances', async () => {
+    const queryClient = createQueryClient();
+    const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
+    const mutation = queryClient.getMutationCache().build(
+      queryClient,
+      createStructureActionMutationOptions(sessionB, bookId, structureApi({
+        unfreeze: async () => ({
+          ok: true,
+          data: {
+            id: 'draft-after-unfreeze',
+          } as never,
+        }),
+      })),
+    );
+
+    await mutation.execute({
+      type: 'unfreeze',
+      frozenSetId: 'frozen-module-query' as StructureSetId,
+    });
+
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: exportStatusKeys.status(sessionB, bookId),
     });
     expect(invalidateQueries).not.toHaveBeenCalledWith({
       queryKey: moduleInstanceKeys.instances(sessionB, bookId),
@@ -172,9 +206,9 @@ function createQueryClient(): QueryClient {
   });
 }
 
-function structureApi(overrides: {
-  readonly freeze: WritestormApi['structure']['freeze'];
-}): Pick<WritestormApi, 'structure'> {
+function structureApi(
+  overrides: Partial<WritestormApi['structure']>,
+): Pick<WritestormApi, 'structure'> {
   const unavailable = async () => { throw new Error('not configured'); };
   return {
     structure: {
@@ -186,8 +220,8 @@ function structureApi(overrides: {
       discardDraft: unavailable,
       updateNode: unavailable,
       updateStoryRange: unavailable,
-      freeze: overrides.freeze,
-      unfreeze: unavailable,
+      freeze: overrides.freeze ?? unavailable,
+      unfreeze: overrides.unfreeze ?? unavailable,
     },
   };
 }

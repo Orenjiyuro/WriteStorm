@@ -77,7 +77,18 @@ export {
   updateModuleBodyRequestSchema,
 } from './modules';
 export type { ModuleInstanceSummary } from './modules';
-export { exportStatusSchema } from './exports';
+export {
+  exportAvailabilitySchema,
+  exportExcludedContentKindSchema,
+  exportOwnerAvailabilitySchema,
+  exportOwnerKindSchema,
+  exportOwnerParticipationSchema,
+  exportRuntimeBlockerCodeSchema,
+  exportStatusSchema,
+  exportTargetKindSchema,
+  exportTargetPreviewSchema,
+  exportTargetStatusSchema,
+} from './exports';
 export type { ExportStatusDto } from './exports';
 export {
   candidateStructureSetSchema,

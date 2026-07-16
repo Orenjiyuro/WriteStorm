@@ -5,6 +5,7 @@ import { activateLibrarySession } from '../../../src/renderer/features/library/l
 import { moduleInstanceKeys } from '../../../src/renderer/features/module-workbench/module-instance-queries';
 import type {
   BookSummary,
+  ExportStatusDto,
   LibrarySessionSummary,
   ModuleInstanceSummary,
 } from '../../../src/shared/contracts';
@@ -12,6 +13,9 @@ import type { WritestormApi } from '../../../src/shared/contracts/preload-api';
 import type { StructureWorkspace } from '../../../src/shared/contracts/structure';
 import {
   ANALYSIS_MODULE_DEFINITIONS,
+  EXPORT_EXCLUDED_CONTENT_KINDS,
+  EXPORT_OWNER_RUNTIME_POLICY,
+  EXPORT_OWNER_UNAVAILABLE_BLOCKER_CODES,
   type AnalysisModuleInstanceId,
   type BreakdownBookId,
   type LibraryId,
@@ -69,8 +73,14 @@ const api = {
     }),
     updateBody: unavailable,
   },
-  jobs: { list: unavailable, get: unavailable, cancel: unavailable },
-  exports: { getStatus: unavailable },
+  jobs: {
+    list: async () => ({ ok: true as const, data: [] }),
+    get: unavailable,
+    cancel: unavailable,
+  },
+  exports: {
+    getStatus: async () => ({ ok: true as const, data: exportStatus() }),
+  },
 } as unknown as WritestormApi;
 
 Object.assign(window, {
@@ -160,4 +170,51 @@ function moduleInstances(
     analysisRevision: 0,
     updatedAt: '2026-07-16T00:00:00.000Z',
   }));
+}
+
+function exportStatus(): ExportStatusDto {
+  const preview: ExportStatusDto['targets'][number]['preview'] = {
+    structure: { status: 'frozen', structureEdition: 1 },
+    moduleInstances: {
+      expectedCount: 7,
+      actualCount: 7,
+      nonEmptyBodyCount: 0,
+      statusCounts: {
+        not_generated: activeLibrary.sessionId === libraryA.sessionId ? 7 : 0,
+        generated_pending_review: 0,
+        confirmed: 0,
+        stale: 0,
+        needs_rebuild: activeLibrary.sessionId === libraryB.sessionId ? 7 : 0,
+      },
+    },
+  };
+  const contentBlocker = activeLibrary.sessionId === libraryA.sessionId
+    ? 'analysis_module_not_generated' as const
+    : 'analysis_module_needs_rebuild' as const;
+  const blockers: ExportStatusDto['targets'][number]['blockers'] = [
+    'export_execution_not_admitted',
+    contentBlocker,
+    'analysis_module_body_missing',
+    ...EXPORT_OWNER_UNAVAILABLE_BLOCKER_CODES,
+  ];
+
+  return {
+    bookId,
+    targets: [
+      {
+        kind: 'markdown_package',
+        availability: 'blocked',
+        blockers,
+        preview,
+      },
+      {
+        kind: 'machine_package',
+        availability: 'unavailable',
+        blockers,
+        preview,
+      },
+    ],
+    owners: [...EXPORT_OWNER_RUNTIME_POLICY],
+    excludedContent: [...EXPORT_EXCLUDED_CONTENT_KINDS],
+  };
 }

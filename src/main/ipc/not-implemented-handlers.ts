@@ -19,6 +19,7 @@ import type { StructureDetectionIpcDependencies } from '../structure/structure-d
 import type { StructureReviewIpcDependencies } from '../structure/structure-review-ipc';
 import type { AnalysisModuleInstanceIpcDependencies } from '../modules/analysis-module-instance-ipc';
 import type { JobIpcDependencies } from '../jobs/job-ipc';
+import type { ExportStatusIpcDependencies } from '../exports/export-status-ipc';
 import {
   registerTypedIpcHandlers,
   type IpcMainLike,
@@ -72,6 +73,7 @@ export type ProductIpcRegistrationOptions = {
   readonly structure?: StructureDetectionIpcDependencies & StructureReviewIpcDependencies;
   readonly modules?: AnalysisModuleInstanceIpcDependencies;
   readonly jobs?: JobIpcDependencies;
+  readonly exports?: ExportStatusIpcDependencies;
 };
 
 export function registerNotImplementedProductIpcHandlers(
@@ -119,6 +121,15 @@ function createProductHandlers(options: ProductIpcRegistrationOptions): TypedIpc
     ...(options.structure ? createStructureProductHandlers(options.structure) : {}),
     ...(options.modules ? createModuleProductHandlers(options.modules) : {}),
     ...(options.jobs ? createJobProductHandlers(options.jobs) : {}),
+    ...(options.exports ? createExportProductHandlers(options.exports) : {}),
+  };
+}
+
+function createExportProductHandlers(
+  exports: ExportStatusIpcDependencies,
+): TypedIpcHandlerMap {
+  return {
+    'exports:get-status': (request) => exports['exports:get-status'](request),
   };
 }
 

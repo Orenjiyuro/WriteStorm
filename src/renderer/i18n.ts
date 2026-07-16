@@ -1,3 +1,10 @@
+import type {
+  ExportAvailability,
+  ExportExcludedContentKind,
+  ExportRuntimeBlockerCode,
+  ExportTargetKind,
+} from '../shared/domain';
+
 export const rendererLocale = 'en-US';
 
 export const rendererFormats = {
@@ -75,6 +82,13 @@ export const rendererText = {
       analysis_module_shell_creation: 'Analysis module shell creation',
       analysis_module_instance_analysis: 'Analysis module instance analysis',
       export: 'Export',
+    },
+    exportReadiness: {
+      eyebrow: 'Opened Book status only',
+      title: 'Export readiness (not a Job)',
+      loading: 'Loading export readiness…',
+      unavailable: 'Export readiness is unavailable for this Book.',
+      targetListLabel: 'Export target readiness',
     },
   },
   structureReview: {
@@ -183,6 +197,54 @@ export const rendererText = {
       stale: 'Stale',
       needs_rebuild: 'Needs rebuild',
     },
+  },
+  exportStatus: {
+    eyebrow: 'Opened book',
+    title: 'Export readiness',
+    notAJob: 'Status only · not a Job',
+    loading: 'Loading export readiness…',
+    unavailable: 'Export readiness is unavailable for this Book.',
+    targetLabels: {
+      markdown_package: 'Markdown package',
+      machine_package: 'Machine package',
+    } satisfies Record<ExportTargetKind, string>,
+    availabilityLabels: {
+      blocked: 'Blocked',
+      unavailable: 'Unavailable',
+    } satisfies Record<ExportAvailability, string>,
+    structure: 'Structure',
+    notFrozenStructure: 'Not frozen',
+    frozenStructure: (edition: number) => `Frozen edition ${edition}`,
+    moduleBodies: 'Module bodies',
+    moduleBodiesSummary: (nonEmpty: number, actual: number, expected: number) =>
+      `${nonEmpty} non-empty · ${actual} present · ${expected} expected`,
+    blockers: 'Blockers',
+    blockerLabels: {
+      export_execution_not_admitted: 'Export execution is not admitted in Block 11.',
+      structure_not_frozen: 'The Book structure is not frozen.',
+      analysis_module_not_generated: 'At least one analysis module is not generated.',
+      analysis_module_pending_review: 'At least one analysis module is pending review.',
+      analysis_module_stale: 'At least one analysis module is stale.',
+      analysis_module_needs_rebuild: 'At least one analysis module needs rebuild.',
+      analysis_module_body_missing: 'At least one admitted module body is empty.',
+      review_asset_owner_unavailable: 'Review assets are not admitted yet.',
+      evidence_anchor_owner_unavailable: 'Evidence anchors are not admitted yet.',
+      technique_asset_owner_unavailable: 'Technique assets are not admitted yet.',
+      perspective_view_owner_unavailable: 'Perspective views are not admitted yet.',
+      completion_gate_owner_unavailable: 'The completion gate is not admitted yet.',
+    } satisfies Record<ExportRuntimeBlockerCode, string>,
+    execute: 'Export unavailable',
+    executionDisabled: 'Disabled: Block 11 exposes read-only readiness and never creates an export Job.',
+    excludedContent: 'Excluded content',
+    excludedContentDescription:
+      'These sensitive content classes are never read for preview and never participate beyond this exclusion marker.',
+    excludedContentLabels: {
+      credentials: 'Credentials',
+      authentication_tokens: 'Authentication tokens',
+      secret_keys: 'Secret keys',
+      secure_storage: 'Secure storage',
+      full_sensitive_logs: 'Full sensitive logs',
+    } satisfies Record<ExportExcludedContentKind, string>,
   },
   sourceImport: {
     button: 'Import source',

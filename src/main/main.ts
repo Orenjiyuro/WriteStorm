@@ -95,6 +95,7 @@ const books = createBookImportIpcDependencies({
   showOpenDialog: (options) => dialog.showOpenDialog(options),
 });
 const mainLifecycle = createMainLifecycleCoordinator({
+  jobs: jobApplicationService,
   structure: structureService,
   disposeStructureWorker: () => structureWorkerRunner.dispose(),
   clearPendingImports: () => books.clearPendingImports(),
@@ -366,7 +367,10 @@ app.whenReady().then(async () => {
   registerProductIpc(ipcMain, MAIN_WINDOW_VITE_DEV_SERVER_URL, {
     senderPolicy: productSenderPolicy.isTrustedSender,
     beforeLibrarySessionChange: prepareForLibrarySessionChange,
-    afterLibrarySessionChange: () => sourceImportService.resumeImports(),
+    afterLibrarySessionChange: () => {
+      sourceImportService.resumeImports();
+      jobApplicationService.resumeCancellations();
+    },
     afterLibrarySessionActivated: async () => {
       await sourceImportService.recoverAbandonedImports();
     },

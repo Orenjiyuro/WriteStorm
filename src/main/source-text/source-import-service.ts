@@ -346,7 +346,10 @@ export class SourceImportService {
     this.pendingImports.clearAll();
   }
 
-  async cancelImport(jobId: JobId): Promise<boolean> {
+  async cancelImport(jobId: JobId, expectedSessionId?: string): Promise<boolean> {
+    if (expectedSessionId && this.libraryService.getCurrent()?.sessionId !== expectedSessionId) {
+      throw new LibraryUnitOfWorkError('LIBRARY_SESSION_CHANGED');
+    }
     const active = this.activeImports.get(jobId);
     if (!active) return false;
     if (!active.cancelRequested) {

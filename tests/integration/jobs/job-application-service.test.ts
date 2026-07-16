@@ -85,6 +85,52 @@ describe('JobApplicationService', () => {
     expect(fixture.jobs.get(structureJobId)?.state).toBe('running');
     fixture.database.close();
   });
+
+  it('does not read or mutate a replacement Library after cancellation awaits its owner', async () => {
+    const databaseA = openSqliteDatabase(':memory:');
+    const databaseB = openSqliteDatabase(':memory:');
+    runMigrations(databaseA, APP_MIGRATIONS);
+    runMigrations(databaseB, APP_MIGRATIONS);
+    seedSourceJob(databaseA);
+    seedSourceJob(databaseB);
+    const contextA = libraryContext(databaseA, 'session-a', 'library-a');
+    const contextB = libraryContext(databaseB, 'session-b', 'library-b');
+    let current: InternalLibrarySession | null = contextA;
+    const unitOfWork = createLibraryUnitOfWork(() => current);
+    const libraryService = {
+      getCurrent: () => current
+        ? { sessionId: current.sessionId, library: current.library }
+        : null,
+      getUnitOfWork: () => unitOfWork,
+    } as LibraryService;
+    let ownerStarted!: () => void;
+    let releaseOwner!: () => void;
+    const started = new Promise<void>((resolve) => { ownerStarted = resolve; });
+    const ownerBarrier = new Promise<void>((resolve) => { releaseOwner = resolve; });
+    const application = new JobApplicationService({
+      libraryService,
+      sourceImports: {
+        async cancelImport() {
+          ownerStarted();
+          await ownerBarrier;
+          return false;
+        },
+      },
+      structure: { cancelDetectionAndWait: async () => false },
+      now: () => cancelledAt,
+    });
+
+    const cancelling = application.cancel(sourceJobId);
+    await started;
+    current = contextB;
+    releaseOwner();
+
+    await expect(cancelling).rejects.toMatchObject({ code: 'LIBRARY_SESSION_CHANGED' });
+    expect(new JobService({ database: databaseA }).get(sourceJobId)?.state).toBe('queued');
+    expect(new JobService({ database: databaseB }).get(sourceJobId)?.state).toBe('queued');
+    databaseA.close();
+    databaseB.close();
+  });
 });
 
 function jobApplicationFixture(options: { readonly transitionToRunning?: boolean } = {}) {
@@ -142,4 +188,38 @@ function jobApplicationFixture(options: { readonly transitionToRunning?: boolean
     jobs.transition(structureJobId, 'running', '2026-07-16T06:01:00.000Z');
   }
   return { database, libraryService, jobs };
+}
+
+function libraryContext(
+  database: ReturnType<typeof openSqliteDatabase>,
+  sessionId: string,
+  libraryId: string,
+): InternalLibrarySession {
+  return {
+    sessionId,
+    rootPath: `C:/${libraryId}`,
+    manifestPath: `C:/${libraryId}/library.json`,
+    databasePath: ':memory:',
+    database,
+    library: {
+      id: libraryId as LibraryId,
+      name: libraryId,
+      rootPath: `C:/${libraryId}`,
+      schemaVersion: 5,
+      appVersion: '0.1.0-test',
+    },
+  };
+}
+
+function seedSourceJob(database: ReturnType<typeof openSqliteDatabase>): void {
+  new JobService({ database }).createQueued({
+    id: sourceJobId,
+    bookId: null,
+    kind: 'source_import',
+    totalUnits: 1,
+    payloadSchemaVersion: 1,
+    payload: { sourceTextId: 'source-job-app' },
+    createdAt,
+    updatedAt: createdAt,
+  });
 }

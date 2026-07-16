@@ -1,4 +1,8 @@
 export type MainLifecycleDependencies = {
+  readonly jobs: {
+    pauseCancellations(): void;
+    waitForIdle(): Promise<void>;
+  };
   readonly structure: {
     cancelAll(): number;
     waitForIdle(): Promise<void>;
@@ -17,8 +21,12 @@ export function createMainLifecycleCoordinator(
   dependencies: MainLifecycleDependencies,
 ): MainLifecycleCoordinator {
   const prepareForLibrarySessionChange = async (): Promise<void> => {
+    dependencies.jobs.pauseCancellations();
     dependencies.structure.cancelAll();
-    await dependencies.structure.waitForIdle();
+    await Promise.all([
+      dependencies.jobs.waitForIdle(),
+      dependencies.structure.waitForIdle(),
+    ]);
   };
   let shutdownPromise: Promise<void> | null = null;
 

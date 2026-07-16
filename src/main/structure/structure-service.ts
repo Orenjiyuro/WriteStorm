@@ -602,7 +602,10 @@ export class StructureService {
     return true;
   }
 
-  async cancelDetectionAndWait(jobId: JobId): Promise<boolean> {
+  async cancelDetectionAndWait(jobId: JobId, expectedSessionId?: string): Promise<boolean> {
+    if (expectedSessionId && this.libraryService.getCurrent()?.sessionId !== expectedSessionId) {
+      this.throwSessionChanged();
+    }
     const active = this.activeByJobId.get(jobId);
     if (active) {
       this.cancelDetection(jobId);
@@ -611,6 +614,9 @@ export class StructureService {
     }
 
     return this.libraryService.getUnitOfWork().write((session) => {
+      if (expectedSessionId && session.sessionId !== expectedSessionId) {
+        this.throwSessionChanged();
+      }
       const runs = new StructureDetectionRunRepository(session.database);
       const orphan = runs.findActiveByJobId(jobId);
       if (!orphan) return false;

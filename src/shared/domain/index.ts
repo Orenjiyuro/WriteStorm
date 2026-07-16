@@ -68,11 +68,24 @@ export type {
   StructureNodeKind,
 } from './status';
 export {
+  JOB_CAPABILITIES,
+  JOB_CANCELLATION_POLICY,
+  JOB_CHECKPOINT_APPEND_STATES,
+  JOB_CHECKPOINT_UNITS,
+  JOB_IMPLEMENTATION_STAGES,
+  JOB_PROGRESS_POLICY,
   JOB_STATES,
   JOB_TRANSITIONS,
+  JOB_TYPES,
   canTransitionJob,
 } from './job';
-export type { JobState } from './job';
+export type {
+  JobCapability,
+  JobCheckpointUnit,
+  JobImplementationStage,
+  JobState,
+  JobType,
+} from './job';
 export {
   ANALYSIS_AI_CONSTRAINT_DEPENDENCY_POLICY,
   ANALYSIS_AI_CONSTRAINT_PARTICIPATION_POLICY,

@@ -1,7 +1,13 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
+  JOB_CAPABILITIES,
+  JOB_CANCELLATION_POLICY,
+  JOB_CHECKPOINT_APPEND_STATES,
+  JOB_CHECKPOINT_UNITS,
+  JOB_PROGRESS_POLICY,
   JOB_STATES,
+  JOB_TYPES,
   canTransitionJob,
 } from '../../src/shared/domain';
 import {
@@ -35,6 +41,93 @@ const validCheckpoint = {
 };
 
 describe('V1 Job and checkpoint contracts', () => {
+  it('freezes persisted Job types without admitting future execution paths', () => {
+    expect(JOB_TYPES).toEqual([
+      'source_import',
+      'structure_detection',
+      'structure_edition',
+      'analysis_module_shell_creation',
+      'analysis_module_instance_analysis',
+      'export',
+    ]);
+
+    expect(JOB_CAPABILITIES.analysis_module_shell_creation).toMatchObject({
+      implementation: 'planned',
+      creatable: false,
+      checkpointUnit: 'analysis_module_instance_batch',
+    });
+    expect(JOB_CAPABILITIES.analysis_module_instance_analysis).toMatchObject({
+      implementation: 'contract_only',
+      creatable: false,
+      checkpointUnit: 'analysis_module_instance_batch',
+    });
+    expect(JOB_CAPABILITIES.export).toMatchObject({
+      implementation: 'contract_only',
+      creatable: false,
+      checkpointUnit: 'export_manifest_and_blocked_reason',
+    });
+
+    const jobService = readFileSync('src/main/jobs/job-service.ts', 'utf8');
+    expect(jobService).not.toContain("'analysis_module_instance_analysis@1'");
+    expect(jobService).not.toContain("'export@1'");
+  });
+
+  it('freezes checkpoint units and append-state policy separately from Job state', () => {
+    expect(JOB_CHECKPOINT_UNITS).toEqual([
+      'source_copy_and_metadata',
+      'structure_draft',
+      'structure_edition',
+      'analysis_module_instance_batch',
+      'export_manifest_and_blocked_reason',
+    ]);
+    expect(JOB_CHECKPOINT_APPEND_STATES).toEqual(['running', 'paused', 'resumable']);
+
+    for (const capability of Object.values(JOB_CAPABILITIES)) {
+      expect(capability.allowsQueuedPreparationCheckpoint).toBe(false);
+    }
+    for (const state of ['failed', 'cancelled', 'completed'] as const) {
+      expect(JOB_CHECKPOINT_APPEND_STATES).not.toContain(state);
+    }
+  });
+
+  it('records cancellation, restart, resume, and draft ownership per Job type', () => {
+    expect(JOB_CANCELLATION_POLICY).toEqual({
+      dormantStateCandidates: ['queued', 'paused', 'resumable'],
+      runtimeOwnerMustConfirmStopped: true,
+      ipcMayPersistBeforeRuntimeOwnerStops: false,
+    });
+    expect(JOB_CAPABILITIES.source_import).toMatchObject({
+      implementation: 'implemented',
+      creatable: true,
+      cancellation: 'runtime_owner_first',
+      restartPolicy: 'fail_abandoned_runtime',
+      resume: 'disabled',
+      keepDraft: 'not_applicable',
+    });
+    expect(JOB_CAPABILITIES.structure_detection).toMatchObject({
+      cancellation: 'runtime_owner_first',
+      restartPolicy: 'preserve_for_explicit_recovery',
+      keepDraft: 'structure_disabled',
+    });
+    expect(JOB_CAPABILITIES.structure_edition).toMatchObject({
+      cancellation: 'transactional_not_cancellable',
+      keepDraft: 'structure_disabled',
+    });
+  });
+
+  it('freezes monotonic progress and one-way total discovery', () => {
+    expect(JOB_PROGRESS_POLICY).toEqual({
+      minimumCompletedUnits: 0,
+      minimumKnownTotalUnits: 0,
+      completedUnitsMonotonic: true,
+      completedUnitsMayExceedKnownTotal: false,
+      totalUnitsMayStartUnknown: true,
+      totalUnitsMayBecomeKnownOnce: true,
+      totalUnitsMayReturnToUnknown: false,
+      totalUnitsMayChangeOnceKnown: false,
+    });
+  });
+
   it('freezes the complete Job state vocabulary and transition policy', () => {
     expect(JOB_STATES).toEqual([
       'queued',

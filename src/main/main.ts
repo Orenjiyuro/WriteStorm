@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, protocol, session, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, protocol, screen, session, shell } from 'electron';
 import path from 'node:path';
 import {
   createContentSecurityPolicy,
@@ -28,6 +28,18 @@ import { createMainWindow } from './windows/main-window';
 import { runOptionalSourceTextWorkerProbe } from './source-text/worker-probe';
 import { SourceImportService } from './source-text/source-import-service';
 import { createElectronSourceTextWorkerRunner } from './source-text/worker-runner';
+import {
+  TEST_DISPLAY_DIAGNOSTIC_PREFIX,
+  TEST_DISPLAY_FAILURE_EXIT_CODE,
+  TestDisplayPlacementError,
+  assertActualWindowPlacement,
+  resolveTestDisplayTarget,
+  selectSecondaryDisplayPlacement,
+  type DisplayRectangle,
+  type DisplaySnapshot,
+  type SecondaryDisplayPlacement,
+  type TestDisplayTarget,
+} from './windows/test-display-placement';
 import { AnalysisModuleInstanceEditionChangePort } from './modules/analysis-module-instance-edition-change-port';
 import { AnalysisModuleInstanceService } from './modules/analysis-module-instance-service';
 import { JobApplicationService } from './jobs/job-application-service';
@@ -90,6 +102,11 @@ const mainLifecycle = createMainLifecycleCoordinator({
 });
 let quitCleanupComplete = false;
 let quitCleanupStarted = false;
+let testDisplayTarget: TestDisplayTarget | null = null;
+let activeTestPlacement: SecondaryDisplayPlacement | null = null;
+let testDisplayFailureStarted = false;
+let lastObservedPrimaryDisplay: DisplaySnapshot | null = null;
+let lastObservedDisplays: readonly DisplaySnapshot[] = [];
 
 async function shutdownAndExit(): Promise<void> {
   if (quitCleanupStarted) return;
@@ -146,8 +163,16 @@ type HealthResponse = {
 };
 
 const createWindow = async (): Promise<void> => {
-  await createMainWindow({
+  let placement: SecondaryDisplayPlacement | null = null;
+  if (testDisplayTarget) {
+    lastObservedDisplays = screen.getAllDisplays().map(summarizeDisplay);
+    lastObservedPrimaryDisplay = summarizeDisplay(screen.getPrimaryDisplay());
+    placement = selectSecondaryDisplayPlacement(lastObservedDisplays, lastObservedPrimaryDisplay);
+  }
+  activeTestPlacement = placement;
+  const window = await createMainWindow({
     createWindow: (options) => new BrowserWindow(options),
+    initialBounds: placement?.windowBounds,
     preloadPath: path.join(__dirname, 'index.js'),
     appUrl: MAIN_WINDOW_VITE_DEV_SERVER_URL ?? createAppUrl('index.html'),
     allowedExternalOrigins,
@@ -156,7 +181,110 @@ const createWindow = async (): Promise<void> => {
     unbindSenderPolicy: productSenderPolicy.unbindWebContents,
     onClosed: cleanupSourceImportsForWindowClose,
   });
+
+  if (placement) {
+    verifyAndReportTestWindowPlacement(window, placement, 'window-placement');
+    window.show();
+  }
 };
+
+function verifyAndReportTestWindowPlacement(
+  window: BrowserWindow,
+  placement: SecondaryDisplayPlacement,
+  event: 'window-placement' | 'display-metrics-validated',
+): void {
+  const actualWindowBounds = window.getBounds();
+  const centerDisplayId = screen.getDisplayNearestPoint(rectangleCenter(actualWindowBounds)).id;
+  assertActualWindowPlacement(placement, actualWindowBounds, centerDisplayId);
+  logTestDisplayDiagnostic({
+    event,
+    primaryDisplay: summarizeDisplay(placement.primaryDisplay),
+    targetDisplay: summarizeDisplay(placement.targetDisplay),
+    workArea: placement.targetDisplay.workArea,
+    requestedWindowBounds: placement.windowBounds,
+    actualWindowBounds,
+    centerDisplayId,
+  });
+}
+
+function installTestDisplayGuards(): void {
+  screen.on('display-removed', (_event, display) => {
+    if (display.id !== activeTestPlacement?.targetDisplay.id) return;
+    failTestDisplayMode(
+      new TestDisplayPlacementError(
+        'TARGET_DISPLAY_REMOVED',
+        `Target display ${display.id} was disconnected during secondary-display test mode.`,
+      ),
+    );
+  });
+
+  screen.on('display-metrics-changed', (_event, display) => {
+    const placement = activeTestPlacement;
+    if (!placement || display.id !== placement.targetDisplay.id) return;
+    const window = BrowserWindow.getAllWindows().find((candidate) => !candidate.isDestroyed());
+    if (!window) return;
+
+    const refreshedPlacement: SecondaryDisplayPlacement = {
+      ...placement,
+      targetDisplay: display,
+    };
+    activeTestPlacement = refreshedPlacement;
+
+    try {
+      verifyAndReportTestWindowPlacement(window, refreshedPlacement, 'display-metrics-validated');
+    } catch (error) {
+      failTestDisplayMode(error);
+    }
+  });
+}
+
+function rectangleCenter(bounds: DisplayRectangle): { x: number; y: number } {
+  return {
+    x: bounds.x + Math.floor(bounds.width / 2),
+    y: bounds.y + Math.floor(bounds.height / 2),
+  };
+}
+
+function summarizeDisplay(display: DisplaySnapshot): DisplaySnapshot {
+  return {
+    id: display.id,
+    bounds: { ...display.bounds },
+    workArea: { ...display.workArea },
+    scaleFactor: display.scaleFactor,
+  };
+}
+
+function logTestDisplayDiagnostic(record: Record<string, unknown>): void {
+  console.error(`${TEST_DISPLAY_DIAGNOSTIC_PREFIX}${JSON.stringify(record)}`);
+}
+
+function failTestDisplayMode(error: unknown): void {
+  if (testDisplayFailureStarted) return;
+  testDisplayFailureStarted = true;
+  const placementError =
+    error instanceof TestDisplayPlacementError
+      ? error
+      : new TestDisplayPlacementError(
+          'TEST_DISPLAY_STARTUP_FAILED',
+          error instanceof Error ? error.message : String(error),
+        );
+  logTestDisplayDiagnostic({
+    event: 'window-placement-error',
+    code: placementError.code,
+    message: placementError.message,
+    primaryDisplay: activeTestPlacement
+      ? summarizeDisplay(activeTestPlacement.primaryDisplay)
+      : lastObservedPrimaryDisplay,
+    targetDisplay: activeTestPlacement
+      ? summarizeDisplay(activeTestPlacement.targetDisplay)
+      : undefined,
+    availableDisplays: lastObservedDisplays,
+  });
+  for (const window of BrowserWindow.getAllWindows()) {
+    if (!window.isDestroyed()) window.destroy();
+  }
+  app.exit(TEST_DISPLAY_FAILURE_EXIT_CODE);
+}
 
 function installContentSecurityPolicy(): void {
   if (!shouldUseHeaderContentSecurityPolicy(MAIN_WINDOW_VITE_DEV_SERVER_URL)) {
@@ -230,6 +358,8 @@ function registerInternalIpc(): void {
 }
 
 app.whenReady().then(async () => {
+  testDisplayTarget = resolveTestDisplayTarget(process.env);
+  if (testDisplayTarget) installTestDisplayGuards();
   installContentSecurityPolicy();
   registerAppProtocol();
   registerInternalIpc();
@@ -268,6 +398,13 @@ app.whenReady().then(async () => {
     env: process.env,
     quitApp: () => process.exit(0),
   });
+}).catch((error: unknown) => {
+  if (testDisplayTarget || error instanceof TestDisplayPlacementError) {
+    failTestDisplayMode(error);
+    return;
+  }
+
+  throw error;
 });
 
 app.on('before-quit', (event) => {

@@ -1,4 +1,7 @@
 import { defineConfig } from '@playwright/test';
+import { configureLocalE2EDisplayPolicy } from './tests/e2e/display-policy';
+
+configureLocalE2EDisplayPolicy(process.env);
 
 export default defineConfig({
   testDir: 'tests/e2e',

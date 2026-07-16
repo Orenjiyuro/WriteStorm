@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { spawn, type ChildProcess } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import {
   createElectronStderrBuffer,
   formatErrorWithElectronStderr,
   isSupportedPackagedPlatform,
-  resolvePackagedAppPath,
+  spawnPackagedApp,
 } from './electron-app';
 
 test.skip(!isSupportedPackagedPlatform(), 'Packaged Electron source-text worker probe targets Windows and macOS.');
@@ -19,14 +19,12 @@ test('packaged Electron runs and reaps the source-text utility worker', async ()
   rmSync(resultRoot, { recursive: true, force: true });
   mkdirSync(userDataDir, { recursive: true });
 
-  const appProcess = spawn(resolvePackagedAppPath(), [`--user-data-dir=${userDataDir}`], {
+  const appProcess = spawnPackagedApp({
+    args: [`--user-data-dir=${userDataDir}`],
     env: {
-      ...process.env,
-      WRITESTORM_DISABLE_HARDWARE_ACCELERATION: '1',
       WRITESTORM_SOURCE_TEXT_WORKER_PROBE: '1',
       WRITESTORM_SOURCE_TEXT_WORKER_PROBE_RESULT: resultPath,
     },
-    stdio: ['ignore', 'ignore', 'pipe'],
   });
   const appExit = waitForExit(appProcess);
   appProcess.stderr?.on('data', (chunk: Buffer) => stderr.push(chunk));

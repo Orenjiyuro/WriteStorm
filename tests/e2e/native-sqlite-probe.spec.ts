@@ -1,5 +1,5 @@
 import { chromium, expect, test } from '@playwright/test';
-import { spawn, type ChildProcess } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
 import {
   existsSync,
   mkdirSync,
@@ -11,7 +11,7 @@ import path from 'node:path';
 import {
   formatErrorWithElectronStderr,
   isSupportedPackagedPlatform,
-  resolvePackagedAppPath,
+  spawnPackagedApp,
 } from './electron-app';
 
 test.skip(!isSupportedPackagedPlatform(), 'Packaged Electron native SQLite probe targets Windows and macOS.');
@@ -26,19 +26,13 @@ test('packaged Electron main process can load better-sqlite3 and open SQLite', a
   mkdirSync(probeResultDir, { recursive: true });
   rmSync(probeResultPath, { force: true });
 
-  const appProcess = spawn(
-    resolvePackagedAppPath(),
-    [`--remote-debugging-port=${port}`, `--user-data-dir=${userDataDir}`],
-    {
-      env: {
-        ...process.env,
-        WRITESTORM_DISABLE_HARDWARE_ACCELERATION: '1',
-        WRITESTORM_NATIVE_SQLITE_PROBE: '1',
-        WRITESTORM_NATIVE_SQLITE_PROBE_RESULT: probeResultPath,
-      },
-      stdio: ['ignore', 'ignore', 'pipe'],
+  const appProcess = spawnPackagedApp({
+    args: [`--remote-debugging-port=${port}`, `--user-data-dir=${userDataDir}`],
+    env: {
+      WRITESTORM_NATIVE_SQLITE_PROBE: '1',
+      WRITESTORM_NATIVE_SQLITE_PROBE_RESULT: probeResultPath,
     },
-  );
+  });
   let appExit: { code: number | null; signal: NodeJS.Signals | null } | undefined;
 
   appProcess.stderr?.on('data', (chunk: Buffer) => {

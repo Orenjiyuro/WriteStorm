@@ -45,15 +45,56 @@ describe('main window security lifecycle', () => {
       'load-url',
     ]);
     expect(options).toMatchObject({
+      width: 1100,
+      height: 760,
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
         sandbox: true,
       },
     });
+    expect(options).not.toHaveProperty('x');
+    expect(options).not.toHaveProperty('y');
+    expect(options).not.toHaveProperty('show');
 
     closedListener();
     expect(calls.slice(-2)).toEqual(['unbind-sender-policy', 'cleanup-window-imports']);
+  });
+
+  it('passes test bounds at construction and keeps the window hidden for main-process verification', async () => {
+    let options: unknown;
+    const window = {
+      webContents: {
+        id: 18,
+        getURL: () => 'about:blank',
+        setWindowOpenHandler: () => undefined,
+        on: () => undefined,
+      },
+      loadURL: async () => undefined,
+      on: () => undefined,
+    };
+
+    await createMainWindow({
+      createWindow: (windowOptions) => {
+        options = windowOptions;
+        return window;
+      },
+      initialBounds: { x: -1350, y: 70, width: 1100, height: 760 },
+      preloadPath: 'C:\\WriteStorm\\preload.js',
+      appUrl: 'writestorm://app/index.html',
+      allowedExternalOrigins: new Set(),
+      openExternal: async () => undefined,
+      bindSenderPolicy: () => undefined,
+      unbindSenderPolicy: () => undefined,
+    });
+
+    expect(options).toMatchObject({
+      x: -1350,
+      y: 70,
+      width: 1100,
+      height: 760,
+      show: false,
+    });
   });
 
   it('requires trusted URL, the bound webContents ID, and the main frame', () => {

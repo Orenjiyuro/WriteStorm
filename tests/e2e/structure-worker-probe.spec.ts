@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { spawn, type ChildProcess } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
 import {
   existsSync,
   mkdirSync,
@@ -11,7 +11,7 @@ import {
   createElectronStderrBuffer,
   formatErrorWithElectronStderr,
   isSupportedPackagedPlatform,
-  resolvePackagedAppPath,
+  spawnPackagedApp,
 } from './electron-app';
 
 test.skip(!isSupportedPackagedPlatform(), 'Packaged Electron utility worker probe targets Windows and macOS.');
@@ -24,19 +24,13 @@ test('packaged Electron runs and cleans up the typed structure utility worker', 
   rmSync(resultRoot, { recursive: true, force: true });
   mkdirSync(userDataDir, { recursive: true });
 
-  const appProcess = spawn(
-    resolvePackagedAppPath(),
-    [`--user-data-dir=${userDataDir}`, '--disable-gpu'],
-    {
-      env: {
-        ...process.env,
-        WRITESTORM_DISABLE_HARDWARE_ACCELERATION: '1',
-        WRITESTORM_STRUCTURE_WORKER_PROBE: '1',
-        WRITESTORM_STRUCTURE_WORKER_PROBE_RESULT: resultPath,
-      },
-      stdio: ['ignore', 'ignore', 'pipe'],
+  const appProcess = spawnPackagedApp({
+    args: [`--user-data-dir=${userDataDir}`, '--disable-gpu'],
+    env: {
+      WRITESTORM_STRUCTURE_WORKER_PROBE: '1',
+      WRITESTORM_STRUCTURE_WORKER_PROBE_RESULT: resultPath,
     },
-  );
+  });
   const appExit = waitForExit(appProcess);
   appProcess.stderr?.on('data', (chunk: Buffer) => stderr.push(chunk));
 

@@ -22,6 +22,9 @@ export type MainWindowDependencies<TWindow extends MainWindowLike> = {
   readonly createWindow: (options: {
     width: number;
     height: number;
+    x?: number;
+    y?: number;
+    show?: false;
     webPreferences: {
       preload: string;
       contextIsolation: true;
@@ -29,6 +32,12 @@ export type MainWindowDependencies<TWindow extends MainWindowLike> = {
       sandbox: true;
     };
   }) => TWindow;
+  readonly initialBounds?: {
+    readonly x: number;
+    readonly y: number;
+    readonly width: number;
+    readonly height: number;
+  };
   readonly preloadPath: string;
   readonly appUrl: string;
   readonly allowedExternalOrigins: ReadonlySet<string>;
@@ -41,9 +50,17 @@ export type MainWindowDependencies<TWindow extends MainWindowLike> = {
 export async function createMainWindow<TWindow extends MainWindowLike>(
   dependencies: MainWindowDependencies<TWindow>,
 ): Promise<TWindow> {
+  const initialBounds = dependencies.initialBounds;
   const window = dependencies.createWindow({
-    width: 1100,
-    height: 760,
+    width: initialBounds?.width ?? 1100,
+    height: initialBounds?.height ?? 760,
+    ...(initialBounds
+      ? {
+          x: initialBounds.x,
+          y: initialBounds.y,
+          show: false as const,
+        }
+      : {}),
     webPreferences: {
       preload: dependencies.preloadPath,
       contextIsolation: true,

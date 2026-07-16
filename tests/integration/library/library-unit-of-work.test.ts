@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { LibraryService } from '../../../src/main/library/library-service';
+import { APP_MIGRATIONS } from '../../../src/main/db/migrations';
 import {
   createLibraryUnitOfWork,
   type InternalLibrarySession,
@@ -14,6 +15,7 @@ import { getContract } from '../../../src/shared/contracts';
 
 const tempDirs: string[] = [];
 const sessionId = '11111111-1111-4111-8111-111111111111';
+const currentSchemaVersion = APP_MIGRATIONS.at(-1)!.id;
 
 afterEach(() => {
   for (const directory of tempDirs.splice(0)) rmSync(directory, { recursive: true, force: true });
@@ -36,7 +38,7 @@ describe('LibrarySession and LibraryUnitOfWork boundary', () => {
           id: 'library-unit-of-work',
           name: 'Session Library',
           rootPath,
-          schemaVersion: 2,
+          schemaVersion: currentSchemaVersion,
           appVersion: '0.1.0-test',
         },
       });

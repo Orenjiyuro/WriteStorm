@@ -28,14 +28,14 @@ describe('canonical runtime schema validator', () => {
 
   it('rejects changed CHECK constraints and unadmitted production objects', () => {
     const checkRegistry = [...APP_MIGRATIONS, {
-      id: 3,
+      id: 6,
       name: 'validator_check_fixture',
       up(database) {
         database.exec('CREATE TABLE validator_check (value INTEGER CHECK (value > 0))');
       },
       semanticWitnesses: [{
         id: 'validator_check_requires_positive_value',
-        migrationId: 3,
+        migrationId: 6,
         sql: 'INSERT INTO validator_check (value) VALUES (0)',
         expected: { outcome: 'constraint', code: 'SQLITE_CONSTRAINT_CHECK' },
       }],
@@ -56,7 +56,7 @@ describe('canonical runtime schema validator', () => {
 
   it('accepts equivalent DDL formatting because sqlite_schema.sql text is not authoritative', () => {
     const formattingRegistry = [...APP_MIGRATIONS, {
-      id: 3,
+      id: 6,
       name: 'validator_formatting_fixture',
       up(database) {
         database.exec('CREATE TABLE validator_formatting (id INTEGER PRIMARY KEY, value TEXT NOT NULL)');
@@ -158,14 +158,14 @@ describe('canonical runtime schema validator', () => {
 
   it('rejects CHECK deletion, relaxation, and tightening through both witness directions', () => {
     const registry = [...APP_MIGRATIONS, {
-      id: 3,
+      id: 6,
       name: 'check_boundary_mutation_fixture',
       up(database: SqliteDatabase) {
         database.exec('CREATE TABLE check_boundary_fixture (value INTEGER CHECK (value > 0))');
       },
       semanticWitnesses: [],
       semanticBoundaries: [{
-        id: '003.check_boundary.value_positive', migrationId: 3, kind: 'check' as const,
+        id: '006.check_boundary.value_positive', migrationId: 6, kind: 'check' as const,
         accept: { sql: 'INSERT INTO check_boundary_fixture VALUES (1)' },
         reject: {
           sql: 'INSERT INTO check_boundary_fixture VALUES (0)',
@@ -187,7 +187,7 @@ describe('canonical runtime schema validator', () => {
 
   it('rejects trigger deletion, relaxation, and tightening through both witness directions', () => {
     const registry = [...APP_MIGRATIONS, {
-      id: 3,
+      id: 6,
       name: 'trigger_boundary_mutation_fixture',
       up(database: SqliteDatabase) {
         database.exec(`
@@ -198,7 +198,7 @@ describe('canonical runtime schema validator', () => {
       },
       semanticWitnesses: [],
       semanticBoundaries: [{
-        id: '003.trigger_boundary.positive', migrationId: 3, kind: 'trigger' as const,
+        id: '006.trigger_boundary.positive', migrationId: 6, kind: 'trigger' as const,
         accept: { sql: 'INSERT INTO trigger_boundary_fixture VALUES (1)' },
         reject: {
           sql: 'INSERT INTO trigger_boundary_fixture VALUES (0)',
@@ -261,7 +261,7 @@ function withCanonicalDatabase(
 
 function fixtureRegistry(sql: string): readonly Migration[] {
   return [...APP_MIGRATIONS, {
-    id: 3,
+    id: 6,
     name: 'schema_mutation_fixture',
     up(database: SqliteDatabase) { database.exec(sql); },
     semanticWitnesses: [],

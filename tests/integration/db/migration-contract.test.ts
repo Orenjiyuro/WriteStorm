@@ -10,6 +10,7 @@ import {
   WRITESTORM_SQLITE_APPLICATION_ID,
 } from '../../../src/main/db/schema-identity';
 import { openSqliteDatabase, type SqliteDatabase } from '../../../src/main/db/sqlite';
+import { ANALYSIS_MODULE_DEFINITIONS } from '../../../src/shared/domain';
 import {
   assertSchemaSemanticWitnessRegistry,
   migrationSemanticWitnesses,
@@ -41,6 +42,8 @@ describe('empty-database migration replay contract', () => {
       expect(rowCounts).toEqual(
         rowCounts.map(({ table }) => ({ table, count: 0 })),
       );
+      expect(database.prepare('SELECT COUNT(*) FROM analysis_modules').pluck().get())
+        .toBe(ANALYSIS_MODULE_DEFINITIONS.length);
     } finally {
       database.close();
     }
@@ -78,18 +81,29 @@ describe('empty-database migration replay contract', () => {
   it('requires each canonical migration to own uniquely identified semantic witnesses', () => {
     expect(() => assertSchemaSemanticWitnessRegistry(APP_MIGRATIONS)).not.toThrow();
     for (const migration of APP_MIGRATIONS) {
-      expect(migration.semanticWitnesses.length, `migration ${migration.id} witness count`).toBeGreaterThan(0);
-      expect(migration.semanticWitnesses.every(({ migrationId }) => migrationId === migration.id)).toBe(true);
-      expect(migration.semanticBoundaries.length, `migration ${migration.id} boundary count`).toBeGreaterThan(0);
-      expect(migration.semanticBoundaries.every(({ migrationId }) => migrationId === migration.id)).toBe(true);
+      const semanticWitnesses = migration.semanticWitnesses ?? [];
+      const semanticBoundaries = migration.semanticBoundaries ?? [];
+      expect(semanticWitnesses.length, `migration ${migration.id} witness count`).toBeGreaterThan(0);
+      expect(semanticWitnesses.every(({ migrationId }) => migrationId === migration.id)).toBe(true);
+      expect(semanticBoundaries.length, `migration ${migration.id} boundary count`).toBeGreaterThan(0);
+      expect(semanticBoundaries.every(({ migrationId }) => migrationId === migration.id)).toBe(true);
     }
-    expect(APP_MIGRATIONS[0].semanticBoundaries).toHaveLength(12);
-    expect(APP_MIGRATIONS[0].semanticBoundaries.every(({ kind }) => kind === 'check')).toBe(true);
-    expect(APP_MIGRATIONS[1].semanticBoundaries.filter(({ kind }) => kind === 'check')).toHaveLength(32);
-    expect(APP_MIGRATIONS[1].semanticBoundaries.filter(({ kind }) => kind === 'trigger')).toHaveLength(10);
-    expect(APP_MIGRATIONS[1].semanticBoundaries.filter(({ kind }) => kind === 'partial-index')).toHaveLength(1);
+    const [foundationBoundaries = [], structureBoundaries = [], moduleBoundaries = [],
+      instanceBoundaries = [], assetBoundaries = []]
+      = APP_MIGRATIONS.map((migration) => migration.semanticBoundaries ?? []);
+    expect(foundationBoundaries).toHaveLength(12);
+    expect(foundationBoundaries.every(({ kind }) => kind === 'check')).toBe(true);
+    expect(structureBoundaries.filter(({ kind }) => kind === 'check')).toHaveLength(32);
+    expect(structureBoundaries.filter(({ kind }) => kind === 'trigger')).toHaveLength(10);
+    expect(structureBoundaries.filter(({ kind }) => kind === 'partial-index')).toHaveLength(1);
+    expect(moduleBoundaries.filter(({ kind }) => kind === 'check')).toHaveLength(6);
+    expect(moduleBoundaries.filter(({ kind }) => kind === 'trigger')).toHaveLength(0);
+    expect(instanceBoundaries.filter(({ kind }) => kind === 'check')).toHaveLength(4);
+    expect(instanceBoundaries.filter(({ kind }) => kind === 'trigger')).toHaveLength(5);
+    expect(instanceBoundaries.filter(({ kind }) => kind === 'partial-index')).toHaveLength(4);
+    expect(assetBoundaries.filter(({ kind }) => kind === 'check')).toHaveLength(1);
     const expanded = migrationSemanticWitnesses(APP_MIGRATIONS);
-    for (const boundary of APP_MIGRATIONS.flatMap((migration) => migration.semanticBoundaries)) {
+    for (const boundary of APP_MIGRATIONS.flatMap((migration) => migration.semanticBoundaries ?? [])) {
       expect(expanded.some(({ id }) => id === `${boundary.id}.accept`)).toBe(true);
       expect(expanded.some(({ id }) => id === `${boundary.id}.reject`)).toBe(true);
     }
@@ -149,7 +163,9 @@ function userObjectNames(database: SqliteDatabase): string[] {
 function businessRowCounts(database: SqliteDatabase): Array<{ table: string; count: number }> {
   const tables = database.prepare(`
     SELECT name FROM sqlite_schema
-    WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name != 'schema_migrations'
+    WHERE type = 'table'
+      AND name NOT LIKE 'sqlite_%'
+      AND name NOT IN ('schema_migrations', 'analysis_modules')
     ORDER BY name
   `).pluck().all() as string[];
   return tables.map((table) => ({

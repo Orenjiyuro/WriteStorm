@@ -50,6 +50,7 @@ describe('shared domain errors', () => {
       'LIBRARY_SCHEMA_INCOMPATIBLE',
       'IMPORT_ERROR',
       'STRUCTURE_ERROR',
+      'MODULE_ERROR',
       'INTERNAL_ERROR',
     ]);
   });

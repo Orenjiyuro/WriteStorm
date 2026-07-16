@@ -19,6 +19,7 @@ import {
   createStructureActionMutationOptions,
   structureWorkspaceQueryOptions,
 } from '../features/structure-review/structure-queries';
+import { moduleInstancesQueryOptions } from '../features/module-workbench/module-instance-queries';
 import {
   createSourceImportFailureViewModel,
   type SourceImportFailureAction,
@@ -41,10 +42,16 @@ import {
 
 type AppRoute = 'product' | 'diagnostics';
 
-export function AppRouter(): ReactElement {
+export type AppRouterProps = {
+  readonly api?: WritestormApi | null;
+};
+
+export function AppRouter(props: AppRouterProps = {}): ReactElement {
   const [route, setRoute] = useState<AppRoute>(() => readRoute());
   const queryClient = useQueryClient();
-  const rendererApi = typeof window === 'undefined' ? null : window.writestorm;
+  const rendererApi = props.api === undefined
+    ? (typeof window === 'undefined' ? null : window.writestorm)
+    : props.api;
   const queryApi = rendererApi ?? ({} as WritestormApi);
   const currentLibraryQuery = useQuery({
     ...currentLibraryQueryOptions(queryApi),
@@ -65,6 +72,11 @@ export function AppRouter(): ReactElement {
   const [sourceImportFailure, setSourceImportFailure] =
     useState<SourceImportFailureViewModel | null>(null);
   const [openedBook, setOpenedBook] = useState<BookSummary | null>(null);
+  useEffect(() => {
+    setLastImport(null);
+    setSourceImportFailure(null);
+    setOpenedBook(null);
+  }, [currentLibrary?.sessionId]);
   const structureWorkspaceQuery = useQuery({
     ...structureWorkspaceQueryOptions(
       currentLibrary?.sessionId ?? 'no-library-session',
@@ -78,6 +90,16 @@ export function AppRouter(): ReactElement {
     openedBook?.id ?? ('00000000-0000-4000-8000-000000000000' as BookSummary['id']),
     queryApi,
   ));
+  const moduleInstancesQuery = useQuery({
+    ...moduleInstancesQueryOptions(
+      currentLibrary?.sessionId ?? 'no-library-session',
+      openedBook?.id ?? ('00000000-0000-4000-8000-000000000000' as BookSummary['id']),
+      queryApi,
+    ),
+    enabled: rendererApi !== null && currentLibrary !== null && openedBook !== null &&
+      structureWorkspaceQuery.data?.frozen !== null &&
+      structureWorkspaceQuery.data?.frozen !== undefined,
+  });
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -187,6 +209,9 @@ export function AppRouter(): ReactElement {
       structureLoading={structureWorkspaceQuery.isLoading}
       structureActionPending={structureActionMutation.isPending}
       structureError={getQueryErrorMessage(structureWorkspaceQuery.error ?? structureActionMutation.error)}
+      moduleInstances={moduleInstancesQuery.data}
+      moduleInstancesLoading={moduleInstancesQuery.isLoading}
+      moduleInstancesError={getQueryErrorMessage(moduleInstancesQuery.error)}
       onImport={() => void runSourceImport({})}
       onOpenBook={setOpenedBook}
       onDetectStructure={() => structureActionMutation.mutate({ type: 'detect' })}

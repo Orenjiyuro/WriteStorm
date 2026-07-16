@@ -87,6 +87,7 @@ export {
   ANALYSIS_MODULE_INSTANCE_CONTRACT,
   ANALYSIS_MODULE_DEFINITIONS,
   ANALYSIS_MODULE_ASSET_MATRIX,
+  ANALYSIS_MODULE_ASSET_PLACEHOLDER_SLOT_KINDS,
   ANALYSIS_MODULE_KEYS,
   ANALYSIS_MODULE_SCOPE_MATRIX,
   ANALYSIS_ORIGINAL_CONTEXT_PARTICIPATION_POLICY,
@@ -101,6 +102,8 @@ export {
   ANALYSIS_TECHNIQUE_LIBRARY_PARTICIPATION_POLICY,
   ANALYSIS_TECHNIQUE_OBSERVATION_ROUTING,
   REVIEW_ASSET_STATUSES,
+  createAnalysisModuleAssetPlaceholders,
+  AnalysisModuleAssetPlaceholderError,
 } from './analysis';
 export type {
   AnalysisAiConstraintDependencyPolicy,
@@ -120,6 +123,9 @@ export type {
   AnalysisMarkdownEditResultKind,
   AnalysisModuleCategory,
   AnalysisModuleAssetMatrixEntry,
+  AnalysisModuleAssetPlaceholder,
+  AnalysisModuleAssetPlaceholderErrorReason,
+  AnalysisModuleAssetPlaceholderSlotKind,
   AnalysisModuleDependencyEntry,
   AnalysisModuleDefinition,
   AnalysisModuleInstanceContract,
@@ -146,6 +152,15 @@ export type {
   ReviewAssetEnvelope,
   ReviewAssetStatus,
 } from './analysis';
+export { evaluateModuleWorkspaceGate } from './module-workspace-gate';
+export type {
+  ModuleWorkspaceBookSnapshot,
+  ModuleWorkspaceContractSnapshot,
+  ModuleWorkspaceGateBlocker,
+  ModuleWorkspaceGateInput,
+  ModuleWorkspaceGateResult,
+  ModuleWorkspaceStructureSnapshot,
+} from './module-workspace-gate';
 export {
   ORIGINAL_REFERENCE_SNAPSHOT_POLICY,
   createProblemSolutionPatternSchema,

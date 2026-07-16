@@ -114,6 +114,8 @@ describe('analysis body and structured field boundary', () => {
     expect(ANALYSIS_MODULE_INSTANCE_CONTRACT).toEqual({
       ownerKind: 'analysis_module_instance',
       identityFields: ['id', 'bookId', 'moduleId', 'scope'],
+      structureEditionField: 'structureEdition',
+      structureEditionMeaning: 'source_structure_snapshot',
       revisionField: 'analysisRevision',
       statusFieldKind: 'status',
       statusValues: MODULE_INSTANCE_STATUSES,

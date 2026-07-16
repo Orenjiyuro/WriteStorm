@@ -45,6 +45,8 @@ import {
   NOOP_STRUCTURE_EDITION_CHANGE_PORT,
   type StructureEditionChangePort,
 } from './structure-edition-change-port';
+import { AnalysisModuleRepositoryError } from '../modules/analysis-module-repository';
+import { AnalysisModuleInstanceEditionChangeError } from '../modules/analysis-module-instance-edition-change-port';
 
 export type StructureServiceWorker = {
   detect(
@@ -523,6 +525,15 @@ export class StructureService {
           expectedDraftRevision: error.revision?.expected,
           actualDraftRevision: error.revision?.actual,
           blockers: error.blockers,
+        });
+      }
+      if (
+        error instanceof AnalysisModuleInstanceEditionChangeError ||
+        error instanceof AnalysisModuleRepositoryError
+      ) {
+        throw new StructureServiceError('structure_reference_blocked', error.message, {
+          cause: error,
+          blockers: [error.reason],
         });
       }
       throw error;

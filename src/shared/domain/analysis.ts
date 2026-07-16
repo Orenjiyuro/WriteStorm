@@ -270,6 +270,62 @@ export const ANALYSIS_MODULE_ASSET_MATRIX = [
   },
 ] as const satisfies readonly AnalysisModuleAssetMatrixEntry[];
 
+export const ANALYSIS_MODULE_ASSET_PLACEHOLDER_SLOT_KINDS = [
+  'body',
+  'evidence',
+  'relation',
+  'technique',
+  'ai_constraint',
+] as const;
+
+export type AnalysisModuleAssetPlaceholderSlotKind =
+  (typeof ANALYSIS_MODULE_ASSET_PLACEHOLDER_SLOT_KINDS)[number];
+
+export type AnalysisModuleAssetPlaceholder = {
+  readonly slotKind: AnalysisModuleAssetPlaceholderSlotKind;
+  readonly assetKinds: readonly AnalysisAssetKind[];
+  readonly availability: 'empty';
+  readonly emptyState: '尚无资产';
+};
+
+export type AnalysisModuleAssetPlaceholderErrorReason = 'module_contract_unavailable';
+
+export class AnalysisModuleAssetPlaceholderError extends Error {
+  constructor(readonly reason: AnalysisModuleAssetPlaceholderErrorReason) {
+    super('The requested key is not an ordinary analysis module in the asset matrix.');
+    this.name = 'AnalysisModuleAssetPlaceholderError';
+  }
+}
+
+const ASSET_PLACEHOLDER_SLOT_ASSET_KINDS = {
+  body: ['body'],
+  evidence: ['evidence_anchor'],
+  relation: ['relation_link'],
+  technique: ['work_technique_observation', 'reusable_technique_candidate'],
+  ai_constraint: ['ai_constraint'],
+} as const satisfies Record<
+  AnalysisModuleAssetPlaceholderSlotKind,
+  readonly AnalysisAssetKind[]
+>;
+
+export function createAnalysisModuleAssetPlaceholders(
+  moduleKey: string,
+): AnalysisModuleAssetPlaceholder[] {
+  const matrixEntry = ANALYSIS_MODULE_ASSET_MATRIX.find((entry) => entry.moduleKey === moduleKey);
+  if (!matrixEntry) {
+    throw new AnalysisModuleAssetPlaceholderError('module_contract_unavailable');
+  }
+  const allowedAssetKinds: readonly AnalysisAssetKind[] = matrixEntry.allowedAssetKinds;
+
+  return ANALYSIS_MODULE_ASSET_PLACEHOLDER_SLOT_KINDS.flatMap((slotKind) => {
+    const assetKinds = ASSET_PLACEHOLDER_SLOT_ASSET_KINDS[slotKind]
+      .filter((assetKind) => allowedAssetKinds.includes(assetKind));
+    return assetKinds.length === 0
+      ? []
+      : [{ slotKind, assetKinds, availability: 'empty' as const, emptyState: '尚无资产' as const }];
+  });
+}
+
 export type AnalysisTechniqueObservationRouting = {
   readonly assetKind: Extract<AnalysisAssetKind, 'work_technique_observation'>;
   readonly sourceModuleKeys: readonly AnalysisModuleKey[];
@@ -385,6 +441,8 @@ export type ReviewAssetEnvelope = {
 export type AnalysisModuleInstanceContract = {
   readonly ownerKind: 'analysis_module_instance';
   readonly identityFields: readonly ['id', 'bookId', 'moduleId', 'scope'];
+  readonly structureEditionField: 'structureEdition';
+  readonly structureEditionMeaning: 'source_structure_snapshot';
   readonly revisionField: 'analysisRevision';
   readonly statusFieldKind: 'status';
   readonly statusValues: readonly ModuleInstanceStatus[];
@@ -397,6 +455,8 @@ export type AnalysisModuleInstanceContract = {
 export const ANALYSIS_MODULE_INSTANCE_CONTRACT = {
   ownerKind: 'analysis_module_instance',
   identityFields: ['id', 'bookId', 'moduleId', 'scope'],
+  structureEditionField: 'structureEdition',
+  structureEditionMeaning: 'source_structure_snapshot',
   revisionField: 'analysisRevision',
   statusFieldKind: 'status',
   statusValues: MODULE_INSTANCE_STATUSES,

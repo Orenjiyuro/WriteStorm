@@ -50,8 +50,16 @@ describe('Block 6 native-gate documentation', () => {
     expect(context).toContain(
       'The unpublished Block 1-7 migration history was replaced by schema epoch 2',
     );
-    expect(context).toContain('TechniqueEntry and ReusableTechniqueCandidate remain separate tables');
-    expect(context).toContain('Perspective views are stored in `perspective_views`, not `analysis_module_instances`');
+    expect(context).toContain(
+      'TechniqueEntry and ReusableTechniqueCandidate remain separate domain objects and must use separate tables when their persistence is admitted',
+    );
+    expect(context).toContain(
+      'none of those speculative tables is currently admitted',
+    );
+    expect(context).toContain(
+      'Perspective views belong in a future `perspective_views` table, never `analysis_module_instances`',
+    );
+    expect(context).toContain('no perspective table is currently admitted');
     expect(context).toContain('LibraryService failures are mapped to `LIBRARY_ERROR`');
     expect(context).toContain('renderer requests remain empty and cannot submit arbitrary paths');
     expect(context).toContain('Task 6.11 authorizes only the LibraryService service/IPC minimum loop.');

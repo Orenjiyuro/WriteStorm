@@ -17,8 +17,10 @@ import type { LibraryId } from '../../../src/shared/domain';
 const tempDirs: string[] = [];
 const now = '2026-07-12T01:02:03.000Z';
 const libraryId = 'migration-backup-library' as LibraryId;
+const currentSchemaVersion = APP_MIGRATIONS.at(-1)!.id;
+const pendingSchemaVersion = currentSchemaVersion + 1;
 const pendingMigration: Migration = {
-  id: 3,
+  id: pendingSchemaVersion,
   name: 'migration_backup_test',
   up(database) {
     database.exec('CREATE TABLE migration_backup_proof (id INTEGER PRIMARY KEY)');
@@ -76,7 +78,7 @@ describe('migration backup and safe Library open', () => {
         'validate-schema',
         'publish-session',
       ]);
-      expect(service.getCurrent()?.library.schemaVersion).toBe(3);
+      expect(service.getCurrent()?.library.schemaVersion).toBe(pendingSchemaVersion);
       expect(readdirSync(path.join(rootPath, 'backups'))).toHaveLength(1);
     } finally {
       service.closeCurrent();
@@ -149,7 +151,8 @@ describe('migration backup and safe Library open', () => {
       const snapshot = openSqliteDatabase(path.join(backupsPath, backup));
       try {
         expect(snapshot.pragma('integrity_check', { simple: true })).toBe('ok');
-        expect(snapshot.prepare('SELECT MAX(id) FROM schema_migrations').pluck().get()).toBe(2);
+        expect(snapshot.prepare('SELECT MAX(id) FROM schema_migrations').pluck().get())
+          .toBe(currentSchemaVersion);
       } finally {
         snapshot.close();
       }
@@ -221,7 +224,7 @@ describe('migration backup and safe Library open', () => {
     const failingRegistry = [
       ...APP_MIGRATIONS,
       {
-        id: 3,
+        id: pendingSchemaVersion,
         name: 'failing_migration',
         up(database) {
           database.exec('CREATE TABLE must_roll_back (id INTEGER PRIMARY KEY)');
@@ -244,7 +247,8 @@ describe('migration backup and safe Library open', () => {
 
     const database = openSqliteDatabase(path.join(rootPath, 'writestorm.sqlite'));
     try {
-      expect(database.prepare('SELECT MAX(id) FROM schema_migrations').pluck().get()).toBe(2);
+      expect(database.prepare('SELECT MAX(id) FROM schema_migrations').pluck().get())
+        .toBe(currentSchemaVersion);
       expect(database.prepare(`
         SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'must_roll_back'
       `).pluck().get()).toBe(0);
@@ -255,7 +259,7 @@ describe('migration backup and safe Library open', () => {
     const baselineService = new LibraryService({ appVersion: '0.1.0-test' });
     try {
       await expect(baselineService.open({ rootPath })).resolves.toMatchObject({
-        library: { schemaVersion: 2 },
+        library: { schemaVersion: currentSchemaVersion },
       });
     } finally {
       baselineService.closeCurrent();

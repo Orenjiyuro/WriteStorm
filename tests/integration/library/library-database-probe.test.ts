@@ -26,6 +26,7 @@ import type { LibraryId } from '../../../src/shared/domain';
 
 const tempDirs: string[] = [];
 const now = '2026-07-12T00:00:00.000Z';
+const currentSchemaVersion = APP_MIGRATIONS.at(-1)!.id;
 
 afterEach(() => {
   for (const tempDir of tempDirs.splice(0)) rmSync(tempDir, { recursive: true, force: true });
@@ -44,8 +45,8 @@ describe('Library database read-only probe', () => {
         appVersion: '0.1.0-test',
         schemaEpoch: 2,
       },
-      appliedMigrationCount: 2,
-      currentSchemaVersion: 2,
+      appliedMigrationCount: APP_MIGRATIONS.length,
+      currentSchemaVersion,
     });
   });
 
@@ -54,7 +55,7 @@ describe('Library database read-only probe', () => {
     const pendingRegistry = [
       ...APP_MIGRATIONS,
       {
-        id: 3,
+        id: currentSchemaVersion + 1,
         name: 'pending_test_migration',
         up() {},
       },
@@ -62,8 +63,8 @@ describe('Library database read-only probe', () => {
 
     expect(probeLibraryDatabase(databasePath, pendingRegistry)).toMatchObject({
       ok: true,
-      appliedMigrationCount: 2,
-      currentSchemaVersion: 2,
+      appliedMigrationCount: APP_MIGRATIONS.length,
+      currentSchemaVersion,
     });
   });
 

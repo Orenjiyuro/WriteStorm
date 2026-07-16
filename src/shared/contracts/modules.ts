@@ -25,6 +25,7 @@ export const moduleInstanceSummarySchema = z.object({
   moduleId: analysisModuleIdSchema,
   scope: scopeRefSchema,
   status: z.enum(MODULE_INSTANCE_STATUSES),
+  structureEdition: z.number().int().positive(),
   analysisRevision: z.number().int().nonnegative(),
   updatedAt: isoDateTimeStringSchema.nullable(),
 }).strict();

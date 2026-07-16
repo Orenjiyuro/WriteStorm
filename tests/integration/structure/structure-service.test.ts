@@ -12,6 +12,8 @@ import { StructureCandidateRepository } from '../../../src/main/structure/persis
 import { StructureDetectionRunRepository } from '../../../src/main/structure/persistence/structure-detection-run-repository';
 import { JobService } from '../../../src/main/jobs/job-service';
 import { StructureService, type StructureServiceOptions } from '../../../src/main/structure/structure-service';
+import { AnalysisModuleInstanceEditionChangePort } from '../../../src/main/modules/analysis-module-instance-edition-change-port';
+import { createStructureEditionChange } from '../../../src/main/structure/structure-edition-change-port';
 import { executeStructureWorkerDetection } from '../../../src/main/structure/worker/structure-worker-detection';
 import type {
   StructureWorkerDetectionInput,
@@ -904,6 +906,237 @@ describe('StructureService', () => {
     expect(fixture.database.prepare("SELECT COUNT(*) FROM jobs WHERE kind = 'structure_edition'").pluck().get()).toBe(0);
     expect(fixture.database.prepare("SELECT COUNT(*) FROM job_checkpoints WHERE kind = 'structure_edition_completed'")
       .pluck().get()).toBe(0);
+  });
+
+  it('creates seven book-scope shells on first freeze and preserves their source edition on replacement', async () => {
+    let jobIndex = 0;
+    let instanceIndex = 0;
+    let draftIndex = 0;
+    const instancePort = new AnalysisModuleInstanceEditionChangePort({
+      createInstanceId: () => `runtime-instance-${++instanceIndex}` as import('../../../src/shared/domain').AnalysisModuleInstanceId,
+      now: () => '2026-07-15T12:00:00.000Z',
+    });
+    const { service, candidate, draft, fixture } = await detectedDraftFixture('instance-first-freeze', {
+      createJobId: () => `instance-freeze-job-${++jobIndex}` as JobId,
+      createDraftSetId: () => `instance-runtime-draft-${++draftIndex}` as StructureSetId,
+      structureEditionChangePort: instancePort,
+    });
+    fixtureReviewAcceptAll(service, candidate.bookId, draft);
+    const firstReady = await service.getWorkspace(candidate.bookId);
+
+    await service.freeze(candidate.bookId, draft.id, firstReady.draft!.draftRevision);
+
+    expect(fixture.database.prepare(`
+      SELECT COUNT(*) FROM analysis_module_instances
+      WHERE book_id = ? AND scope_kind = 'book'
+    `).pluck().get(candidate.bookId)).toBe(7);
+    expect(fixture.database.prepare(`
+      SELECT DISTINCT source_structure_set_id AS sourceSetId,
+        structure_edition AS structureEdition, status
+      FROM analysis_module_instances WHERE book_id = ?
+    `).all(candidate.bookId)).toEqual([{
+      sourceSetId: draft.id,
+      structureEdition: 1,
+      status: 'not_generated',
+    }]);
+    instancePort.apply(createStructureEditionChange({
+      bookId: candidate.bookId,
+      frozenSetId: draft.id,
+      previousStructureEdition: null,
+      structureEdition: 1,
+    }), { database: fixture.database });
+    expect(instanceIndex).toBe(7);
+
+    const replacement = service.unfreeze(candidate.bookId, draft.id);
+    await service.freeze(candidate.bookId, replacement.id, replacement.draftRevision);
+
+    expect(instanceIndex).toBe(7);
+    expect(fixture.database.prepare(`
+      SELECT COUNT(*) FROM analysis_module_instances WHERE book_id = ?
+    `).pluck().get(candidate.bookId)).toBe(7);
+    expect(fixture.database.prepare(`
+      SELECT DISTINCT source_structure_set_id AS sourceSetId,
+        structure_edition AS structureEdition, status
+      FROM analysis_module_instances WHERE book_id = ?
+    `).all(candidate.bookId)).toEqual([{
+      sourceSetId: draft.id,
+      structureEdition: 1,
+      status: 'needs_rebuild',
+    }]);
+  });
+
+  it('rolls back a partial shell insert when the ID factory throws and retries atomically', async () => {
+    let jobIndex = 0;
+    let instanceAttempt = 0;
+    let rejectOnce = true;
+    const instancePort = new AnalysisModuleInstanceEditionChangePort({
+      createInstanceId: () => {
+        instanceAttempt += 1;
+        if (rejectOnce && instanceAttempt === 4) {
+          rejectOnce = false;
+          throw new Error('synthetic runtime instance id failure');
+        }
+        return `retry-instance-${instanceAttempt}` as import('../../../src/shared/domain').AnalysisModuleInstanceId;
+      },
+    });
+    const { service, candidate, draft, fixture } = await detectedDraftFixture('instance-retry-freeze', {
+      createJobId: () => `instance-retry-job-${++jobIndex}` as JobId,
+      structureEditionChangePort: instancePort,
+    });
+    fixtureReviewAcceptAll(service, candidate.bookId, draft);
+    const ready = await service.getWorkspace(candidate.bookId);
+
+    await expect(service.freeze(candidate.bookId, draft.id, ready.draft!.draftRevision))
+      .rejects.toThrow('synthetic runtime instance id failure');
+    expect(fixture.database.prepare('SELECT COUNT(*) FROM analysis_module_instances').pluck().get()).toBe(0);
+    expect(fixture.database.prepare('SELECT structure_edition FROM books WHERE id = ?')
+      .pluck().get(candidate.bookId)).toBeNull();
+    expect(fixture.database.prepare('SELECT stage FROM structure_sets WHERE id = ?')
+      .pluck().get(draft.id)).toBe('draft');
+
+    await service.freeze(candidate.bookId, draft.id, ready.draft!.draftRevision);
+
+    expect(fixture.database.prepare('SELECT COUNT(*) FROM analysis_module_instances').pluck().get()).toBe(7);
+    expect(fixture.database.prepare(`
+      SELECT COUNT(*) FROM (
+        SELECT book_id, module_id, scope_kind, COUNT(*) AS count
+        FROM analysis_module_instances
+        GROUP BY book_id, module_id, scope_kind HAVING count > 1
+      )
+    `).pluck().get()).toBe(0);
+  });
+
+  it.each([
+    {
+      label: 'one book-scope instance is missing',
+      corrupt(database: SqliteDatabase, bookId: BreakdownBookId) {
+        database.prepare(`
+          DELETE FROM analysis_module_instances
+          WHERE book_id = ? AND module_id = 'world_rules'
+        `).run(bookId);
+      },
+    },
+    {
+      label: 'seven instances have a mismatched module ID set',
+      corrupt(database: SqliteDatabase, bookId: BreakdownBookId) {
+        database.exec('PRAGMA foreign_keys = OFF');
+        try {
+          database.prepare(`
+            UPDATE analysis_module_instances SET module_id = 'corrupt-module-id'
+            WHERE book_id = ? AND module_id = 'world_rules'
+          `).run(bookId);
+        } finally {
+          database.exec('PRAGMA foreign_keys = ON');
+        }
+      },
+    },
+  ])('maps an incomplete instance contract and rolls replacement freeze back when $label', async ({ corrupt }) => {
+    let jobIndex = 0;
+    let draftIndex = 0;
+    const { service, candidate, draft, fixture } = await detectedDraftFixture(
+      'incomplete-instance-initial-draft',
+      {
+        createJobId: () => `incomplete-instance-job-${++jobIndex}` as JobId,
+        createDraftSetId: () => `incomplete-instance-draft-${++draftIndex}` as StructureSetId,
+        structureEditionChangePort: new AnalysisModuleInstanceEditionChangePort(),
+      },
+    );
+    fixtureReviewAcceptAll(service, candidate.bookId, draft);
+    const firstReady = await service.getWorkspace(candidate.bookId);
+    await service.freeze(candidate.bookId, draft.id, firstReady.draft!.draftRevision);
+    corrupt(fixture.database, candidate.bookId);
+    const replacement = service.unfreeze(candidate.bookId, draft.id);
+
+    await expect(service.freeze(candidate.bookId, replacement.id, replacement.draftRevision))
+      .rejects.toMatchObject({
+        reason: 'structure_reference_blocked',
+        blockers: ['book_scope_instances_incomplete'],
+      });
+    expect(fixture.database.prepare('SELECT structure_edition FROM books WHERE id = ?')
+      .pluck().get(candidate.bookId)).toBe(1);
+    expect(fixture.database.prepare(`
+      SELECT stage, structure_edition AS structureEdition
+      FROM structure_sets WHERE id = ?
+    `).get(replacement.id)).toEqual({ stage: 'draft', structureEdition: null });
+    expect(fixture.database.prepare("SELECT COUNT(*) FROM jobs WHERE kind = 'structure_edition'")
+      .pluck().get()).toBe(1);
+  });
+
+  it('maps a source snapshot mismatch and rolls replacement freeze back', async () => {
+    let jobIndex = 0;
+    let draftIndex = 0;
+    const { service, candidate, draft, fixture } = await detectedDraftFixture(
+      'source-mismatch-instance-draft',
+      {
+        createJobId: () => `source-mismatch-job-${++jobIndex}` as JobId,
+        createDraftSetId: () => `source-mismatch-draft-${++draftIndex}` as StructureSetId,
+        structureEditionChangePort: new AnalysisModuleInstanceEditionChangePort(),
+      },
+    );
+    fixtureReviewAcceptAll(service, candidate.bookId, draft);
+    const firstReady = await service.getWorkspace(candidate.bookId);
+    await service.freeze(candidate.bookId, draft.id, firstReady.draft!.draftRevision);
+    fixture.database.exec('DROP TRIGGER trg_analysis_module_instances_scope_integrity_update');
+    fixture.database.prepare(`
+      UPDATE analysis_module_instances SET structure_edition = 99
+      WHERE book_id = ? AND module_id = 'world_rules'
+    `).run(candidate.bookId);
+    const replacement = service.unfreeze(candidate.bookId, draft.id);
+
+    await expect(service.freeze(candidate.bookId, replacement.id, replacement.draftRevision))
+      .rejects.toMatchObject({
+        reason: 'structure_reference_blocked',
+        blockers: ['book_scope_instance_source_mismatch'],
+      });
+    expect(fixture.database.prepare('SELECT structure_edition FROM books WHERE id = ?')
+      .pluck().get(candidate.bookId)).toBe(1);
+    expect(fixture.database.prepare(`
+      SELECT stage, structure_edition AS structureEdition
+      FROM structure_sets WHERE id = ?
+    `).get(replacement.id)).toEqual({ stage: 'draft', structureEdition: null });
+    expect(fixture.database.prepare("SELECT COUNT(*) FROM jobs WHERE kind = 'structure_edition'")
+      .pluck().get()).toBe(1);
+  });
+
+  it('maps a damaged module contract and rolls first freeze back before retrying atomically', async () => {
+    let jobIndex = 0;
+    const { service, candidate, draft, fixture } = await detectedDraftFixture(
+      'damaged-module-contract-draft',
+      {
+        createJobId: () => `damaged-contract-job-${++jobIndex}` as JobId,
+        structureEditionChangePort: new AnalysisModuleInstanceEditionChangePort(),
+      },
+    );
+    fixtureReviewAcceptAll(service, candidate.bookId, draft);
+    const ready = await service.getWorkspace(candidate.bookId);
+    fixture.database.prepare(`
+      UPDATE analysis_modules SET name = 'damaged module name'
+      WHERE id = 'world_rules'
+    `).run();
+
+    await expect(service.freeze(candidate.bookId, draft.id, ready.draft!.draftRevision))
+      .rejects.toMatchObject({
+        reason: 'structure_reference_blocked',
+        blockers: ['module_contract_unavailable'],
+      });
+    expect(fixture.database.prepare('SELECT structure_edition FROM books WHERE id = ?')
+      .pluck().get(candidate.bookId)).toBeNull();
+    expect(fixture.database.prepare(`
+      SELECT stage, structure_edition AS structureEdition
+      FROM structure_sets WHERE id = ?
+    `).get(draft.id)).toEqual({ stage: 'draft', structureEdition: null });
+    expect(fixture.database.prepare("SELECT COUNT(*) FROM jobs WHERE kind = 'structure_edition'")
+      .pluck().get()).toBe(0);
+    expect(fixture.database.prepare('SELECT COUNT(*) FROM analysis_module_instances')
+      .pluck().get()).toBe(0);
+
+    fixture.database.prepare(`
+      UPDATE analysis_modules SET name = '世界设定与规则'
+      WHERE id = 'world_rules'
+    `).run();
+    await service.freeze(candidate.bookId, draft.id, ready.draft!.draftRevision);
+    expect(fixture.database.prepare('SELECT COUNT(*) FROM analysis_module_instances')
+      .pluck().get()).toBe(7);
   });
 
   it('pins freeze to the library session captured before source IO', async () => {

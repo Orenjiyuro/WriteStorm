@@ -92,7 +92,47 @@ export const rendererText = {
     startOffset: 'Start offset',
     endOffset: 'End offset',
   },
-    sourceImport: {
+  moduleWorkbench: {
+    eyebrow: 'Frozen structure modules',
+    title: 'Analysis workbench',
+    instanceCount: (count: number) => `${count} module instances`,
+    moduleListLabel: 'Analysis modules',
+    loading: 'Loading module instances…',
+    empty: 'No module instances are available for this frozen structure.',
+    contractUnavailable: 'One or more module instances do not match the authoritative module contract.',
+    scope: 'Scope',
+    status: 'Status',
+    structureEdition: 'Source structure edition',
+    analysisRevision: 'Analysis revision',
+    body: 'Markdown body',
+    emptyAsset: '尚无资产',
+    actions: {
+      title: 'AI analysis actions',
+      runAnalysis: 'Run analysis',
+      rerunModule: 'Rerun module',
+      viewRerunDiff: 'View rerun diff',
+      analysisDisabledReason:
+        'Unavailable: the Codex SDK compatibility spike has not passed, so no AI analysis runtime is admitted.',
+      rerunDisabledReason:
+        'Unavailable: the AI Job runtime is not admitted, so this module cannot be rerun.',
+      diffDisabledReason:
+        'Unavailable: No rerun candidate exists, and rerun diff is not implemented.',
+    },
+    scopeLabels: {
+      book: 'Book scope',
+      volume: (nodeId: string) => `Volume scope · ${nodeId}`,
+      chapter: (nodeId: string) => `Chapter scope · ${nodeId}`,
+      storySegmentRange: (rangeId: string) => `Story segment range · ${rangeId}`,
+    },
+    statusLabels: {
+      not_generated: 'Not generated',
+      generated_pending_review: 'Pending review',
+      confirmed: 'Confirmed',
+      stale: 'Stale',
+      needs_rebuild: 'Needs rebuild',
+    },
+  },
+  sourceImport: {
     button: 'Import source',
     actionError: 'Source import failed.',
     failure: {

@@ -4,6 +4,7 @@ import type {
   ContractRequest,
   ImportSourceResult,
   LibrarySessionSummary,
+  ModuleInstanceSummary,
 } from '../../shared/contracts';
 import { rendererText } from '../i18n';
 import {
@@ -13,6 +14,7 @@ import {
 } from '../features/breakdown-shelf/source-import-failure';
 import { StructureReviewPanel } from '../features/structure-review/StructureReviewPanel';
 import type { StructureWorkspace } from '../../shared/contracts/structure';
+import { AnalysisModuleWorkbench } from '../features/module-workbench/AnalysisModuleWorkbench';
 
 export type LastImportPresentation = {
   readonly sessionId: string;
@@ -30,6 +32,9 @@ export type BreakdownShelfRouteProps = {
   readonly structureLoading: boolean;
   readonly structureActionPending: boolean;
   readonly structureError: string | null;
+  readonly moduleInstances?: readonly ModuleInstanceSummary[];
+  readonly moduleInstancesLoading?: boolean;
+  readonly moduleInstancesError?: string | null;
   readonly onImport: () => void;
   readonly onOpenBook: (book: BookSummary) => void;
   readonly onDetectStructure: () => void;
@@ -107,22 +112,37 @@ export function BreakdownShelfRoute(props: BreakdownShelfRouteProps): ReactEleme
           ) : null}
         </section>
         {props.openedBook ? (
-          <StructureReviewPanel
-            book={props.openedBook}
-            workspace={props.structureWorkspace}
-            loading={props.structureLoading}
-            actionPending={props.structureActionPending}
-            error={props.structureError}
-            onDetect={props.onDetectStructure}
-            onRecoverDetection={props.onRecoverStructureDetection}
-            onCreateDraft={props.onCreateStructureDraft}
-            onCreateManualDraft={props.onCreateManualStructureDraft}
-            onUpdateNode={props.onUpdateStructureNode}
-            onUpdateRange={props.onUpdateStructureRange}
-            onDiscardDraft={props.onDiscardStructureDraft}
-            onFreeze={props.onFreezeStructure}
-            onUnfreeze={props.onUnfreezeStructure}
-          />
+          <>
+            <StructureReviewPanel
+              book={props.openedBook}
+              workspace={props.structureWorkspace}
+              loading={props.structureLoading}
+              actionPending={props.structureActionPending}
+              error={props.structureError}
+              onDetect={props.onDetectStructure}
+              onRecoverDetection={props.onRecoverStructureDetection}
+              onCreateDraft={props.onCreateStructureDraft}
+              onCreateManualDraft={props.onCreateManualStructureDraft}
+              onUpdateNode={props.onUpdateStructureNode}
+              onUpdateRange={props.onUpdateStructureRange}
+              onDiscardDraft={props.onDiscardStructureDraft}
+              onFreeze={props.onFreezeStructure}
+              onUnfreeze={props.onUnfreezeStructure}
+            />
+            {props.structureWorkspace?.frozen ? (
+              props.moduleInstancesLoading ? (
+                <p className="analysis-workbench-state" role="status">
+                  {rendererText.moduleWorkbench.loading}
+                </p>
+              ) : props.moduleInstancesError ? (
+                <p className="analysis-workbench-error" role="alert">
+                  {props.moduleInstancesError}
+                </p>
+              ) : props.moduleInstances ? (
+                <AnalysisModuleWorkbench instances={props.moduleInstances} />
+              ) : null
+            ) : null}
+          </>
         ) : null}
       </section>
     </main>

@@ -16,6 +16,11 @@ export type {
 } from '../structure/structure-detection-ipc';
 export { createStructureReviewIpcDependencies } from '../structure/structure-review-ipc';
 export type { StructureReviewIpcDependencies } from '../structure/structure-review-ipc';
+export { createAnalysisModuleInstanceIpcDependencies } from '../modules/analysis-module-instance-ipc';
+export type {
+  AnalysisModuleInstanceIpcDependencies,
+  AnalysisModuleInstanceListService,
+} from '../modules/analysis-module-instance-ipc';
 export {
   registerTypedIpcHandler,
   registerTypedIpcHandlers,

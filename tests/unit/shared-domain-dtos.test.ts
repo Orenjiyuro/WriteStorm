@@ -97,6 +97,7 @@ const moduleInstanceSummary = {
     rangeId,
   },
   status: 'generated_pending_review',
+  structureEdition: 2,
   analysisRevision: 3,
   updatedAt: '2026-07-07T00:00:00.000Z',
 } satisfies ModuleInstanceSummary;

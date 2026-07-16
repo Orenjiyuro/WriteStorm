@@ -310,3 +310,118 @@ Rules:
 - Recovery state, retry capability, and manual-draft authorization consume the repository selection; they must not reconstruct timestamp or UUID ordering.
 - `created_at` and `updated_at` remain display/audit metadata and are not causal ordering keys.
 - Migration 002 owns the positive and per-book uniqueness constraints because it remains unpublished; a released schema would require a forward migration instead.
+
+## D023: Analysis Module Definition Admission
+
+Decision: Task 9.2 admits migration 003 `analysis_module_definitions` and the `analysis_modules` reference table as the persisted definition source owned by the future `ModuleInstanceService`. The migration seeds exactly the seven ordinary analysis modules from its immutable migration-local `ANALYSIS_MODULE_DEFINITION_SEED_003`, and `AnalysisModuleRepository` rejects a persisted list that differs from the current shared contract in id, key, name, category, instance eligibility, or product order.
+
+Rules:
+
+- The seven `analysis_modules` rows are migration-owned reference seed data, not user business rows. Empty-database migration replay still requires zero user business rows and separately proves the exact seven reference rows.
+- Stable key allowlisting, `id = key`, non-blank names, category, `creates_module_instance = 1`, and product order are protected by migration-owned SQLite constraints and semantic witnesses.
+- `AI 约束摘要` remains the `ai_constraint_summary` secondary system page. It is not an `analysis_modules` row and does not create an ordinary instance.
+- Task 9.2 does not admit `analysis_module_instances`, module body/assets, AI execution, Jobs, module IPC, or workbench UI.
+- The retained real SQLite 3.53.2 schema-v2 fixture remains validated against migrations 001/002. A writable copy must upgrade through migration 003 and pass the complete runtime-schema validator without modifying the retained fixture.
+
+## D024: Analysis Module Instance Identity and Source Edition
+
+Decision: Task 9.3 admits migration 004 `analysis_module_instances`. A persisted identity uses `book_id + module_id + scope_kind` plus exactly one structured scope reference for `book`, `volume`, `chapter`, or `story_segment_range`; it is never an opaque polymorphic scope string. The migration creates only book-scope shells and backfills seven ordinary module instances for every already-frozen Book.
+
+Rules:
+
+- Foreign keys protect every reference, a mutually exclusive CHECK protects the discriminator shape, cross-table triggers require the frozen source set and referenced node/range to belong to the same Book snapshot, and one partial unique index per scope kind protects its natural identity. Reverse-protection triggers prevent later edits to a referenced source set's Book/stage/edition, node's kind/set, or story range's set from invalidating that identity; changing only `is_current` remains legal for replacement freeze.
+- Before creating the table or any shells, migration 004 requires the persisted module rows to exactly match migration 003's frozen seven-row seed, including id, key, name, category, instance eligibility, and product order. Missing or altered rows abort and roll back the migration; repair followed by retry is supported.
+- Instance IDs come from an injectable ID factory. Migration backfill and the future runtime creation path must use that same factory contract; a failed backfill rolls back the migration, and retry cannot duplicate a natural module/scope identity.
+- `structure_edition` is the source structure snapshot on which instance content is based. A replacement freeze may later mark an instance `needs_rebuild`, but it must not update an old instance's source edition to the Book's newer edition.
+- Migration 004 backfills only Books with a matching current frozen structure set. It creates no fake `volume`, `chapter`, or `story_segment_range` instances, no eighth instance for the `AI 约束摘要` secondary page, and no AI content or Job runtime.
+- Task 9.3 stores identity, scope, source version, revision, and status only. It does not add `body_markdown` or other asset placeholders; body/evidence/relation/technique/AI-constraint placeholders remain Task 9.5. It also does not wire future freeze creation, services, IPC, renderer queries, cache invalidation, or the module workbench.
+
+## D025: Authoritative Module Workspace Gate
+
+Decision: Task 9.1 keeps module workspace admission at a pure function boundary. The caller injects Book state, frozen-structure state, and a module contract snapshot; the gate performs no SQLite, LibraryService, or global-session access. The snapshot must exactly match the ordered authoritative Block 3 module/scope/asset/dependency contract or admission returns `module_contract_unavailable`.
+
+Rules:
+
+- Exact matching covers module keys; definition id, key, name, category, and instance eligibility; supported scopes and story-range relation; every allowed asset kind; required gates; and dependency edges.
+- Seven rows that are merely unique and internally self-consistent are not authoritative. Narrowed scopes/assets, cleared dependencies, altered display/category semantics, reordered entries, or replacement keys must be rejected.
+- Comparison is structural rather than reference-based. A decoded or cloned authoritative fixture is accepted, while tests prove failures through injected altered fixtures and never mutate shared constants.
+
+## D026: Immutable Block 9 Migration Snapshots
+
+Decision: migrations 003 and 004 own literal migration-local compatibility snapshots. Migration 003 uses `ANALYSIS_MODULE_DEFINITION_SEED_003` plus its frozen key allowlist for DDL and seed rows. Migration 004 uses `MODULE_INSTANCE_STATUS_VOCABULARY_004` for its status CHECK and validates schema-v3 rows against migration 003's frozen seed, never against mutable current-domain values.
+
+Rules:
+
+- Historical migrations may use erased shared-domain types but must not import mutable shared-domain values to generate DDL, seed data, constraints, or upgrade validation.
+- Admission tests prove the frozen snapshots currently equal the shared definitions and statuses. A future mismatch is a demand for a new forward migration and an explicit compatibility decision, not permission to edit 003/004.
+- Adding a module or status, or changing a module name, category, or order, must leave the replayed contents of migrations 003/004 unchanged.
+
+## D027: Runtime Book-Scope Shell Creation
+
+Decision: Task 9.4 implements `AnalysisModuleInstanceEditionChangePort` as the AnalysisModuleInstance owner of the existing synchronous DB-only structure-edition seam. Main composition injects it into `StructureService`; shell persistence therefore occurs in the same freeze transaction as the frozen structure, Book edition, structure-edition Job, and completion checkpoint.
+
+Rules:
+
+- First freeze creates exactly one book-scope instance for each of the seven current authoritative module definitions. IDs use the same injectable factory contract as migration 004 backfill, and the new frozen set/edition becomes the instance's source structure snapshot.
+- Reapplying the same first-freeze change is idempotent. A partial or mismatched existing set is an error rather than permission to fill gaps or silently create duplicates.
+- Replacement freeze keeps stable instance IDs and their historical source structure snapshot, and marks instances `needs_rebuild`; it must not update old `structure_edition` or `source_structure_set_id` to claim regeneration that did not occur.
+- Any adapter or ID-factory exception rolls back the complete freeze UoW. A retry starts from the pre-freeze state and may atomically create all seven shells.
+- Task 9.4 creates only book-scope shells. It does not create fake volume/chapter/range instances, asset placeholders, AI content, IPC, renderer cache behavior, or workbench UI.
+
+## D028: Matrix-Derived Asset Placeholders
+
+Decision: Task 9.5 adds forward migration 005 `analysis_module_asset_placeholders`, which owns the empty persisted `body_markdown` field without rewriting migration 004. Evidence, relation, technique, and `ai_constraint` placeholders are matrix-derived display slots with `尚无资产`; they are not fabricated business rows.
+
+Rules:
+
+- Placeholder slot order is body, evidence, relation, technique, then `ai_constraint`. Each slot lists only asset kinds allowed by that module's authoritative asset matrix; technique may represent observation and reusable-candidate kinds when both are allowed.
+- The ordinary module asset kind `ai_constraint` may produce a `尚无资产` slot. The `ai_constraint_summary` secondary system page is not an AnalysisModule, creates no eighth instance, and must be rejected by the placeholder builder.
+- Migration 005 adds `body_markdown TEXT NOT NULL DEFAULT ''` with a text-storage CHECK. Existing and future instances receive the same empty body without changing identity, revision, status, or source edition.
+- No speculative asset tables are admitted for evidence, relation, technique, or AI constraints. Their future persistence requires complete identity, owner, lifecycle, real write/read paths, and a new forward migration.
+- Task 9.5 adds no real asset content, evidence extraction, relations, technique candidates, AI execution, service/IPC reads, renderer behavior, or workbench UI.
+
+## D029: Frozen-Structure Module Workbench Placement
+
+Decision: Task 9.6 owns a renderer-only `AnalysisModuleWorkbench` presentation boundary. The workbench is mounted through the real Breakdown shelf for an opened Book only when its structure workspace has a frozen set and a module-instance list has been injected; it has no standalone or side-door route.
+
+Rules:
+
+- The list uses the authoritative seven-module product order and each item exposes its real structured scope and instance status. The selected detail shows module key/name, scope, status, source structure edition, analysis revision, and the matrix-derived empty Markdown-body placeholder.
+- Unknown module ids fail visibly as a contract mismatch instead of being presented as ordinary modules. `ai_constraint_summary` therefore cannot appear as an eighth workbench item.
+- Task 9.6 does not read SQLite or global session state from renderer code and does not implement `modules:list-instances`. Task 9.8 owns the typed main/IPC adapter, query key containing Library `sessionId` plus `bookId`, freeze refresh, and cross-session cache isolation.
+- Task 9.7 owns disabled AI action affordances. Task 9.6 adds no analysis, rerun, diff, body-edit, evidence, relation, technique, or AI-constraint action.
+
+## D030: Honest Disabled AI Action Shell
+
+Decision: Task 9.7 exposes Run analysis, Rerun module, and View rerun diff only as native disabled controls in the selected `AnalysisModuleInstance` detail. Every control has a distinct visible reason connected with `aria-describedby`; a generic banner is insufficient because the prerequisites differ.
+
+Rules:
+
+- Analysis is disabled because the required Codex SDK compatibility spike has not passed and no AI runtime is admitted.
+- Rerun is disabled because no AI Job runtime exists. Diff is disabled because no rerun candidate exists and rerun diff is not implemented.
+- Disabled actions have no callback, mutation, IPC invocation, Job creation, candidate revision, synthetic result, or fallback through `codex exec`, app-server, GUI automation, API keys, local models, or another provider.
+- A future enablement must complete its owning gate and replace the corresponding disabled shell through an explicitly authorized Task; Task 9.7 itself does not weaken any AI boundary.
+
+## D031: Session-Scoped Module Instance Read Path
+
+Decision: Task 9.8 implements `modules:list-instances` as a read-only main-side `AnalysisModuleInstanceService` plus typed IPC adapter. The service reads the current Library unit of work, evaluates the pure module-workspace gate against the persisted Book/current frozen structure and verified seven-module definition snapshot, and returns strict `ModuleInstanceSummary` values. It never exposes SQLite rows or body storage directly to renderer.
+
+Rules:
+
+- The renderer query key is `['library-session', sessionId, 'module-instances', bookId]`. Omitting either `sessionId` or `bookId` is a cache-isolation defect.
+- Successful freeze invalidates both `structureKeys.workspace(sessionId, bookId)` and `moduleInstanceKeys.instances(sessionId, bookId)`. Failed freeze does not claim a new instance list. Activating a different Library removes the complete previous-session query prefix.
+- AppRouter treats Library `sessionId` as a renderer-state boundary: any observed session identity change clears the previously opened Book and withdraws its structure/module workbench before the user can open a Book in the next Library. A mounted A→B test must prove both the old cache removal and that B never displays A's seven instances.
+- Missing Library, Book, frozen structure, authoritative module contract, or complete seven-book-scope shell set returns a stable blocker through `MODULE_ERROR`; unexpected errors remain the typed router's non-leaking `INTERNAL_ERROR`.
+- `MODULE_ERROR.recoverable` is reason-specific. `no_current_library`, `book_not_found`, `structure_not_frozen`, and `structure_snapshot_mismatch` are user-repairable; `module_contract_unavailable` and `book_scope_instances_incomplete` indicate persisted-contract damage and are non-recoverable through the current UI. A renderer must not promise retry for the latter class.
+- `modules:update-body` remains `NOT_IMPLEMENTED`. Task 9.8 adds no writes, volume/chapter/range shell creation, AI runtime, generated content, rerun candidate, or diff.
+
+## D032: Module Workbench Boundary Acceptance
+
+Decision: Task 9.9 closes Block 9 only when automated cross-layer tests and a packaged natural-entry journey jointly prove the `AnalysisModule` / `AnalysisModuleInstance` ownership boundary. The journey must start from the real Library entry, proceed through the Breakdown shelf and structure freeze, and discover the seven-instance Analysis workbench without a side URL or test-only renderer injection.
+
+Rules:
+
+- `analysis_modules` owns exactly the seven stable ordinary definitions and no per-Book scope, status, revision, source edition, or body state. `analysis_module_instances` owns that per-Book state and does not duplicate definition name, category, or product order.
+- The ordinary module asset kind `ai_constraint` may have an empty asset placeholder, but the `ai_constraint_summary` secondary system page is neither an `AnalysisModule` row nor an eighth `AnalysisModuleInstance`.
+- Packaged acceptance creates a Library, imports a Book from the Breakdown shelf, reviews and freezes the structure, then verifies seven ordered book-scope shells, their empty state, and the three honestly disabled AI actions. Reopening the Library must rediscover the persisted seven-instance workbench through the same natural route.
+- This acceptance admits no real AI content, AI Job runtime, evidence extraction, volume/chapter/range instance fabrication, rerun candidate, or rerun diff. Those capabilities require later explicitly authorized Tasks.

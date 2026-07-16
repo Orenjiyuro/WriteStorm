@@ -12,6 +12,10 @@ import Database from 'better-sqlite3';
 import net from 'node:net';
 import path from 'node:path';
 import {
+  ANALYSIS_MODULE_DEFINITIONS,
+  ANALYSIS_SECONDARY_SYSTEM_PAGES,
+} from '../../src/shared/domain';
+import {
   createElectronStderrBuffer,
   formatErrorWithElectronStderr,
   isSupportedPackagedPlatform,
@@ -68,6 +72,7 @@ test('imports a txt/md source through the packaged desktop entry using a main-pr
     await page.screenshot({ path: path.join(evidenceRoot, 'draft-ready.png'), fullPage: true });
     await page.getByRole('button', { name: 'Freeze structure' }).click();
     await expect(page.getByText('Structure edition 1 is frozen and current.')).toBeVisible();
+    await expectFrozenAnalysisWorkbench(page);
     await page.screenshot({ path: path.join(evidenceRoot, 'frozen.png'), fullPage: true });
   });
 
@@ -81,6 +86,7 @@ test('imports a txt/md source through the packaged desktop entry using a main-pr
     await expect(page.getByText('Source imported.')).not.toBeVisible();
     await page.getByRole('button', { name: 'Review structure' }).click();
     await expect(page.getByText('Structure edition 1 is frozen and current.')).toBeVisible();
+    await expectFrozenAnalysisWorkbench(page);
     await page.screenshot({ path: path.join(evidenceRoot, 'frozen-after-restart.png'), fullPage: true });
     await page.getByRole('button', { name: 'Create revision draft' }).click();
     await expect(page.getByText('Draft revision 1 is ready for review.')).toBeVisible();
@@ -118,6 +124,49 @@ test('imports a txt/md source through the packaged desktop entry using a main-pr
   expect(existsSync(copiedPath)).toBe(true);
   expect(readFileSync(copiedPath, 'utf8')).toBe(sourceText);
 });
+
+async function expectFrozenAnalysisWorkbench(page: Page): Promise<void> {
+  const workbench = page.locator('.analysis-module-workbench');
+  await expect(workbench.getByRole('heading', { name: 'Analysis workbench' })).toBeVisible();
+  await expect(workbench).toContainText('7 module instances');
+  await expect(workbench.locator('.analysis-module-list > li')).toHaveCount(
+    ANALYSIS_MODULE_DEFINITIONS.length,
+  );
+
+  for (const definition of ANALYSIS_MODULE_DEFINITIONS) {
+    await expect(workbench.locator('.analysis-module-list button', {
+      hasText: definition.name,
+    })).toHaveCount(1);
+  }
+  for (const pageDefinition of ANALYSIS_SECONDARY_SYSTEM_PAGES) {
+    await expect(workbench.getByText(pageDefinition.name, { exact: true })).toHaveCount(0);
+  }
+
+  await workbench.locator('.analysis-module-list button', {
+    hasText: '世界设定与规则',
+  }).click();
+  const detail = workbench.locator('.analysis-module-detail');
+  await expect(detail.getByRole('heading', { name: '世界设定与规则' })).toBeVisible();
+  await expect(detail).toContainText('world_rules');
+  await expect(detail).toContainText('Book scope');
+  await expect(detail).toContainText('Not generated');
+  await expect(detail).toContainText('尚无资产');
+  await expect(detail.getByRole('button', { name: 'Run analysis' })).toBeDisabled();
+  await expect(detail.getByRole('button', { name: 'Rerun module' })).toBeDisabled();
+  await expect(detail.getByRole('button', { name: 'View rerun diff' })).toBeDisabled();
+  await expect(detail.getByText(
+    'Unavailable: the Codex SDK compatibility spike has not passed, so no AI analysis runtime is admitted.',
+    { exact: true },
+  )).toBeVisible();
+  await expect(detail.getByText(
+    'Unavailable: the AI Job runtime is not admitted, so this module cannot be rerun.',
+    { exact: true },
+  )).toBeVisible();
+  await expect(detail.getByText(
+    'Unavailable: No rerun candidate exists, and rerun diff is not implemented.',
+    { exact: true },
+  )).toBeVisible();
+}
 
 test('shows packaged detection failure and lets the user retry from the structure workspace', async () => {
   test.setTimeout(60_000);

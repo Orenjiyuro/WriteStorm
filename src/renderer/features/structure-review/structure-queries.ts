@@ -2,6 +2,7 @@ import { mutationOptions, queryOptions, type QueryClient } from '@tanstack/react
 import type { ContractRequest } from '../../../shared/contracts';
 import type { StructureWorkspace } from '../../../shared/contracts/structure';
 import type { WritestormApi } from '../../../shared/contracts/preload-api';
+import { moduleInstanceKeys } from '../module-workbench/module-instance-queries';
 
 export const structureKeys = {
   workspace: (sessionId: string, bookId: string) =>
@@ -89,6 +90,12 @@ export function createStructureActionMutationOptions(
           bookId, frozenSetId: action.frozenSetId,
         });
       if (!response.ok) throw response.error;
+    },
+    onSuccess: async (_data, action, _context, mutation) => {
+      if (action.type !== 'freeze') return;
+      await (mutation.client as QueryClient).invalidateQueries({
+        queryKey: moduleInstanceKeys.instances(sessionId, bookId),
+      });
     },
     onSettled: async (_data, _error, _action, _context, mutation) => {
       await (mutation.client as QueryClient).invalidateQueries({

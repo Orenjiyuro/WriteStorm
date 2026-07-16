@@ -7,6 +7,7 @@ import { getCurrentSchemaVersion, runMigrations } from '../../../src/main/db/mig
 import { openSqliteDatabase, type SqliteDatabase } from '../../../src/main/db/sqlite';
 
 const tempDirs: string[] = [];
+const STRUCTURE_WORKSPACE_MIGRATIONS = APP_MIGRATIONS.slice(0, 2);
 
 afterEach(() => {
   for (const tempDir of tempDirs.splice(0)) rmSync(tempDir, { recursive: true, force: true });
@@ -16,7 +17,7 @@ describe('structure workspace migration 002', () => {
   it('builds the final structure workspace directly after the V1 runtime baseline', () => {
     const db = migratedDatabase();
     try {
-      expect(APP_MIGRATIONS.map(({ id, name }) => ({ id, name }))).toEqual([
+      expect(STRUCTURE_WORKSPACE_MIGRATIONS.map(({ id, name }) => ({ id, name }))).toEqual([
         { id: 1, name: 'v1_runtime_baseline' },
         { id: 2, name: 'structure_workspace' },
       ]);
@@ -103,7 +104,7 @@ describe('structure workspace migration 002', () => {
     const db = openSqliteDatabase(tempDatabasePath());
     try {
       expect(tableNames(db)).toEqual([]);
-      expect(() => runMigrations(db, APP_MIGRATIONS)).not.toThrow();
+      expect(() => runMigrations(db, STRUCTURE_WORKSPACE_MIGRATIONS)).not.toThrow();
       expect(getCurrentSchemaVersion(db)).toBe(2);
       expect(tableNames(db)).toContain('structure_nodes');
     } finally {
@@ -141,7 +142,7 @@ describe('structure workspace migration 002', () => {
 
 function migratedDatabase(): SqliteDatabase {
   const db = openSqliteDatabase(tempDatabasePath());
-  runMigrations(db, APP_MIGRATIONS);
+  runMigrations(db, STRUCTURE_WORKSPACE_MIGRATIONS);
   return db;
 }
 

@@ -8,6 +8,7 @@ import {
 import {
   createStructureDetectionIpcDependencies,
   createStructureReviewIpcDependencies,
+  createAnalysisModuleInstanceIpcDependencies,
   createTrustedDevServerOrigins,
   registerProductIpc,
 } from './ipc';
@@ -26,6 +27,8 @@ import { createMainWindow } from './windows/main-window';
 import { runOptionalSourceTextWorkerProbe } from './source-text/worker-probe';
 import { SourceImportService } from './source-text/source-import-service';
 import { createElectronSourceTextWorkerRunner } from './source-text/worker-runner';
+import { AnalysisModuleInstanceEditionChangePort } from './modules/analysis-module-instance-edition-change-port';
+import { AnalysisModuleInstanceService } from './modules/analysis-module-instance-service';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -49,9 +52,12 @@ const structureWorkerRunner = createElectronStructureWorkerRunner(__dirname, {
     });
   },
 });
+const moduleInstanceEditionChangePort = new AnalysisModuleInstanceEditionChangePort();
+const moduleInstanceService = new AnalysisModuleInstanceService({ libraryService });
 const structureService = new StructureService({
   libraryService,
   worker: structureWorkerRunner,
+  structureEditionChangePort: moduleInstanceEditionChangePort,
 });
 const bookService = new BookService({ libraryService });
 const sourceTextWorkerRunner = createElectronSourceTextWorkerRunner(__dirname);
@@ -237,6 +243,7 @@ app.whenReady().then(async () => {
       }),
       ...createStructureReviewIpcDependencies(structureService),
     },
+    modules: createAnalysisModuleInstanceIpcDependencies(moduleInstanceService),
   });
   await createWindow();
   await runOptionalNativeSqliteProbe();

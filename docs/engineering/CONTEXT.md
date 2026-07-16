@@ -91,6 +91,8 @@ Task 10.7 runs restart recovery only after a successful Library activation is pr
 
 Recovery converts only abandoned queued/running `source_import` Jobs to failed with `SOURCE_IMPORT_ABANDONED`, removes only each exact `source/.staging/{jobId}.tmp`, and preserves existing failed/resumable records for discovery through the natural Breakdown-shelf `Jobs & recovery` panel. Structure detection keeps its explicit-recovery policy. Persisted fixtures establish resumable display after reopen; they do not claim users can naturally produce resumable work. Task 10.7 adds no migration, schema, background queue, automatic Resume, executable Keep draft, AI runtime, or export execution. Task 10.8 owns the final regression gate and Block 10 status record.
 
+Task 10.8 completes the Block 10 regression gate without adding another Job implementation layer. The existing shared-domain, repository, JobService, application-service, typed IPC, renderer, restart-recovery, source-import, structure-freeze, and packaged natural-entry tests remain the executable authorities for the state machine, checkpoint safety, invalid payload rejection, and import guards. `docs/engineering/V1-BLOCK-10-STATUS.md` records the 10.1–10.8 reconciliation, the focused matrix, the fresh `npm run check` certification, and the honest boundary that a resumable fixture proves reopen discovery while there is still no natural resumable producer.
+
 ## 1. Current Repository State
 
 The repository now contains the first Electron application scaffold plus the Block 1 security and e2e baseline. It is no longer docs-only.

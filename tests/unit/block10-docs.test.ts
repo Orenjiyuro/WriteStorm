@@ -134,4 +134,27 @@ describe('Block 10 durable engineering status', () => {
     }
     expect(decisions).toContain('D040: Successful Library Activation Restart Recovery');
   });
+
+  it('records Task 10.8 regression certification and the complete Block 10 boundary', () => {
+    const context = readFileSync('docs/engineering/CONTEXT.md', 'utf8');
+    const decisions = readFileSync('docs/engineering/DECISIONS.md', 'utf8');
+    const status = readFileSync('docs/engineering/V1-BLOCK-10-STATUS.md', 'utf8');
+
+    for (const document of [context, decisions, status]) {
+      expect(document).toContain('Task 10.8');
+      expect(document).toContain('state machine');
+      expect(document).toContain('checkpoint safety');
+      expect(document).toContain('invalid payload');
+      expect(document).toContain('import guards');
+      expect(document).toContain('npm run check');
+    }
+    for (let task = 1; task <= 8; task += 1) {
+      expect(status).toContain(`10.${task}`);
+    }
+    expect(status).toContain('Jobs & recovery');
+    expect(status).toContain('13/13');
+    expect(status).toContain('resumable fixture');
+    expect(status).toContain('no natural resumable producer');
+    expect(decisions).toContain('D041: Block 10 Regression Gate And Completion Boundary');
+  });
 });

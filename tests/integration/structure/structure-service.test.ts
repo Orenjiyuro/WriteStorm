@@ -256,7 +256,7 @@ describe('StructureService', () => {
     await service.waitForIdle();
   });
 
-  it('persists cancellation before aborting the active worker', async () => {
+  it('persists cancellation only after aborting and stopping the active worker', async () => {
     const fixture = structureLibraryFixture();
     let stateObservedDuringAbort: { run: unknown; job: unknown } | null = null;
     const service = structureService(fixture, cancellationAwareWorker(() => {
@@ -268,9 +268,8 @@ describe('StructureService', () => {
     const started = await service.startDetection('book-1' as BreakdownBookId, { timeoutMs: 1_000 });
     await new Promise((resolve) => setImmediate(resolve));
 
-    expect(service.cancelDetection(started.job.id)).toBe(true);
-    expect(stateObservedDuringAbort).toEqual({ run: 'failed', job: 'cancelled' });
-    await service.waitForIdle();
+    await expect(service.cancelDetectionAndWait(started.job.id)).resolves.toBe(true);
+    expect(stateObservedDuringAbort).toEqual({ run: 'running', job: 'running' });
     expectDetectionState(fixture.database, 'failed', 'cancelled');
     expect(currentCandidateCount(fixture.database)).toBe(0);
   });

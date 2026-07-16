@@ -3,7 +3,7 @@ import { contractResponseSchema, emptyRequestSchema } from './common';
 import { bookRequestSchema, bookSummarySchema, optionalBookRequestSchema } from './books';
 import { exportStatusSchema } from './exports';
 import { importSourceRequestSchema, importSourceResponseSchema } from './source-import';
-import { jobRequestSchema, jobSummarySchema } from './jobs';
+import { jobDetailSchema, jobRequestSchema, jobSummarySchema } from './jobs';
 import { librarySessionSummarySchema } from './library';
 import { moduleInstanceSummarySchema, updateModuleBodyRequestSchema } from './modules';
 import {
@@ -144,7 +144,7 @@ export const CONTRACT_REGISTRY = {
   'jobs:get': createContract(
     'jobs:get',
     jobRequestSchema,
-    contractResponseSchema(jobSummarySchema.nullable()),
+    contractResponseSchema(jobDetailSchema.nullable()),
   ),
   'jobs:cancel': createContract(
     'jobs:cancel',

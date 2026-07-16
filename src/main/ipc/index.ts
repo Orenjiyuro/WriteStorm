@@ -21,6 +21,8 @@ export type {
   AnalysisModuleInstanceIpcDependencies,
   AnalysisModuleInstanceListService,
 } from '../modules/analysis-module-instance-ipc';
+export { createJobIpcDependencies } from '../jobs/job-ipc';
+export type { JobIpcDependencies, JobIpcService } from '../jobs/job-ipc';
 export {
   registerTypedIpcHandler,
   registerTypedIpcHandlers,

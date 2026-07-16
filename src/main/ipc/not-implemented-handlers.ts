@@ -17,6 +17,7 @@ import { LibraryServiceError as LibraryServiceErrorClass } from '../library/libr
 import type { StructureDetectionIpcDependencies } from '../structure/structure-detection-ipc';
 import type { StructureReviewIpcDependencies } from '../structure/structure-review-ipc';
 import type { AnalysisModuleInstanceIpcDependencies } from '../modules/analysis-module-instance-ipc';
+import type { JobIpcDependencies } from '../jobs/job-ipc';
 import {
   registerTypedIpcHandlers,
   type IpcMainLike,
@@ -48,6 +49,7 @@ export type ProductIpcRegistrationOptions = {
   };
   readonly structure?: StructureDetectionIpcDependencies & StructureReviewIpcDependencies;
   readonly modules?: AnalysisModuleInstanceIpcDependencies;
+  readonly jobs?: JobIpcDependencies;
 };
 
 export function registerNotImplementedProductIpcHandlers(
@@ -93,6 +95,15 @@ function createProductHandlers(options: ProductIpcRegistrationOptions): TypedIpc
     ...(options.books ? createBookProductHandlers(options.books) : {}),
     ...(options.structure ? createStructureProductHandlers(options.structure) : {}),
     ...(options.modules ? createModuleProductHandlers(options.modules) : {}),
+    ...(options.jobs ? createJobProductHandlers(options.jobs) : {}),
+  };
+}
+
+function createJobProductHandlers(jobs: JobIpcDependencies): TypedIpcHandlerMap {
+  return {
+    'jobs:list': (request) => jobs['jobs:list'](request),
+    'jobs:get': (request) => jobs['jobs:get'](request),
+    'jobs:cancel': (request) => jobs['jobs:cancel'](request),
   };
 }
 

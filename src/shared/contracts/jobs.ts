@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { JOB_STATES } from '../domain/job';
+import { JOB_STATES, JOB_TYPES } from '../domain/job';
 import { breakdownBookIdSchema, jobIdSchema } from './common';
 
 export const jobStateSchema = z.enum(JOB_STATES);
@@ -38,3 +38,10 @@ export const jobCheckpointSchema = versionedJobPayloadEnvelopeSchema.extend({
 }).strict();
 
 export type JobCheckpointDto = z.infer<typeof jobCheckpointSchema>;
+
+export const jobDetailSchema = jobSummarySchema.extend({
+  type: z.enum(JOB_TYPES),
+  checkpoints: z.array(jobCheckpointSchema),
+}).strict();
+
+export type JobDetail = z.infer<typeof jobDetailSchema>;

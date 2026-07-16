@@ -1,6 +1,11 @@
-import { jobSummarySchema, type JobSummary } from '../../shared/contracts';
+import {
+  jobDetailSchema,
+  jobSummarySchema,
+  type JobDetail,
+  type JobSummary,
+} from '../../shared/contracts';
 import type { JobType } from '../../shared/domain';
-import type { JobRecord } from './job-repository';
+import type { JobRecord, PersistedJobDetail } from './job-repository';
 
 const JOB_TITLES = {
   source_import: 'Import source',
@@ -31,5 +36,13 @@ export function mapJobRecordToSummary(job: JobRecord): JobSummary {
     checkpointSummary: job.state === 'completed' ? COMPLETION_SUMMARIES[job.kind] : null,
     failureReason: job.errorCode,
     updatedAt: job.updatedAt,
+  });
+}
+
+export function mapPersistedJobDetail(detail: PersistedJobDetail): JobDetail {
+  return jobDetailSchema.parse({
+    ...mapJobRecordToSummary(detail.job),
+    type: detail.job.kind,
+    checkpoints: detail.checkpoints,
   });
 }

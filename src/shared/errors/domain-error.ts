@@ -10,6 +10,7 @@ export const DOMAIN_ERROR_CODES = [
   'IMPORT_ERROR',
   'STRUCTURE_ERROR',
   'MODULE_ERROR',
+  'JOB_ERROR',
   'INTERNAL_ERROR',
 ] as const;
 

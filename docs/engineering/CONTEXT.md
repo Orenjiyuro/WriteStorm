@@ -75,6 +75,12 @@ The pre-Task 10.5 integrity remediation makes four previously descriptive bounda
 
 `createQueued` now rejects every capability whose `creatable` flag is false with `job_not_creatable`, even when a caller injects a matching payload schema. Source import no longer prebuilds a completed `JobSummary`: the import transaction accepts Job identity and timestamp, returns the persisted JobRecord produced by `completeWithCheckpoint`, and the shared main-side mapper builds the response DTO from that record. SQLite remains the fact source. These changes add no migration, IPC, renderer, runtime cancellation, AI, or export path; typed Job IPC and owner-first cancellation remain Task 10.5.
 
+Task 10.5 replaces the Job not-implemented boundary with typed `jobs:list`, `jobs:get`, and `jobs:cancel` handlers. Library-wide list is the default, includes failed imports whose `bookId` is null, accepts an optional Book filter, and preserves repository `updatedAt DESC` ordering. `jobs:get` returns a distinct persisted `JobDetail` containing the summary, Job type, and validated checkpoints instead of expanding `JobSummary`. Expected Job failures cross IPC as the stable `JOB_ERROR` domain code; unrelated product channels remain not implemented.
+
+Cancellation is owner-first. Active source imports are indexed by Job id and stopped through `cancelImport(jobId)`; active structure detections are stopped through `cancelDetectionAndWait(jobId)`. Each runtime owner aborts the exact operation, waits for worker exit and cleanup, and only then calls the confirmed-stopped Job persistence path. `jobs:cancel` never writes `cancelled` before owner confirmation. Dormant queued/paused/resumable work with no runtime owner may use the ownerless path, while an active Job with no confirmed owner fails closed. Source-import lifecycle shutdown now records cancellation rather than misclassifying the abort as worker failure.
+
+Task 10.5 changes no migration or database schema and adds no renderer, recovery panel, automatic resume, keep-draft action, AI runtime, queue, or export execution. The natural Library/Breakdown-shelf discovery and recovery UI remain Task 10.6.
+
 ## 1. Current Repository State
 
 The repository now contains the first Electron application scaffold plus the Block 1 security and e2e baseline. It is no longer docs-only.

@@ -580,7 +580,9 @@ export class StructureService {
         );
       }
       runs.markCancelled(orphan.detectionRun.id, this.now());
-      new JobService({ database: session.database }).transition(orphan.job.id, 'cancelled', this.now());
+      new JobService({ database: session.database }).cancel(orphan.job.id, this.now(), {
+        runtimeOwner: 'confirmed_stopped',
+      });
       return runs.getById(orphan.detectionRun.id)!;
     });
   }
@@ -595,12 +597,16 @@ export class StructureService {
       return false;
     }
 
-    this.writeFor(active, (database) => {
-      new StructureDetectionRunRepository(database).markCancelled(active.runId, this.now());
-      new JobService({ database }).transition(active.started.job.id, 'cancelled', this.now());
-    });
     active.cancelled = true;
     active.controller.abort();
+    return true;
+  }
+
+  async cancelDetectionAndWait(jobId: JobId): Promise<boolean> {
+    const active = this.activeByJobId.get(jobId);
+    if (!active) return false;
+    this.cancelDetection(jobId);
+    await active.completion;
     return true;
   }
 
@@ -653,6 +659,7 @@ export class StructureService {
   private async executeActive(active: ActiveDetection): Promise<void> {
     try {
       if (active.cancelled) {
+        this.failOrCancel(active, 'cancelled', 'cancelled_by_user');
         return;
       }
       this.writeFor(active, (database) => {
@@ -686,6 +693,7 @@ export class StructureService {
       }, options.timeoutMs, options.signal ? { signal: options.signal } : undefined);
     } catch (error) {
       if (active?.cancelled) {
+        this.failOrCancel(prepared, 'cancelled', 'cancelled_by_user');
         throw error;
       }
       if (error instanceof UtilityWorkerRunnerError) {
@@ -705,6 +713,7 @@ export class StructureService {
     }
 
     if (active?.cancelled) {
+      this.failOrCancel(prepared, 'cancelled', 'cancelled_by_user');
       throw new StructureServiceError('UTILITY_WORKER_CANCELLED', 'Structure detection was cancelled.');
     }
     await this.assertSourceStillCurrent(prepared);
@@ -843,7 +852,9 @@ export class StructureService {
       const runs = new StructureDetectionRunRepository(database);
       if (jobState === 'cancelled') {
         runs.markCancelled(prepared.runId, this.now());
-        new JobService({ database }).transition(prepared.started.job.id, 'cancelled', this.now());
+        new JobService({ database }).cancel(prepared.started.job.id, this.now(), {
+          runtimeOwner: 'confirmed_stopped',
+        });
       } else {
         runs.markFailed(prepared.runId, reason, this.now());
         new JobService({ database }).fail(prepared.started.job.id, this.now(), { errorCode: reason });

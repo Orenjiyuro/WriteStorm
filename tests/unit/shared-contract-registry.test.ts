@@ -285,21 +285,26 @@ describe('shared contract registry', () => {
     );
   });
 
-  it('uses the canonical JobSummary schema for Job responses', () => {
+  it('uses JobSummary for lists and JobDetail for jobs:get', () => {
     const estimatingJob = {
       ...completedImportJob,
       state: 'estimating',
     } satisfies JobSummary;
 
     expect(jobSummarySchema.parse(estimatingJob)).toEqual(estimatingJob);
+    const detail = {
+      ...estimatingJob,
+      type: 'source_import' as const,
+      checkpoints: [],
+    };
     expect(
       getContract('jobs:get').response.parse({
         ok: true,
-        data: estimatingJob,
+        data: detail,
       }),
     ).toEqual({
       ok: true,
-      data: estimatingJob,
+      data: detail,
     });
   });
 

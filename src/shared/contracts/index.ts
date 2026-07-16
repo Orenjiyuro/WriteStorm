@@ -59,6 +59,7 @@ export type {
 } from './source-import';
 export {
   jobCheckpointSchema,
+  jobDetailSchema,
   jobRequestSchema,
   jobStateSchema,
   jobSummarySchema,
@@ -66,6 +67,7 @@ export {
 } from './jobs';
 export type {
   JobCheckpointDto,
+  JobDetail,
   JobSummary,
   VersionedJobPayloadEnvelope,
 } from './jobs';

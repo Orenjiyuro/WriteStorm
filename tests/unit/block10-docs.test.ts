@@ -83,4 +83,23 @@ describe('Block 10 durable engineering status', () => {
     }
     expect(decisions).toContain('D037: Pre-10.5 Job Integrity Remediation');
   });
+
+  it('records Task 10.5 typed IPC and owner-first cancellation', () => {
+    const context = readFileSync('docs/engineering/CONTEXT.md', 'utf8');
+    const decisions = readFileSync('docs/engineering/DECISIONS.md', 'utf8');
+
+    for (const document of [context, decisions]) {
+      expect(document).toContain('Task 10.5');
+      expect(document).toContain('jobs:list');
+      expect(document).toContain('jobs:get');
+      expect(document).toContain('jobs:cancel');
+      expect(document).toContain('JobDetail');
+      expect(document).toContain('JOB_ERROR');
+      expect(document).toContain('cancelImport(jobId)');
+      expect(document).toContain('cancelDetectionAndWait(jobId)');
+      expect(document).toContain('owner-first');
+      expect(document).toContain('Task 10.6');
+    }
+    expect(decisions).toContain('D038: Typed Job IPC And Runtime-Owner Cancellation');
+  });
 });

@@ -9,6 +9,7 @@ import {
   createStructureDetectionIpcDependencies,
   createStructureReviewIpcDependencies,
   createAnalysisModuleInstanceIpcDependencies,
+  createJobIpcDependencies,
   createTrustedDevServerOrigins,
   registerProductIpc,
 } from './ipc';
@@ -29,6 +30,7 @@ import { SourceImportService } from './source-text/source-import-service';
 import { createElectronSourceTextWorkerRunner } from './source-text/worker-runner';
 import { AnalysisModuleInstanceEditionChangePort } from './modules/analysis-module-instance-edition-change-port';
 import { AnalysisModuleInstanceService } from './modules/analysis-module-instance-service';
+import { JobApplicationService } from './jobs/job-application-service';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -67,6 +69,11 @@ const sourceImportService = new SourceImportService({
   afterImportCommitted: async ({ bookId }) => {
     await structureService.startDetection(bookId, { timeoutMs: structureDetectionTimeoutMs });
   },
+});
+const jobApplicationService = new JobApplicationService({
+  libraryService,
+  sourceImports: sourceImportService,
+  structure: structureService,
 });
 const books = createBookImportIpcDependencies({
   books: bookService,
@@ -244,6 +251,7 @@ app.whenReady().then(async () => {
       ...createStructureReviewIpcDependencies(structureService),
     },
     modules: createAnalysisModuleInstanceIpcDependencies(moduleInstanceService),
+    jobs: createJobIpcDependencies(jobApplicationService),
   });
   await createWindow();
   await runOptionalNativeSqliteProbe();

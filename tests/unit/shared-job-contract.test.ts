@@ -13,6 +13,7 @@ import {
 } from '../../src/shared/domain';
 import {
   jobCheckpointSchema,
+  jobDetailSchema,
   jobSummarySchema,
   versionedJobPayloadEnvelopeSchema,
 } from '../../src/shared/contracts';
@@ -179,6 +180,16 @@ describe('V1 Job and checkpoint contracts', () => {
       false,
     );
     expect(jobSummarySchema.safeParse({ ...validJobSummary, extra: true }).success).toBe(false);
+  });
+
+  it('keeps JobDetail separate from JobSummary for jobs:get', () => {
+    const detail = {
+      ...validJobSummary,
+      type: 'source_import',
+      checkpoints: [validCheckpoint],
+    };
+    expect(jobDetailSchema.parse(detail)).toEqual(detail);
+    expect(jobDetailSchema.safeParse(validJobSummary).success).toBe(false);
   });
 
   it('validates positive, versioned checkpoint payload envelopes', () => {

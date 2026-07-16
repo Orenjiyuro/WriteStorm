@@ -51,6 +51,7 @@ describe('shared domain errors', () => {
       'IMPORT_ERROR',
       'STRUCTURE_ERROR',
       'MODULE_ERROR',
+      'JOB_ERROR',
       'INTERNAL_ERROR',
     ]);
   });

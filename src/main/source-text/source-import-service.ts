@@ -30,6 +30,7 @@ export type SourceImportServiceErrorReason =
   | 'duplicate_source_hash'
   | 'target_conflict'
   | 'copy_failed'
+  | 'cancelled'
   | 'database_write_failed';
 
 export type SourceImportServiceResult =
@@ -46,6 +47,12 @@ export type SourceImportServiceResult =
     };
 
 type SourceImportWorker = Pick<SourceTextWorkerRunner, 'prepareImport'>;
+
+type ActiveSourceImport = {
+  readonly controller: AbortController;
+  readonly completion: Promise<SourceImportServiceResult>;
+  cancelRequested: boolean;
+};
 
 export class SourceImportService {
   private readonly libraryService: LibraryService;
@@ -66,7 +73,7 @@ export class SourceImportService {
     readonly sourceTextId: SourceTextId;
   }) => void | Promise<void>;
   private readonly pendingImports: PendingImportStore;
-  private readonly activeImports = new Map<Promise<SourceImportServiceResult>, AbortController>();
+  private readonly activeImports = new Map<JobId, ActiveSourceImport>();
   private importPauseDepth = 0;
 
   constructor(options: {
@@ -112,10 +119,17 @@ export class SourceImportService {
       ));
     }
     const controller = new AbortController();
-    const operation = this.runImport(input, controller.signal).finally(() => {
-      this.activeImports.delete(operation);
+    let activeJobId: JobId | null = null;
+    const operation = this.runImport(input, controller.signal, (jobId) => {
+      activeJobId = jobId;
+    }).finally(() => {
+      if (activeJobId && this.activeImports.get(activeJobId)?.completion === operation) {
+        this.activeImports.delete(activeJobId);
+      }
     });
-    this.activeImports.set(operation, controller);
+    if (activeJobId) {
+      this.activeImports.set(activeJobId, { controller, completion: operation, cancelRequested: false });
+    }
     return operation;
   }
 
@@ -125,7 +139,7 @@ export class SourceImportService {
     readonly pendingImportId?: string;
     readonly encodingOverride?: 'utf-8' | 'gb18030';
     readonly expectedSessionId?: string;
-  }, signal: AbortSignal): Promise<SourceImportServiceResult> {
+  }, signal: AbortSignal, registerJobId: (jobId: JobId) => void): Promise<SourceImportServiceResult> {
     const current = this.libraryService.getCurrent();
     if (!current) return failure('no_current_library', 'Open or create a library before importing source text.');
     if (input.expectedSessionId && input.expectedSessionId !== current.sessionId) {
@@ -152,6 +166,7 @@ export class SourceImportService {
     if (!format) return failure('invalid_extension', 'Only .txt and .md source files can be imported.');
 
     const jobId = (pending?.jobId as JobId | undefined) ?? this.createJobId();
+    registerJobId(jobId);
     const sourceTextId = (pending?.sourceTextId as SourceTextId | undefined) ?? this.createSourceTextId();
     const importedAt = this.now();
     const unitOfWork = this.libraryService.getUnitOfWork();
@@ -187,6 +202,10 @@ export class SourceImportService {
       }, 30_000, { signal });
     } catch (error) {
       removeStaging(current.library.rootPath, jobId);
+      if (signal.aborted) {
+        cancelCurrentImport(this.libraryService, current.sessionId, jobId, importedAt);
+        return failure('cancelled', 'Source import was cancelled.');
+      }
       if (isEncodingRequired(error)) {
         const token = this.pendingImports.create({
           libraryRootPath: current.library.rootPath,
@@ -203,6 +222,12 @@ export class SourceImportService {
       }
       failCurrentImport(this.libraryService, current.sessionId, jobId, importedAt, 'SOURCE_IMPORT_WORKER_FAILED');
       return failure('copy_failed', 'Source import worker could not prepare the selected file.');
+    }
+
+    if (signal.aborted) {
+      removeStaging(current.library.rootPath, jobId);
+      cancelCurrentImport(this.libraryService, current.sessionId, jobId, importedAt);
+      return failure('cancelled', 'Source import was cancelled.');
     }
 
     if (this.libraryService.getCurrent()?.sessionId !== current.sessionId) {
@@ -271,6 +296,11 @@ export class SourceImportService {
     let committed: ImportBookWithSourceTextResultWithJob;
     try {
       await this.beforeFinalWrite?.({ jobId, bookId, sourceTextId, contentHash: prepared.contentHash });
+      if (signal.aborted) {
+        removePromoted(promoted.targetPath);
+        cancelCurrentImport(this.libraryService, current.sessionId, jobId, importedAt);
+        return failure('cancelled', 'Source import was cancelled.');
+      }
       committed = unitOfWork.write((session) => {
         assertSession(session.sessionId, current.sessionId);
         return importBookWithSourceText(session.database, {
@@ -316,8 +346,22 @@ export class SourceImportService {
     this.pendingImports.clearAll();
   }
 
+  async cancelImport(jobId: JobId): Promise<boolean> {
+    const active = this.activeImports.get(jobId);
+    if (!active) return false;
+    if (!active.cancelRequested) {
+      active.cancelRequested = true;
+      active.controller.abort();
+    }
+    await active.completion;
+    return true;
+  }
+
   cancelActiveImports(): number {
-    for (const controller of this.activeImports.values()) controller.abort();
+    for (const active of this.activeImports.values()) {
+      active.cancelRequested = true;
+      active.controller.abort();
+    }
     return this.activeImports.size;
   }
 
@@ -331,7 +375,7 @@ export class SourceImportService {
   }
 
   async waitForIdle(): Promise<void> {
-    await Promise.allSettled([...this.activeImports.keys()]);
+    await Promise.allSettled([...this.activeImports.values()].map(({ completion }) => completion));
   }
 }
 
@@ -422,6 +466,24 @@ function failCurrentImport(
     });
   } catch {
     // Session replacement and cleanup failures are recovered on the next library open.
+  }
+}
+
+function cancelCurrentImport(
+  libraryService: LibraryService,
+  sessionId: string,
+  jobId: JobId,
+  updatedAt: string,
+): void {
+  try {
+    libraryService.getUnitOfWork().write((session) => {
+      assertSession(session.sessionId, sessionId);
+      new JobService({ database: session.database }).cancel(jobId, updatedAt, {
+        runtimeOwner: 'confirmed_stopped',
+      });
+    });
+  } catch {
+    // Session replacement owns cleanup; restart recovery handles an abandoned record.
   }
 }
 

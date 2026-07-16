@@ -85,11 +85,11 @@ describe('SourceImportService', () => {
     await service.waitForIdle();
     await expect(importing).resolves.toMatchObject({
       ok: false,
-      error: { details: { reason: 'copy_failed' } },
+      error: { details: { reason: 'cancelled' } },
     });
     expect(jobRow(fixture.library, 'job-1')).toMatchObject({
-      state: 'failed',
-      error_code: 'SOURCE_IMPORT_WORKER_FAILED',
+      state: 'cancelled',
+      error_code: null,
     });
     service.resumeImports();
     service.pauseImports();
@@ -104,6 +104,41 @@ describe('SourceImportService', () => {
       ok: false,
       error: { details: { reason: 'invalid_extension' } },
     });
+  });
+
+  it('cancels the exact active import by jobId after its worker stops', async () => {
+    const fixture = sourceImportFixture();
+    let workerStarted!: () => void;
+    const started = new Promise<void>((resolve) => { workerStarted = resolve; });
+    let stateObservedDuringAbort: unknown;
+    const worker = {
+      prepareImport: vi.fn((input: PrepareSourceImportInput, _timeout: number, options: { signal?: AbortSignal }) => (
+        new Promise<never>((_resolve, reject) => {
+          workerStarted();
+          options.signal?.addEventListener('abort', () => {
+            stateObservedDuringAbort = jobRow(fixture.library, input.jobId).state;
+            reject(new SourceTextWorkerRunnerError('cancelled', 'cancelled by jobs IPC'));
+          }, { once: true });
+        })
+      )),
+    };
+    const service = fixture.service({ worker });
+    const importing = service.import({ sourcePath: fixture.sourcePath });
+    await started;
+
+    await expect(service.cancelImport('job-other' as JobId)).resolves.toBe(false);
+    expect(stateObservedDuringAbort).toBeUndefined();
+    await expect(service.cancelImport('job-1' as JobId)).resolves.toBe(true);
+    expect(stateObservedDuringAbort).toBe('queued');
+    await expect(importing).resolves.toMatchObject({
+      ok: false,
+      error: { details: { reason: 'cancelled' } },
+    });
+    expect(jobRow(fixture.library, 'job-1')).toMatchObject({
+      state: 'cancelled',
+      error_code: null,
+    });
+    await expect(service.cancelImport('job-1' as JobId)).resolves.toBe(false);
   });
 
   it('owns queued -> running -> completed and commits Book, SourceText, Job, and checkpoint', async () => {

@@ -12,6 +12,7 @@ import {
 import type { StructureDetectionStartResult } from '../../../shared/contracts/structure';
 import type {
   BreakdownBookId,
+  JobId,
   JobState,
   StructureDetectionRunId,
   StructureDetectionRunState,
@@ -162,6 +163,38 @@ export class StructureDetectionRunRepository {
       ORDER BY run.run_sequence DESC
       LIMIT 1
     `).get(bookId) as DetectionRunJobRow | undefined;
+
+    return row ? mapStartResult(row) : null;
+  }
+
+  findActiveByJobId(jobId: JobId): StructureDetectionStartResult | null {
+    const row = this.database.prepare(`
+      SELECT
+        run.id AS run_id,
+        run.book_id AS run_book_id,
+        run.job_id AS run_job_id,
+        run.source_text_id,
+        run.source_text_edition,
+        run.source_content_hash,
+        run.decoded_text_length,
+        run.offset_unit,
+        run.state AS run_state,
+        run.failure_reason AS run_failure_reason,
+        run.created_at AS run_created_at,
+        run.updated_at AS run_updated_at,
+        job.book_id AS job_book_id,
+        job.state AS job_state,
+        job.completed_units AS job_completed_units,
+        job.total_units AS job_total_units,
+        job.payload_json AS job_payload_json,
+        job.error_code AS job_error_code,
+        job.updated_at AS job_updated_at
+      FROM structure_detection_runs run
+      JOIN jobs job ON job.id = run.job_id
+      WHERE run.job_id = ?
+        AND run.state IN ('queued', 'running')
+        AND job.kind = 'structure_detection'
+    `).get(jobId) as DetectionRunJobRow | undefined;
 
     return row ? mapStartResult(row) : null;
   }

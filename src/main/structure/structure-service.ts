@@ -604,10 +604,23 @@ export class StructureService {
 
   async cancelDetectionAndWait(jobId: JobId): Promise<boolean> {
     const active = this.activeByJobId.get(jobId);
-    if (!active) return false;
-    this.cancelDetection(jobId);
-    await active.completion;
-    return true;
+    if (active) {
+      this.cancelDetection(jobId);
+      await active.completion;
+      return true;
+    }
+
+    return this.libraryService.getUnitOfWork().write((session) => {
+      const runs = new StructureDetectionRunRepository(session.database);
+      const orphan = runs.findActiveByJobId(jobId);
+      if (!orphan) return false;
+      const cancelledAt = this.now();
+      runs.markCancelled(orphan.detectionRun.id, cancelledAt);
+      new JobService({ database: session.database }).cancel(jobId, cancelledAt, {
+        runtimeOwner: 'confirmed_stopped',
+      });
+      return true;
+    });
   }
 
   cancelAll(): number {

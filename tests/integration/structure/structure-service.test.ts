@@ -256,6 +256,57 @@ describe('StructureService', () => {
     await service.waitForIdle();
   });
 
+  it('cancels an orphan SQLite run by Job id and then permits detection', async () => {
+    const fixture = structureLibraryFixture();
+    new JobService({ database: fixture.database }).createQueued({
+      id: 'orphan-cancel-job' as JobId,
+      bookId: 'book-1' as BreakdownBookId,
+      kind: 'structure_detection',
+      totalUnits: 1,
+      payloadSchemaVersion: 1,
+      payload: {
+        title: 'Detect structure',
+        sourceTextId: 'source-1',
+        sourceTextEdition: 1,
+        contentHash: fixture.contentHash,
+      },
+      createdAt: '2026-07-11T00:00:30.000Z',
+      updatedAt: '2026-07-11T00:00:30.000Z',
+    });
+    new StructureDetectionRunRepository(fixture.database).createQueued({
+      runId: 'orphan-cancel-run' as StructureDetectionRunId,
+      jobId: 'orphan-cancel-job' as JobId,
+      bookId: 'book-1' as BreakdownBookId,
+      sourceSnapshot: {
+        sourceTextId: 'source-1' as import('../../../src/shared/domain').SourceTextId,
+        sourceTextEdition: 1,
+        contentHash: fixture.contentHash,
+        decodedTextLength: fixture.decodedText.length,
+        offsetUnit: 'utf16_code_unit',
+      },
+      createdAt: '2026-07-11T00:00:30.000Z',
+    });
+    const service = structureService(fixture, immediateWorker());
+
+    await expect(service.cancelDetectionAndWait('orphan-cancel-job' as JobId)).resolves.toBe(true);
+    expect(fixture.database.prepare(
+      "SELECT state, failure_reason FROM structure_detection_runs WHERE id = 'orphan-cancel-run'",
+    ).get()).toEqual({ state: 'failed', failure_reason: 'cancelled_by_user' });
+    expect(fixture.database.prepare(
+      "SELECT state FROM jobs WHERE id = 'orphan-cancel-job'",
+    ).pluck().get()).toBe('cancelled');
+    await expect(service.getWorkspace('book-1' as BreakdownBookId)).resolves.toMatchObject({
+      capabilities: {
+        canDetect: true,
+        blockers: expect.not.arrayContaining(['structure_detection_recovery_required']),
+      },
+    });
+
+    const started = await service.startDetection('book-1' as BreakdownBookId, { timeoutMs: 1_000 });
+    expect(started.detectionRun.state).toBe('queued');
+    await service.waitForIdle();
+  });
+
   it('persists cancellation only after aborting and stopping the active worker', async () => {
     const fixture = structureLibraryFixture();
     let stateObservedDuringAbort: { run: unknown; job: unknown } | null = null;

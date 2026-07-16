@@ -74,6 +74,10 @@ describe('JobApplicationService', () => {
     });
 
     await expect(application.cancel(sourceJobId)).resolves.toMatchObject({ state: 'cancelled' });
+    await expect(application.cancel(structureJobId)).rejects.toMatchObject({
+      reason: 'runtime_owner_not_stopped',
+    });
+    expect(fixture.jobs.get(structureJobId)?.state).toBe('queued');
     fixture.jobs.transition(structureJobId, 'running', createdAt);
     await expect(application.cancel(structureJobId)).rejects.toMatchObject({
       reason: 'runtime_owner_not_stopped',

@@ -56,6 +56,10 @@ export class JobApplicationService {
       return mapJobRecordToSummary(stopped);
     }
 
+    if (current.kind === 'structure_detection') {
+      throw new JobServiceError('runtime_owner_not_stopped', current.kind);
+    }
+
     return this.options.libraryService.getUnitOfWork().write((session) => {
       const cancelled = new JobService({ database: session.database }).cancel(
         jobId,

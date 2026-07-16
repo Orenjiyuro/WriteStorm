@@ -4,6 +4,7 @@ import {
   JOB_CAPABILITIES,
   JOB_CANCELLATION_POLICY,
   JOB_CHECKPOINT_APPEND_STATES,
+  JOB_CHECKPOINT_POLICIES,
   JOB_CHECKPOINT_UNITS,
   JOB_PROGRESS_POLICY,
   JOB_STATES,
@@ -88,6 +89,20 @@ describe('V1 Job and checkpoint contracts', () => {
     for (const state of ['failed', 'cancelled', 'completed'] as const) {
       expect(JOB_CHECKPOINT_APPEND_STATES).not.toContain(state);
     }
+    expect(JOB_CHECKPOINT_POLICIES.source_import).toEqual({
+      intermediateKinds: [],
+      finalKind: 'source_import_completed',
+      intermediateProgress: 'not_applicable',
+    });
+    expect(JOB_CHECKPOINT_POLICIES.structure_detection.finalKind)
+      .toBe('structure_detection_completed');
+    expect(JOB_CHECKPOINT_POLICIES.analysis_module_shell_creation.finalKind)
+      .toBe('analysis_module_shell_creation_completed');
+    expect(JOB_CHECKPOINT_POLICIES.analysis_module_instance_analysis).toMatchObject({
+      intermediateKinds: [],
+      finalKind: null,
+      intermediateProgress: 'atomic_required',
+    });
   });
 
   it('records cancellation, restart, resume, and draft ownership per Job type', () => {

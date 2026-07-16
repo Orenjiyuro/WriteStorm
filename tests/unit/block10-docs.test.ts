@@ -66,4 +66,21 @@ describe('Block 10 durable engineering status', () => {
     }
     expect(decisions).toContain('D036: Existing Flow Job Records And Runtime Module Shell Audit');
   });
+
+  it('records the pre-10.5 ownership and persisted DTO remediation', () => {
+    const context = readFileSync('docs/engineering/CONTEXT.md', 'utf8');
+    const decisions = readFileSync('docs/engineering/DECISIONS.md', 'utf8');
+
+    for (const document of [context, decisions]) {
+      expect(document).toContain('invalid_book_ownership');
+      expect(document).toContain('invalid_checkpoint_kind');
+      expect(document).toContain('job_not_creatable');
+      expect(document).toContain('null -> imported Book');
+      expect(document).toContain('final checkpoints');
+      expect(document).toContain('atomic checkpoint + progress');
+      expect(document).toContain('persisted JobRecord');
+      expect(document).toContain('Task 10.5');
+    }
+    expect(decisions).toContain('D037: Pre-10.5 Job Integrity Remediation');
+  });
 });

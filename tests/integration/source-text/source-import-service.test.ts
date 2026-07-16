@@ -34,6 +34,12 @@ afterEach(() => {
 });
 
 describe('SourceImportService', () => {
+  it('does not synthesize a completed JobSummary outside persistence', () => {
+    const source = readFileSync('src/main/source-text/source-import-service.ts', 'utf8');
+    expect(source).not.toContain('completedJobSummary');
+    expect(source).not.toContain('data: { ...committed, job }');
+  });
+
   it('rejects a stale dialog selection before queueing or starting the worker', async () => {
     const fixture = sourceImportFixture();
     const worker = successfulWorker(fixture.sourceBytes);

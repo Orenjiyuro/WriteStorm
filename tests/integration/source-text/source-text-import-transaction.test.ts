@@ -33,6 +33,8 @@ describe('source text import transaction', () => {
     expect(source).not.toMatch(/INSERT INTO jobs/i);
     expect(source).not.toMatch(/INSERT INTO job_checkpoints/i);
     expect(source).toContain('JobService');
+    expect(source).not.toContain('summary: JobSummary');
+    expect(source).not.toContain('input.job.summary');
   });
 
   it('inserts the book and source_text metadata in one transaction', () => {
@@ -127,7 +129,7 @@ describe('source text import transaction', () => {
 
     try {
       insertRunningImportJob(db, 'job-atomic' as JobId, 'source-atomic' as SourceTextId);
-      importBookWithSourceText(db, {
+      const result = importBookWithSourceText(db, {
         libraryId,
         bookId: 'book-atomic' as BreakdownBookId,
         title: 'Atomic Import',
@@ -136,19 +138,22 @@ describe('source text import transaction', () => {
           sourceTextId: 'source-atomic' as SourceTextId,
         }),
         job: {
+          id: 'job-atomic' as JobId,
           sourceTextId: 'source-atomic' as SourceTextId,
-          summary: {
-            id: 'job-atomic' as JobId,
-            bookId: 'book-atomic' as BreakdownBookId,
-            state: 'completed',
-            title: 'Import source',
-            completedUnits: 1,
-            totalUnits: 1,
-            checkpointSummary: 'Source imported.',
-            failureReason: null,
-            updatedAt: importedAt,
-          },
+          updatedAt: importedAt,
         },
+        updatedAt: importedAt,
+      });
+
+      expect(result.job).toEqual({
+        id: 'job-atomic',
+        bookId: 'book-atomic',
+        state: 'completed',
+        title: 'Import source',
+        completedUnits: 1,
+        totalUnits: 1,
+        checkpointSummary: 'Source imported.',
+        failureReason: null,
         updatedAt: importedAt,
       });
 
@@ -240,18 +245,9 @@ describe('source text import transaction', () => {
           sourceTextId: 'source-job-failure' as SourceTextId,
         }),
         job: {
+          id: 'job-duplicate' as JobId,
           sourceTextId: 'source-job-failure' as SourceTextId,
-          summary: {
-            id: 'job-duplicate' as JobId,
-            bookId: 'book-job-failure' as BreakdownBookId,
-            state: 'completed',
-            title: 'Import source',
-            completedUnits: 1,
-            totalUnits: 1,
-            checkpointSummary: 'Source imported.',
-            failureReason: null,
-            updatedAt: importedAt,
-          },
+          updatedAt: importedAt,
         },
         updatedAt: importedAt,
       })).toThrow();

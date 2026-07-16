@@ -2,11 +2,13 @@ import type { SqliteDatabase } from '../db/sqlite';
 import type { BookSummary, JobSummary } from '../../shared/contracts';
 import type {
   BreakdownBookId,
+  JobId,
   LibraryId,
   SourceTextId,
 } from '../../shared/domain';
 import type { SourceTextImportMetadata } from './source-text-metadata';
 import { JobService } from '../jobs/job-service';
+import { mapJobRecordToSummary } from '../jobs/job-summary-mapper';
 
 export type ImportBookWithSourceTextInput = {
   readonly libraryId: LibraryId;
@@ -14,8 +16,9 @@ export type ImportBookWithSourceTextInput = {
   readonly title: string;
   readonly sourceText: SourceTextImportMetadata;
   readonly job?: {
+    readonly id: JobId;
     readonly sourceTextId: SourceTextId;
-    readonly summary: JobSummary;
+    readonly updatedAt: string;
   };
   readonly updatedAt: string;
 };
@@ -25,6 +28,21 @@ export type ImportBookWithSourceTextResult = {
   readonly sourceText: SourceTextImportMetadata['dto'];
   readonly job?: JobSummary;
 };
+
+export type ImportBookWithSourceTextResultWithJob = Omit<
+  ImportBookWithSourceTextResult,
+  'job'
+> & { readonly job: JobSummary };
+
+export function importBookWithSourceText(
+  database: SqliteDatabase,
+  input: ImportBookWithSourceTextInput & { readonly job: NonNullable<ImportBookWithSourceTextInput['job']> },
+): ImportBookWithSourceTextResultWithJob;
+
+export function importBookWithSourceText(
+  database: SqliteDatabase,
+  input: ImportBookWithSourceTextInput,
+): ImportBookWithSourceTextResult;
 
 export function importBookWithSourceText(
   database: SqliteDatabase,
@@ -74,36 +92,37 @@ export function importBookWithSourceText(
     if (input.job) {
       const jobs = new JobService({ database });
       const payload = { sourceTextId: input.job.sourceTextId };
-      if (!jobs.get(input.job.summary.id)) {
+      if (!jobs.get(input.job.id)) {
         jobs.createQueued({
-          id: input.job.summary.id,
+          id: input.job.id,
           bookId: null,
           kind: 'source_import',
           totalUnits: 1,
           payloadSchemaVersion: 1,
           payload,
-          createdAt: input.job.summary.updatedAt,
-          updatedAt: input.job.summary.updatedAt,
+          createdAt: input.job.updatedAt,
+          updatedAt: input.job.updatedAt,
         });
-        jobs.transition(input.job.summary.id, 'running', input.job.summary.updatedAt);
+        jobs.transition(input.job.id, 'running', input.job.updatedAt);
       }
-      jobs.completeWithCheckpoint(input.job.summary.id, {
+      return jobs.completeWithCheckpoint(input.job.id, {
         bookId: input.bookId,
         completedUnits: 1,
         totalUnits: 1,
-        updatedAt: input.job.summary.updatedAt,
+        updatedAt: input.job.updatedAt,
         checkpoint: {
-          id: `${input.job.summary.id}:1`,
+          id: `${input.job.id}:1`,
           kind: 'source_import_completed',
           payloadSchemaVersion: 1,
           payload,
-          createdAt: input.job.summary.updatedAt,
+          createdAt: input.job.updatedAt,
         },
-      });
+      }).job;
     }
+    return undefined;
   });
 
-  writeImport();
+  const completedJob = writeImport();
 
   return {
     book: {
@@ -116,7 +135,7 @@ export function importBookWithSourceText(
       updatedAt: input.updatedAt,
     },
     sourceText: input.sourceText.dto,
-    ...(input.job ? { job: input.job.summary } : {}),
+    ...(completedJob ? { job: mapJobRecordToSummary(completedJob) } : {}),
   };
 }
 

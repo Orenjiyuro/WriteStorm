@@ -71,6 +71,7 @@ export {
   JOB_CAPABILITIES,
   JOB_CANCELLATION_POLICY,
   JOB_CHECKPOINT_APPEND_STATES,
+  JOB_CHECKPOINT_POLICIES,
   JOB_CHECKPOINT_UNITS,
   JOB_IMPLEMENTATION_STAGES,
   JOB_PROGRESS_POLICY,
@@ -81,6 +82,7 @@ export {
 } from './job';
 export type {
   JobCapability,
+  JobCheckpointPolicy,
   JobCheckpointUnit,
   JobImplementationStage,
   JobState,

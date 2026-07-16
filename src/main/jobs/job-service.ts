@@ -4,6 +4,7 @@ import {
   JOB_CAPABILITIES,
   JOB_CANCELLATION_POLICY,
   JOB_CHECKPOINT_APPEND_STATES,
+  JOB_CHECKPOINT_POLICIES,
   JOB_PROGRESS_POLICY,
   canTransitionJob,
   type BreakdownBookId,
@@ -23,7 +24,10 @@ export type JobServiceErrorReason =
   | 'invalid_progress'
   | 'invalid_transition'
   | 'invalid_checkpoint_state'
+  | 'invalid_checkpoint_kind'
+  | 'invalid_book_ownership'
   | 'invalid_failure'
+  | 'job_not_creatable'
   | 'job_not_cancellable'
   | 'runtime_owner_not_stopped'
   | 'job_not_found';
@@ -111,6 +115,9 @@ export class JobService {
   }
 
   createQueued(input: CreateQueuedJobInput): JobRecord {
+    if (!JOB_CAPABILITIES[input.kind].creatable) {
+      throw new JobServiceError('job_not_creatable', input.kind);
+    }
     this.validateProgress({ completedUnits: 0, totalUnits: null }, 0, input.totalUnits);
     const job: JobRecord = {
       ...input,
@@ -221,11 +228,6 @@ export class JobService {
     jobId: JobId,
     input: CompleteJobInput,
   ): { readonly job: JobRecord; readonly checkpoint: JobCheckpointRecord } {
-    this.validatePayload(
-      input.checkpoint.kind,
-      input.checkpoint.payloadSchemaVersion,
-      input.checkpoint.payload,
-    );
     if (input.totalUnits < 0 || input.completedUnits !== input.totalUnits) {
       throw new JobServiceError(
         'invalid_progress',
@@ -235,12 +237,18 @@ export class JobService {
 
     return this.database.transaction(() => {
       const current = this.require(jobId);
+      this.validateCompletionBookOwnership(current, input.bookId);
       if (!canTransitionJob(current.state, 'completed')) {
         throw new JobServiceError('invalid_transition', `${current.state} -> completed`);
       }
       this.validateProgress(current, input.completedUnits, input.totalUnits);
+      this.validatePayload(
+        input.checkpoint.kind,
+        input.checkpoint.payloadSchemaVersion,
+        input.checkpoint.payload,
+      );
       if (
-        input.checkpoint.kind !== `${current.kind}_completed` ||
+        input.checkpoint.kind !== JOB_CHECKPOINT_POLICIES[current.kind].finalKind ||
         !isDeepStrictEqual(input.checkpoint.payload, current.payload)
       ) {
         throw new JobServiceError('invalid_payload', 'final checkpoint does not match queued Job');
@@ -275,6 +283,10 @@ export class JobService {
     if (!allowsCurrentState) {
       throw new JobServiceError('invalid_checkpoint_state', current.state);
     }
+    if (!(JOB_CHECKPOINT_POLICIES[current.kind].intermediateKinds as readonly string[])
+      .includes(checkpoint.kind)) {
+      throw new JobServiceError('invalid_checkpoint_kind', `${current.kind} -> ${checkpoint.kind}`);
+    }
     this.validatePayload(
       checkpoint.kind,
       checkpoint.payloadSchemaVersion,
@@ -302,6 +314,21 @@ export class JobService {
     const schema = this.payloadSchemas[`${kind}@${version}`];
     if (!schema || !schema.safeParse(payload).success) {
       throw new JobServiceError('invalid_payload', `${kind}@${version}`);
+    }
+  }
+
+  private validateCompletionBookOwnership(
+    current: JobRecord,
+    completedBookId: BreakdownBookId,
+  ): void {
+    const valid = current.kind === 'source_import'
+      ? current.bookId === null
+      : current.bookId !== null && current.bookId === completedBookId;
+    if (!valid) {
+      throw new JobServiceError(
+        'invalid_book_ownership',
+        `${current.kind}: ${String(current.bookId)} -> ${completedBookId}`,
+      );
     }
   }
 

@@ -38,6 +38,49 @@ export const JOB_CHECKPOINT_UNITS = [
 
 export type JobCheckpointUnit = (typeof JOB_CHECKPOINT_UNITS)[number];
 
+export type JobCheckpointPolicy = {
+  readonly intermediateKinds: readonly string[];
+  readonly finalKind: string | null;
+  readonly intermediateProgress: 'atomic_required' | 'not_applicable';
+};
+
+/**
+ * Final checkpoints are owned by completeWithCheckpoint. Admitting any
+ * intermediate kind also requires an atomic checkpoint + progress API.
+ */
+export const JOB_CHECKPOINT_POLICIES = {
+  source_import: {
+    intermediateKinds: [],
+    finalKind: 'source_import_completed',
+    intermediateProgress: 'not_applicable',
+  },
+  structure_detection: {
+    intermediateKinds: [],
+    finalKind: 'structure_detection_completed',
+    intermediateProgress: 'not_applicable',
+  },
+  structure_edition: {
+    intermediateKinds: [],
+    finalKind: 'structure_edition_completed',
+    intermediateProgress: 'not_applicable',
+  },
+  analysis_module_shell_creation: {
+    intermediateKinds: [],
+    finalKind: 'analysis_module_shell_creation_completed',
+    intermediateProgress: 'not_applicable',
+  },
+  analysis_module_instance_analysis: {
+    intermediateKinds: [],
+    finalKind: null,
+    intermediateProgress: 'atomic_required',
+  },
+  export: {
+    intermediateKinds: [],
+    finalKind: null,
+    intermediateProgress: 'atomic_required',
+  },
+} as const satisfies Readonly<Record<JobType, JobCheckpointPolicy>>;
+
 export const JOB_IMPLEMENTATION_STAGES = [
   'implemented',
   'planned',

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { linkSync, mkdirSync, rmdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
-import type { ImportSourceResult, JobSummary, SourceTextFormat } from '../../shared/contracts';
+import type { ImportSourceResult, SourceTextFormat } from '../../shared/contracts';
 import type { BreakdownBookId, JobId, SourceTextId } from '../../shared/domain';
 import { JobService } from '../jobs/job-service';
 import type { LibraryService } from '../library/library-service';
@@ -9,7 +9,10 @@ import { LibraryUnitOfWorkError } from '../library/library-unit-of-work';
 import { resolveLibraryRelativePath } from '../library/path-guard';
 import { PendingImportStore } from '../books/book-import-entry';
 import { detectSourceTextDuplicateByHash } from './source-text-conflicts';
-import { importBookWithSourceText } from './source-text-import-transaction';
+import {
+  importBookWithSourceText,
+  type ImportBookWithSourceTextResultWithJob,
+} from './source-text-import-transaction';
 import { buildCanonicalSourceTextRelativePath, buildSourceTextImportMetadata } from './source-text-metadata';
 import { MAX_IMPORT_SOURCE_SIZE_BYTES } from './source-text-preflight';
 import { recoverAbandonedSourceImports } from './source-health';
@@ -265,9 +268,7 @@ export class SourceImportService {
       relativePath,
       importedAt,
     });
-    const job = completedJobSummary(jobId, bookId, importedAt);
-
-    let committed: ReturnType<typeof importBookWithSourceText>;
+    let committed: ImportBookWithSourceTextResultWithJob;
     try {
       await this.beforeFinalWrite?.({ jobId, bookId, sourceTextId, contentHash: prepared.contentHash });
       committed = unitOfWork.write((session) => {
@@ -277,7 +278,7 @@ export class SourceImportService {
           bookId,
           title,
           sourceText,
-          job: { sourceTextId, summary: job },
+          job: { id: jobId, sourceTextId, updatedAt: importedAt },
           updatedAt: importedAt,
         });
       });
@@ -299,7 +300,7 @@ export class SourceImportService {
     } catch {
       // Import is already committed. Structure workspace exposes Detect/Retry recovery separately.
     }
-    return { ok: true, data: { ...committed, job } };
+    return { ok: true, data: committed };
   }
 
   recoverAbandonedImports(): Promise<{ readonly recoveredJobIds: string[] }> {
@@ -440,20 +441,6 @@ function duplicateFailure(duplicate: Exclude<ReturnType<typeof detectSourceTextD
     existingBookId: duplicate.existingBookId,
     existingSourceTextId: duplicate.existingSourceTextId,
   });
-}
-
-function completedJobSummary(jobId: JobId, bookId: BreakdownBookId, updatedAt: string): JobSummary {
-  return {
-    id: jobId,
-    bookId,
-    state: 'completed',
-    title: 'Import source',
-    completedUnits: 1,
-    totalUnits: 1,
-    checkpointSummary: 'Source imported.',
-    failureReason: null,
-    updatedAt,
-  };
 }
 
 function failure(

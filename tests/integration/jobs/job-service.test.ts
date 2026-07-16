@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
+import { z } from 'zod';
 import { APP_MIGRATIONS } from '../../../src/main/db/migrations';
 import { runMigrations } from '../../../src/main/db/migration-runner';
 import { openSqliteDatabase, type SqliteDatabase } from '../../../src/main/db/sqlite';
@@ -100,31 +101,132 @@ describe('JobService', () => {
     }
   });
 
-  it('assigns monotonically increasing checkpoint sequence numbers', () => {
+  it('rejects final and cross-type checkpoints through generic append', () => {
     const database = migratedDatabase();
     const service = new JobService({ database });
     try {
       service.createQueued(sourceImportJob());
       service.transition(jobId, 'running', runningAt);
-      const first = service.appendCheckpoint({
+      expect(() => service.appendCheckpoint({
         id: `${jobId}:first`,
         jobId,
         kind: 'source_import_completed',
         payloadSchemaVersion: 1,
         payload: { sourceTextId },
         createdAt,
-      });
-      const second = service.appendCheckpoint({
-        id: `${jobId}:second`,
+      })).toThrowError(expect.objectContaining({ reason: 'invalid_checkpoint_kind' }));
+      expect(() => service.appendCheckpoint({
+        id: `${jobId}:cross-type`,
         jobId,
-        kind: 'source_import_completed',
+        kind: 'structure_detection_completed',
         payloadSchemaVersion: 1,
-        payload: { sourceTextId },
+        payload: {
+          title: 'Detect structure',
+          sourceTextId,
+          sourceTextEdition: 1,
+          contentHash: 'sha256:source',
+        },
         createdAt: completedAt,
-      });
-      expect([first.sequence, second.sequence]).toEqual([1, 2]);
+      })).toThrowError(expect.objectContaining({ reason: 'invalid_checkpoint_kind' }));
+      expect(service.getWithCheckpoints(jobId)?.checkpoints).toEqual([]);
     } finally {
       database.close();
+    }
+  });
+
+  it('preserves Book ownership during completion', () => {
+    const database = migratedDatabase();
+    const service = new JobService({ database });
+    try {
+      insertBook(database);
+      database.prepare(`INSERT INTO books (id, title, created_at, updated_at)
+        VALUES ('book-other', 'Other Book', ?, ?)`).run(createdAt, createdAt);
+      service.createQueued({
+        id: jobId,
+        bookId,
+        kind: 'structure_detection',
+        totalUnits: 1,
+        payloadSchemaVersion: 1,
+        payload: {
+          title: 'Detect structure',
+          sourceTextId,
+          sourceTextEdition: 1,
+          contentHash: 'sha256:source',
+        },
+        createdAt,
+        updatedAt: createdAt,
+      });
+      service.transition(jobId, 'running', runningAt);
+      expect(() => service.completeWithCheckpoint(jobId, {
+        bookId: 'book-other' as BreakdownBookId,
+        completedUnits: 1,
+        totalUnits: 1,
+        updatedAt: completedAt,
+        checkpoint: {
+          id: `${jobId}:completed`,
+          kind: 'structure_detection_completed',
+          payloadSchemaVersion: 1,
+          payload: service.get(jobId)!.payload,
+          createdAt: completedAt,
+        },
+      })).toThrowError(expect.objectContaining({ reason: 'invalid_book_ownership' }));
+      expect(service.get(jobId)).toMatchObject({ bookId, state: 'running' });
+    } finally {
+      database.close();
+    }
+  });
+
+  it('only permits source_import to bind Book ownership from null', () => {
+    const importDatabase = migratedDatabase();
+    const structureDatabase = migratedDatabase();
+    try {
+      insertBook(importDatabase);
+      const imports = new JobService({ database: importDatabase });
+      imports.createQueued({ ...sourceImportJob(), bookId });
+      imports.transition(jobId, 'running', runningAt);
+      expect(() => imports.completeWithCheckpoint(jobId, {
+        bookId,
+        completedUnits: 1,
+        totalUnits: 1,
+        updatedAt: completedAt,
+        checkpoint: completedCheckpoint(),
+      })).toThrowError(expect.objectContaining({ reason: 'invalid_book_ownership' }));
+
+      insertBook(structureDatabase);
+      const structures = new JobService({ database: structureDatabase });
+      const payload = {
+        title: 'Detect structure' as const,
+        sourceTextId,
+        sourceTextEdition: 1,
+        contentHash: 'sha256:source',
+      };
+      structures.createQueued({
+        id: jobId,
+        bookId: null,
+        kind: 'structure_detection',
+        totalUnits: 1,
+        payloadSchemaVersion: 1,
+        payload,
+        createdAt,
+        updatedAt: createdAt,
+      });
+      structures.transition(jobId, 'running', runningAt);
+      expect(() => structures.completeWithCheckpoint(jobId, {
+        bookId,
+        completedUnits: 1,
+        totalUnits: 1,
+        updatedAt: completedAt,
+        checkpoint: {
+          id: `${jobId}:completed`,
+          kind: 'structure_detection_completed',
+          payloadSchemaVersion: 1,
+          payload,
+          createdAt: completedAt,
+        },
+      })).toThrowError(expect.objectContaining({ reason: 'invalid_book_ownership' }));
+    } finally {
+      importDatabase.close();
+      structureDatabase.close();
     }
   });
 
@@ -155,6 +257,29 @@ describe('JobService', () => {
         ...sourceImportJob(),
         payloadSchemaVersion: 2,
       })).toThrowError(expect.objectContaining({ reason: 'invalid_payload' }));
+      expect(service.list()).toEqual([]);
+    } finally {
+      database.close();
+    }
+  });
+
+  it('rejects contract-only Job types even when a payload schema is injected', () => {
+    const database = migratedDatabase();
+    const service = new JobService({
+      database,
+      payloadSchemas: { 'export@1': z.object({}).strict() },
+    });
+    try {
+      expect(() => service.createQueued({
+        id: jobId,
+        bookId: null,
+        kind: 'export',
+        totalUnits: 0,
+        payloadSchemaVersion: 1,
+        payload: {},
+        createdAt,
+        updatedAt: createdAt,
+      })).toThrowError(expect.objectContaining({ reason: 'job_not_creatable' }));
       expect(service.list()).toEqual([]);
     } finally {
       database.close();
@@ -266,11 +391,10 @@ describe('JobService', () => {
       insertBook(database);
       service.createQueued(sourceImportJob());
       service.transition(jobId, 'running', runningAt);
-      service.appendCheckpoint({
-        ...completedCheckpoint(),
-        id: 'duplicate-checkpoint-id',
-        jobId,
-      });
+      database.prepare(`INSERT INTO job_checkpoints (
+        id, job_id, sequence, kind, payload_schema_version, payload_json, created_at
+      ) VALUES ('duplicate-checkpoint-id', ?, 1, 'source_import_completed', 1, ?, ?)`)
+        .run(jobId, JSON.stringify({ sourceTextId }), createdAt);
 
       expect(() => service.completeWithCheckpoint(jobId, {
         bookId,
@@ -353,11 +477,10 @@ describe('JobService', () => {
     try {
       service.createQueued(sourceImportJob());
       service.transition(jobId, 'running', runningAt);
-      service.appendCheckpoint({
-        ...completedCheckpoint(),
-        id: `${jobId}:before-failure`,
-        jobId,
-      });
+      database.prepare(`INSERT INTO job_checkpoints (
+        id, job_id, sequence, kind, payload_schema_version, payload_json, created_at
+      ) VALUES (?, ?, 1, 'source_import_completed', 1, ?, ?)`)
+        .run(`${jobId}:before-failure`, jobId, JSON.stringify({ sourceTextId }), createdAt);
       expect(() => service.fail(jobId, completedAt, {
         errorCode: '   ',
       })).toThrowError(expect.objectContaining({ reason: 'invalid_failure' }));
@@ -368,14 +491,13 @@ describe('JobService', () => {
         jobId,
       })).toThrowError(expect.objectContaining({ reason: 'invalid_checkpoint_state' }));
       service.transition(jobId, 'resumable', completedAt);
-      expect(service.appendCheckpoint({
+      expect(() => service.appendCheckpoint({
         ...completedCheckpoint(),
         id: `${jobId}:after-resumable`,
         jobId,
-      })).toMatchObject({ sequence: 2 });
+      })).toThrowError(expect.objectContaining({ reason: 'invalid_checkpoint_kind' }));
       expect(service.getWithCheckpoints(jobId)?.checkpoints.map(({ id }) => id)).toEqual([
         `${jobId}:before-failure`,
-        `${jobId}:after-resumable`,
       ]);
     } finally {
       database.close();

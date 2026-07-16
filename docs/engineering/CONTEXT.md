@@ -71,6 +71,10 @@ Task 10.4 preserves the existing production Job write paths for source import, s
 
 Migration 004 remains immutable historical backfill. It must not fabricate `analysis_module_shell_creation` Jobs for shells created while upgrading an already-frozen Book, because no runtime Job occurred. The module-shell payload schemas are admitted only for this implemented runtime flow; future `analysis_module_instance_analysis` and `export` payloads remain absent and contract-only. Task 10.4 adds no migration, IPC, renderer, queue, AI analysis, worker cancellation, or export behavior. Exact runtime cancellation orchestration remains Task 10.5.
 
+The pre-Task 10.5 integrity remediation makes four previously descriptive boundaries executable. Completion preserves Book ownership: only `source_import` may bind `null -> imported Book`; every other Job must already own and retain the exact completed Book, with violations returning `invalid_book_ownership`. Per-JobType checkpoint policy owns each final kind. Generic append rejects cross-type and all final checkpoints with `invalid_checkpoint_kind`; final checkpoints remain exclusive to `completeWithCheckpoint`. No current runtime kind admits an intermediate checkpoint. A future batch intermediate kind requires a single atomic checkpoint + progress write API before admission.
+
+`createQueued` now rejects every capability whose `creatable` flag is false with `job_not_creatable`, even when a caller injects a matching payload schema. Source import no longer prebuilds a completed `JobSummary`: the import transaction accepts Job identity and timestamp, returns the persisted JobRecord produced by `completeWithCheckpoint`, and the shared main-side mapper builds the response DTO from that record. SQLite remains the fact source. These changes add no migration, IPC, renderer, runtime cancellation, AI, or export path; typed Job IPC and owner-first cancellation remain Task 10.5.
+
 ## 1. Current Repository State
 
 The repository now contains the first Electron application scaffold plus the Block 1 security and e2e baseline. It is no longer docs-only.

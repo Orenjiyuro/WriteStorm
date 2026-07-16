@@ -434,6 +434,8 @@ describe('SourceImportService', () => {
     const fixture = sourceImportFixture();
     seedAbandonedJob(fixture.library, 'queued-job', 'queued');
     seedAbandonedJob(fixture.library, 'running-job', 'running');
+    seedPreservedSourceImportRecoveryJob(fixture.library, 'failed-job', 'failed');
+    seedPreservedSourceImportRecoveryJob(fixture.library, 'resumable-job', 'resumable');
     mkdirSync(path.join(fixture.rootPath, 'source', '.staging'), { recursive: true });
     writeFileSync(path.join(fixture.rootPath, 'source', '.staging', 'queued-job.tmp'), 'queued');
     writeFileSync(path.join(fixture.rootPath, 'source', '.staging', 'running-job.tmp'), 'running');
@@ -451,6 +453,14 @@ describe('SourceImportService', () => {
     expect(jobRow(fixture.library, 'running-job')).toMatchObject({
       state: 'failed',
       error_code: 'SOURCE_IMPORT_ABANDONED',
+    });
+    expect(jobRow(fixture.library, 'failed-job')).toMatchObject({
+      state: 'failed',
+      error_code: 'PRESERVED_FAILURE',
+    });
+    expect(jobRow(fixture.library, 'resumable-job')).toMatchObject({
+      state: 'resumable',
+      error_code: 'PRESERVED_RECOVERY',
     });
     expect(existsSync(path.join(fixture.rootPath, 'source', '.staging', 'queued-job.tmp'))).toBe(false);
     expect(existsSync(path.join(fixture.rootPath, 'source', '.staging', 'running-job.tmp'))).toBe(false);
@@ -564,6 +574,27 @@ function seedAbandonedJob(library: LibraryService, jobId: string, state: 'queued
       created_at, updated_at
     ) VALUES (?, NULL, 'source_import', ?, 0, 1, 1, ?, NULL, NULL, ?, ?)
   `).run(jobId, state, JSON.stringify({ sourceTextId: `${jobId}-source` }), importedAt, importedAt));
+}
+
+function seedPreservedSourceImportRecoveryJob(
+  library: LibraryService,
+  jobId: string,
+  state: 'failed' | 'resumable',
+): void {
+  library.getUnitOfWork().write((session) => session.database.prepare(`
+    INSERT INTO jobs (
+      id, book_id, kind, state, completed_units, total_units,
+      payload_schema_version, payload_json, error_code, error_details_json,
+      created_at, updated_at
+    ) VALUES (?, NULL, 'source_import', ?, 0, 1, 1, ?, ?, NULL, ?, ?)
+  `).run(
+    jobId,
+    state,
+    JSON.stringify({ sourceTextId: `${jobId}-source` }),
+    state === 'failed' ? 'PRESERVED_FAILURE' : 'PRESERVED_RECOVERY',
+    importedAt,
+    importedAt,
+  ));
 }
 
 function jobRow(library: LibraryService, jobId: string): Record<string, unknown> {

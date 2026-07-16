@@ -87,6 +87,10 @@ Cancellation remains the Task 10.5 owner-first IPC operation. The renderer enabl
 
 Task 10.6 creates no alternate Diagnostics route, migration, schema, Job state, checkpoint, runtime queue, automatic resume, executable Keep draft, restart recovery, AI analysis, or export behavior. Task 10.7 owns abandoned-runtime restart recovery and its reopen semantics; persisted failed/resumable fixtures used to exercise this UI are test establishment, not evidence that users can naturally create resumable Jobs.
 
+Task 10.7 runs restart recovery only after a successful Library activation is proven: the returned summary and `LibraryService.getCurrent()` must publish the same new session id, distinct from the session observed before replacement. The main process then awaits recovery before returning create/open success. The generic session-change `finally` hook remains lifecycle cleanup only and cannot trigger recovery for a cancelled, failed, or unchanged activation. Identity mismatch returns recoverable `LIBRARY_ERROR` with `library_activation_mismatch`; a recovery failure closes the newly activated session and returns `restart_recovery_failed` instead of exposing a half-recovered Library.
+
+Recovery converts only abandoned queued/running `source_import` Jobs to failed with `SOURCE_IMPORT_ABANDONED`, removes only each exact `source/.staging/{jobId}.tmp`, and preserves existing failed/resumable records for discovery through the natural Breakdown-shelf `Jobs & recovery` panel. Structure detection keeps its explicit-recovery policy. Persisted fixtures establish resumable display after reopen; they do not claim users can naturally produce resumable work. Task 10.7 adds no migration, schema, background queue, automatic Resume, executable Keep draft, AI runtime, or export execution. Task 10.8 owns the final regression gate and Block 10 status record.
+
 ## 1. Current Repository State
 
 The repository now contains the first Electron application scaffold plus the Block 1 security and e2e baseline. It is no longer docs-only.

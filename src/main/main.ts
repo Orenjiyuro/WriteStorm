@@ -237,6 +237,9 @@ app.whenReady().then(async () => {
     senderPolicy: productSenderPolicy.isTrustedSender,
     beforeLibrarySessionChange: prepareForLibrarySessionChange,
     afterLibrarySessionChange: () => sourceImportService.resumeImports(),
+    afterLibrarySessionActivated: async () => {
+      await sourceImportService.recoverAbandonedImports();
+    },
     library: createLibraryEntryIpcDependencies({
       service: libraryService,
       env: process.env,

@@ -118,4 +118,20 @@ describe('Block 10 durable engineering status', () => {
     }
     expect(decisions).toContain('D039: Natural-Entry Job Recovery UI');
   });
+
+  it('records Task 10.7 successful-activation restart recovery', () => {
+    const context = readFileSync('docs/engineering/CONTEXT.md', 'utf8');
+    const decisions = readFileSync('docs/engineering/DECISIONS.md', 'utf8');
+
+    for (const document of [context, decisions]) {
+      expect(document).toContain('Task 10.7');
+      expect(document).toContain('successful Library activation');
+      expect(document).toContain('SOURCE_IMPORT_ABANDONED');
+      expect(document).toContain('library_activation_mismatch');
+      expect(document).toContain('restart_recovery_failed');
+      expect(document).toContain('failed/resumable');
+      expect(document).toContain('Task 10.8');
+    }
+    expect(decisions).toContain('D040: Successful Library Activation Restart Recovery');
+  });
 });

@@ -2,6 +2,7 @@ import {
   PRODUCT_IPC_CHANNELS,
   type ContractRequest,
   type ContractResponse,
+  type LibrarySessionSummary,
   type ProductIpcChannel,
 } from '../../shared/contracts';
 import {
@@ -29,6 +30,24 @@ import {
 
 type MaybePromise<T> = T | Promise<T>;
 
+export type SuccessfulLibrarySessionActivation = {
+  readonly previousSessionId: string | null;
+  readonly session: LibrarySessionSummary;
+};
+
+type LibrarySessionActivationErrorReason =
+  | 'library_activation_mismatch'
+  | 'restart_recovery_failed';
+
+class LibrarySessionActivationError extends Error {
+  constructor(readonly reason: LibrarySessionActivationErrorReason, options?: { readonly cause?: unknown }) {
+    super(reason === 'library_activation_mismatch'
+      ? 'The Library service did not publish the returned session.'
+      : 'The Library opened, but restart recovery could not complete.', options);
+    this.name = 'LibrarySessionActivationError';
+  }
+}
+
 export type LibraryIpcDependencies = {
   readonly service: LibraryService;
   readonly selectCreateRoot: () => MaybePromise<CreateLibraryInput | null>;
@@ -39,6 +58,9 @@ export type ProductIpcRegistrationOptions = {
   readonly senderPolicy?: (sender: IpcSenderIdentity) => boolean;
   readonly beforeLibrarySessionChange?: () => MaybePromise<void>;
   readonly afterLibrarySessionChange?: () => MaybePromise<void>;
+  readonly afterLibrarySessionActivated?: (
+    activation: SuccessfulLibrarySessionActivation,
+  ) => MaybePromise<void>;
   readonly library?: LibraryIpcDependencies;
   readonly books?: {
     readonly list?: () => MaybePromise<ContractResponse<'books:list'>>;
@@ -90,6 +112,7 @@ function createProductHandlers(options: ProductIpcRegistrationOptions): TypedIpc
       options.library,
       options.beforeLibrarySessionChange,
       options.afterLibrarySessionChange,
+      options.afterLibrarySessionActivated,
       options.books?.clearPendingImports,
     ) : {}),
     ...(options.books ? createBookProductHandlers(options.books) : {}),
@@ -119,6 +142,9 @@ function createLibraryProductHandlers(
   library: LibraryIpcDependencies,
   beforeLibrarySessionChange?: () => MaybePromise<void>,
   afterLibrarySessionChange?: () => MaybePromise<void>,
+  afterLibrarySessionActivated?: (
+    activation: SuccessfulLibrarySessionActivation,
+  ) => MaybePromise<void>,
   onLibrarySessionChanged?: () => void,
 ): TypedIpcHandlerMap {
   const createHandler: TypedIpcHandler<'library:create'> = async () => {
@@ -126,17 +152,19 @@ function createLibraryProductHandlers(
 
     try {
       if (selection) {
+        const previousSessionId = library.service.getCurrent()?.sessionId ?? null;
         await beforeLibrarySessionChange?.();
+        const summary = library.service.create(selection);
+        await completeLibraryActivation({
+          library,
+          previousSessionId,
+          summary,
+          afterLibrarySessionActivated,
+          onLibrarySessionChanged,
+        });
+        return { ok: true, data: summary };
       }
-      const summary = selection ? library.service.create(selection) : null;
-      if (summary) {
-        onLibrarySessionChanged?.();
-      }
-
-      return {
-        ok: true,
-        data: summary,
-      };
+      return { ok: true, data: null };
     } catch (error) {
       return libraryServiceErrorResponse('library:create', error);
     } finally {
@@ -148,17 +176,19 @@ function createLibraryProductHandlers(
 
     try {
       if (rootPath) {
+        const previousSessionId = library.service.getCurrent()?.sessionId ?? null;
         await beforeLibrarySessionChange?.();
+        const summary = await library.service.open({ rootPath });
+        await completeLibraryActivation({
+          library,
+          previousSessionId,
+          summary,
+          afterLibrarySessionActivated,
+          onLibrarySessionChanged,
+        });
+        return { ok: true, data: summary };
       }
-      const summary = rootPath ? await library.service.open({ rootPath }) : null;
-      if (summary) {
-        onLibrarySessionChanged?.();
-      }
-
-      return {
-        ok: true,
-        data: summary,
-      };
+      return { ok: true, data: null };
     } catch (error) {
       return libraryServiceErrorResponse('library:open', error);
     } finally {
@@ -175,6 +205,38 @@ function createLibraryProductHandlers(
     'library:open': openHandler,
     'library:get-current': getCurrentHandler,
   };
+}
+
+async function completeLibraryActivation(input: {
+  readonly library: LibraryIpcDependencies;
+  readonly previousSessionId: string | null;
+  readonly summary: LibrarySessionSummary;
+  readonly afterLibrarySessionActivated?: (
+    activation: SuccessfulLibrarySessionActivation,
+  ) => MaybePromise<void>;
+  readonly onLibrarySessionChanged?: () => void;
+}): Promise<void> {
+  const current = input.library.service.getCurrent();
+  if (
+    !current ||
+    current.sessionId !== input.summary.sessionId ||
+    input.summary.sessionId === input.previousSessionId
+  ) {
+    throw new LibrarySessionActivationError('library_activation_mismatch');
+  }
+
+  input.onLibrarySessionChanged?.();
+  try {
+    await input.afterLibrarySessionActivated?.({
+      previousSessionId: input.previousSessionId,
+      session: input.summary,
+    });
+  } catch (error) {
+    if (input.library.service.getCurrent()?.sessionId === input.summary.sessionId) {
+      input.library.service.closeCurrent();
+    }
+    throw new LibrarySessionActivationError('restart_recovery_failed', { cause: error });
+  }
 }
 
 function createBookProductHandlers(
@@ -215,6 +277,17 @@ function libraryServiceErrorResponse<TChannel extends 'library:create' | 'librar
   error: unknown,
 ): ContractResponse<TChannel> {
   if (!(error instanceof LibraryServiceErrorClass)) {
+    if (error instanceof LibrarySessionActivationError) {
+      return {
+        ok: false,
+        error: createDomainError({
+          code: 'LIBRARY_ERROR',
+          message: error.message,
+          recoverable: true,
+          details: { channel, reason: error.reason },
+        }),
+      } as ContractResponse<TChannel>;
+    }
     throw error;
   }
 

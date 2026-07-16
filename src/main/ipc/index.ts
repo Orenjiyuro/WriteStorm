@@ -6,6 +6,7 @@ export {
 export type {
   LibraryIpcDependencies,
   ProductIpcRegistrationOptions,
+  SuccessfulLibrarySessionActivation,
 } from './not-implemented-handlers';
 export {
   createStructureDetectionIpcDependencies,

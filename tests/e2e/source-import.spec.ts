@@ -92,6 +92,13 @@ test('imports a txt/md source through the packaged desktop entry using a main-pr
   });
 
   insertRecoveryUiFixtures(libraryRoot);
+  const abandonedImportStaging = path.join(
+    libraryRoot,
+    'source',
+    '.staging',
+    'e2e-job-abandoned-import.tmp',
+  );
+  expect(existsSync(abandonedImportStaging)).toBe(true);
 
   await withPackagedApp(libraryRoot, sourcePath, async (page) => {
     await expect(page.getByRole('heading', { name: 'No library open' })).toBeVisible();
@@ -104,7 +111,10 @@ test('imports a txt/md source through the packaged desktop entry using a main-pr
     const jobPanel = page.getByRole('region', { name: 'Jobs & recovery' });
     const failedImport = jobPanel.locator('.job-recovery-list button')
       .filter({ hasText: 'Import source' }).filter({ hasText: 'FAILED' });
-    await failedImport.click();
+    await expect(failedImport).toHaveCount(2);
+    await failedImport.first().click();
+    await expect(jobPanel.getByText('SOURCE_IMPORT_ABANDONED')).toBeVisible();
+    await failedImport.nth(1).click();
     await expect(jobPanel.getByText('E2E_IMPORT_FAILED')).toBeVisible();
     await expect(jobPanel.getByText('Library-level / unbound').first()).toBeVisible();
 
@@ -116,9 +126,9 @@ test('imports a txt/md source through the packaged desktop entry using a main-pr
     await expect(jobPanel.getByRole('button', { name: 'Cancel job' })).toBeVisible();
     await page.screenshot({ path: path.join(evidenceRoot, 'job-recovery-resumable.png'), fullPage: true });
 
-    const queuedImport = jobPanel.locator('.job-recovery-list button')
-      .filter({ hasText: 'Import source' }).filter({ hasText: 'QUEUED' });
-    await queuedImport.click();
+    const resumableImport = jobPanel.locator('.job-recovery-list button')
+      .filter({ hasText: 'Import source' }).filter({ hasText: 'RESUMABLE' });
+    await resumableImport.click();
     await jobPanel.getByRole('button', { name: 'Cancel job' }).click();
     await expect(jobPanel.locator('.job-recovery-detail')).toContainText('CANCELLED');
     await expect(jobPanel.getByRole('button', { name: 'Cancel job' })).toHaveCount(0);
@@ -137,6 +147,8 @@ test('imports a txt/md source through the packaged desktop entry using a main-pr
     await expect(page.getByText('Draft revision 2 is ready for review.')).toBeVisible();
     await page.screenshot({ path: path.join(evidenceRoot, 'revision-conflict.png'), fullPage: true });
   });
+
+  expect(existsSync(abandonedImportStaging)).toBe(false);
 
   markCurrentSourceStale(libraryRoot);
   await withPackagedApp(libraryRoot, sourcePath, async (page) => {
@@ -593,11 +605,24 @@ function insertRecoveryUiFixtures(libraryRoot: string): void {
         timestamp(2), timestamp(3),
       );
       insert.run(
-        'e2e-job-queued-import', null, 'source_import', 'queued', 0, 1,
-        JSON.stringify({ sourceTextId: 'e2e-queued-source' }), null,
+        'e2e-job-resumable-import', null, 'source_import', 'resumable', 0, 1,
+        JSON.stringify({ sourceTextId: 'e2e-resumable-source' }), 'E2E_IMPORT_INTERRUPTED',
         timestamp(4), timestamp(5),
       );
+      insert.run(
+        'e2e-job-abandoned-import', null, 'source_import', 'running', 0, 1,
+        JSON.stringify({ sourceTextId: 'e2e-abandoned-source' }), null,
+        timestamp(6), timestamp(7),
+      );
     })();
+    const stagingPath = path.join(
+      libraryRoot,
+      'source',
+      '.staging',
+      'e2e-job-abandoned-import.tmp',
+    );
+    mkdirSync(path.dirname(stagingPath), { recursive: true });
+    writeFileSync(stagingPath, 'abandoned import staging');
   } finally {
     database.close();
   }

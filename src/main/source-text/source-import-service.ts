@@ -347,16 +347,33 @@ export class SourceImportService {
   }
 
   async cancelImport(jobId: JobId, expectedSessionId?: string): Promise<boolean> {
-    if (expectedSessionId && this.libraryService.getCurrent()?.sessionId !== expectedSessionId) {
+    const current = this.libraryService.getCurrent();
+    if (expectedSessionId && current?.sessionId !== expectedSessionId) {
       throw new LibraryUnitOfWorkError('LIBRARY_SESSION_CHANGED');
     }
     const active = this.activeImports.get(jobId);
-    if (!active) return false;
-    if (!active.cancelRequested) {
-      active.cancelRequested = true;
-      active.controller.abort();
+    if (active) {
+      if (!active.cancelRequested) {
+        active.cancelRequested = true;
+        active.controller.abort();
+      }
+      await active.completion;
+      return true;
     }
-    await active.completion;
+
+    if (!current) return false;
+    const pendingScope = {
+      libraryRootPath: current.library.rootPath,
+      sessionId: current.sessionId,
+    };
+    if (!this.pendingImports.hasByJobId(jobId, pendingScope)) return false;
+    this.libraryService.getUnitOfWork().write((session) => {
+      assertSession(session.sessionId, current.sessionId);
+      new JobService({ database: session.database }).cancel(jobId, this.now(), {
+        runtimeOwner: 'none',
+      });
+    });
+    this.pendingImports.clearByJobId(jobId, pendingScope);
     return true;
   }
 

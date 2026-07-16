@@ -132,6 +132,41 @@ export class PendingImportStore {
     this.records.delete(pendingImportId);
   }
 
+  hasByJobId(
+    jobId: string,
+    options: {
+      readonly libraryRootPath: string;
+      readonly sessionId: string;
+    },
+  ): boolean {
+    return [...this.records.values()].some((record) => (
+      record.jobId === jobId &&
+      record.libraryRootPath === options.libraryRootPath &&
+      record.sessionId === options.sessionId
+    ));
+  }
+
+  clearByJobId(
+    jobId: string,
+    options: {
+      readonly libraryRootPath: string;
+      readonly sessionId: string;
+    },
+  ): number {
+    let cleared = 0;
+    for (const [pendingImportId, record] of this.records) {
+      if (
+        record.jobId === jobId &&
+        record.libraryRootPath === options.libraryRootPath &&
+        record.sessionId === options.sessionId
+      ) {
+        this.records.delete(pendingImportId);
+        cleared += 1;
+      }
+    }
+    return cleared;
+  }
+
   clearAll(): void {
     this.records.clear();
   }

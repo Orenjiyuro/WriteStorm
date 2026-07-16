@@ -182,4 +182,51 @@ describe('main book import entry providers', () => {
     expect(store.take('pending-single-use', scope)).toMatchObject({ jobId: 'job-1' });
     expect(store.take('pending-single-use', scope)).toBeNull();
   });
+
+  it('clears only pending encoding records owned by one Job and Library session', () => {
+    let nextId = 1;
+    const store = new PendingImportStore({
+      createId: () => `pending-job-${nextId++}`,
+      now: () => 1_000,
+      ttlMs: 600_000,
+    });
+    const first = store.create({
+      libraryRootPath: 'C:\\Libraries\\Story Lab',
+      sessionId: 'session-1',
+      sourcePath: 'C:\\Books\\first.md',
+      jobId: 'job-1',
+    });
+    const sameJobOtherSession = store.create({
+      libraryRootPath: 'C:\\Libraries\\Story Lab',
+      sessionId: 'session-2',
+      sourcePath: 'C:\\Books\\second.md',
+      jobId: 'job-1',
+    });
+    const otherJob = store.create({
+      libraryRootPath: 'C:\\Libraries\\Story Lab',
+      sessionId: 'session-1',
+      sourcePath: 'C:\\Books\\third.md',
+      jobId: 'job-2',
+    });
+
+    expect(store.clearByJobId('job-1', {
+      libraryRootPath: 'C:\\Libraries\\Story Lab',
+      sessionId: 'session-1',
+    })).toBe(1);
+    expect(store.resolve(first.pendingImportId, {
+      libraryRootPath: 'C:\\Libraries\\Story Lab',
+      sessionId: 'session-1',
+      now: 1_500,
+    })).toBeNull();
+    expect(store.resolve(sameJobOtherSession.pendingImportId, {
+      libraryRootPath: 'C:\\Libraries\\Story Lab',
+      sessionId: 'session-2',
+      now: 1_500,
+    })).not.toBeNull();
+    expect(store.resolve(otherJob.pendingImportId, {
+      libraryRootPath: 'C:\\Libraries\\Story Lab',
+      sessionId: 'session-1',
+      now: 1_500,
+    })).not.toBeNull();
+  });
 });

@@ -295,6 +295,45 @@ describe('SourceImportService', () => {
     expect(fixture.rows('jobs')).toHaveLength(1);
   });
 
+  it('cancels an encoding-required import and invalidates its pending retry token', async () => {
+    const fixture = sourceImportFixture(Buffer.from([0x81, 0x40]));
+    const worker = {
+      prepareImport: vi.fn(async () => {
+        const error = new Error('Choose the source encoding.') as Error & {
+          code: 'SOURCE_TEXT_ENCODING_REQUIRED';
+        };
+        error.code = 'SOURCE_TEXT_ENCODING_REQUIRED';
+        throw error;
+      }),
+    };
+    const service = fixture.service({ worker });
+    const first = await service.import({ sourcePath: fixture.sourcePath });
+    expect(first).toMatchObject({
+      ok: false,
+      error: {
+        details: {
+          reason: 'encoding_required',
+          pendingImportId: 'pending-1',
+        },
+      },
+    });
+    const sessionId = fixture.library.getCurrent()!.sessionId;
+
+    await expect(service.cancelImport('job-1' as JobId, sessionId)).resolves.toBe(true);
+    expect(jobRow(fixture.library, 'job-1')).toMatchObject({
+      state: 'cancelled',
+      error_code: null,
+    });
+    await expect(service.import({
+      pendingImportId: 'pending-1',
+      encodingOverride: 'gb18030',
+    })).resolves.toMatchObject({
+      ok: false,
+      error: { details: { reason: 'pending_import_not_found' } },
+    });
+    expect(worker.prepareImport).toHaveBeenCalledOnce();
+  });
+
   it('rejects a library session replacement after worker staging and does not publish the import', async () => {
     const fixture = sourceImportFixture();
     const originalRoot = fixture.rootPath;

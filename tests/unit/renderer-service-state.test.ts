@@ -117,6 +117,19 @@ describe('renderer service state', () => {
     expect(queryClient.getQueryData(libraryKeys.current())).toEqual(libraryB);
   });
 
+  it('publishes the next session before removing the previous session cache', async () => {
+    const queryClient = createQueryClient();
+    const setQueryData = vi.spyOn(queryClient, 'setQueryData');
+    const removeQueries = vi.spyOn(queryClient, 'removeQueries');
+
+    await activateLibrarySession(queryClient, sessionA, libraryB);
+
+    expect(setQueryData).toHaveBeenCalledWith(libraryKeys.current(), libraryB);
+    expect(removeQueries).toHaveBeenCalledWith({ queryKey: libraryKeys.session(sessionA) });
+    expect(setQueryData.mock.invocationCallOrder[0])
+      .toBeLessThan(removeQueries.mock.invocationCallOrder[0]);
+  });
+
   it('does not let an older in-flight current-library query overwrite a new session', async () => {
     const queryClient = createQueryClient();
     let releaseInitialQuery!: () => void;
@@ -163,6 +176,8 @@ function createBook(id: string, title: string, libraryId: string): BookSummary {
     sourceTextId: null,
     sourceTextEdition: null,
     structureEdition: null,
+    mainTypeDisplayName: null,
+    contentFocusDisplayNames: [],
     updatedAt: '2026-07-13T00:00:00.000Z',
   };
 }

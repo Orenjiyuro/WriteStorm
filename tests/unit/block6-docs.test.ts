@@ -21,12 +21,20 @@ describe('Block 6 native-gate documentation', () => {
     expect(technicalDesign).toContain('SQLite `library` row owns library identity');
     expect(technicalDesign).toContain('applied migrations must be a contiguous prefix');
     expect(technicalDesign).toContain('`books.current_source_text_id` references `source_texts.id`');
-    expect(technicalDesign).toContain('`relation_links`');
-    expect(technicalDesign).toContain('`work_technique_observations`');
-    expect(technicalDesign).toContain('`reusable_technique_candidates`');
-    expect(technicalDesign).toContain('`technique_entries`');
-    expect(technicalDesign).toContain('`source_snapshots`');
-    expect(technicalDesign).toContain('`perspective_views`');
+    expect(technicalDesign).toContain(
+      'does not create speculative evidence, relation, Technique, perspective, export, Prompt, or snapshot tables',
+    );
+    for (const speculativeTable of [
+      'relation_links',
+      'work_technique_observations',
+      'reusable_technique_candidates',
+      'technique_entries',
+      'source_snapshots',
+      'perspective_views',
+    ]) {
+      expect(technicalDesign).not.toContain(`| \`${speculativeTable}\` |`);
+    }
+    expect(decisions).toContain('## D072: Product And Technical Authority Reflect The Admitted Block 12 Model');
     expect(technicalDesign).not.toContain(
       '`manifest.json` stores library identity, schema version, app version and database filename.',
     );

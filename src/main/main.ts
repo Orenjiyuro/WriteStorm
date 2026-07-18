@@ -10,6 +10,7 @@ import {
   createStructureReviewIpcDependencies,
   createAnalysisModuleInstanceIpcDependencies,
   createExportStatusIpcDependencies,
+  createTypeLibraryIpcDependencies,
   createJobIpcDependencies,
   createTrustedDevServerOrigins,
   registerProductIpc,
@@ -45,6 +46,7 @@ import { AnalysisModuleInstanceEditionChangePort } from './modules/analysis-modu
 import { AnalysisModuleInstanceService } from './modules/analysis-module-instance-service';
 import { JobApplicationService } from './jobs/job-application-service';
 import { ExportStatusService } from './exports/export-status-service';
+import { TypeLibraryService } from './type-library/type-library-service';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -71,6 +73,7 @@ const structureWorkerRunner = createElectronStructureWorkerRunner(__dirname, {
 const moduleInstanceEditionChangePort = new AnalysisModuleInstanceEditionChangePort();
 const moduleInstanceService = new AnalysisModuleInstanceService({ libraryService });
 const exportStatusService = new ExportStatusService({ libraryService });
+const typeLibraryService = new TypeLibraryService({ libraryService });
 const structureService = new StructureService({
   libraryService,
   worker: structureWorkerRunner,
@@ -393,6 +396,7 @@ app.whenReady().then(async () => {
     modules: createAnalysisModuleInstanceIpcDependencies(moduleInstanceService),
     jobs: createJobIpcDependencies(jobApplicationService),
     exports: createExportStatusIpcDependencies(exportStatusService),
+    typeLibrary: createTypeLibraryIpcDependencies(typeLibraryService),
   });
   await createWindow();
   await runOptionalNativeSqliteProbe();

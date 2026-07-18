@@ -60,6 +60,8 @@ describe('source text import transaction', () => {
           sourceTextId: 'source-1',
           sourceTextEdition: 1,
           structureEdition: null,
+          mainTypeDisplayName: null,
+          contentFocusDisplayNames: [],
           updatedAt: importedAt,
         },
         sourceText: sourceText.dto,
@@ -79,6 +81,67 @@ describe('source text import transaction', () => {
           size_bytes: 120,
         },
       ]);
+    } finally {
+      db.close();
+    }
+  });
+
+  it('commits an optional initial TypeLibrary binding in the source import transaction', () => {
+    const db = migratedDatabase();
+
+    try {
+      const sourceText = sourceTextMetadata({
+        bookId: 'book-typed' as BreakdownBookId,
+        sourceTextId: 'source-typed' as SourceTextId,
+      });
+      const result = importBookWithSourceText(db, {
+        libraryId,
+        bookId: 'book-typed' as BreakdownBookId,
+        title: 'Typed Import',
+        sourceText,
+        typeBinding: {
+          typeLibraryVersion: 1,
+          mainType: reference('builtin_main_001'),
+          contentFocuses: [reference('builtin_focus_001')],
+        },
+        updatedAt: importedAt,
+      });
+
+      expect(result.book).toMatchObject({
+        mainTypeDisplayName: '日轻校园',
+        contentFocusDisplayNames: ['恋爱炒股'],
+      });
+      expect(db.prepare(`
+        SELECT book_id, type_library_version, revision FROM book_type_bindings
+      `).get()).toEqual({ book_id: 'book-typed', type_library_version: 1, revision: 1 });
+    } finally {
+      db.close();
+    }
+  });
+
+  it('rolls back Book and SourceText when the optional TypeLibrary selection is invalid', () => {
+    const db = migratedDatabase();
+
+    try {
+      expect(() => importBookWithSourceText(db, {
+        libraryId,
+        bookId: 'book-invalid-type' as BreakdownBookId,
+        title: 'Invalid Typed Import',
+        sourceText: sourceTextMetadata({
+          bookId: 'book-invalid-type' as BreakdownBookId,
+          sourceTextId: 'source-invalid-type' as SourceTextId,
+        }),
+        typeBinding: {
+          typeLibraryVersion: 1,
+          mainType: reference('builtin_focus_001'),
+          contentFocuses: [],
+        },
+        updatedAt: importedAt,
+      })).toThrow();
+
+      expect(db.prepare('SELECT id FROM books').all()).toEqual([]);
+      expect(db.prepare('SELECT id FROM source_texts').all()).toEqual([]);
+      expect(db.prepare('SELECT book_id FROM book_type_bindings').all()).toEqual([]);
     } finally {
       db.close();
     }
@@ -302,4 +365,11 @@ function sourceTextMetadata(input: {
     relativePath: `source/${input.sourceTextId}/Example.md`,
     importedAt,
   });
+}
+
+function reference(stableKey: string) {
+  return {
+    typeDefinitionId: stableKey as import('../../../src/shared/domain').TypeDefinitionId,
+    typeDefinitionVersionId: `${stableKey}_v1` as import('../../../src/shared/domain').TypeDefinitionVersionId,
+  };
 }

@@ -18,6 +18,17 @@ export type WritestormApi = {
     list(): Promise<ContractResponse<'books:list'>>;
     importSource(request: ContractRequest<'books:import-source'>): Promise<ContractResponse<'books:import-source'>>;
   };
+  typeLibrary: {
+    listOptions(
+      request?: ContractRequest<'type-library:list-options'>,
+    ): Promise<ContractResponse<'type-library:list-options'>>;
+    getBookBinding(
+      request: ContractRequest<'type-library:get-book-binding'>,
+    ): Promise<ContractResponse<'type-library:get-book-binding'>>;
+    updateBookBinding(
+      request: ContractRequest<'type-library:update-book-binding'>,
+    ): Promise<ContractResponse<'type-library:update-book-binding'>>;
+  };
   structure: {
     get(request: ContractRequest<'structure:get'>): Promise<ContractResponse<'structure:get'>>;
     detect(request: ContractRequest<'structure:detect'>): Promise<ContractResponse<'structure:detect'>>;

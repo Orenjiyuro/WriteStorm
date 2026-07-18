@@ -45,6 +45,8 @@ const book: BookSummary = {
   sourceTextId: null,
   sourceTextEdition: null,
   structureEdition: null,
+  mainTypeDisplayName: '日轻校园',
+  contentFocusDisplayNames: ['恋爱炒股', '群像'],
   updatedAt: '2026-07-13T00:00:00.000Z',
 };
 const emptyJobRecovery: JobRecoveryPanelProps = {
@@ -89,6 +91,21 @@ describe('renderer product routes', () => {
       structureActionPending: false,
       structureError: null,
       jobRecovery: emptyJobRecovery,
+      typeLibrary: {
+        options: null,
+        openedBookOptions: null,
+        openedBookPinnedOptions: [],
+        optionsError: null,
+        importSelection: { mainType: null, contentFocuses: [] },
+        openedBookSelection: { mainType: null, contentFocuses: [] },
+        bindingPending: false,
+        bindingError: null,
+        bindingConflict: false,
+        onImportSelectionChange: vi.fn(),
+        onOpenedBookSelectionChange: vi.fn(),
+        onSaveOpenedBookBinding: vi.fn(),
+        onLoadLatestBookBinding: vi.fn(),
+      },
       onImport: vi.fn(),
       onOpenBook: vi.fn(),
       onDetectStructure: vi.fn(),
@@ -104,7 +121,10 @@ describe('renderer product routes', () => {
     }));
 
     expect(html).toContain('Breakdown shelf');
+    expect(html).toContain('Optional book classification');
     expect(html).toContain('Persisted Task 18 Book');
+    expect(html).toContain('日轻校园');
+    expect(html).toContain('恋爱炒股 → 群像');
     expect(html).toContain('Retry as GB18030');
     expect(html).toContain('Review structure');
   });
@@ -377,12 +397,13 @@ describe('renderer product routes', () => {
     expect(html).toContain('Perspective contract readout');
   });
 
-  it('routes only the explicit diagnostics hash away from the product surface', () => {
+  it('routes explicit product and diagnostics hashes without changing the default shelf', () => {
     const routerSource = readFileSync('src/renderer/app/AppRouter.tsx', 'utf8');
 
     expect(resolveAppRoute('#/diagnostics')).toBe('diagnostics');
-    expect(resolveAppRoute('#/')).toBe('product');
-    expect(resolveAppRoute('')).toBe('product');
+    expect(resolveAppRoute('#/techniques')).toBe('techniques');
+    expect(resolveAppRoute('#/')).toBe('breakdown');
+    expect(resolveAppRoute('')).toBe('breakdown');
     expect(routerSource).toContain("addEventListener('hashchange', updateRoute)");
     expect(routerSource).toContain("removeEventListener('hashchange', updateRoute)");
   });

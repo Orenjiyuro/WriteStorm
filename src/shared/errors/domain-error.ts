@@ -12,6 +12,7 @@ export const DOMAIN_ERROR_CODES = [
   'MODULE_ERROR',
   'JOB_ERROR',
   'EXPORT_ERROR',
+  'TYPE_LIBRARY_ERROR',
   'INTERNAL_ERROR',
 ] as const;
 

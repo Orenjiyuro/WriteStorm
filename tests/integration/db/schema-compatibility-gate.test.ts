@@ -84,7 +84,7 @@ describe('SQLite 3.53.2 schema compatibility gate', () => {
     } finally { database.close(); }
   });
 
-  it('upgrades a retained SQLite 3.53.2 schema-v2 fixture through migration 005', () => {
+  it('upgrades a retained SQLite 3.53.2 schema-v2 fixture through migration 007', () => {
     const directory = mkdtempSync(path.join(os.tmpdir(), 'writestorm-schema-gate-004-upgrade-'));
     tempDirs.push(directory);
     const upgradedPath = path.join(directory, 'library.sqlite');
@@ -92,9 +92,13 @@ describe('SQLite 3.53.2 schema compatibility gate', () => {
     const database = new Database(upgradedPath);
     try {
       runMigrations(database, APP_MIGRATIONS);
-      expect(getCurrentSchemaVersion(database)).toBe(5);
+      expect(getCurrentSchemaVersion(database)).toBe(7);
       expect(database.prepare('SELECT COUNT(*) FROM analysis_modules').pluck().get()).toBe(7);
       expect(database.prepare('SELECT COUNT(*) FROM analysis_module_instances').pluck().get()).toBe(0);
+      expect(database.prepare('SELECT COUNT(*) FROM type_definitions').pluck().get()).toBe(14);
+      expect(database.prepare('SELECT COUNT(*) FROM type_library_version_entries').pluck().get()).toBe(14);
+      expect(database.prepare('SELECT COUNT(*) FROM book_type_bindings').pluck().get()).toBe(0);
+      expect(database.prepare('SELECT COUNT(*) FROM book_content_focus_bindings').pluck().get()).toBe(0);
       expect(validateRuntimeSchema(database, APP_MIGRATIONS)).toEqual({ ok: true });
     } finally { database.close(); }
   });

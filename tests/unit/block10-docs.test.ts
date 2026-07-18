@@ -21,7 +21,10 @@ describe('Block 10 durable engineering status', () => {
   it('records the Task 10.2 no-migration persistence read boundary', () => {
     const context = readFileSync('docs/engineering/CONTEXT.md', 'utf8');
     const decisions = readFileSync('docs/engineering/DECISIONS.md', 'utf8');
-    const migrations = readFileSync('src/main/db/migrations/index.ts', 'utf8');
+    const taskDecision = decisions.slice(
+      decisions.indexOf('## D034:'),
+      decisions.indexOf('## D035:'),
+    );
 
     for (const document of [context, decisions]) {
       expect(document).toContain('Task 10.2');
@@ -32,7 +35,11 @@ describe('Block 10 durable engineering status', () => {
       expect(document).toContain('schema version remains 5');
     }
     expect(decisions).toContain('D034: Existing Job Persistence Read Boundary');
-    expect(migrations).not.toContain('006_');
+    expect(taskDecision).toContain('Migrations 001–005 remain unchanged');
+    expect(taskDecision).toContain('no migration 006 is created');
+    expect(decisions).toContain(
+      'Historical migration tests must execute an explicit registry prefix ending at their owned migration',
+    );
   });
 
   it('records the Task 10.3 JobService policy without claiming runtime cancellation', () => {

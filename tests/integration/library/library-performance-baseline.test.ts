@@ -32,13 +32,14 @@ describe('Block 6 SQLite and migration performance baseline', () => {
     writePerformanceEvidence(results);
 
     expect(results.map((result) => result.fixture.name)).toEqual(['small', 'medium']);
-    expect(APP_MIGRATIONS).toHaveLength(5);
+    const currentSchemaVersion = APP_MIGRATIONS.at(-1)?.id;
+    expect(currentSchemaVersion).toBeDefined();
 
     for (const result of results) {
       const limits = LIBRARY_PERFORMANCE_BASELINE_LIMITS_MS[result.fixture.name];
 
       expect(result.summary.itemCount).toBe(result.fixture.itemCount);
-      expect(result.summary.schemaVersion).toBe(result.fixture.expectedSchemaVersion);
+      expect(result.summary.schemaVersion).toBe(currentSchemaVersion);
       expect(result.timingsMs.create).toBeGreaterThanOrEqual(0);
       expect(result.timingsMs.open).toBeGreaterThanOrEqual(0);
       expect(result.timingsMs.migration).toBeGreaterThanOrEqual(0);

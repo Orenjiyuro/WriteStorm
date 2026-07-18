@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { linkSync, mkdirSync, rmdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
-import type { ImportSourceResult, SourceTextFormat } from '../../shared/contracts';
+import type { ImportSourceResult, ImportSourceTypeBinding, SourceTextFormat } from '../../shared/contracts';
 import type { BreakdownBookId, JobId, SourceTextId } from '../../shared/domain';
 import { JobService } from '../jobs/job-service';
 import type { LibraryService } from '../library/library-service';
@@ -111,6 +111,7 @@ export class SourceImportService {
     readonly pendingImportId?: string;
     readonly encodingOverride?: 'utf-8' | 'gb18030';
     readonly expectedSessionId?: string;
+    readonly typeBinding?: ImportSourceTypeBinding;
   }): Promise<SourceImportServiceResult> {
     if (this.importPauseDepth > 0) {
       return Promise.resolve(failure(
@@ -139,6 +140,7 @@ export class SourceImportService {
     readonly pendingImportId?: string;
     readonly encodingOverride?: 'utf-8' | 'gb18030';
     readonly expectedSessionId?: string;
+    readonly typeBinding?: ImportSourceTypeBinding;
   }, signal: AbortSignal, registerJobId: (jobId: JobId) => void): Promise<SourceImportServiceResult> {
     const current = this.libraryService.getCurrent();
     if (!current) return failure('no_current_library', 'Open or create a library before importing source text.');
@@ -162,6 +164,7 @@ export class SourceImportService {
       return failure('pending_import_not_found', 'The pending source import could not be found.');
     }
     const titleOverride = pending?.title ?? normalizeTitle(input.title);
+    const typeBinding = pending?.typeBinding ?? input.typeBinding;
     const format = sourceFormat(sourcePath);
     if (!format) return failure('invalid_extension', 'Only .txt and .md source files can be imported.');
 
@@ -214,6 +217,7 @@ export class SourceImportService {
           ...(titleOverride ? { title: titleOverride } : {}),
           jobId,
           sourceTextId,
+          ...(typeBinding ? { typeBinding } : {}),
         });
         return failure('encoding_required', 'Choose the source text encoding and retry.', {
           pendingImportId: token.pendingImportId,
@@ -308,6 +312,7 @@ export class SourceImportService {
           bookId,
           title,
           sourceText,
+          ...(typeBinding ? { typeBinding } : {}),
           job: { id: jobId, sourceTextId, updatedAt: importedAt },
           updatedAt: importedAt,
         });

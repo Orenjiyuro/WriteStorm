@@ -35,10 +35,24 @@ describe('preload WriteStorm API', () => {
       };
     });
 
-    expect(Object.keys(api)).toEqual(['internal', 'library', 'books', 'structure', 'modules', 'jobs', 'exports']);
+    expect(Object.keys(api)).toEqual([
+      'internal',
+      'library',
+      'books',
+      'typeLibrary',
+      'structure',
+      'modules',
+      'jobs',
+      'exports',
+    ]);
     expect(Object.keys(api.internal)).toEqual(['health']);
     expect(Object.keys(api.library)).toEqual(['create', 'open', 'getCurrent']);
     expect(Object.keys(api.books)).toEqual(['list', 'importSource']);
+    expect(Object.keys(api.typeLibrary)).toEqual([
+      'listOptions',
+      'getBookBinding',
+      'updateBookBinding',
+    ]);
     expect(Object.keys(api.structure)).toEqual([
       'get',
       'detect',
@@ -105,12 +119,22 @@ describe('preload WriteStorm API', () => {
       body: 'Updated body',
     } satisfies ContractRequest<'modules:update-body'>;
     const jobRequest = { jobId } satisfies ContractRequest<'jobs:get'>;
+    const typeLibraryUpdateRequest = {
+      bookId,
+      expectedRevision: 0,
+      typeLibraryVersion: 1,
+      mainType: null,
+      contentFocuses: [],
+    } satisfies ContractRequest<'type-library:update-book-binding'>;
 
     await api.library.create();
     await api.library.open();
     await api.library.getCurrent();
     await api.books.list();
     await api.books.importSource(importSourceRequest);
+    await api.typeLibrary.listOptions();
+    await api.typeLibrary.getBookBinding({ bookId });
+    await api.typeLibrary.updateBookBinding(typeLibraryUpdateRequest);
     await api.structure.get(bookRequest);
     await api.structure.detect(bookRequest);
     await api.structure.recoverDetection(bookRequest);
@@ -138,6 +162,9 @@ describe('preload WriteStorm API', () => {
       { channel: 'library:get-current', request: {} },
       { channel: 'books:list', request: {} },
       { channel: 'books:import-source', request: importSourceRequest },
+      { channel: 'type-library:list-options', request: {} },
+      { channel: 'type-library:get-book-binding', request: { bookId } },
+      { channel: 'type-library:update-book-binding', request: typeLibraryUpdateRequest },
       { channel: 'structure:get', request: bookRequest },
       { channel: 'structure:detect', request: bookRequest },
       { channel: 'structure:recover-detection', request: bookRequest },

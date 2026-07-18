@@ -1,14 +1,16 @@
 # WriteStorm Technical Design
 
 日期：2026-07-05  
-状态：V1 技术方案草案  
+状态：活跃 V1 技术方案；实现 schema 已同步至 migration 007
 范围：拆解工作台优先路线的工程技术方案，不包含 UI 高保真、不包含真实 AI 拆解实现、不包含原创小说项目。
 
 ## 1. Summary
 
 WriteStorm V1 采用 Electron + React + TypeScript 构建 Windows 11 和 macOS 双桌面端，不提供 Web 运行版。应用以 SQLite 作为唯一事务性主事实源，JSON/Markdown 只作为导出、镜像或人类可读产物。AI V1 只允许接入 Codex SDK；如果 Codex SDK spike 不能满足结构化输出、取消、日志、鉴权和打包运行要求，V1 AI 能力阻塞，不回退到 `codex exec`、app-server、GUI app 自动化或其他供应商。
 
-Task 20 recertifies the implemented foundation around schema epoch 2 and migrations 001/002. Library open is `readonly probe -> readonly backup when migration is pending -> writable open -> migrate -> resulting-schema validation -> publish session`. Repositories and services receive session-bound Units of Work rather than a public SQLite handle. Imported bytes live at `source/{sourceTextId}/{originalFileName}`. Jobs are created queued, transition through policy, and complete with their final checkpoint in one transaction. Renderer server state uses session-scoped TanStack Query keys.
+Task 20 recertifies the foundation around schema epoch 2 and migrations 001/002. The implemented registry now continues through migrations 003–007 for analysis-module definitions/instances/placeholders and TypeLibrary reference/Book-binding facts. Library open is `readonly probe -> readonly backup when migration is pending -> writable open -> migrate -> resulting-schema validation -> publish session`. Repositories and services receive session-bound Units of Work rather than a public SQLite handle. Imported bytes live at `source/{sourceTextId}/{originalFileName}`. Jobs are created queued, transition through policy, and complete with their final checkpoint in one transaction. Renderer server state uses session-scoped TanStack Query keys.
+
+Block 12 freezes seven MainType and seven orthogonal ContentFocus options, user-only Book binding, CAS, active-only selectors and Book-pinned historical display metadata. Technique production tables remain unadmitted: there is no candidate producer, atomic adoption transaction, `TechniqueEntry` persistence, repository/service, or mutation IPC in the implemented schema.
 
 首个实现增量仍是 `docs/tasks/TASK-001-breakdown-workbench-foundation.md`：资料库、拆解书架、导入、结构校正、模块实例骨架、job 状态和导出阻塞态。
 
@@ -196,7 +198,7 @@ Rules:
 
 ## 7. SQLite Schema Contract
 
-Minimum tables for the first implementation:
+Admitted tables through migration 007:
 
 | Table | Purpose |
 | --- | --- |
@@ -204,19 +206,23 @@ Minimum tables for the first implementation:
 | `library` | Library identity row owned by SQLite, not by manifest |
 | `books` | `BreakdownBook` records and lifecycle state; `books.current_source_text_id` references `source_texts.id` |
 | `source_texts` | Imported file metadata, hash, encoding and source edition |
+| `jobs` | Import, structure, analysis placeholder and export jobs |
+| `job_checkpoints` | Ordered durable Job progress and completion facts |
+| `structure_detection_runs` | Persisted detection-run identity and causal sequence |
+| `structure_sets` | Candidate/draft/frozen structure aggregate headers |
 | `structure_nodes` | Title tree nodes for book/volume/chapter |
 | `story_segment_ranges` | Cross-chapter story segment scopes |
-| `jobs` | Import, structure, analysis placeholder and export jobs |
-| `exports` | Export requests, outputs and blocked reasons |
+| `story_segment_range_chapters` | Ordered range-to-chapter membership |
 | `analysis_modules` | Stable module definitions |
 | `analysis_module_instances` | Module + scope instances, body, status and revision |
-| `evidence_anchors` | Placeholder and future evidence states |
-| `relation_links` | Reference-only relationship links owned by source modules, not perspectives |
-| `work_technique_observations` | Breakdown-book technique observations with evidence-anchor references |
-| `reusable_technique_candidates` | Breakdown-book reusable technique candidates, separate from technique entries |
-| `source_snapshots` | Readonly redacted source trace copied for technique-library assets |
-| `technique_entries` | Technique-library entries that point to source snapshots and never write back to candidates |
-| `perspective_views` | Stored derived/composite perspective views, not analysis module instances |
+| `type_definitions` | Immutable MainType/ContentFocus identities with one-way archive retirement |
+| `type_definition_versions` | Immutable versioned display name and selection description |
+| `type_library_versions` | Immutable TypeLibrary release headers |
+| `type_library_version_entries` | Exact release membership, kind and stored display order |
+| `book_type_bindings` | Book-owned current classification target with `expectedRevision` CAS |
+| `book_content_focus_bindings` | Zero-to-three ordered ContentFocus references owned by a Book binding |
+
+Migration 005 adds admitted placeholder columns to `analysis_module_instances`; it does not create speculative evidence, relation, Technique, perspective, export, Prompt, or snapshot tables. Technique production tables remain unadmitted until identity, producer, immutable `SourceSnapshot` capture transaction and real read/write lifecycle are separately approved.
 
 Version fields:
 
@@ -241,6 +247,7 @@ Migration rules:
 | `SourceTextService` | Copy txt/md source, detect encoding, compute hash, record metadata |
 | `StructureService` | Manage `StructureNode`, `StorySegmentRange`, freeze/unfreeze and structure edition |
 | `ModuleInstanceService` | Create/read/update module instance shells, body revisions and stale state |
+| `TypeLibraryService` | List active release options, read Book binding detail with pinned display metadata, and apply Book CAS updates |
 | `JobService` | Create jobs, update state, checkpoints, cancellation and recovery |
 | `ExportService` | Report export availability and build export packages later |
 | `CodexService` | Codex SDK spike and future real AI calls; disabled until spike passes |
@@ -267,6 +274,9 @@ library:open
 library:get-current
 books:list
 books:import-source
+type-library:list-options
+type-library:get-book-binding
+type-library:update-book-binding
 structure:get
 structure:update-node
 structure:update-story-range
@@ -371,3 +381,4 @@ The first implementation plan must add the exact commands once the scaffold exis
 - No arbitrary Markdown-to-SQLite structural import.
 - No renderer-side filesystem or SQLite access.
 - No automatic external file watcher in the first increment; external changes are detected by explicit open/health-check/repair flows.
+- No Technique production table, candidate adoption transaction, `TechniqueEntry` repository/service, or editable Technique detail until the deferred lifecycle is admitted.

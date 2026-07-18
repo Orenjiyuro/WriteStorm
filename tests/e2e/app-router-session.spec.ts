@@ -40,10 +40,95 @@ test('does not display Library A module instances after an in-place switch to Li
       document.documentElement.append(harnessRoot);
     });
     await page.evaluate(bundle);
+    const harness = page.locator('#app-router-session-root');
 
-    await expect(page.getByText('Library A', { exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Review structure' }).click();
-    const jobRecoveryPanel = page.locator('.job-recovery-panel');
+    await expect(harness.getByText('Library A', { exact: true })).toBeVisible();
+    await page.evaluate(() => { window.location.hash = '#/techniques'; });
+    await expect(harness.getByRole('heading', { name: 'Technique library' })).toBeVisible();
+    await page.evaluate(() => (
+      window as unknown as { __probeTechniqueRouteQueryGate: () => Promise<void> }
+    ).__probeTechniqueRouteQueryGate());
+    await page.waitForTimeout(750);
+    await expect(page.evaluate(() => (
+      window as unknown as {
+        __getBreakdownQueryCalls: () => Record<string, number>;
+      }
+    ).__getBreakdownQueryCalls())).resolves.toEqual({
+      books: 0,
+      jobs: 0,
+      jobDetail: 0,
+      structure: 0,
+      modules: 0,
+      exportStatus: 0,
+      typeLibraryOptions: 0,
+      typeLibraryBinding: 0,
+    });
+
+    await harness.getByRole('link', { name: 'Settings' }).click();
+    await expect(harness.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
+    await expect(harness.getByRole('heading', { name: 'AI & connectors' })).toBeVisible();
+    await expect(harness.getByText('Codex SDK gate', { exact: true })).toBeVisible();
+    await expect(harness.getByText('Required', { exact: true })).toBeVisible();
+    await expect(harness.getByText('Connector', { exact: true })).toBeVisible();
+    await expect(harness.getByText('Unavailable', { exact: true }).first()).toBeVisible();
+    for (const action of [
+      'Manage templates',
+      'Inspect schemas',
+      'Repair library',
+      'Run health check',
+    ]) {
+      await expect(harness.getByRole('button', { name: action })).toBeDisabled();
+    }
+    await expect(harness.getByRole('heading', { name: 'Local observability' })).toBeVisible();
+    await expect(harness.getByText('Local only', { exact: true })).toBeVisible();
+    await expect(harness.getByRole('button', { name: 'Clear local logs' })).toBeDisabled();
+    await expect(harness.getByRole('button', { name: 'Manually export logs' })).toBeDisabled();
+    await page.waitForTimeout(750);
+    await expect(page.evaluate(() => (
+      window as unknown as {
+        __getBreakdownQueryCalls: () => Record<string, number>;
+      }
+    ).__getBreakdownQueryCalls())).resolves.toEqual({
+      books: 0,
+      jobs: 0,
+      jobDetail: 0,
+      structure: 0,
+      modules: 0,
+      exportStatus: 0,
+      typeLibraryOptions: 0,
+      typeLibraryBinding: 0,
+    });
+
+    await harness.getByRole('link', { name: 'Original shelf' }).click();
+    await expect(harness.getByRole('heading', { name: 'Original shelf' })).toBeVisible();
+    await expect(harness.getByRole('button', { name: 'Create original project' })).toBeDisabled();
+    await expect(harness.getByText('Original project creation is outside the V1 admitted scope.'))
+      .toBeVisible();
+    await expect(harness.getByRole('main')).not.toContainText('Adopt confirmed candidate');
+    await expect(harness.getByRole('main')).not.toContainText('SourceSnapshot');
+    await page.waitForTimeout(750);
+    await expect(page.evaluate(() => (
+      window as unknown as {
+        __getBreakdownQueryCalls: () => Record<string, number>;
+      }
+    ).__getBreakdownQueryCalls())).resolves.toEqual({
+      books: 0,
+      jobs: 0,
+      jobDetail: 0,
+      structure: 0,
+      modules: 0,
+      exportStatus: 0,
+      typeLibraryOptions: 0,
+      typeLibraryBinding: 0,
+    });
+    await page.evaluate(() => (
+      window as unknown as { __finishTechniqueRouteQueryGateProbe: () => void }
+    ).__finishTechniqueRouteQueryGateProbe());
+
+    await page.evaluate(() => { window.location.hash = '#/'; });
+    await expect(harness.getByRole('heading', { name: 'Breakdown shelf' })).toBeVisible();
+    await harness.getByRole('button', { name: 'Review structure' }).click();
+    const jobRecoveryPanel = harness.locator('.job-recovery-panel');
     await expect(jobRecoveryPanel).toContainText('0 jobs');
     await expect(jobRecoveryPanel.locator('[data-not-job="true"]')).toHaveCount(1);
     await expect(jobRecoveryPanel).toContainText('Export readiness (not a Job)');
@@ -53,30 +138,64 @@ test('does not display Library A module instances after an in-place switch to Li
     await expect(jobRecoveryPanel).toContainText('Unavailable');
     await expect(jobRecoveryPanel).toContainText('analysis_module_not_generated');
     await expect(jobRecoveryPanel.locator('.job-recovery-list')).toHaveCount(0);
-    const workbench = page.locator('.analysis-module-workbench');
+    const workbench = harness.locator('.analysis-module-workbench');
     await expect(workbench.locator('.analysis-module-list > li')).toHaveCount(7);
     await expect(workbench).toContainText('Not generated');
+
+    const mainType = harness.locator('#book-classification-main-type');
+    const firstFocus = harness.locator('#book-classification-focus-1');
+    await mainType.selectOption('builtin_main_001_v1');
+    await firstFocus.selectOption('builtin_focus_001_v1');
+    await harness.getByRole('button', { name: 'Save classification' }).click();
+    await expect(harness.getByText('Classification changed in another session')).toBeVisible();
+    await expect(mainType).toHaveValue('builtin_main_001_v1');
+    await expect(firstFocus).toHaveValue('builtin_focus_001_v1');
+    await expect(harness.getByRole('button', { name: 'Retry my selection' })).toBeVisible();
+    await harness.getByRole('button', { name: 'Load latest saved classification' }).click();
+    await expect(harness.getByText('Classification changed in another session')).toHaveCount(0);
+    await expect(mainType).toHaveValue('builtin_main_004_v1');
+    await expect(firstFocus).toHaveValue('builtin_focus_005_v1');
+
+    await mainType.selectOption('builtin_main_001_v1');
+    await firstFocus.selectOption('builtin_focus_001_v1');
+    await page.evaluate(() => (
+      window as unknown as { __armTypeLibraryConflict: () => void }
+    ).__armTypeLibraryConflict());
+    await harness.getByRole('button', { name: 'Save classification' }).click();
+    await expect(harness.getByText('Classification changed in another session')).toBeVisible();
+    await expect(mainType).toHaveValue('builtin_main_001_v1');
+    await expect(firstFocus).toHaveValue('builtin_focus_001_v1');
+    await harness.getByRole('button', { name: 'Retry my selection' }).click();
+    await expect(harness.getByText('Classification changed in another session')).toHaveCount(0);
+    await expect(mainType).toHaveValue('builtin_main_001_v1');
+    await expect(firstFocus).toHaveValue('builtin_focus_001_v1');
+    await expect(page.evaluate(() => (
+      window as unknown as {
+        __getTypeLibraryUpdateRequests: () => Array<{ expectedRevision: number }>;
+      }
+    ).__getTypeLibraryUpdateRequests().map(({ expectedRevision }) => expectedRevision)))
+      .resolves.toEqual([1, 2, 3]);
 
     await page.evaluate(() => (
       window as unknown as { __switchAppRouterLibrary: () => Promise<void> }
     ).__switchAppRouterLibrary());
 
-    await expect(page.getByText('Library B', { exact: true })).toBeVisible();
-    await expect(page.getByText('Session B book', { exact: true })).toBeVisible();
-    await expect(page.getByText('Session A book', { exact: true })).toHaveCount(0);
+    await expect(harness.getByText('Library B', { exact: true })).toBeVisible();
+    await expect(harness.getByText('Session B book', { exact: true })).toBeVisible();
+    await expect(harness.getByText('Session A book', { exact: true })).toHaveCount(0);
     await expect(workbench).toHaveCount(0);
-    await page.getByRole('button', { name: 'Review structure' }).click();
+    await harness.getByRole('button', { name: 'Review structure' }).click();
     await expect(jobRecoveryPanel.locator('[data-not-job="true"]')).toHaveCount(1);
     await expect(jobRecoveryPanel).toContainText('analysis_module_needs_rebuild');
     await expect(jobRecoveryPanel).not.toContainText('analysis_module_not_generated');
     await expect(jobRecoveryPanel.locator('.job-recovery-list')).toHaveCount(0);
-    const libraryBWorkbench = page.locator('.analysis-module-workbench');
+    const libraryBWorkbench = harness.locator('.analysis-module-workbench');
     await expect(libraryBWorkbench.locator('.analysis-module-list > li')).toHaveCount(7);
     await expect(libraryBWorkbench).toContainText('Needs rebuild');
     await expect(libraryBWorkbench).not.toContainText('Not generated');
-    await expect(page.evaluate(() => (
+    await expect.poll(() => page.evaluate(() => (
       window as unknown as { __hasAppRouterSessionACache: () => boolean }
-    ).__hasAppRouterSessionACache())).resolves.toBe(false);
+    ).__hasAppRouterSessionACache())).toBe(false);
   } catch (error) {
     throw formatErrorWithElectronStderr(error, electronStderr.summary());
   } finally {

@@ -15,6 +15,8 @@ import type {
   StructureDetectionRunId,
   StructureNodeId,
   StructureSetId,
+  TypeDefinitionId,
+  TypeDefinitionVersionId,
 } from '../domain/ids';
 
 const idSchema = <T extends string>() =>
@@ -32,6 +34,8 @@ export const analysisModuleIdSchema = idSchema<AnalysisModuleId>();
 export const analysisModuleInstanceIdSchema = idSchema<AnalysisModuleInstanceId>();
 export const jobIdSchema = idSchema<JobId>();
 export const exportIdSchema = idSchema<ExportId>();
+export const typeDefinitionIdSchema = idSchema<TypeDefinitionId>();
+export const typeDefinitionVersionIdSchema = idSchema<TypeDefinitionVersionId>();
 
 function isJsonValue(value: unknown): value is JsonValue {
   if (value === null || typeof value === 'string' || typeof value === 'boolean') {

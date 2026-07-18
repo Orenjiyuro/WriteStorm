@@ -27,6 +27,8 @@ const book: BookSummary = {
   sourceTextId: null,
   sourceTextEdition: 1,
   structureEdition: 1,
+  mainTypeDisplayName: null,
+  contentFocusDisplayNames: [],
   updatedAt: '2026-07-15T00:00:00.000Z',
 };
 const library: LibrarySessionSummary = {

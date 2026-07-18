@@ -7,6 +7,7 @@ import {
 } from './common';
 import { bookSummarySchema } from './books';
 import { jobSummarySchema } from './jobs';
+import { typeLibrarySelectionSchema } from './type-library';
 
 export const sourceTextMetadataSchema = z.object({
   id: sourceTextIdSchema,
@@ -111,6 +112,7 @@ export const importSourceResponseSchema = z.discriminatedUnion('ok', [
 
 const importSourceInitialRequestSchema = z.object({
   title: z.string().min(1).optional(),
+  typeBinding: typeLibrarySelectionSchema.optional(),
 }).strict();
 
 const importSourceEncodingRetryRequestSchema = z.object({
@@ -122,3 +124,5 @@ export const importSourceRequestSchema = z.union([
   importSourceInitialRequestSchema,
   importSourceEncodingRetryRequestSchema,
 ]);
+
+export type ImportSourceTypeBinding = z.infer<typeof typeLibrarySelectionSchema>;

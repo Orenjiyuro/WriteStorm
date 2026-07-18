@@ -1,5 +1,8 @@
+import type { ImportSourceTypeBinding } from '../../shared/contracts';
+
 export const E2E_IMPORT_DIALOG_STUB_ENV = 'WRITESTORM_E2E_IMPORT_DIALOG_STUB';
 export const E2E_IMPORT_SOURCE_PATH_ENV = 'WRITESTORM_E2E_IMPORT_SOURCE_PATH';
+export const E2E_IMPORT_SOURCE_PATHS_ENV = 'WRITESTORM_E2E_IMPORT_SOURCE_PATHS';
 
 export type ImportFileDialogOptions = {
   readonly title: string;
@@ -37,6 +40,7 @@ export type PendingImportRecord = {
   readonly title?: string;
   readonly jobId?: string;
   readonly sourceTextId?: string;
+  readonly typeBinding?: ImportSourceTypeBinding;
   readonly expiresAt: number;
 };
 
@@ -69,6 +73,7 @@ export class PendingImportStore {
     readonly title?: string;
     readonly jobId?: string;
     readonly sourceTextId?: string;
+    readonly typeBinding?: ImportSourceTypeBinding;
   }): PendingImportToken {
     const pendingImportId = this.createId();
     const expiresAt = this.now() + this.ttlMs;
@@ -80,6 +85,7 @@ export class PendingImportStore {
       ...(input.title === undefined ? {} : { title: input.title }),
       ...(input.jobId === undefined ? {} : { jobId: input.jobId }),
       ...(input.sourceTextId === undefined ? {} : { sourceTextId: input.sourceTextId }),
+      ...(input.typeBinding === undefined ? {} : { typeBinding: input.typeBinding }),
       expiresAt,
     });
 
@@ -222,6 +228,17 @@ function resolveE2eStubSourcePath(env: Record<string, string | undefined>): stri
     return null;
   }
 
+  const sourcePathsJson = env[E2E_IMPORT_SOURCE_PATHS_ENV]?.trim();
+  if (sourcePathsJson) {
+    const sourcePaths = parseE2eSourcePathQueue(sourcePathsJson);
+    const [sourcePath, ...remainingSourcePaths] = sourcePaths;
+    if (!sourcePath) {
+      throw new Error(`${E2E_IMPORT_SOURCE_PATHS_ENV} must contain at least one source path.`);
+    }
+    env[E2E_IMPORT_SOURCE_PATHS_ENV] = JSON.stringify(remainingSourcePaths);
+    return sourcePath;
+  }
+
   const sourcePath = env[E2E_IMPORT_SOURCE_PATH_ENV]?.trim();
 
   if (!sourcePath) {
@@ -229,4 +246,17 @@ function resolveE2eStubSourcePath(env: Record<string, string | undefined>): stri
   }
 
   return sourcePath;
+}
+
+function parseE2eSourcePathQueue(value: string): string[] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    throw new Error(`${E2E_IMPORT_SOURCE_PATHS_ENV} must be a JSON array of source paths.`);
+  }
+  if (!Array.isArray(parsed) || parsed.some((item) => typeof item !== 'string' || !item.trim())) {
+    throw new Error(`${E2E_IMPORT_SOURCE_PATHS_ENV} must be a JSON array of source paths.`);
+  }
+  return parsed.map((item) => item.trim());
 }

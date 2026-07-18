@@ -35,6 +35,12 @@ export function createWritestormPreloadApi(invoke: WritestormIpcInvoke): Writest
       list: () => productInvoke('books:list', emptyRequest<'books:list'>()),
       importSource: (request) => productInvoke('books:import-source', request),
     },
+    typeLibrary: {
+      listOptions: (request = emptyRequest<'type-library:list-options'>()) =>
+        productInvoke('type-library:list-options', request),
+      getBookBinding: (request) => productInvoke('type-library:get-book-binding', request),
+      updateBookBinding: (request) => productInvoke('type-library:update-book-binding', request),
+    },
     structure: {
       get: (request) => productInvoke('structure:get', request),
       detect: (request) => productInvoke('structure:detect', request),

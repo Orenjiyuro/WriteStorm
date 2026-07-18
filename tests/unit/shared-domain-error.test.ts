@@ -53,6 +53,7 @@ describe('shared domain errors', () => {
       'MODULE_ERROR',
       'JOB_ERROR',
       'EXPORT_ERROR',
+      'TYPE_LIBRARY_ERROR',
       'INTERNAL_ERROR',
     ]);
   });

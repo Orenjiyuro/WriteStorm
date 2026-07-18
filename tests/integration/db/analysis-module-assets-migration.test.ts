@@ -3,6 +3,8 @@ import { APP_MIGRATIONS } from '../../../src/main/db/migrations';
 import { getCurrentSchemaVersion, runMigrations } from '../../../src/main/db/migration-runner';
 import { openSqliteDatabase } from '../../../src/main/db/sqlite';
 
+const MIGRATIONS_THROUGH_005 = APP_MIGRATIONS.slice(0, 5);
+
 describe('analysis module asset placeholders migration 005', () => {
   it('forward-adds an empty body placeholder for existing instances', () => {
     const database = openSqliteDatabase(':memory:');
@@ -12,7 +14,7 @@ describe('analysis module asset placeholders migration 005', () => {
       runMigrations(database, APP_MIGRATIONS.slice(0, 4));
       expect(columnNames(database)).not.toContain('body_markdown');
 
-      runMigrations(database, APP_MIGRATIONS);
+      runMigrations(database, MIGRATIONS_THROUGH_005);
 
       expect(getCurrentSchemaVersion(database)).toBe(5);
       expect(columnNames(database)).toContain('body_markdown');
@@ -31,7 +33,7 @@ describe('analysis module asset placeholders migration 005', () => {
   it('defaults future shell bodies to empty text and rejects non-text storage', () => {
     const database = openSqliteDatabase(':memory:');
     try {
-      runMigrations(database, APP_MIGRATIONS);
+      runMigrations(database, MIGRATIONS_THROUGH_005);
       seedUnfrozenBook(database);
       seedFrozenSet(database);
       database.prepare(`INSERT INTO analysis_module_instances (

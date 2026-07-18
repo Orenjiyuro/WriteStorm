@@ -19,6 +19,8 @@ import type {
   JobId,
   LibraryId,
   SourceTextId,
+  TypeDefinitionId,
+  TypeDefinitionVersionId,
 } from '../../../src/shared/domain';
 
 const tempDirs: string[] = [];
@@ -272,7 +274,15 @@ describe('SourceImportService', () => {
     };
     const service = fixture.service({ worker });
 
-    const first = await service.import({ sourcePath: fixture.sourcePath, title: 'GB text' });
+    const first = await service.import({
+      sourcePath: fixture.sourcePath,
+      title: 'GB text',
+      typeBinding: {
+        typeLibraryVersion: 1,
+        mainType: reference('builtin_main_001'),
+        contentFocuses: [reference('builtin_focus_001')],
+      },
+    });
     expect(first).toMatchObject({
       ok: false,
       error: {
@@ -290,7 +300,16 @@ describe('SourceImportService', () => {
       pendingImportId: 'pending-1',
       encodingOverride: 'gb18030',
     });
-    expect(retry).toMatchObject({ ok: true, data: { sourceText: { encoding: 'gb18030' } } });
+    expect(retry).toMatchObject({
+      ok: true,
+      data: {
+        book: {
+          mainTypeDisplayName: '日轻校园',
+          contentFocusDisplayNames: ['恋爱炒股'],
+        },
+        sourceText: { encoding: 'gb18030' },
+      },
+    });
     expect(attemptedEncodings).toEqual(['utf-8', 'gb18030']);
     expect(fixture.rows('jobs')).toHaveLength(1);
   });
@@ -649,4 +668,14 @@ function sha256(bytes: Buffer): string {
 function sequence(prefix: string): () => string {
   let value = 0;
   return () => `${prefix}-${++value}`;
+}
+
+function reference(stableKey: string): {
+  readonly typeDefinitionId: TypeDefinitionId;
+  readonly typeDefinitionVersionId: TypeDefinitionVersionId;
+} {
+  return {
+    typeDefinitionId: stableKey as TypeDefinitionId,
+    typeDefinitionVersionId: `${stableKey}_v1` as TypeDefinitionVersionId,
+  };
 }

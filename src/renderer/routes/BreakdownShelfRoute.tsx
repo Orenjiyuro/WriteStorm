@@ -7,6 +7,10 @@ import type {
   ModuleInstanceSummary,
   ExportStatusDto,
 } from '../../shared/contracts';
+import type {
+  TypeLibraryPinnedOption,
+  TypeLibraryReleaseOptions,
+} from '../../shared/domain';
 import { rendererText } from '../i18n';
 import {
   SourceImportFailurePanel,
@@ -21,6 +25,10 @@ import {
   type JobRecoveryPanelProps,
 } from '../features/job-recovery/JobRecoveryPanel';
 import { ExportStatusPanel } from '../features/export-status/ExportStatusPanel';
+import {
+  TypeLibraryBindingEditor,
+  type TypeLibrarySelectionValue,
+} from '../features/type-library/TypeLibraryBindingEditor';
 
 export type LastImportPresentation = {
   readonly sessionId: string;
@@ -45,7 +53,22 @@ export type BreakdownShelfRouteProps = {
   readonly moduleInstancesLoading?: boolean;
   readonly moduleInstancesError?: string | null;
   readonly jobRecovery: JobRecoveryPanelProps;
-  readonly onImport: () => void;
+  readonly typeLibrary?: {
+    readonly options: TypeLibraryReleaseOptions | null;
+    readonly openedBookOptions: TypeLibraryReleaseOptions | null;
+    readonly openedBookPinnedOptions: readonly TypeLibraryPinnedOption[];
+    readonly optionsError: string | null;
+    readonly importSelection: TypeLibrarySelectionValue;
+    readonly openedBookSelection: TypeLibrarySelectionValue;
+    readonly bindingPending: boolean;
+    readonly bindingError: string | null;
+    readonly bindingConflict: boolean;
+    readonly onImportSelectionChange: (value: TypeLibrarySelectionValue) => void;
+    readonly onOpenedBookSelectionChange: (value: TypeLibrarySelectionValue) => void;
+    readonly onSaveOpenedBookBinding: () => void;
+    readonly onLoadLatestBookBinding: () => void;
+  };
+  readonly onImport: (selection?: TypeLibrarySelectionValue) => void;
   readonly onOpenBook: (book: BookSummary) => void;
   readonly onDetectStructure: () => void;
   readonly onRecoverStructureDetection: () => void;
@@ -89,10 +112,25 @@ export function BreakdownShelfRoute(props: BreakdownShelfRouteProps): ReactEleme
             <h2 id="empty-breakdown-shelf-title">
               {hasBooks ? rendererText.libraryShelf.importedTitle : rendererText.libraryShelf.emptyTitle}
             </h2>
-            <button type="button" onClick={props.onImport} disabled={props.importPending}>
+            <button
+              type="button"
+              onClick={() => props.onImport(props.typeLibrary?.importSelection)}
+              disabled={props.importPending}
+            >
               {rendererText.sourceImport.button}
             </button>
           </div>
+          {props.typeLibrary ? (
+            <TypeLibraryBindingEditor
+              idPrefix="import-classification"
+              title={rendererText.typeLibraryBinding.optionalImportTitle}
+              options={props.typeLibrary.options}
+              value={props.typeLibrary.importSelection}
+              pending={props.importPending}
+              error={props.typeLibrary.optionsError}
+              onChange={props.typeLibrary.onImportSelectionChange}
+            />
+          ) : null}
           {props.failure ? (
             <SourceImportFailurePanel failure={props.failure} onAction={props.onFailureAction} />
           ) : null}
@@ -106,6 +144,11 @@ export function BreakdownShelfRoute(props: BreakdownShelfRouteProps): ReactEleme
               {props.books.map((book) => (
                 <li key={book.id}>
                   <strong>{book.title}</strong>
+                  <span className="book-classification-summary">
+                    {book.mainTypeDisplayName ?? rendererText.typeLibraryBinding.mainTypeUnassigned}
+                    {book.contentFocusDisplayNames.length > 0
+                      ? ` · ${book.contentFocusDisplayNames.join(' → ')}` : ''}
+                  </span>
                   <button type="button" onClick={() => props.onOpenBook(book)}>
                     {rendererText.libraryShelf.reviewStructure}
                   </button>
@@ -125,6 +168,21 @@ export function BreakdownShelfRoute(props: BreakdownShelfRouteProps): ReactEleme
           {...props.jobRecovery}
           bookTitles={Object.fromEntries(props.books.map((book) => [book.id, book.title]))}
         />
+        {props.openedBook && props.typeLibrary ? (
+          <TypeLibraryBindingEditor
+            idPrefix="book-classification"
+            title={rendererText.typeLibraryBinding.bookMetadataTitle}
+            options={props.typeLibrary.openedBookOptions}
+            pinnedOptions={props.typeLibrary.openedBookPinnedOptions}
+            value={props.typeLibrary.openedBookSelection}
+            pending={props.typeLibrary.bindingPending}
+            error={props.typeLibrary.bindingError}
+            conflict={props.typeLibrary.bindingConflict}
+            onChange={props.typeLibrary.onOpenedBookSelectionChange}
+            onSave={props.typeLibrary.onSaveOpenedBookBinding}
+            onLoadLatest={props.typeLibrary.onLoadLatestBookBinding}
+          />
+        ) : null}
         {props.openedBook ? (
           <>
             <ExportStatusPanel

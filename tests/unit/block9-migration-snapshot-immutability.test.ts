@@ -45,10 +45,20 @@ describe('Block 9 immutable migration snapshots', () => {
       'src/main/db/migrations/005_analysis_module_asset_placeholders.ts',
       'utf8',
     );
+    const migration006 = readFileSync(
+      'src/main/db/migrations/006_type_library_registry.ts',
+      'utf8',
+    );
+    const migration007 = readFileSync(
+      'src/main/db/migrations/007_type_library_book_bindings.ts',
+      'utf8',
+    );
 
     expect(migration003).not.toMatch(/^import(?! type).*from ['"][^'"]*shared\/domain/m);
     expect(migration004).not.toMatch(/^import(?! type).*from ['"][^'"]*shared\/domain/m);
     expect(migration005).not.toMatch(/^import(?! type).*from ['"][^'"]*shared\/domain/m);
+    expect(migration006).not.toMatch(/^import(?! type).*from ['"][^'"]*shared\/domain/m);
+    expect(migration007).not.toMatch(/^import(?! type).*from ['"][^'"]*shared\/domain/m);
     expect(migration004).toContain('ANALYSIS_MODULE_DEFINITION_SEED_003');
   });
 });

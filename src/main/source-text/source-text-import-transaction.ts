@@ -1,5 +1,5 @@
 import type { SqliteDatabase } from '../db/sqlite';
-import type { BookSummary, JobSummary } from '../../shared/contracts';
+import type { BookSummary, ImportSourceTypeBinding, JobSummary } from '../../shared/contracts';
 import type {
   BreakdownBookId,
   JobId,
@@ -9,12 +9,15 @@ import type {
 import type { SourceTextImportMetadata } from './source-text-metadata';
 import { JobService } from '../jobs/job-service';
 import { mapJobRecordToSummary } from '../jobs/job-summary-mapper';
+import { TypeLibraryBookBindingMutationPort } from '../type-library/type-library-service';
+import { BookRepository } from '../books/book-repository';
 
 export type ImportBookWithSourceTextInput = {
   readonly libraryId: LibraryId;
   readonly bookId: BreakdownBookId;
   readonly title: string;
   readonly sourceText: SourceTextImportMetadata;
+  readonly typeBinding?: ImportSourceTypeBinding;
   readonly job?: {
     readonly id: JobId;
     readonly sourceTextId: SourceTextId;
@@ -89,6 +92,14 @@ export function importBookWithSourceText(
       WHERE id = ?
     `).run(input.sourceText.dto.id, input.updatedAt, input.bookId);
 
+    if (input.typeBinding) {
+      new TypeLibraryBookBindingMutationPort().updateInTransaction(database, {
+        bookId: input.bookId,
+        expectedRevision: 0,
+        ...input.typeBinding,
+      }, input.updatedAt);
+    }
+
     if (input.job) {
       const jobs = new JobService({ database });
       const payload = { sourceTextId: input.job.sourceTextId };
@@ -123,16 +134,20 @@ export function importBookWithSourceText(
   });
 
   const completedJob = writeImport();
+  const persistedBook = new BookRepository().get(database, input.bookId);
+  if (!persistedBook) throw new Error('Imported Book could not be read after commit.');
 
   return {
     book: {
-      id: input.bookId,
+      id: persistedBook.id,
       libraryId: input.libraryId,
-      title: input.title,
-      sourceTextId: input.sourceText.dto.id as SourceTextId,
-      sourceTextEdition: input.sourceText.dto.sourceTextEdition,
-      structureEdition: null,
-      updatedAt: input.updatedAt,
+      title: persistedBook.title,
+      sourceTextId: persistedBook.sourceTextId,
+      sourceTextEdition: persistedBook.sourceTextEdition,
+      structureEdition: persistedBook.structureEdition,
+      mainTypeDisplayName: persistedBook.mainTypeDisplayName,
+      contentFocusDisplayNames: [...persistedBook.contentFocusDisplayNames],
+      updatedAt: persistedBook.updatedAt,
     },
     sourceText: input.sourceText.dto,
     ...(completedJob ? { job: mapJobRecordToSummary(completedJob) } : {}),

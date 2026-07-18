@@ -36,6 +36,8 @@ const book: BookSummary = {
   sourceTextId: null,
   sourceTextEdition: 1,
   structureEdition: null,
+  mainTypeDisplayName: null,
+  contentFocusDisplayNames: [],
   updatedAt: '2026-07-16T00:00:00.000Z',
 };
 const library: LibrarySessionSummary = {

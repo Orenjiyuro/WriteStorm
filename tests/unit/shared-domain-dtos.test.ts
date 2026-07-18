@@ -45,6 +45,8 @@ const bookSummary = {
   sourceTextId,
   sourceTextEdition: 1,
   structureEdition: 2,
+  mainTypeDisplayName: null,
+  contentFocusDisplayNames: [],
   updatedAt: '2026-07-07T00:00:00.000Z',
 } satisfies BookSummary;
 

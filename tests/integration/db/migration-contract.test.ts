@@ -44,6 +44,10 @@ describe('empty-database migration replay contract', () => {
       );
       expect(database.prepare('SELECT COUNT(*) FROM analysis_modules').pluck().get())
         .toBe(ANALYSIS_MODULE_DEFINITIONS.length);
+      expect(database.prepare('SELECT COUNT(*) FROM type_definitions').pluck().get()).toBe(14);
+      expect(database.prepare('SELECT COUNT(*) FROM type_definition_versions').pluck().get()).toBe(14);
+      expect(database.prepare('SELECT COUNT(*) FROM type_library_versions').pluck().get()).toBe(1);
+      expect(database.prepare('SELECT COUNT(*) FROM type_library_version_entries').pluck().get()).toBe(14);
     } finally {
       database.close();
     }
@@ -89,7 +93,8 @@ describe('empty-database migration replay contract', () => {
       expect(semanticBoundaries.every(({ migrationId }) => migrationId === migration.id)).toBe(true);
     }
     const [foundationBoundaries = [], structureBoundaries = [], moduleBoundaries = [],
-      instanceBoundaries = [], assetBoundaries = []]
+      instanceBoundaries = [], assetBoundaries = [], typeLibraryBoundaries = [],
+      typeLibraryBindingBoundaries = []]
       = APP_MIGRATIONS.map((migration) => migration.semanticBoundaries ?? []);
     expect(foundationBoundaries).toHaveLength(12);
     expect(foundationBoundaries.every(({ kind }) => kind === 'check')).toBe(true);
@@ -102,6 +107,10 @@ describe('empty-database migration replay contract', () => {
     expect(instanceBoundaries.filter(({ kind }) => kind === 'trigger')).toHaveLength(5);
     expect(instanceBoundaries.filter(({ kind }) => kind === 'partial-index')).toHaveLength(4);
     expect(assetBoundaries.filter(({ kind }) => kind === 'check')).toHaveLength(1);
+    expect(typeLibraryBoundaries.filter(({ kind }) => kind === 'check')).toHaveLength(11);
+    expect(typeLibraryBoundaries.filter(({ kind }) => kind === 'trigger')).toHaveLength(11);
+    expect(typeLibraryBindingBoundaries.filter(({ kind }) => kind === 'check')).toHaveLength(2);
+    expect(typeLibraryBindingBoundaries.filter(({ kind }) => kind === 'trigger')).toHaveLength(7);
     const expanded = migrationSemanticWitnesses(APP_MIGRATIONS);
     for (const boundary of APP_MIGRATIONS.flatMap((migration) => migration.semanticBoundaries ?? [])) {
       expect(expanded.some(({ id }) => id === `${boundary.id}.accept`)).toBe(true);
@@ -165,7 +174,10 @@ function businessRowCounts(database: SqliteDatabase): Array<{ table: string; cou
     SELECT name FROM sqlite_schema
     WHERE type = 'table'
       AND name NOT LIKE 'sqlite_%'
-      AND name NOT IN ('schema_migrations', 'analysis_modules')
+      AND name NOT IN (
+        'schema_migrations', 'analysis_modules', 'type_definitions',
+        'type_definition_versions', 'type_library_versions', 'type_library_version_entries'
+      )
     ORDER BY name
   `).pluck().all() as string[];
   return tables.map((table) => ({

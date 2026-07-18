@@ -6,6 +6,7 @@ import { BookService, BookServiceError } from '../../../src/main/books/book-serv
 import { LibraryService } from '../../../src/main/library/library-service';
 import { openSqliteDatabase } from '../../../src/main/db/sqlite';
 import type { BreakdownBookId, LibraryId } from '../../../src/shared/domain';
+import { TypeLibraryBookBindingMutationPort } from '../../../src/main/type-library/type-library-service';
 
 const tempDirs: string[] = [];
 const libraryId = 'book-service-library' as LibraryId;
@@ -34,6 +35,8 @@ describe('BookService persisted reads', () => {
           sourceTextId: 'source-a-2',
           sourceTextEdition: 2,
           structureEdition: 2,
+          mainTypeDisplayName: '日轻校园',
+          contentFocusDisplayNames: ['恋爱炒股', '群像'],
           updatedAt: '2026-07-12T03:00:00.000Z',
         },
         {
@@ -43,6 +46,8 @@ describe('BookService persisted reads', () => {
           sourceTextId: null,
           sourceTextEdition: null,
           structureEdition: null,
+          mainTypeDisplayName: null,
+          contentFocusDisplayNames: [],
           updatedAt: '2026-07-12T03:00:00.000Z',
         },
       ]);
@@ -148,6 +153,13 @@ function seedBooks(service: LibraryService): void {
       UPDATE books SET current_source_text_id = 'source-a-2' WHERE id = 'book-a';
       UPDATE books SET structure_edition = 2 WHERE id = 'book-a';
     `);
+    new TypeLibraryBookBindingMutationPort().updateInTransaction(session.database, {
+      bookId: 'book-a' as BreakdownBookId,
+      expectedRevision: 0,
+      typeLibraryVersion: 1,
+      mainType: reference('builtin_main_001'),
+      contentFocuses: [reference('builtin_focus_001'), reference('builtin_focus_005')],
+    }, '2026-07-12T03:00:00.000Z');
   });
 }
 
@@ -181,4 +193,11 @@ function libraryRootPath(): string {
   const directory = mkdtempSync(path.join(os.tmpdir(), 'writestorm-book-service-'));
   tempDirs.push(directory);
   return path.join(directory, 'library');
+}
+
+function reference(stableKey: string) {
+  return {
+    typeDefinitionId: stableKey as import('../../../src/shared/domain').TypeDefinitionId,
+    typeDefinitionVersionId: `${stableKey}_v1` as import('../../../src/shared/domain').TypeDefinitionVersionId,
+  };
 }

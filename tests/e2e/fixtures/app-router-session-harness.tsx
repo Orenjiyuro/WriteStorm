@@ -2,9 +2,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRoot } from 'react-dom/client';
 import { AppRouter } from '../../../src/renderer/app/AppRouter';
 import { activateLibrarySession } from '../../../src/renderer/features/library/library-queries';
+import { jobKeys } from '../../../src/renderer/features/job-recovery/job-queries';
 import { moduleInstanceKeys } from '../../../src/renderer/features/module-workbench/module-instance-queries';
 import type {
   BookSummary,
+  ContractRequest,
+  ContractResponse,
   ExportStatusDto,
   LibrarySessionSummary,
   ModuleInstanceSummary,
@@ -13,13 +16,19 @@ import type { WritestormApi } from '../../../src/shared/contracts/preload-api';
 import type { StructureWorkspace } from '../../../src/shared/contracts/structure';
 import {
   ANALYSIS_MODULE_DEFINITIONS,
+  BUILT_IN_TYPE_OPTIONS_V1,
   EXPORT_EXCLUDED_CONTENT_KINDS,
   EXPORT_OWNER_RUNTIME_POLICY,
   EXPORT_OWNER_UNAVAILABLE_BLOCKER_CODES,
   type AnalysisModuleInstanceId,
+  type BookClassificationTarget,
+  type BookTypeBindingRead,
   type BreakdownBookId,
   type LibraryId,
   type StructureSetId,
+  type TypeLibraryReleaseOptions,
+  type TypeDefinitionId,
+  type TypeDefinitionVersionId,
 } from '../../../src/shared/domain';
 
 const bookId = 'book-app-router-session' as BreakdownBookId;
@@ -34,25 +43,120 @@ const queryClient = new QueryClient({
   },
 });
 let activeLibrary = libraryA;
+let typeLibraryBinding = createBinding(1, null, []);
+let typeLibraryConflictArmed = true;
+let typeLibraryConflictSequence = 0;
+const typeLibraryUpdateRequests: ContractRequest<'type-library:update-book-binding'>[] = [];
+const breakdownQueryCalls = {
+  books: 0,
+  jobs: 0,
+  jobDetail: 0,
+  structure: 0,
+  modules: 0,
+  exportStatus: 0,
+  typeLibraryOptions: 0,
+  typeLibraryBinding: 0,
+};
+
+const typeLibraryReleaseOptions: TypeLibraryReleaseOptions = {
+  version: 1,
+  options: BUILT_IN_TYPE_OPTIONS_V1.map((option) => ({
+    typeDefinitionId: option.definition.id,
+    typeDefinitionVersionId: option.definitionVersion.id,
+    kind: option.definition.kind,
+    origin: option.definition.origin,
+    stableKey: option.definition.stableKey,
+    displayName: option.definitionVersion.displayName,
+    selectionDescription: option.definitionVersion.selectionDescription,
+    sortOrder: option.sortOrder,
+  })),
+};
 
 const unavailable = async (): Promise<never> => {
   throw new Error('The AppRouter session harness does not configure this operation.');
 };
-const api = {
+const api: WritestormApi = {
+  internal: {
+    health: async () => ({ ok: true, app: 'WriteStorm' }),
+  },
   library: {
     create: unavailable,
     open: unavailable,
     getCurrent: async () => ({ ok: true as const, data: activeLibrary }),
   },
   books: {
-    list: async () => ({
-      ok: true as const,
-      data: [activeLibrary.sessionId === libraryA.sessionId ? bookA : bookB],
-    }),
+    list: async () => {
+      breakdownQueryCalls.books += 1;
+      return {
+        ok: true as const,
+        data: [activeLibrary.sessionId === libraryA.sessionId ? bookA : bookB],
+      };
+    },
     importSource: unavailable,
   },
+  typeLibrary: {
+    listOptions: async () => {
+      breakdownQueryCalls.typeLibraryOptions += 1;
+      return { ok: true, data: typeLibraryReleaseOptions };
+    },
+    getBookBinding: async (request) => {
+      breakdownQueryCalls.typeLibraryBinding += 1;
+      return {
+        ok: true,
+        data: {
+          binding: { ...typeLibraryBinding, bookId: request.bookId },
+          pinnedOptions: [],
+        },
+      };
+    },
+    updateBookBinding: async (
+      request,
+    ): Promise<ContractResponse<'type-library:update-book-binding'>> => {
+      typeLibraryUpdateRequests.push(request);
+      if (typeLibraryConflictArmed) {
+        typeLibraryConflictArmed = false;
+        typeLibraryConflictSequence += 1;
+        typeLibraryBinding = typeLibraryConflictSequence === 1
+          ? createBinding(
+            typeLibraryBinding.revision + 1,
+            reference('builtin_main_004'),
+            [reference('builtin_focus_005')],
+          )
+          : createBinding(
+            typeLibraryBinding.revision + 1,
+            reference('builtin_main_002'),
+            [reference('builtin_focus_003')],
+          );
+        return {
+          ok: false,
+          error: {
+            code: 'TYPE_LIBRARY_ERROR',
+            message: 'The Book classification changed in another session.',
+            recoverable: true,
+            details: { reason: 'revision_conflict' },
+          },
+        };
+      }
+      const result: BookClassificationTarget = {
+        bookId: request.bookId,
+        typeLibraryVersion: request.typeLibraryVersion,
+        revision: typeLibraryBinding.revision + 1,
+        mainType: request.mainType,
+        contentFocuses: request.contentFocuses.map((focus, index) => ({
+          priority: index + 1,
+          ...focus,
+        })),
+        updatedAt: '2026-07-18T12:00:00.000Z',
+      };
+      typeLibraryBinding = result;
+      return { ok: true, data: result };
+    },
+  },
   structure: {
-    get: async () => ({ ok: true as const, data: frozenWorkspace() }),
+    get: async () => {
+      breakdownQueryCalls.structure += 1;
+      return { ok: true as const, data: frozenWorkspace() };
+    },
     detect: unavailable,
     recoverDetection: unavailable,
     createDraft: unavailable,
@@ -64,24 +168,36 @@ const api = {
     unfreeze: unavailable,
   },
   modules: {
-    listInstances: async () => ({
-      ok: true as const,
-      data: moduleInstances(
-        activeLibrary.sessionId === libraryA.sessionId ? 'not_generated' : 'needs_rebuild',
-        activeLibrary.sessionId === libraryA.sessionId ? 'a' : 'b',
-      ),
-    }),
+    listInstances: async () => {
+      breakdownQueryCalls.modules += 1;
+      return {
+        ok: true as const,
+        data: moduleInstances(
+          activeLibrary.sessionId === libraryA.sessionId ? 'not_generated' : 'needs_rebuild',
+          activeLibrary.sessionId === libraryA.sessionId ? 'a' : 'b',
+        ),
+      };
+    },
     updateBody: unavailable,
   },
   jobs: {
-    list: async () => ({ ok: true as const, data: [] }),
-    get: unavailable,
+    list: async () => {
+      breakdownQueryCalls.jobs += 1;
+      return { ok: true as const, data: [] };
+    },
+    get: async () => {
+      breakdownQueryCalls.jobDetail += 1;
+      return { ok: true as const, data: null };
+    },
     cancel: unavailable,
   },
   exports: {
-    getStatus: async () => ({ ok: true as const, data: exportStatus() }),
+    getStatus: async () => {
+      breakdownQueryCalls.exportStatus += 1;
+      return { ok: true as const, data: exportStatus() };
+    },
   },
-} as unknown as WritestormApi;
+};
 
 Object.assign(window, {
   __switchAppRouterLibrary: async (): Promise<void> => {
@@ -92,6 +208,22 @@ Object.assign(window, {
   __hasAppRouterSessionACache: (): boolean => queryClient.getQueryData(
     moduleInstanceKeys.instances(libraryA.sessionId, bookId),
   ) !== undefined,
+  __probeTechniqueRouteQueryGate: async (): Promise<void> => {
+    queryClient.setQueryData(jobKeys.all(activeLibrary.sessionId), [{
+      id: 'job-technique-route-probe',
+      state: 'running',
+    }]);
+    resetBreakdownQueryCalls();
+    await queryClient.invalidateQueries();
+  },
+  __getBreakdownQueryCalls: () => ({ ...breakdownQueryCalls }),
+  __finishTechniqueRouteQueryGateProbe: (): void => {
+    queryClient.setQueryData(jobKeys.all(activeLibrary.sessionId), []);
+  },
+  __armTypeLibraryConflict: (): void => {
+    typeLibraryConflictArmed = true;
+  },
+  __getTypeLibraryUpdateRequests: () => structuredClone(typeLibraryUpdateRequests),
 });
 
 createRoot(document.getElementById('app-router-session-root')!).render(
@@ -125,6 +257,8 @@ function book(title: string, libraryId: LibraryId): BookSummary {
     sourceTextId: null,
     sourceTextEdition: 1,
     structureEdition: 1,
+    mainTypeDisplayName: null,
+    contentFocusDisplayNames: [],
     updatedAt: '2026-07-16T00:00:00.000Z',
   };
 }
@@ -216,5 +350,41 @@ function exportStatus(): ExportStatusDto {
     ],
     owners: [...EXPORT_OWNER_RUNTIME_POLICY],
     excludedContent: [...EXPORT_EXCLUDED_CONTENT_KINDS],
+  };
+}
+
+function resetBreakdownQueryCalls(): void {
+  breakdownQueryCalls.books = 0;
+  breakdownQueryCalls.jobs = 0;
+  breakdownQueryCalls.jobDetail = 0;
+  breakdownQueryCalls.structure = 0;
+  breakdownQueryCalls.modules = 0;
+  breakdownQueryCalls.exportStatus = 0;
+  breakdownQueryCalls.typeLibraryOptions = 0;
+  breakdownQueryCalls.typeLibraryBinding = 0;
+}
+
+function reference(stableKey: string) {
+  return {
+    typeDefinitionId: stableKey as TypeDefinitionId,
+    typeDefinitionVersionId: `${stableKey}_v1` as TypeDefinitionVersionId,
+  };
+}
+
+function createBinding(
+  revision: number,
+  mainType: ReturnType<typeof reference> | null,
+  contentFocuses: readonly ReturnType<typeof reference>[],
+): BookTypeBindingRead {
+  return {
+    bookId,
+    typeLibraryVersion: 1,
+    revision,
+    mainType,
+    contentFocuses: contentFocuses.map((focus, index) => ({
+      priority: index + 1,
+      ...focus,
+    })),
+    updatedAt: '2026-07-18T12:00:00.000Z',
   };
 }

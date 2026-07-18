@@ -14,7 +14,6 @@ export type LibraryPerformanceFixtureName = 'small' | 'medium';
 export type LibraryPerformanceFixture = {
   readonly name: LibraryPerformanceFixtureName;
   readonly itemCount: number;
-  readonly expectedSchemaVersion: number;
 };
 
 export type LibraryPerformanceOperationTimingsMs = {
@@ -43,12 +42,10 @@ export const LIBRARY_PERFORMANCE_FIXTURES = [
   {
     name: 'small',
     itemCount: 25,
-    expectedSchemaVersion: 5,
   },
   {
     name: 'medium',
     itemCount: 1_000,
-    expectedSchemaVersion: 5,
   },
 ] as const satisfies readonly LibraryPerformanceFixture[];
 

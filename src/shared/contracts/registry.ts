@@ -7,6 +7,14 @@ import { jobDetailSchema, jobRequestSchema, jobSummarySchema } from './jobs';
 import { librarySessionSummarySchema } from './library';
 import { moduleInstanceSummarySchema, updateModuleBodyRequestSchema } from './modules';
 import {
+  typeLibraryBookBindingDetailSchema,
+  typeLibraryBookBindingRequestSchema,
+  typeLibraryBookClassificationTargetSchema,
+  typeLibraryListOptionsRequestSchema,
+  typeLibraryReleaseOptionsSchema,
+  typeLibraryUpdateBookBindingRequestSchema,
+} from './type-library';
+import {
   createStructureDraftRequestSchema,
   createManualStructureDraftRequestSchema,
   discardStructureDraftRequestSchema,
@@ -75,6 +83,21 @@ export const CONTRACT_REGISTRY = {
     'books:import-source',
     importSourceRequestSchema,
     importSourceResponseSchema,
+  ),
+  'type-library:list-options': createContract(
+    'type-library:list-options',
+    typeLibraryListOptionsRequestSchema,
+    contractResponseSchema(typeLibraryReleaseOptionsSchema),
+  ),
+  'type-library:get-book-binding': createContract(
+    'type-library:get-book-binding',
+    typeLibraryBookBindingRequestSchema,
+    contractResponseSchema(typeLibraryBookBindingDetailSchema.nullable()),
+  ),
+  'type-library:update-book-binding': createContract(
+    'type-library:update-book-binding',
+    typeLibraryUpdateBookBindingRequestSchema,
+    contractResponseSchema(typeLibraryBookClassificationTargetSchema),
   ),
   'structure:get': createContract(
     'structure:get',

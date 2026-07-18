@@ -27,8 +27,8 @@ export async function activateLibrarySession(
   nextSession: LibrarySessionSummary | null,
 ): Promise<void> {
   await queryClient.cancelQueries({ queryKey: libraryKeys.current() });
+  queryClient.setQueryData(libraryKeys.current(), nextSession);
   if (previousSessionId && previousSessionId !== nextSession?.sessionId) {
     queryClient.removeQueries({ queryKey: libraryKeys.session(previousSessionId) });
   }
-  queryClient.setQueryData(libraryKeys.current(), nextSession);
 }

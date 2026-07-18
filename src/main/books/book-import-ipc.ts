@@ -73,6 +73,7 @@ export function createBookImportIpcDependencies(
       return mapImportResult(await options.sourceImport.import({
         sourcePath,
         title: request.title,
+        typeBinding: request.typeBinding,
         expectedSessionId: current.sessionId,
       }));
     },

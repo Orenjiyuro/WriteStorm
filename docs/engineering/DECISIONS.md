@@ -208,6 +208,7 @@ Rules:
 - The canonical source path is `source/{sourceTextId}/{originalFileName}`.
 - Job and JobCheckpoint are frozen now because Block 7 already persists real import Jobs; JobService owns transitions.
 - Before the first external alpha or release tag, unpublished migrations may be reset. After that boundary, published migrations are immutable, evolution is forward-only, and pending migrations require a recoverable snapshot.
+- Historical migration tests must execute an explicit registry prefix ending at their owned migration; they must not run the mutable full `APP_MIGRATIONS` registry and then assert an old final version or forbid later migration ids. Current-schema and performance tests derive the final schema version from the registry's last migration rather than hard-coding registry length.
 - Block 8 pure detection and fixture assets remain protected by the ADR SHA-256 manifest. Task 19 reattached its migration 002, persistence, Job, worker and IPC wiring without changing the 19 protected hashes.
 
 Full rationale and the preservation manifest: `docs/adr/0001-pre-release-schema-reset-and-table-admission.md`.
@@ -549,3 +550,513 @@ Rules:
 - The completion authority is `docs/engineering/V1-BLOCK-11-STATUS.md`. Final certification at commit `ddde1a1` passed 527 unit tests, 256 integration tests, Windows x64 packaging, and 13 packaged Electron E2E tests.
 - Secondary-display placement is unified E2E infrastructure evidence, not a product acceptance blocker for Export readiness.
 - Completion authorizes no real export package, filesystem write, directory selector, arbitrary path, migration, Export record, Export Job/checkpoint, Markdown/JSON back-write, Codex SDK, AI content, evidence extraction, future owner table, or Block 12 capability.
+
+## D045: Technique Persistence Requires A Natural Adoption Producer
+
+Decision: Task 12.1 is complete as a TechniqueEntry admission contract and blocked/deferred conclusion; it does not admit persistence. The original master repository/service target is deferred to Block 16 because a production TechniqueEntry may be created only by a natural adoption flow from a confirmed reusable candidate, and that producer is not admitted. Direct SQLite fixtures, test-only inserts, renderer-local state, manual primary creation, and automatic fusion are not production lifecycle owners.
+
+Rules:
+
+- A future TechniqueEntry is owned by the active Library, uses a stable opaque id, and has optimistic revision for title, summary, tags, applicable scope, limitations, and allowed status changes.
+- Each TechniqueEntry owns exactly one immutable SourceSnapshot captured atomically with entry creation. The snapshot is never shared, replaced, updated, or independently deleted, and source trace ids do not become foreign keys to unadmitted tables.
+- TechniqueEntry and SourceSnapshot writes never mutate observations, candidates, EvidenceAnchors, source review state, or the source Breakdown Book.
+- Hard delete is not admitted; `deprecated` is the V1 retirement state.
+- The current repository has no admitted reusable-candidate owner, confirmed-candidate read path, natural adoption producer, capture transaction, or duplicate-adoption identity. Therefore Block 12 authorizes no migration number, Technique production table, repository/service, IPC mutation, real edit form, or naturally reachable existing-entry edit.
+- Technique persistence defers to Block 16. Block 12 Tasks 12.2-12.5 must show a truthful empty state, editing-unavailable reason, readonly SourceSnapshot contract position, and disabled adoption reason instead of fabricating entries or snapshots.
+- Task 12.15 removes existing-entry editing from natural acceptance. It verifies the real empty state, disabled adoption, readonly/no-write-back boundary, and absence of Technique production tables.
+- Storage representation for tags, limitations, and SourceSnapshot relations remains undecided until query, update, indexing, and migration semantics justify it. The design must not infer a multi-table shape from UI field names.
+
+The detailed field matrix, RED evidence, and revised follow-up plan are recorded in `docs/engineering/V1-BLOCK-12-TECHNIQUE-ADMISSION.md`.
+
+## D046: TypeLibrary Taxonomy, Version, And Prompt Governance Override
+
+Decision: The approved TypeLibrary admission and continuous-plan documents override the historical master Task 12.6–12.9 assumptions while leaving the protected master plan unchanged. Block 12 does not infer seed identities from draft labels. The six proposed MainTypes are 日轻校园、异世界幻想、古代玄幻、现代幻想、都市恋爱、 and 无限流; each requires independent definition, boundary, validation-corpus, and verdict checkpoints. Individual admission does not seed automatically. An explicit `TypeLibraryVersion 1` release set selects which admitted identities may enter a later seed/schema proposal, including any intentionally reviewed subset.
+
+Rules:
+
+- MainType and ContentFocus are orthogonal. Import may finish without classification. A Book may persist zero or one MainType and zero to three unique ordered ContentFocus “看点标签”, including a focus-only not-ready configuration. Formal analysis blocks with `missing_main_type` when MainType is absent.
+- Proposed built-in candidates are owned only by source-controlled admission records and typed fixtures. Before persistence admission there is no TypeLibrary production table and no seed operation; “empty seed” may not be represented by a zero-row production table. Future user-defined drafts are separate Library-owned objects with an independent local draft/sample/publication lifecycle.
+- Optional import-time classification and post-import classification editing are both required natural paths after persistence admission. The common blocker title is “方法论尚未就绪，不能开始正式分析”, accompanied by `missing_main_type`, `type_definition_version_unavailable`, `methodology_not_ready`, `prompt_not_ready`, `schema_not_ready`, or `composition_conflict` as applicable.
+- ContentFocus priority determines deterministic Overlay order but grants no override permission. Incompatible Overlays return `composition_conflict`.
+- TypeDefinition, TypeDefinitionVersion, MethodologyVersion, and PromptTemplateVersion are independent. Book CAS updates pin TypeDefinitionVersions only on the current classification target; they never rewrite existing AnalysisConfigurationSnapshots or historical results. Logic upgrades create a new snapshot and impact plan, selectively rebuild actually affected modules, and require explicit confirmation for a complete rerun.
+- EffectiveMethodologySnapshot and EffectivePromptSnapshot separately pin Base versions, ordered Overlay versions, schemaVersion, and compositionVersion. Taxonomy binding may exist before either snapshot is ready, but analysis cannot start.
+- PromptTemplate states are not one enum. PromptTemplateRegistryEntry owns `publishedVersionId` and `activationStatus`; PromptTemplateVersion owns `sampleGateStatus = not_run | blocked | failed | passed`. Any edit creates a new draft version starting at `not_run`. Registry ownership is registry key + module key + TypeDefinition identity + `base | overlay`; each version pins exact TypeDefinitionVersion and MethodologyVersion provenance. Rollback repoints the published version and never mutates old Book snapshots.
+- Task 12.7 remains an honest disabled shell. It does not create, copy, edit, archive, publish, activate, or rebase custom types in Block 12.
+
+No TypeLibrary migration, table, seed, repository/service, IPC, renderer classification control, Prompt runtime, sample execution, or AI behavior is authorized until the candidate and persistence gates in the approved documents pass.
+
+## D047: TypeLibrary Uses User Selection, Not Classification Admission
+
+Decision: D046 remains authoritative for MainType/ContentFocus orthogonality, Book cardinality, current-target-only CAS, immutable analysis snapshots, version ownership, Prompt state separation, and the absence of unauthorized persistence. D047 supersedes D046 only where it required literary-taxonomy definition, boundary, example, corpus, module-impact, or admitted/rejected review. WriteStorm does not automatically classify or infer a Book type; the user alone selects it.
+
+Rules:
+
+- A built-in option confirmation requires only display name, one-sentence selection description, `user_only` authority with no automatic classification or source-text inference, and explicit deferral of methodology content to Block 14. Runtime validation belongs to Block 17; automatic type recognition is outside scope.
+- Built-in option proposal status is `proposed | confirmed | deferred`. A confirmed option requires a stable key; an unconfirmed option has no stable key, production identity, seed membership, selector entry, or Book-binding eligibility.
+- The six requested MainType display names are 日轻校园、异世界幻想、古代玄幻、现代幻想、都市恋爱、 and 无限流. Their one-sentence selection descriptions remain required input, so no stable keys or TypeDefinitionVersion 1 payloads are authorized yet.
+- TypeDefinitionVersion owns the versioned display name and selection description. MethodologyVersion and PromptTemplateVersion remain separate and are not embedded in the selection definition.
+- Before persistence admission there is no TypeLibrary production table and no seed operation. No migration number, physical schema, repository/service, IPC, or renderer selector may be inferred from this decision.
+- Missing MainType blocks formal analysis with `missing_main_type`; focus-only metadata may persist after persistence admission. ContentFocus order controls Overlay composition order only, and incompatibility remains `composition_conflict`.
+- Task 12.7 remains an honest disabled shell for future user-defined types.
+
+## D048: MainType Copy Confirmation Precedes Stable Identity Release
+
+Decision: Task 12.6B confirms seven built-in MainType display names and one-sentence selection descriptions supplied by the user: 日轻校园、日轻异界、现代都市、现代幻想、古代幻想、西式幻想、 and 诸天无限. This supersedes D047's six-name set. Copy confirmation and production stable identity release are separate gates.
+
+Rules:
+
+- `confirmationStatus = confirmed` proves only that exact user-facing copy is approved. It requires a display name and selection description but may retain `stableKey = null`.
+- A stable key may be assigned only to confirmed copy and only through a separately approved TypeLibraryVersion release set. Copy confirmation alone creates no TypeDefinition identity, TypeDefinitionVersion payload, seed membership, selector eligibility, or Book binding.
+- The exact seven strings are preserved in the source-controlled typed admission asset and `V1-BLOCK-12-TYPE-LIBRARY-ADMISSION.md`. They are selection guidance, not automatic classification rules, methodology, examples, boundaries, or validation corpora.
+- There is still no TypeLibrary production table and no seed operation. No migration, repository/service, IPC, renderer selector, or Book mutation is admitted.
+- Task 12.6C must separately confirm the built-in ContentFocus option set before release-set or persistence design proceeds.
+
+## D049: ContentFocus Copy Confirmation Preserves Ordered User Choice
+
+Decision: Task 12.6C confirms the first seven built-in ContentFocus display names and one-sentence selection descriptions supplied by the user: 恋爱炒股、英雄史诗、能力规则、种田运营、群像、事业、 and 冒险探索. They are user-selectable “看点标签”, not children of MainType and not automatic classifications.
+
+Rules:
+
+- Exact copy is preserved in the source-controlled typed admission asset and `V1-BLOCK-12-TYPE-LIBRARY-ADMISSION.md`. Copy confirmation assigns no stable key, production TypeDefinition identity, TypeDefinitionVersion payload, seed membership, selector eligibility, or methodology.
+- Each Book later selects zero to three unique ContentFocus identities and explicitly orders its own binding. The admission asset's listing order is not Book priority and grants no Overlay override permission.
+- These descriptions state selection intent only. Block 14 owns methodology and composition content; Block 17 owns runtime validation. No classifier, inference, examples, corpus, Prompt execution, or AI behavior is introduced.
+- There is still no TypeLibrary production table and no seed operation. No migration, repository/service, IPC, renderer selector, or Book mutation is admitted.
+- Task 12.6D cannot begin until stable identities, TypeDefinitionVersion 1 payloads, a TypeLibraryVersion 1 release set, and persistence ownership receive separate authorization.
+
+## D050: Normalized TypeLibrary Persistence Ownership Selected
+
+Decision: Option A is approved as the persistence ownership model. A future admitted TypeLibrary schema uses normalized SQLite ownership for TypeDefinition identities, immutable definition versions, immutable TypeLibrary release versions and membership, one current CAS-controlled Book binding, and its ordered ContentFocus associations. This selection rejects an authoritative TypeScript-only registry and JSON classification facts.
+
+Rules:
+
+- The selected logical tables are `type_definitions`, `type_definition_versions`, `type_library_versions`, `type_library_version_entries`, `book_type_bindings`, and `book_content_focus_bindings`.
+- Independent Book binding avoids rebuilding the existing `books` table and preserves current Book identity and query order.
+- This decision approves ownership boundaries only. K1 stable keys, exact TypeDefinitionVersion 1 identities, the fourteen-entry TypeLibraryVersion 1 release, CAS initialization/clear semantics, and archive policy remain pending.
+- There is no TypeLibrary migration, migration number, production seed, repository/service, IPC, preload API, renderer selector, or Book mutation authorized by D050.
+- The protected master plan remains unchanged. Implementation resumes only after the remaining persistence-admission decisions pass.
+
+## D051: Opaque Namespaced TypeLibrary Stable-Key Mapping Approved
+
+Decision: The K1 opaque namespaced ordinal mapping is approved for all fourteen confirmed built-in option copies. MainType keys are `builtin_main_001` through `builtin_main_007`; ContentFocus keys are `builtin_focus_001` through `builtin_focus_007`, each mapped in the user-confirmed display order recorded by the persistence-admission document.
+
+Rules:
+
+- Ordinals are immutable technical identity components. They are never reused and imply neither literary semantics nor per-Book ContentFocus priority.
+- Built-in TypeDefinition ids will equal the approved stable keys; V1 version-id proposals append `_v1`. User-defined TypeDefinition ids remain generated and have `stableKey = null`.
+- This decision freezes the mapping but does not publish identities. Under D048, typed admission fixtures retain null stable keys until the TypeLibraryVersion 1 release set is separately approved.
+- The fourteen-entry release set, CAS initialization/clear semantics, archive policy, migration number, tables, seed, repository/service, IPC, preload API, renderer selectors, and Book mutation remain unauthorized.
+- There is no TypeLibrary migration. D051 introduces no production persistence and does not change the protected master plan.
+
+## D052: TypeLibraryVersion 1 Typed Release Approved
+
+Decision: TypeLibraryVersion 1 is approved as an immutable shared-domain release containing all seven confirmed MainType V1 identities and all seven confirmed ContentFocus V1 identities under the D051 K1 mapping. `src/shared/domain/type-library-built-ins.ts` is the production typed source for these exact identities, copies, versions, kinds, and per-kind display order.
+
+Rules:
+
+- Built-in TypeDefinition ids equal their stable keys. Exact V1 TypeDefinitionVersion ids append `_v1`; every version owns the user-confirmed display name and selection description.
+- The release has fourteen unique memberships and per-kind display order 0–6. Release order is presentation order only and never becomes a Book's ContentFocus priority.
+- Test admission fixtures derive from the production typed registry; they are not a duplicate fact source.
+- The typed release contains no MethodologyVersion, PromptTemplateVersion, sample status, publication runtime, automatic classifier, or AI behavior. Analysis remains blocked until later readiness owners exist.
+- SQLite seed remains unauthorized. D052 creates no TypeLibrary migration, table, repository/service, IPC, preload API, renderer selector, or Book mutation.
+- CAS initialization/clear semantics and archive-only retirement remain the final persistence-admission decision before migration work may be authorized.
+
+## D053: TypeLibrary Book Binding CAS And Archive Lifecycle Approved
+
+Decision: The TypeLibrary persistence design uses an absent Book binding row as revision 0, creates revision 1 on the first successful mutation, retains an empty binding row after selections are cleared, and uses archive-only retirement for definition facts. This closes the lifecycle-design prerequisite but does not authorize a migration or production persistence.
+
+Rules:
+
+- A Book with no binding row reads as unassigned with `revision = 0`; reads never insert a row.
+- The first mutation requires `expectedRevision = 0` and creates revision 1. Later mutations require exact revision equality and increment exactly once.
+- Clearing MainType and every ContentFocus retains the binding row and increments revision, preventing an ABA return to revision 0.
+- Ordered ContentFocus replacement and parent revision update belong to one transaction. Persisted gaps or invalid references fail closed instead of being normalized silently.
+- Deleting a Book may cascade its current binding and association rows because they have no independent history.
+- TypeDefinition identities, TypeDefinitionVersions, TypeLibraryVersions, and release entries have no hard-delete path. Definitions retire through a one-way archive transition, and old releases remain immutable.
+- Book binding CAS changes only the current classification target. It never rewrites an existing AnalysisConfigurationSnapshot or historical result.
+- There is no TypeLibrary production table, no seed operation, and no TypeLibrary migration. Migration numbering and implementation require separate explicit authorization.
+
+## D054: TypeLibrary Reference Registry Uses Migration 006
+
+Decision: Migration 006 implements only the approved TypeLibrary reference registry: TypeDefinition identities, immutable definition versions, immutable TypeLibrary releases, immutable release membership, and the exact fourteen-entry V1 seed. Book binding persistence remains a separate checkpoint.
+
+Rules:
+
+- Migration 006 owns `type_definitions`, `type_definition_versions`, `type_library_versions`, and `type_library_version_entries`.
+- The migration carries literal historical seed facts instead of importing the mutable shared-domain registry. Focused tests require those literals to equal the currently approved D052 release.
+- The V1 seed contains 14 built-in identities, 14 immutable definition versions, one TypeLibraryVersion, and 14 immutable memberships with per-kind order 0–6.
+- Foreign keys prove release entries reference the matching definition, definition version, and kind. Unique constraints protect one definition/version membership and one per-kind sort position per release.
+- TypeDefinition identity fields are immutable; `archived_at` permits only one null-to-timestamp retirement transition and cannot be cleared or rewritten. Definition versions, releases, and release entries reject update and hard delete.
+- Migration-owned two-sided semantic witnesses protect checks, foreign-key ownership, unique order, archive mutation, and immutable triggers. Empty-database replay and retained SQLite 3.53.2 upgrade reach schema version 6.
+- Migration 006 creates neither `book_type_bindings` nor `book_content_focus_bindings`. It adds no repository/service, IPC, preload API, renderer selector, Book mutation, methodology, Prompt runtime, classifier, or AI behavior.
+
+## D055: TypeLibrary Book Bindings Use Migration 007
+
+Decision: Migration 007 implements the two Book-owned TypeLibrary binding tables after migration 006 reference facts. It freezes persistence invariants only and exposes no callable product mutation path.
+
+Rules:
+
+- `book_type_bindings` has one optional row per Book. Absence represents revision 0 and unassigned metadata; the first inserted row must have revision 1.
+- Every binding update must preserve Book identity and increment revision exactly once. Repository `expectedRevision` comparison remains a later service responsibility.
+- MainType identity and version are both null or both present. Present values must be a `main_type` entry in the binding's pinned TypeLibraryVersion.
+- `book_content_focus_bindings` owns priority 1–3, unique definition identity, and unique definition-version identity per Book. Every row must be a `content_focus` entry in the parent binding's pinned release.
+- Updating a parent release fails when an existing ContentFocus is absent from that release. The service must later replace ordered focuses and update revision atomically.
+- Deleting a Book cascades its binding and ContentFocus rows without deleting reference definitions, versions, releases, or release entries.
+- Migration-owned checks, foreign keys, triggers, unique constraints, and two-sided semantic witnesses protect these invariants. Retained SQLite 3.53.2 upgrade reaches schema version 7.
+- Migration 007 adds no repository/service, import transaction integration, IPC, preload API, renderer selector, methodology, Prompt runtime, classifier, or AI behavior.
+
+## D056: TypeLibrary Schema Boundary Inventory Closes Task 12.6D.1C
+
+Decision: The migration 006–007 schema checkpoint is complete only with the durable boundary inventory in `V1-BLOCK-12-TYPE-LIBRARY-SCHEMA-INVENTORY.md`. The inventory separates database-owned facts from future repository/service transaction and error-mapping responsibilities.
+
+Rules:
+
+- Migration 007 rejects direct deletion of a Book binding while its Book exists, so an established revision cannot return to absent-row revision 0. Book deletion still cascades binding rows.
+- TypeLibraryVersion headers declare a positive immutable `entry_count`. Release-entry inserts are accepted only until that capacity is reached; V1 is sealed at exactly 14 entries and rejects a fifteenth member.
+- Every migration-owned CHECK and trigger has accept/reject semantic witnesses. Unique, foreign-key, cascade, exact seed, empty replay, runtime-schema reproduction, and retained SQLite 3.53.2 upgrade have focused integration evidence.
+- Priority range and uniqueness are database-owned; contiguous priority order is aggregate-read validation owned by the future repository/service. A persisted gap returns `invalid_persisted_book_type_binding` and is never renumbered silently.
+- No-row revision mapping, `expectedRevision` comparison, atomic focus replacement plus parent revision, future release publication completeness, stable domain errors, and query mapping remain repository/service responsibilities.
+- Task 12.6D.1C is complete. This decision adds no repository/service, import integration, IPC, preload API, renderer control, methodology, Prompt runtime, classifier, or AI behavior.
+
+## D057: TypeLibrary Read Repository Fails Closed
+
+Decision: The first Task 12.6D.2 checkpoint implements main-only TypeLibrary release and Book-binding reads. It does not implement a mutation service or expose IPC.
+
+Rules:
+
+- Shared `TypeLibraryReleaseOptions` and `BookTypeBindingRead` schemas are strict. `BookTypeBindingRead` alone admits revision 0 as the representation of an existing Book with no binding row; persisted classification targets still require positive revisions.
+- `listReleaseOptions` reads a requested or latest release, verifies complete immutable membership count against `entry_count`, then returns only active selector options with contiguous effective per-kind order. Missing or incomplete historical membership throws `type_library_version_unavailable`; a fully archived selector is a valid empty list.
+- `getBookBinding` returns null for a missing Book. For an existing Book with no binding row it returns revision 0, latest release version, null MainType, empty focuses, and null timestamp without inserting data.
+- Persisted parent and child rows are ordered and parsed as one strict aggregate. Priority gaps, malformed timestamps, invalid references, or other parse failures throw `invalid_persisted_book_type_binding`; nothing is renumbered or repaired silently.
+- Repository reads accept an explicit `SqliteDatabase`, matching existing main-process repository patterns. They expose no filesystem paths, SQLite handles, secrets, SDK values, or renderer access.
+- First-write CAS, update CAS, atomic focus replacement, mutation errors, import integration, IPC/preload, renderer controls, methodology, Prompt runtime, classifier, and AI remain unimplemented.
+
+D053/D054/D057 remediation in Task 12.6R5:
+
+- Migration 006 enforces a one-way archive transition: `archived_at` may move from null to one non-blank timestamp exactly once, and cannot be cleared or rewritten.
+- Immutable release membership remains historical truth and still must equal the declared `entry_count`. The product rule is that current selectors exclude archived definitions and derive a dense effective per-kind order without rewriting stored release order; historical pinned Book bindings remain readable.
+- An all-archived release produces a valid empty current selector rather than corrupting the immutable release header. Historical pinned Book bindings remain readable through their stored definition/version references.
+- New or replacement Book bindings reject archived references as `type_definition_version_unavailable`; archive retirement therefore has both read-path and write-path effect.
+- Task 12.6R5 adds no archive UI or IPC mutation, new migration number, custom-type lifecycle, snapshot rewrite, methodology, Prompt runtime, classifier, or AI behavior.
+
+## D058: TypeLibrary Book Binding CAS Service Completes Task 12.6D.2
+
+Decision: Main-only `TypeLibraryService` and `TypeLibraryBookBindingMutationPort` complete Task 12.6D.2. They expose no IPC, preload API, renderer selector, or automatic classification behavior.
+
+Rules:
+
+- An absent binding accepts only `expectedRevision = 0` and creates revision 1. Existing bindings accept only their exact revision and increment once; stale or repeated first writes return `revision_conflict`.
+- MainType is nullable and ContentFocus is an ordered zero-to-three unique list. The service verifies every selected definition/version pair exists in the explicit pinned release and has the requested kind.
+- ContentFocus replacement, parent revision update, and retained-empty binding persistence are one SQLite transaction. Any child failure restores the previous parent and children.
+- Strict pre-mutation reads reject malformed persisted aggregates with `invalid_persisted_book_type_binding`; mutation never renumbers or repairs corruption silently.
+- Stable service errors include `book_not_found`, `revision_conflict`, `type_library_version_unavailable`, `type_definition_version_unavailable`, `type_kind_mismatch`, `duplicate_content_focus`, `too_many_content_focuses`, and `invalid_persisted_book_type_binding`.
+- The mutation port can participate in an existing outer import transaction, but source-import product input and natural import-time selection remain unadmitted.
+- A mutation updates only the current Book classification target. It does not write AnalysisConfigurationSnapshots, historical analysis results, methodology, Prompt state, classifier output, or AI content.
+
+## D059: TypeLibrary IPC And Preload Boundary Completes Task 12.6D.3
+
+Decision: TypeLibrary exposes exactly three typed product channels and one narrow preload namespace. Task 12.6D.3 does not add a renderer caller, source-import product integration, or a natural user path.
+
+Rules:
+
+- The allowlist contains `type-library:list-options`, `type-library:get-book-binding`, and `type-library:update-book-binding`. Main composition connects only `TypeLibraryService` DTO methods.
+- Shared strict schemas reject extra filesystem paths, SQLite fields, row identities, timestamps owned by main, secrets, tokens, secure-storage values, SDK/provider objects, and arbitrary extra fields before service invocation.
+- Successful responses contain only release options, a nullable Book binding read DTO, or the updated classification target. No SQLite handle, filesystem path, source text, credential, or internal service object crosses the boundary.
+- Known service failures map to `TYPE_LIBRARY_ERROR` with a stable `reason`; persisted corruption is non-recoverable and the other admitted user/service conflicts are recoverable. Unknown exceptions are sanitized by the typed router.
+- Existing trusted-sender validation applies to all three channels. The preload namespace exposes only `listOptions`, `getBookBinding`, and `updateBookBinding`; it exposes no raw `ipcRenderer` or generic invoke escape hatch.
+- Renderer discovery, optional import-time selection, later metadata editing, BookSummary display fields, readiness UI, and natural Electron acceptance remain Tasks 12.6D.4–12.6D.5.
+
+## D060: TypeLibrary Natural Renderer Paths Complete Task 12.6D.4
+
+Decision: The existing Breakdown shelf is the only admitted TypeLibrary renderer path. It supports optional import-time classification and later Book metadata CAS editing while formal analysis remains visibly blocked.
+
+Rules:
+
+- The initial `books:import-source` request may carry one strict TypeLibrary selection. Encoding retry cannot supply or replace that selection; the pending import token retains the original value.
+- Book, SourceText, initial Book binding, ordered ContentFocus rows, completed Job, and final checkpoint commit in one transaction. An invalid selection rolls back every imported database fact.
+- BookSummary adds only `mainTypeDisplayName` and ordered `contentFocusDisplayNames`. Exact TypeLibraryVersion, definition/version references, revision, and timestamp remain in the Book binding detail DTO.
+- The natural Breakdown shelf exposes one user-only selector pattern for optional import classification and later Book metadata editing. It never inspects source text, infers a type, or silently selects a default.
+- Metadata writes send the current binding revision as `expectedRevision`. Success invalidates both binding detail and the session-scoped Book list; service conflict reasons remain visible.
+- Book metadata reads its selectors from the binding's pinned TypeLibraryVersion rather than the latest release. Editing cannot silently upgrade or rewrite an existing Book classification target.
+- The readiness panel uses “方法论尚未就绪，不能开始正式分析”. No MainType shows `missing_main_type`; a selected MainType remains blocked by `methodology_not_ready`, `prompt_not_ready`, and `schema_not_ready`. Unavailable versions and future composition conflicts keep their frozen reason codes when applicable.
+- Renderer code uses typed preload DTO methods only. It accesses no filesystem, SQLite handle, shell, secret, token, secure storage, SDK, provider, or source-text classifier.
+- Task 12.6D.5 separately owns hidden-window/secondary-display Electron acceptance. This decision adds no methodology, Prompt runtime, sample preview, Codex call, provider call, or AI content generation.
+
+D060 remediation in Task 12.6R1:
+
+- The active Library session owns one retained user import selection in renderer state. `choose_file`, `choose_smaller_file`, and `retry_import` rebuild their request from that selection and the current TypeLibrary version; they never replace a non-empty selection with an unassigned request.
+- An explicitly empty retained selection continues to mean unassigned. No default MainType or ContentFocus is introduced.
+- Manual encoding retry remains pending token-owned. Its renderer request contains only `pendingImportId` and `encodingOverride`; the main-side pending token retains the original classification and renderer cannot replace it.
+- Library-session replacement clears both renderer selection and main-side pending tokens. Retry retention never crosses Library ownership.
+- Packaged Electron acceptance repairs an initially empty selected source file and proves the successful retried Book persists the retained MainType and ordered ContentFocus values through the natural product path.
+
+D060 remediation in Task 12.6R3:
+
+- `BookRepository.list` executes exactly three SQL queries regardless of Book count: the ordered Book/source list, all MainType display mappings, and all ContentFocus display mappings in Book/priority order.
+- MainType and ContentFocus display rows are grouped by Book identity in main-process memory. This preserves `books.updated_at DESC, books.id ASC`, ordered ContentFocus labels, focus-only bindings, and unassigned empty displays without renderer or contract changes.
+- `BookRepository.get` remains a fixed single-Book read and is not widened into the list aggregation path. No migration, index, schema, IPC, preload, or renderer change is required.
+- A real migrated-SQLite integration test fixes the query-count ceiling at three and proves the count does not grow with the number of Books.
+
+D060 remediation in Task 12.6R4:
+
+- A `revision_conflict` invalidates and refetches only the affected Book binding. It does not invalidate the Book list because the failed mutation changed no display fact.
+- The renderer tracks whether the user selection is dirty. A conflict refetch updates the latest cached binding and revision, but it never overwrites the dirty user draft or silently merges selections.
+- The visible conflict panel offers exactly two recoveries: “Retry my selection” resubmits the preserved draft with the refreshed latest revision; “Load latest saved classification” explicitly replaces the draft with the refreshed binding.
+- A successful mutation writes its returned binding to cache before normal invalidation, clears conflict/dirty state, and then refreshes the binding plus display-only Book list. Opening another Book or Library clears conflict ownership.
+- Packaged Electron acceptance drives both recovery paths through the natural Breakdown shelf and proves retry revisions advance from 1 to 2 to 3 without renderer access to SQLite or privileged APIs.
+
+## D061: TypeLibrary Electron Acceptance Completes Task 12.6D.5
+
+Decision: Real packaged Electron acceptance completes the governed TypeLibrary 12.6 sequence through the existing Breakdown shelf and typed production boundaries.
+
+Rules:
+
+- `tests/e2e/type-library-natural-path.spec.ts` launches the packaged desktop app on the existing configured secondary-display infrastructure; no new window-position product code is added.
+- Two real application sessions cover import without selection, optional import-time selection, later assignment and editing, focus-only persistence after restart, zero-to-three ordered ContentFocus labels, and visible readiness blockers.
+- Every acceptance-state write travels through natural renderer controls, preload DTOs, typed IPC, main services, and SQLite transactions. The test performs no direct SQL write; its final read-only query is supporting evidence rather than a substitute for the product path.
+- Unassigned import remains visibly `missing_main_type`. A selected MainType remains visibly blocked by `methodology_not_ready`, `prompt_not_ready`, and `schema_not_ready` under the common readiness title.
+- The run proves display-only BookSummary labels agree with persisted ordered bindings after query invalidation and process restart.
+- Packaged preload-shape acceptance includes the `typeLibrary` namespace and its exact `listOptions`, `getBookBinding`, and `updateBookBinding` methods, preventing new narrow APIs from silently invalidating the full Electron suite.
+- AppRouter E2E fixtures must satisfy `WritestormApi` directly. They may not use double assertions to hide an omitted namespace; the session harness supplies typed TypeLibrary DTO stubs and proves the Technique route triggers zero TypeLibrary reads.
+- The accepted path performs no automatic classification, methodology execution, Prompt execution, sample preview, Codex SDK call, provider call, or AI content generation.
+- Task 12.6 is complete. Task 12.7 custom-type behavior remains a separately authorized disabled shell.
+
+## D062: Custom Type Entry Remains An Honest Disabled Shell
+
+Decision: Task 12.7 adds only a discoverable disabled custom-type entry to the existing natural TypeLibrary classification editor. It does not admit any custom-type domain lifecycle or privileged boundary.
+
+Rules:
+
+- The target user is a Breakdown-shelf user who wants to derive a future custom type from an existing built-in option. The entry appears beside the existing user-selected classification controls at import time and during later Book metadata editing.
+- The native disabled button says “Copy a built-in template to customize” and references a visible reason covering the unadmitted local identity, persistence, versioning, sample-validation, and publication flows.
+- The disabled shell accepts no action callback and calls neither preload nor IPC. It cannot create, copy, edit, archive, publish, activate, or rebase a custom type.
+- No custom-type migration, table, seed, repository, service, contract, IPC channel, or preload method is added. Existing `origin = user_defined` schema vocabulary remains only a reserved future boundary.
+- Task 12.7 success means the future affordance and exact disabled reason are discoverable through the natural classification path without pretending that any custom-type object or workflow exists.
+
+## D063: PromptTemplate Registry Is A Metadata-Only Domain Shell
+
+Decision: Task 12.8 completes only the strict shared-domain metadata aggregate needed to name PromptTemplate registry identity and its independent version/status axes. It does not create a production registry or user-visible template capability.
+
+Rules:
+
+- Registry identity is registry key + module key + TypeDefinition identity + `base | overlay`. No concrete production registry key list, module/type mapping, template seed, or template body is approved in Task 12.8.
+- PromptTemplateVersion pins its registry entry, TypeDefinitionVersion, MethodologyVersion, `templateVersion`, `schemaVersion`, role, sample gate, creation time, and nullable `publishedAt`. The explicit `templateVersion` name prevents confusion with `schemaVersion`.
+- Version lifecycle is derived from publication history rather than a combined status enum: `publishedAt = null` is a draft and a timestamp is an immutable historical publication fact. Historical publication requires `sampleGateStatus = passed`.
+- PromptTemplateRegistryEntry separately owns the current `publishedVersionId` and `activationStatus`. The aggregate rejects dangling or draft publication pointers, cross-registry versions, role mismatches, duplicate identities, duplicate template-version numbers, and enabled entries without a current published version.
+- Editing never mutates or revives an old version. It creates a new version identity, increments `templateVersion`, resets `sampleGateStatus` to `not_run`, clears `publishedAt`, and preserves provenance fields until a later authorized editor contract says otherwise.
+- `rolled_back` is an operation, not a version status. Task 12.10 owns the first minimal Settings/sample-preview entry; Task 12.11 owns publish/rollback/disable transition policy; Task 12.13 owns the broader Settings/AI capability shell; Block 14 owns methodology/template content; Block 17 owns real runtime validation.
+- Task 12.8 adds no migration, table, seed, repository, service, IPC channel, preload method, renderer component, sample execution, publication transition, Codex SDK call, provider call, or AI generation.
+
+D063 remediation in Task 12.8R1:
+
+- Publication chronology compares parsed instants rather than ISO source-string order. A non-null `publishedAt` must be the same instant as or later than `createdAt`; equal instants are allowed, including representations with different UTC offsets.
+- The invariant belongs to `PromptTemplateVersion` itself, so aggregate parsing, historical rollback targets, and future persistence cannot admit impossible publication history. It does not create a clock, persistence owner, or executable publish operation.
+
+D063 remediation in Task 12.11R2:
+
+- Every edited draft requires a new version identity; reusing the current `PromptTemplateVersion.id` is rejected before derivation.
+- The next `createdAt` must not predate the current version. Chronology compares parsed instants rather than ISO source strings; equal instants are allowed, including equivalent values with different UTC offsets.
+- Successful derivation still increments `templateVersion`, resets the sample gate to `not_run`, clears `publishedAt`, and preserves the remaining provenance fields. It does not mutate the current object.
+- This is a pure domain guard only. It adds no Prompt body, persistence owner, clock, editor UI, IPC/preload method, sample execution, or publication mutation.
+
+## D064: Book Version Snapshot Is Immutable And Module-Complete
+
+Decision: Task 12.9 freezes the strict Book version-snapshot DTO and a source-controlled synthetic fixture. It corrects the earlier global Prompt snapshot shape but does not admit a snapshot producer or persistence.
+
+Rules:
+
+- AnalysisConfigurationSnapshot pins Book identity, source classification revision, TypeLibraryVersion, selected TypeDefinitionVersions, EffectiveMethodologySnapshot, EffectivePromptSnapshot, and creation time. It is immutable historical configuration, not a view over current registry pointers.
+- Registry identity includes module key, so EffectivePromptSnapshot must contain exactly the seven authoritative ordinary module keys in canonical order. Every module independently pins Base and ordered Overlay registry/version identities, numeric `templateVersion`, and module `schemaVersion`; the effective composition separately pins `compositionVersion`.
+- BookSummary remains list-focused and carries only display names. BookMetadataDetail independently carries BookSummary, the current mutable TypeLibrary binding, and a nullable latest immutable AnalysisConfigurationSnapshot. Classification CAS may make current binding differ from the latest snapshot; this divergence is valid and must not trigger snapshot rewriting.
+- An upgrade envelope preserves both previous and next snapshots and binds an impact plan to the same Book and exact snapshot identities. The next snapshot must have a distinct identity, and its creation time is ordered by parsed instant rather than ISO source-string order. Mixed UTC offsets are valid only when the next instant is strictly later; equal instants are rejected.
+- Without complete-rerun confirmation, rebuild module keys must exactly equal affected module keys. Explicit confirmation permits rebuilding all seven authoritative modules. Selective rebuild never silently expands beyond actual impact.
+- Template publication, rollback, activation, TypeLibrary release changes, and Book classification CAS do not mutate old snapshots or historical analysis results. A future upgrade creates a new snapshot and separately executes its admitted impact plan.
+- The Task 12.9 fixture uses synthetic Prompt identities under `tests/fixtures`; it is validation data, not a production key list, module/type mapping, seed, or fact source.
+- Task 12.9 adds no analysis-configuration migration, table, repository, service, IPC, preload, renderer read path, production snapshot producer, methodology, Prompt runtime, sample execution, Codex SDK call, provider call, or AI generation.
+
+## D065: Sample Preview Is A Visible Blocked Publication Gate
+
+Decision: Task 12.10 introduces the minimal Settings product route required to make the sample-preview gate naturally discoverable. The route exposes only a blocked shell and does not implement preview execution or broader Settings capabilities.
+
+Rules:
+
+- The target user is a future template editor checking whether a template can be published. The user enters application-level Settings from top-level product navigation before a Library is opened and sees Templates & schemas → Sample preview.
+- The sample action is a native disabled button with an accessibility-linked visible reason. The blocker codes are exactly `codex_sdk_gate_required`, `prompt_template_instance_unavailable`, and `sample_preview_runtime_not_admitted`.
+- The shell explicitly states that a template version cannot be published until `sampleGateStatus = passed`. This is a hard-gate declaration, not a publish transition or permission implementation.
+- The Settings route and sample-preview shell accept no action callback and call no preload or IPC method. Entering Settings enables no Breakdown-only queries and starts no background polling.
+- The early Codex feasibility gate remains unexecuted and has no Go decision. Task 12.10 does not reinterpret a missing gate as success and does not fabricate a PromptTemplate instance or sample result.
+- Real sample preview remains owned by Block 17. Task 12.11 owns publish/rollback/disable transition shells, and completed Task 12.13 extends this Settings route with AI/connector/log/schema/repair/health placeholders.
+- Task 12.10 adds no sample Job, sample fixture execution, Prompt body, result persistence, migration, table, repository, service, IPC, preload, SDK call, provider call, AI output, or generated content.
+
+## D066: Prompt Publication Controls Are A Non-Executing State Machine Shell
+
+Decision: Task 12.11 freezes pure permission and transition-preview semantics for PromptTemplate publish, rollback, and disable, then exposes their currently unavailable state through the existing Settings route. It does not admit a production template or an executable mutation path.
+
+Rules:
+
+- Publication operations are exactly `publish`, `rollback`, and `disable`. The current shell has no registry identity, draft, published version, rollback target, or admitted PromptTemplate persistence, so every action remains disabled.
+- Publish selection and sample status are resolved from a validated `PromptTemplateRegistryAggregate`; the shell does not duplicate those facts. Publish requires a draft version with `sampleGateStatus = passed`. `not_run`, `blocked`, and `failed` all return `sample_preview_not_passed`; no missing Codex or sample runtime gate may be interpreted as a pass.
+- A successful publish preview records the immutable publication fact before repointing `publishedVersionId`, then validates the complete result through `promptTemplateRegistryAggregateSchema`. It cannot record a `publishedAt` instant earlier than the draft `createdAt` instant and never leaves the current pointer targeting a draft.
+- Rollback is an operation that repoints the current published version to a distinct earlier immutable version. The target must resolve inside the validated aggregate and already have a non-null historical `publishedAt`; a draft or unknown target returns `rollback_target_not_published`. The preview never creates a `rolled_back` version status.
+- Disabling changes only `activationStatus` from enabled to disabled. It retains the current published pointer, rollback target, immutable version history, and every existing Book snapshot.
+- The shared transition function is a deterministic compound preview over the validated aggregate plus selected version identities. Every successful result is aggregate-valid; a blocked preview returns the exact input state unchanged. It writes nothing.
+- Settings displays three native disabled actions with accessibility-linked, operation-specific reasons and exact blocker codes. The component accepts no callback and calls no preload or IPC method.
+- The synthetic successful previews used by unit tests are contract examples, not production template instances or seed data. Real persistence, clock/authorization ownership, pointer mutation transactions, template instances, and runtime execution remain owned by Task 17.13. Task 12.11 adds no migration, table, seed, repository, service, IPC, preload, SDK/provider call, AI output, or Book snapshot mutation.
+
+## D067: Original Shelf Remains An Independent Placeholder
+
+Decision: Task 12.12 adds a natural top-level Original shelf route only as an honest non-creating placeholder. It does not introduce an original-writing data model or expose Technique Library content inside the route.
+
+Rules:
+
+- After opening a Library, the user can discover the Original shelf from top-level product navigation without entering Diagnostics or a direct-only URL.
+- The route contains no original project list or invented instance. “Create original project” is a native disabled button with the visible reason that project creation is outside the V1 admitted scope.
+- The Original shelf does not render Technique Library entries, reusable candidates, SourceSnapshots, adoption controls, editing controls, or mutable Breakdown Book evidence.
+- Entering the route enables no Breakdown-only query and starts no Job polling. The route receives only the current `LibrarySessionSummary` for display context and has no action callback.
+- Task 12.12 adds no `OriginalBook`, original-project migration, table, repository, service, IPC channel, preload method, creation handler, filesystem access, SQLite access, shell access, SDK/provider call, AI output, or generated content.
+
+## D068: Settings Exposes Truthful AI And Maintenance Placeholders
+
+Decision: Task 12.13 extends the existing natural Settings route with a static unavailable-capability shell. It reports known gate state and future entry ownership without probing a runtime or pretending that an operation exists.
+
+Rules:
+
+- The AI status is exactly `Codex SDK gate = Required` and `Connector = Unavailable`. This is a static product truth because the feasibility gate has not passed and no connector is admitted; it is not the result of SDK or provider discovery.
+- Templates, schemas, repair, and health are visible as native disabled entry placeholders with accessibility-linked, owner-specific reasons.
+- D070 completes Task 12.15 with the separate `local_only` observability policy and disabled recent-error, cleanup, and manual-export shell. Task 12.13 reads, clears, exports, or writes no log.
+- Existing Task 12.10–12.11 template gate shells remain visible. Production template management and schema inspection remain unadmitted. Block 18 owns real Library health and repair execution.
+- The shell has no props, callbacks, query, preload call, or IPC path. Entering Settings continues to enable no Breakdown-only query or Job polling.
+- Task 12.13 adds no migration, table, repository, service, IPC channel, preload method, SDK/provider dependency, connector discovery, health scan, repair action, schema inspection, credential/token access, AI output, or generated content.
+
+## D069: Block 12 Boundaries Are Executable Gates
+
+Decision: Task 12.14 consolidates the four Block 12 cross-domain boundaries into focused executable tests. It adds no runtime policy object or product capability because the authoritative facts already belong to the existing Technique, OriginalReferenceSnapshot, IPC-channel, renderer-process, and AnalysisConfigurationSnapshot contracts.
+
+Rules:
+
+- TechniqueEntry continues to read provenance only through its SourceSnapshot. The gate requires `mayMutateSourceEvidenceState = false`, `sourceEvidenceStateIsReadonly = true`, no direct EvidenceAnchor ids, and no product channel capable of writing source/evidence/observation facts from the Technique namespace.
+- Original remains a placeholder. The gate requires `createsOriginalBookData = false`, `followsSourceMutations = false`, no Original creation/import/generation/write channel, and no create callback or handler in the Original route.
+- The renderer import scanner parses every production `.ts` and `.tsx` file under `src/renderer`. It rejects Node built-ins, Electron, SQLite, secure-storage packages, Codex/provider packages, and relative imports into main, preload, or utility-process code.
+- Product IPC vocabulary independently rejects Codex/provider, secret/credential/token/secure-storage, filesystem, and shell channels. Renderer may continue to consume narrow typed DTO APIs admitted by prior Tasks.
+- Template/version gates reuse the immutable AnalysisConfigurationSnapshot policy: upgrades require a distinct snapshot and explicit impact plan; selective rebuild targets only affected modules; a full rerun requires explicit confirmation. No current product channel may bulk-upgrade Books, auto-rerun, silently rerun, or rewrite snapshots.
+- Every scanner has synthetic forbidden imports and channels as positive rejection witnesses, proving the test is non-vacuous and will fail on representative boundary violations.
+- Task 12.14 adds no product capability, migration, table, repository, service, IPC, preload method, renderer control, SDK/provider dependency, AI output, original project, Technique persistence, template mutation, snapshot persistence, or rerun execution.
+
+D069/D070 remediation in Task 12.QA-R2:
+
+- Renderer dependency extraction covers ESM imports/exports, dynamic imports, and CommonJS `require()` so a privileged package cannot evade the gate by changing module syntax.
+- Technique mutation namespaces cover both `technique:*`/`techniques:*` and `technique-library:*`; `technique-library:update-source` is a mandatory rejection witness.
+- Privileged and unavailable execution namespaces include AI/Codex/provider, FS/filesystem, secrets/credentials/tokens, shell, logs/logging/observability, crash reports, telemetry, and usage statistics. `logging:upload` is a mandatory rejection witness.
+- Original creation aliases include original Books/projects/writing, and template snapshot gates reject bulk upgrade aliases such as `templates:bulk-upgrade` in addition to auto/silent rerun and snapshot rewrite spellings.
+- Every named bypass is a positive rejection witness. The production channel registry must remain empty under these predicates; QA-R2 adds no channel or runtime capability.
+
+## D070: Local Observability Is Local-Only And Non-Executing
+
+Decision: Task 12.15 exposes a truthful local-observability policy and disabled maintenance entries through the natural Settings route, then certifies the complete Block 12 product boundary. It does not admit a logging execution surface.
+
+Rules:
+
+- Observability storage scope is `local_only`. Crash reports and usage statistics are not uploaded remotely by default. Source text snippets are never recorded or uploaded.
+- An unavailable local reader is not evidence of zero errors. The recent-error summary therefore reports `Unavailable` with a null count and explicitly avoids “No recent errors.”
+- Clearing local logs requires explicit user action but remains disabled under `local_log_clear_not_admitted`. Manual export requires explicit user action but remains disabled under `manual_log_export_not_admitted`.
+- The renderer component accepts no callback and accesses no preload, IPC, filesystem, SQLite, shell, secret, SDK, provider, or remote service. Task 12.15 adds no log channel or privileged implementation.
+- Final natural acceptance covers the Technique Library empty state, disabled `Adopt confirmed candidate` reason, `Read-only · no write-back` SourceSnapshot contract, absence of Technique production tables, independent Original shelf, and Settings local-observability shell. It does not require an existing TechniqueEntry edit path.
+- The Task 12.1 repository/service target remains blocked/deferred. No Technique migration, production table, producer, adoption transaction, repository, service, IPC mutation, or edit form is implied by Block 12 completion.
+
+## D071: Archived Type Definitions Use Book-Pinned Display Metadata
+
+Decision: Current TypeLibrary selector options and historical Book display facts are separate DTO concerns. `type-library:list-options` remains an active-only selector source, while `type-library:get-book-binding` returns Book binding detail containing the raw binding plus ordered pinned display metadata for every selected definition version.
+
+Rules:
+
+- Pinned display metadata follows binding order: MainType first when present, then ContentFocus priority order. It records exact definition/version identity, kind, immutable display copy, and `current_selectable` or `archived` availability.
+- Current import selectors never receive archived definitions. A Book editor may render its own archived pinned value as a native disabled option so the saved historical identity remains visible but cannot be newly selected.
+- A CAS update may retain an archived reference only in the same release, role, and priority slot: the command keeps the same pinned TypeLibraryVersion and exact slot. Removing it is allowed; re-adding, moving, replacing, or carrying it into another release returns `type_definition_version_unavailable`.
+- Active pinned references must still belong to the Book's complete immutable release. A missing, mismatched, or non-member display fact is `invalid_persisted_book_type_binding`; the repository never fabricates a label from a current release.
+- Mutation success invalidates and reloads Book binding detail instead of writing a bare binding aggregate into the detail cache.
+- This decision adds no archive mutation UI or IPC, custom-type lifecycle, release upgrade flow, automatic classification, methodology, Prompt runtime, snapshot rewrite, or AI behavior.
+
+## D072: Product And Technical Authority Reflect The Admitted Block 12 Model
+
+Decision: The active product design, technical design, engineering context, and Block 12 status supersede stale Block 12 assumptions in the protected master plan without editing that historical planning record.
+
+Rules:
+
+- The built-in release contains exactly seven MainType and seven ContentFocus options. They are orthogonal user-selected axes, not a parent/subtype taxonomy, and WriteStorm does not infer or automatically assign them.
+- Prompt sample gate, immutable publication fact, current published pointer, activation state, and rollback operation remain independent axes or operations rather than one status chain.
+- Technique production tables remain unadmitted. Block 12 delivers a truthful empty/read-only shell with disabled adoption; Technique persistence, producer ownership, atomic adoption, and editable entries remain blocked/deferred.
+- `TECHNICAL_DESIGN.md` inventories the actually admitted schema through migration 007 and does not reserve speculative Technique tables.
+- The protected master plan remains unchanged as historical planning evidence. Its older six-name taxonomy, parent/subtype wording, single Prompt state chain, and Technique repository/service target do not override D072 or the active authority documents.
+
+## D073: Settings Is Independent Of Library Lifecycle
+
+Decision: Settings is an application-level product route. A user can discover and open it before a Library is opened so environment gates, connector availability, template/schema placeholders, maintenance ownership, and local-observability policy are visible before Library creation.
+
+Rules:
+
+- Product navigation is rendered for the no-Library state. `#/settings` renders `SettingsRoute` regardless of current Library availability; all other product routes retain the existing Library requirement and no-Library fallback.
+- Entering application-level Settings enables no Breakdown-only queries, Job polling, TypeLibrary reads, filesystem/SQLite access, connector probe, SDK/provider call, or mutation.
+- The Settings shells remain non-executing and callback-free. This routing change adds no preload method, IPC channel, persistence, credential access, or AI capability.
+- Natural packaged acceptance starts with no Library, opens Settings through the visible product navigation, verifies the existing blockers and local policy, then returns to the Breakdown shelf no-Library entry.
+
+## D074: Renderer Readiness Delegates To The Shared Evaluator
+
+Decision: `evaluateTypeLibraryAnalysisReadiness` is the only authority that decides whether the current Book classification is ready for formal analysis. Renderer components may prepare its typed facts and localize its result, but must not reproduce blocker conditions.
+
+Rules:
+
+- `TypeLibraryBindingEditor` converts ordered ContentFocus selection into priority-bearing references and calls the shared evaluator for every render.
+- A selected definition version is unavailable when it is absent from current selectable options, including an archived pinned historical value. Historical display and same-slot retention remain allowed, but formal analysis stays blocked until the unavailable selection is removed or replaced.
+- `BLOCK_12_ANALYSIS_READINESS_DEPENDENCIES` truthfully records that methodology, Prompt, and schema are not ready. Composition defaults to `ready` only in the sense that no conflict fact exists yet; it does not claim that effective composition is runnable.
+- Future Block 14 inputs may supply actual methodology, Prompt, schema, and composition facts through `TypeLibraryAnalysisReadinessDependencies`. They must not add renderer-only blocker logic.
+- The UI preserves stable blocker codes as machine-readable attributes and displays localized blocker reasons rather than raw reason-code lists.
+- This remediation adds no formal-analysis action, methodology, Prompt runtime, schema runtime, composition engine, persistence, IPC, SDK/provider call, or AI behavior.
+
+## D075: Type Selectors Separate Names From Descriptions
+
+Decision: A native TypeLibrary option displays only the option's short display name. The selected option's one-sentence selection description appears as wrapping helper text below its own control instead of being concatenated into the native option label.
+
+Rules:
+
+- MainType and each ordered ContentFocus selector use the same interaction. A populated selector connects to its selection description below the control through `aria-describedby`.
+- An archived selection remains visible and disabled under its historical short display name. Its helper text is prefixed with `Archived selection` so retirement remains understandable without lengthening the collapsed option label.
+- Unselected controls render no fabricated description. Changing selection immediately changes the helper text from the same DTO already used to build options.
+- This presentation change does not alter TypeDefinition identity, version ownership, selector ordering, CAS, archive rules, persistence, preload/IPC boundaries, or analysis readiness.
+
+## D076: Impact Plans Are Derived From Immutable Snapshot Differences
+
+Decision: `deriveAnalysisConfigurationImpact` using `analysis_configuration_snapshot_diff_v1` is the authority for `AnalysisConfigurationImpactPlan.derivation` and `affectedModuleKeys`. An upgrade envelope rejects caller-declared affected modules that do not exactly match the deterministic diff of its previous and next snapshots.
+
+Rules:
+
+- Each module impact contains canonical reason codes: `effective_methodology_changed`, `effective_prompt_composition_changed`, and/or `effective_prompt_module_changed`.
+- The current EffectiveMethodologySnapshot is global rather than module-scoped, so any base, ordered Overlay, schemaVersion, or compositionVersion change conservatively affects all seven modules.
+- A global EffectivePromptSnapshot compositionVersion change affects all modules. A change confined to one module's Base, ordered Overlays, template versions, identities, or schemaVersion affects that module only.
+- The envelope recomputes `deriveAnalysisConfigurationImpact(previousSnapshot, nextSnapshot)` and requires both the submitted derivation and ordered affected keys to match. Fabricated, stale, reordered, duplicated, or caller-declared affected modules are rejected.
+- Selective rebuild keys equal the derived affected keys. Rebuilding all seven ordinary modules requires `completeRerunConfirmed = true`, including when every module is genuinely affected.
+- Block 14 may introduce module-level methodology dependency facts only through an explicitly reviewed new derivation algorithm/version. It must not weaken this boundary back to caller declarations.
+- Task 12.9 remains contract-only: this adds no snapshot producer, persistence, migration, repository/service, IPC/preload path, rerun execution, SDK/provider call, or AI behavior.
+
+## D077: Prompt Aggregate Proves Provenance Ownership And Rollback Direction
+
+Decision: The metadata-only `PromptTemplateRegistryAggregate` carries the exact TypeDefinitionVersion and MethodologyVersion provenance facts required to validate every PromptTemplateVersion. The `rollback` operation keeps its literal meaning and may only move the current pointer to a historically published version with a smaller `templateVersion`.
+
+Rules:
+
+- Aggregate provenance is a strict in-memory validation boundary, not a production seed or a new persistence owner. It adds no Prompt, TypeDefinitionVersion, or MethodologyVersion table, repository, service, IPC, preload method, or renderer capability.
+- Every aggregate TypeDefinitionVersion belongs to the registry entry's TypeDefinition identity. Every MethodologyVersion belongs to that same definition, resolves an aggregate TypeDefinitionVersion, and matches the registry's `base | overlay` role.
+- Every PromptTemplateVersion resolves both provenance identities inside the aggregate. Its MethodologyVersion must point to the same TypeDefinitionVersion that the Prompt version pins; unresolved, cross-definition, cross-version, or cross-role provenance is rejected.
+- Provenance identities are unique inside the aggregate. Successful publish, rollback, and disable previews preserve the validated provenance facts and reparse the complete aggregate.
+- A rollback target must be distinct, historically published, and have a smaller `templateVersion` than the current published version. A same or newer version returns `rollback_target_not_earlier`; moving forward remains a publish operation, not rollback.
+- Successful rollback clears the selected rollback target rather than converting the previously current, newer version into another rollback target. Historical versions and existing Book snapshots remain immutable.
+
+## D078: Publish Is Monotonic Across Version And Publication History
+
+Decision: `publish` is the forward-only counterpart to constrained rollback. Once a registry has a current published version, a publish preview may only select a passed draft with a strictly larger `templateVersion` and may not record a publication instant earlier than the current immutable publication fact.
+
+Rules:
+
+- Publish permission returns `draft_version_not_newer` when the selected draft's `templateVersion` is equal to or smaller than the current published version. A caller cannot use publish to move the registry pointer backward or sideways.
+- The compound transition validates the new `publishedAt` against both the draft's `createdAt` and the current published version's `publishedAt` using parsed instants. The new fact may equal but never predate the current publication instant.
+- A registry with no current published version remains eligible for its first publication once the existing draft and passed-sample requirements are met.
+- Rollback remains the only operation that can move the pointer to a smaller historically published `templateVersion`; moving to a larger draft remains publish.
+- This is a pure permission/preview guard. It adds no clock, transaction, persistence, migration, repository/service, IPC/preload method, renderer mutation, Prompt body, sample execution, SDK/provider call, or AI behavior.

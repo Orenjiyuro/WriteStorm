@@ -29,6 +29,11 @@ export type {
   ExportStatusIpcDependencies,
   ExportStatusIpcService,
 } from '../exports/export-status-ipc';
+export { createTypeLibraryIpcDependencies } from '../type-library/type-library-ipc';
+export type {
+  TypeLibraryIpcDependencies,
+  TypeLibraryIpcService,
+} from '../type-library/type-library-ipc';
 export {
   registerTypedIpcHandler,
   registerTypedIpcHandlers,

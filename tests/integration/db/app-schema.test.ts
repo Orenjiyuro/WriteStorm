@@ -26,6 +26,12 @@ const PRODUCTION_TABLE_OWNERS = {
   story_segment_range_chapters: 'StructureService',
   analysis_modules: 'ModuleInstanceService',
   analysis_module_instances: 'ModuleInstanceService',
+  type_definitions: 'TypeLibraryService',
+  type_definition_versions: 'TypeLibraryService',
+  type_library_versions: 'TypeLibraryService',
+  type_library_version_entries: 'TypeLibraryService',
+  book_type_bindings: 'TypeLibraryService',
+  book_content_focus_bindings: 'TypeLibraryService',
 } as const;
 
 afterEach(() => {
@@ -51,6 +57,12 @@ describe('V1 runtime baseline', () => {
         story_segment_range_chapters: 'StructureService',
         analysis_modules: 'ModuleInstanceService',
         analysis_module_instances: 'ModuleInstanceService',
+        type_definitions: 'TypeLibraryService',
+        type_definition_versions: 'TypeLibraryService',
+        type_library_versions: 'TypeLibraryService',
+        type_library_version_entries: 'TypeLibraryService',
+        book_type_bindings: 'TypeLibraryService',
+        book_content_focus_bindings: 'TypeLibraryService',
       });
       expect(db.pragma('application_id', { simple: true })).toBe(0x5753544d);
       expect(WRITESTORM_SQLITE_APPLICATION_ID).toBe(0x5753544d);
@@ -64,13 +76,15 @@ describe('V1 runtime baseline', () => {
   it('registers the V1 runtime baseline and Structure workspace', () => {
     const db = migratedDatabase();
     try {
-      expect(APP_MIGRATIONS).toHaveLength(5);
+      expect(APP_MIGRATIONS).toHaveLength(7);
       expect(APP_MIGRATIONS[0]).toMatchObject({ id: 1, name: 'v1_runtime_baseline' });
       expect(APP_MIGRATIONS[1]).toMatchObject({ id: 2, name: 'structure_workspace' });
       expect(APP_MIGRATIONS[2]).toMatchObject({ id: 3, name: 'analysis_module_definitions' });
       expect(APP_MIGRATIONS[3]).toMatchObject({ id: 4, name: 'analysis_module_instances' });
       expect(APP_MIGRATIONS[4]).toMatchObject({ id: 5, name: 'analysis_module_asset_placeholders' });
-      expect(getCurrentSchemaVersion(db)).toBe(5);
+      expect(APP_MIGRATIONS[5]).toMatchObject({ id: 6, name: 'type_library_registry' });
+      expect(APP_MIGRATIONS[6]).toMatchObject({ id: 7, name: 'type_library_book_bindings' });
+      expect(getCurrentSchemaVersion(db)).toBe(7);
     } finally {
       db.close();
     }

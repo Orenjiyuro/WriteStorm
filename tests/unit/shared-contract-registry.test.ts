@@ -37,6 +37,9 @@ const expectedChannels = [
   'library:get-current',
   'books:list',
   'books:import-source',
+  'type-library:list-options',
+  'type-library:get-book-binding',
+  'type-library:update-book-binding',
   'structure:get',
   'structure:detect',
   'structure:recover-detection',
@@ -71,6 +74,8 @@ const bookSummary = {
   sourceTextId,
   sourceTextEdition: 1,
   structureEdition: 1,
+  mainTypeDisplayName: null,
+  contentFocusDisplayNames: [],
   updatedAt: '2026-07-07T00:00:00.000Z',
 };
 
@@ -168,6 +173,7 @@ describe('shared contract registry', () => {
           'library:get-current',
           'books:list',
           'books:import-source',
+          'type-library:list-options',
           'jobs:list',
         ].includes(channel),
       );
@@ -230,6 +236,27 @@ describe('shared contract registry', () => {
         encodingOverride: 'gb18030',
       }).success,
     ).toBe(false);
+  });
+
+  it('accepts an optional initial TypeLibrary selection but never a replacement on encoding retry', () => {
+    const typeBinding = {
+      typeLibraryVersion: 1,
+      mainType: {
+        typeDefinitionId: 'builtin_main_001',
+        typeDefinitionVersionId: 'builtin_main_001_v1',
+      },
+      contentFocuses: [{
+        typeDefinitionId: 'builtin_focus_001',
+        typeDefinitionVersionId: 'builtin_focus_001_v1',
+      }],
+    };
+
+    expect(getContract('books:import-source').request.parse({ typeBinding })).toEqual({ typeBinding });
+    expect(getContract('books:import-source').request.safeParse({
+      pendingImportId: 'pending-1',
+      encodingOverride: 'gb18030',
+      typeBinding,
+    }).success).toBe(false);
   });
 
   it('returns imported book, source metadata, and completed job for source import success', () => {

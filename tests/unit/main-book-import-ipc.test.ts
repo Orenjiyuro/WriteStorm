@@ -4,7 +4,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { createBookImportIpcDependencies } from '../../src/main/books/book-import-ipc';
 import type { SourceImportServiceResult } from '../../src/main/source-text/source-import-service';
 import type { BookSummary } from '../../src/shared/contracts';
-import type { BreakdownBookId, LibraryId, SourceTextId, JobId } from '../../src/shared/domain';
+import type {
+  BreakdownBookId,
+  JobId,
+  LibraryId,
+  SourceTextId,
+  TypeDefinitionId,
+  TypeDefinitionVersionId,
+} from '../../src/shared/domain';
 
 const sessionId = 'session-task-16';
 const book: BookSummary = {
@@ -14,6 +21,8 @@ const book: BookSummary = {
   sourceTextId: null,
   sourceTextEdition: null,
   structureEdition: null,
+  mainTypeDisplayName: null,
+  contentFocusDisplayNames: [],
   updatedAt: '2026-07-13T00:00:00.000Z',
 };
 
@@ -62,11 +71,20 @@ describe('main book import IPC adapter', () => {
       importSource,
     });
 
-    await expect(dependencies.importSource({ title: '  Novel title  ' })).resolves.toEqual(successResponse());
+    const typeBinding = {
+      typeLibraryVersion: 1,
+      mainType: reference('builtin_main_001'),
+      contentFocuses: [reference('builtin_focus_001')],
+    };
+    await expect(dependencies.importSource({
+      title: '  Novel title  ',
+      typeBinding,
+    })).resolves.toEqual(successResponse());
     expect(calls).toEqual(['get-current-session', 'select-source-file', 'source-import']);
     expect(importSource).toHaveBeenCalledWith({
       sourcePath: 'C:\\fixtures\\Novel.md',
       title: '  Novel title  ',
+      typeBinding,
       expectedSessionId: sessionId,
     });
   });
@@ -242,4 +260,14 @@ function importSpecifiers(source: string): string[] {
   return [...source.matchAll(
     /\b(?:import|export)\s+(?:type\s+)?(?:[^'\"]*?\s+from\s+)?['\"]([^'\"]+)['\"]|\bimport\(\s*['\"]([^'\"]+)['\"]\s*\)/g,
   )].map((match) => match[1] ?? match[2]);
+}
+
+function reference(stableKey: string): {
+  readonly typeDefinitionId: TypeDefinitionId;
+  readonly typeDefinitionVersionId: TypeDefinitionVersionId;
+} {
+  return {
+    typeDefinitionId: stableKey as TypeDefinitionId,
+    typeDefinitionVersionId: `${stableKey}_v1` as TypeDefinitionVersionId,
+  };
 }

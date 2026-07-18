@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   E2E_IMPORT_DIALOG_STUB_ENV,
   E2E_IMPORT_SOURCE_PATH_ENV,
+  E2E_IMPORT_SOURCE_PATHS_ENV,
   PendingImportStore,
   selectImportSourceFile,
 } from '../../src/main/books/book-import-entry';
@@ -25,6 +26,22 @@ describe('main book import entry providers', () => {
       },
     })).resolves.toBe('C:\\Books\\stubbed.md');
     expect(dialogCalls).toBe(0);
+  });
+
+  it('consumes explicit e2e source paths in order for consecutive imports', async () => {
+    const env = {
+      [E2E_IMPORT_DIALOG_STUB_ENV]: '1',
+      [E2E_IMPORT_SOURCE_PATHS_ENV]: JSON.stringify([
+        'C:\\Books\\first.md',
+        'C:\\Books\\second.md',
+      ]),
+    };
+    const showOpenDialog = async () => ({ canceled: true, filePaths: [] });
+
+    await expect(selectImportSourceFile({ env, showOpenDialog }))
+      .resolves.toBe('C:\\Books\\first.md');
+    await expect(selectImportSourceFile({ env, showOpenDialog }))
+      .resolves.toBe('C:\\Books\\second.md');
   });
 
   it('falls back to a main-side native file dialog filtered to txt and md files', async () => {

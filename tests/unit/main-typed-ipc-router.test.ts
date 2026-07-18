@@ -66,6 +66,8 @@ const booksListResponse: ContractResponse<'books:list'> = {
       sourceTextId,
       sourceTextEdition: 1,
       structureEdition: 1,
+      mainTypeDisplayName: null,
+      contentFocusDisplayNames: [],
       updatedAt: '2026-07-07T00:00:00.000Z',
     },
   ],
@@ -81,6 +83,8 @@ const importSourceResponse: ContractResponse<'books:import-source'> = {
       sourceTextId,
       sourceTextEdition: 1,
       structureEdition: null,
+      mainTypeDisplayName: null,
+      contentFocusDisplayNames: [],
       updatedAt: '2026-07-07T00:00:00.000Z',
     },
     sourceText: {

@@ -34,15 +34,35 @@ export {
   sourceTextIdSchema,
   storySegmentRangeIdSchema,
   structureNodeIdSchema,
+  typeDefinitionIdSchema,
+  typeDefinitionVersionIdSchema,
 } from './common';
 export { librarySessionSummarySchema, librarySummarySchema } from './library';
 export type { LibrarySessionSummary, LibrarySummary } from './library';
 export {
+  bookMetadataDetailSchema,
   bookRequestSchema,
   bookSummarySchema,
   optionalBookRequestSchema,
 } from './books';
-export type { BookSummary } from './books';
+export type { BookMetadataDetail, BookSummary } from './books';
+export {
+  typeLibraryBookBindingReadSchema,
+  typeLibraryBookBindingDetailSchema,
+  typeLibraryBookBindingRequestSchema,
+  typeLibraryBookClassificationTargetSchema,
+  typeLibraryListOptionsRequestSchema,
+  typeLibraryReleaseOptionsSchema,
+  typeLibrarySelectionReferenceSchema,
+  typeLibrarySelectionSchema,
+  typeLibraryUpdateBookBindingRequestSchema,
+} from './type-library';
+export type {
+  TypeLibraryBookBindingRequest,
+  TypeLibraryListOptionsRequest,
+  TypeLibrarySelection,
+  TypeLibraryUpdateBookBindingRequest,
+} from './type-library';
 export {
   IMPORT_SOURCE_ERROR_REASONS,
   importSourceErrorDetailsSchema,
@@ -54,6 +74,7 @@ export {
 } from './source-import';
 export type {
   ImportSourceResult,
+  ImportSourceTypeBinding,
   SourceTextFormat,
   SourceTextMetadata,
 } from './source-import';

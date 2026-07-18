@@ -49,6 +49,17 @@ const validRequests = {
   'books:import-source': {
     title: 'Example Book',
   },
+  'type-library:list-options': {},
+  'type-library:get-book-binding': {
+    bookId,
+  },
+  'type-library:update-book-binding': {
+    bookId,
+    expectedRevision: 0,
+    typeLibraryVersion: 1,
+    mainType: null,
+    contentFocuses: [],
+  },
   'structure:get': {
     bookId,
   },

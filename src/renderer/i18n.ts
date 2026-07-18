@@ -1,4 +1,5 @@
 import type {
+  AnalysisReadinessBlockerCode,
   ExportAvailability,
   ExportExcludedContentKind,
   ExportRuntimeBlockerCode,
@@ -22,6 +23,154 @@ export const rendererText = {
     openButton: 'Open library',
     actionError: 'Library action failed.',
   },
+  productNavigation: {
+    label: 'Product navigation',
+    breakdownShelf: 'Breakdown shelf',
+    techniqueLibrary: 'Technique library',
+    originalShelf: 'Original shelf',
+    settings: 'Settings',
+  },
+  originalShelf: {
+    eyebrow: 'Current library',
+    title: 'Original shelf',
+    currentLibrary: (name: string) => `Library: ${name}`,
+    statusLabel: 'Original writing',
+    placeholderTitle: 'Original projects are not available yet',
+    placeholderStatus: 'V1 placeholder only',
+    placeholderDescription:
+      'This independent shelf reserves the future original-writing entry without creating or listing original projects.',
+    createAction: 'Create original project',
+    createDisabledReason: 'Original project creation is outside the V1 admitted scope.',
+    boundaryTitle: 'Independent domain boundary',
+    boundaryDescription:
+      'This placeholder does not display or reuse technique entries, reusable candidates, source snapshots, or Breakdown Book evidence.',
+  },
+  settings: {
+    eyebrow: 'Application',
+    title: 'Settings',
+    context: 'Template and runtime gates are shown here without pretending unavailable capabilities work.',
+    templatesTitle: 'Templates & schemas',
+  },
+  settingsUnavailable: {
+    title: 'AI & connectors',
+    aiStatusLabel: 'Runtime availability',
+    aiStatusTitle: 'AI execution',
+    aiDisabledStatus: 'Disabled',
+    codexGateLabel: 'Codex SDK gate',
+    codexGateStatus: 'Required',
+    connectorLabel: 'Connector',
+    connectorStatus: 'Unavailable',
+    aiDisabledReason:
+      'AI features remain disabled until the Codex SDK feasibility gate passes and an admitted connector exists.',
+    placeholdersTitle: 'Unavailable settings entries',
+    placeholders: {
+      templates: {
+        action: 'Manage templates',
+        reason: 'Production template management is not admitted.',
+      },
+      schemas: {
+        action: 'Inspect schemas',
+        reason: 'Schema inspection tooling is not admitted.',
+      },
+      repair: {
+        action: 'Repair library',
+        reason: 'Library repair remains owned by Block 18.',
+      },
+      health: {
+        action: 'Run health check',
+        reason: 'Library health execution remains owned by Block 18.',
+      },
+    },
+  },
+  localObservability: {
+    label: 'Local diagnostics policy',
+    title: 'Local observability',
+    localOnlyStatus: 'Local only',
+    policyTitle: 'Privacy defaults',
+    crashReportsLabel: 'Crash reports',
+    usageStatisticsLabel: 'Usage statistics',
+    sourceTextSnippetsLabel: 'Source text snippets',
+    uploadedByDefault: 'Uploaded by default',
+    notUploadedByDefault: 'Not uploaded by default',
+    sourceTextSnippetsValue: 'Never recorded or uploaded',
+    recentErrorSummaryTitle: 'Recent error summary',
+    unavailableStatus: 'Unavailable',
+    recentErrorSummaryReason:
+      'No local error-summary reader is admitted. This does not mean that no errors occurred.',
+    actionsLabel: 'Local observability actions',
+    clearLogsAction: 'Clear local logs',
+    clearLogsReason: 'Unavailable: local log clearing is not admitted.',
+    manualExportAction: 'Manually export logs',
+    manualExportReason: 'Unavailable: manual log export is not admitted.',
+  },
+  samplePreview: {
+    label: 'Template validation',
+    title: 'Sample preview',
+    blockedStatus: 'Blocked',
+    runAction: 'Run sample preview',
+    disabledReason:
+      'Unavailable: the Codex SDK gate has not passed, no production PromptTemplate instance exists, and sample preview runtime is not admitted before Block 17.',
+    blockerListLabel: 'Sample preview blockers',
+    publicationGateTitle: 'Publication hard gate',
+    publicationGateDescription:
+      'A template version cannot be published until its sample preview status is passed.',
+  },
+  publicationControls: {
+    label: 'Template lifecycle',
+    title: 'Publication controls',
+    unavailableStatus: 'Unavailable',
+    sampleGateLabel: 'Sample gate',
+    sampleGateValue: 'Blocked',
+    publishedVersionLabel: 'Published version',
+    activationLabel: 'Activation',
+    activationValue: 'Disabled',
+    actionListLabel: 'Publication operations',
+    actionLabels: {
+      publish: 'Publish template',
+      rollback: 'Roll back published version',
+      disable: 'Disable template',
+    },
+    actionReasons: {
+      publish:
+        'Unavailable: no draft exists, sample preview has not passed, and PromptTemplate persistence is not admitted.',
+      rollback:
+        'Unavailable: no current published version or earlier rollback target exists, and PromptTemplate persistence is not admitted.',
+      disable:
+        'Unavailable: no enabled registry entry exists, and PromptTemplate persistence is not admitted.',
+    },
+    blockerListLabels: {
+      publish: 'Publish blockers',
+      rollback: 'Rollback blockers',
+      disable: 'Disable blockers',
+    },
+    boundary:
+      'These controls only explain state-machine permissions. They execute no transition and never change an existing Book snapshot.',
+  },
+  techniqueLibrary: {
+    eyebrow: 'Current library',
+    title: 'Technique library',
+    currentLibrary: (name: string) => `Library: ${name}`,
+    emptyDescription:
+      'Entries can only come from future adopted reusable-technique candidates. Manual primary creation is not available.',
+    persistenceBlocker:
+      'No TechniqueEntry persistence or adoption producer is admitted yet.',
+    adoptCandidateButton: 'Adopt confirmed candidate',
+    adoptCandidateDisabledReason:
+      'Unavailable: the reusable-candidate owner, confirmed-candidate query, and atomic adoption transaction are not admitted.',
+    editingUnavailableTitle: 'Editing unavailable',
+    editingUnavailableReason:
+      'TechniqueEntry persistence and the adopted-candidate adoption transaction are not admitted.',
+    sourceSnapshotTitle: 'SourceSnapshot contract',
+    sourceSnapshotPositionLabel: 'Contract position',
+    sourceSnapshotPosition: 'Future TechniqueEntry detail · secondary provenance information',
+    sourceSnapshotFieldLabel: 'Provenance field',
+    sourceSnapshotEvidenceLabel: 'Evidence summary source',
+    sourceSnapshotReadonlyLabel: 'Read-only · no write-back',
+    sourceSnapshotReadonlyBoundary:
+      'Technique Library never updates source observations, candidates, EvidenceAnchors, review state, or the source Breakdown Book.',
+    sourceSnapshotInstanceAbsent:
+      'No SourceSnapshot instance is available in this blocked state.',
+  },
   libraryShelf: {
     eyebrow: 'Current library',
     title: 'Breakdown shelf',
@@ -32,6 +181,46 @@ export const rendererText = {
     appVersionLabel: 'App version',
     openedBookStatus: (title: string) => `Opened book: ${title}`,
     reviewStructure: 'Review structure',
+  },
+  typeLibraryBinding: {
+    userSelectedLabel: 'User-selected classification',
+    inferenceOff: 'Application inference: off',
+    selectionHelp:
+      'Choose the classification yourself. WriteStorm does not inspect source text to assign it.',
+    optionalImportTitle: 'Optional book classification',
+    bookMetadataTitle: 'Book classification',
+    mainTypeLabel: 'Main type',
+    mainTypeUnassigned: 'Main type unassigned',
+    unassignedOption: 'Unassigned',
+    contentFocusPriority: (priority: number) => `Content focus priority ${priority}`,
+    noContentFocus: 'None',
+    archivedSelection: 'Archived selection',
+    save: 'Save classification',
+    saving: 'Saving classification…',
+    conflictTitle: 'Classification changed in another session',
+    conflictBody:
+      'The latest saved revision was refreshed. Your unsaved selection is still preserved.',
+    retrySelection: 'Retry my selection',
+    loadLatest: 'Load latest saved classification',
+    readinessBlockersLabel: 'Formal analysis blockers',
+    readinessReadyTitle: 'Classification is ready for formal analysis',
+    readinessReadyDescription: 'All required type, methodology, Prompt, schema, and composition inputs are ready.',
+    readinessReason: (code: AnalysisReadinessBlockerCode) => ({
+      missing_main_type: 'Choose a Main type before formal analysis.',
+      type_definition_version_unavailable:
+        'A selected type version is archived or unavailable. Remove or replace it before formal analysis.',
+      methodology_not_ready: 'The selected type methodology is not ready.',
+      prompt_not_ready: 'The selected type Prompt is not ready.',
+      schema_not_ready: 'The selected type output schema is not ready.',
+      composition_conflict: 'The selected type methodologies cannot be composed safely.',
+    })[code],
+  },
+  customTypeDisabled: {
+    title: 'Custom types',
+    status: 'Unavailable',
+    copyBuiltInTemplate: 'Copy a built-in template to customize',
+    reason:
+      'Unavailable in Block 12: local identity, persistence, versioning, sample validation, and publication flows have not been admitted.',
   },
   jobRecovery: {
     eyebrow: 'Library activity',

@@ -148,6 +148,15 @@ async function invokeEveryProductMethod(api: WritestormApi): Promise<void> {
   await api.library.getCurrent();
   await api.books.list();
   await api.books.importSource(importSourceRequest);
+  await api.typeLibrary.listOptions();
+  await api.typeLibrary.getBookBinding({ bookId });
+  await api.typeLibrary.updateBookBinding({
+    bookId,
+    expectedRevision: 0,
+    typeLibraryVersion: 1,
+    mainType: null,
+    contentFocuses: [],
+  });
   await api.structure.get(bookRequest);
   await api.structure.detect(bookRequest);
   await api.structure.recoverDetection(bookRequest);

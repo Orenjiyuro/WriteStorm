@@ -20,6 +20,7 @@ import type { StructureReviewIpcDependencies } from '../structure/structure-revi
 import type { AnalysisModuleInstanceIpcDependencies } from '../modules/analysis-module-instance-ipc';
 import type { JobIpcDependencies } from '../jobs/job-ipc';
 import type { ExportStatusIpcDependencies } from '../exports/export-status-ipc';
+import type { TypeLibraryIpcDependencies } from '../type-library/type-library-ipc';
 import {
   registerTypedIpcHandlers,
   type IpcMainLike,
@@ -74,6 +75,7 @@ export type ProductIpcRegistrationOptions = {
   readonly modules?: AnalysisModuleInstanceIpcDependencies;
   readonly jobs?: JobIpcDependencies;
   readonly exports?: ExportStatusIpcDependencies;
+  readonly typeLibrary?: TypeLibraryIpcDependencies;
 };
 
 export function registerNotImplementedProductIpcHandlers(
@@ -122,6 +124,17 @@ function createProductHandlers(options: ProductIpcRegistrationOptions): TypedIpc
     ...(options.modules ? createModuleProductHandlers(options.modules) : {}),
     ...(options.jobs ? createJobProductHandlers(options.jobs) : {}),
     ...(options.exports ? createExportProductHandlers(options.exports) : {}),
+    ...(options.typeLibrary ? createTypeLibraryProductHandlers(options.typeLibrary) : {}),
+  };
+}
+
+function createTypeLibraryProductHandlers(
+  typeLibrary: TypeLibraryIpcDependencies,
+): TypedIpcHandlerMap {
+  return {
+    'type-library:list-options': (request) => typeLibrary['type-library:list-options'](request),
+    'type-library:get-book-binding': (request) => typeLibrary['type-library:get-book-binding'](request),
+    'type-library:update-book-binding': (request) => typeLibrary['type-library:update-book-binding'](request),
   };
 }
 

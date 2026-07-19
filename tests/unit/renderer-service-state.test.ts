@@ -130,6 +130,14 @@ describe('renderer service state', () => {
       .toBeLessThan(removeQueries.mock.invocationCallOrder[0]);
   });
 
+  it('keeps a commit-phase previous-session cleanup for active React Query observers', () => {
+    const appSource = readFileSync('src/renderer/app/AppRouter.tsx', 'utf8');
+
+    expect(appSource).toContain('committedLibrarySessionId');
+    expect(appSource).toContain('libraryKeys.session(previousSessionId)');
+    expect(appSource).toContain('[currentLibrary?.sessionId, queryClient]');
+  });
+
   it('does not let an older in-flight current-library query overwrite a new session', async () => {
     const queryClient = createQueryClient();
     let releaseInitialQuery!: () => void;

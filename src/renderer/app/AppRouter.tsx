@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
   type ReactElement,
 } from 'react';
@@ -37,6 +38,7 @@ import {
 import {
   activateLibrarySession,
   currentLibraryQueryOptions,
+  libraryKeys,
 } from '../features/library/library-queries';
 import { rendererText } from '../i18n';
 import {
@@ -81,6 +83,15 @@ export function AppRouter(props: AppRouterProps = {}): ReactElement {
     enabled: rendererApi !== null,
   });
   const currentLibrary = currentLibraryQuery.data ?? null;
+  const committedLibrarySessionId = useRef<string | null>(null);
+  useEffect(() => {
+    const previousSessionId = committedLibrarySessionId.current;
+    const nextSessionId = currentLibrary?.sessionId ?? null;
+    if (previousSessionId && previousSessionId !== nextSessionId) {
+      queryClient.removeQueries({ queryKey: libraryKeys.session(previousSessionId) });
+    }
+    committedLibrarySessionId.current = nextSessionId;
+  }, [currentLibrary?.sessionId, queryClient]);
   const breakdownQueriesEnabled =
     route === 'breakdown' && rendererApi !== null && currentLibrary !== null;
   const booksQuery = useQuery({

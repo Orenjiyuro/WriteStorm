@@ -5,6 +5,28 @@ import { describe, expect, it } from 'vitest';
 const rootDir = path.resolve(__dirname, '../..');
 
 describe('Block 6A.8a packaged Codex SDK probe boundary', () => {
+  it('behaviorally rejects development, wrong-target, arbitrary-result, and unapproved synthetic input', async () => {
+    const probeModule = await import('../../src/main/codex-feasibility/packaged-probe') as Record<string, unknown>;
+    expect(probeModule.evaluatePackagedProbeGate).toBeTypeOf('function');
+    const evaluate = probeModule.evaluatePackagedProbeGate as (input: unknown) => { accepted: boolean };
+    const base = {
+      trigger: '1',
+      runId: '123e4567-e89b-42d3-a456-426614174000',
+      syntheticInput: 'unapproved arbitrary text',
+      syntheticExpected: 'unapproved',
+      isPackaged: true,
+      platform: 'win32',
+      architecture: 'x64',
+      temporaryDirectory: 'C:\\Temp',
+    };
+
+    expect(evaluate({ ...base, isPackaged: false }).accepted).toBe(false);
+    expect(evaluate({ ...base, platform: 'darwin' }).accepted).toBe(false);
+    expect(evaluate({ ...base, architecture: 'arm64' }).accepted).toBe(false);
+    expect(evaluate(base).accepted).toBe(false);
+    expect(JSON.stringify(base)).not.toContain('resultPath');
+  });
+
   it('uses an explicit no-window packaged-only startup gate', () => {
     const mainSource = readFileSync(path.join(rootDir, 'src/main/main.ts'), 'utf8');
     const probeSource = readFileSync(
@@ -13,10 +35,25 @@ describe('Block 6A.8a packaged Codex SDK probe boundary', () => {
     );
 
     expect(mainSource).toContain('runOptionalPackagedCodexProbe');
-    expect(probeSource).toContain("app.isPackaged");
+    expect(probeSource).toContain('evaluatePackagedProbeGate');
     expect(probeSource).toContain('runOutputSchemaProbe');
     expect(probeSource).not.toContain('BrowserWindow');
     expect(probeSource).not.toMatch(/spawn\([^)]*codex|execFile\([^)]*codex|codex exec|app-server/i);
+  });
+
+  it('publishes fixed safe reproduction commands and includes package guards in check', () => {
+    const packageManifest = JSON.parse(readFileSync(path.join(rootDir, 'package.json'), 'utf8')) as {
+      scripts: Record<string, string>;
+    };
+
+    expect(packageManifest.scripts['probe:codex:dev']).toBeTruthy();
+    expect(packageManifest.scripts['probe:codex:lifecycle']).toBeTruthy();
+    expect(packageManifest.scripts['probe:codex:packaged']).toBeTruthy();
+    expect(packageManifest.scripts['test:verification']).toContain('tests/verification');
+    expect(packageManifest.scripts.check).toContain('test:verification');
+    for (const command of Object.values(packageManifest.scripts).filter((value) => value.includes('codex'))) {
+      expect(command).not.toMatch(/WRITESTORM_PROBE_OK|OPENAI_API_KEY|CODEX_ACCESS_TOKEN|stdout|stderr/i);
+    }
   });
 
   it('keeps prompt, schema, credentials and raw process data outside the packaged result contract', () => {

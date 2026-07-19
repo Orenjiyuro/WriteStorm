@@ -3,7 +3,7 @@
   "evidenceId": "block6a-6a7-real-sdk-lifecycle-cleanup-001",
   "task": "6A.7",
   "source": "real_sdk",
-  "recordedAt": "2026-07-19T06:01:33.816Z",
+  "recordedAt": "2026-07-19T07:36:15.640Z",
   "commandName": "block6a-electron-lifecycle-four-scenario-probe",
   "classification": "lifecycle_probe_matrix_passed",
   "versions": {
@@ -23,12 +23,17 @@
     "allCliProcessesOwnedByUtilityParentChain": true,
     "allUtilityResidualsAbsent": true,
     "allCliResidualsAbsent": true,
+    "runnerTimeoutPathExercised": true,
+    "runnerTimeoutCleanupGraceful": true,
+    "runnerTimeoutAbortObserved": true,
+    "runnerTimeoutUtilityExitObservedBeforeResult": true,
+    "runnerTimeoutCliResidualAbsent": true,
     "windowCloseAndAppQuitDistinct": true
   },
   "scenarios": [
     {
       "scenario": "app-timeout",
-      "recordedAt": "2026-07-19T05:58:53.899Z",
+      "recordedAt": "2026-07-19T07:36:09.752Z",
       "classification": "lifecycle_probe_passed",
       "result": {
         "trigger": "app-timeout",
@@ -39,11 +44,22 @@
         "sdkPromiseSettled": true
       },
       "processAssertions": {
+        "runnerTimeoutPathExercised": true,
+        "timeoutCleanupGraceful": true,
+        "timeoutUtilityExitObserved": true,
         "utilityProcessAttributed": true,
         "cliObservedBeforeTrigger": true,
         "cliOwnedByUtilityParentChain": true,
         "utilityResidualAbsent": true,
         "cliResidualAbsent": true
+      },
+      "timeoutCleanup": {
+        "classification": "graceful",
+        "abortRequested": true,
+        "abortObserved": true,
+        "sdkPromiseSettled": true,
+        "cleanupAcknowledged": true,
+        "utilityExitObserved": true
       },
       "lifecycleEvents": {
         "initialTrigger": "app-timeout",
@@ -57,7 +73,7 @@
     },
     {
       "scenario": "explicit-cancel",
-      "recordedAt": "2026-07-19T05:59:51.607Z",
+      "recordedAt": "2026-07-19T07:36:11.745Z",
       "classification": "lifecycle_probe_passed",
       "result": {
         "trigger": "explicit-cancel",
@@ -86,7 +102,7 @@
     },
     {
       "scenario": "window-close",
-      "recordedAt": "2026-07-19T06:00:43.003Z",
+      "recordedAt": "2026-07-19T07:36:13.716Z",
       "classification": "lifecycle_probe_passed",
       "result": {
         "trigger": "window-close",
@@ -115,7 +131,7 @@
     },
     {
       "scenario": "app-quit",
-      "recordedAt": "2026-07-19T06:01:33.816Z",
+      "recordedAt": "2026-07-19T07:36:15.640Z",
       "classification": "lifecycle_probe_passed",
       "result": {
         "trigger": "app-quit",
@@ -147,6 +163,8 @@
     "Process identities were ephemeral correlation data; no path, PID, process list, prompt, response, environment value or raw SDK error is retained.",
     "The observer used utility PID, parent chain, start time and the exact project-local CLI executable path; it did not use global process-name matching.",
     "No CLI process was terminated directly and no unowned Codex process was touched.",
+    "The app-timeout scenario exercised the runner timeout supervisor itself: cancel-active-probe, SDK AbortController settlement, shutdown acknowledgement, utility exit, then attributed residual checks.",
+    "A grace-period failure is classified forced and cannot pass without utility-exit and attributed CLI-residual evidence; this successful run completed gracefully and did not invoke the forced kill fallback.",
     "These are development Electron results, not packaged runtime evidence."
   ]
 }

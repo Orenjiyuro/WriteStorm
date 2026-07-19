@@ -29,11 +29,13 @@ void app.whenReady().then(async () => {
     const utilityEnvironment = createUtilityEnvironment(process.env);
     const scenarios: CodexOutputSchemaProbeResult[] = [];
     for (const scenario of ['valid-minimal', 'invalid-schema'] as const) {
+      writeSanitizedProgress(scenario, scenarios.length);
       const outcome = await runner.runOutputSchemaProbe({ scenario, workingDirectory: workspace }, 60_000, {
         utilityWorkingDirectory: workspace,
         utilityEnvironment,
       });
       scenarios.push(outcome.result);
+      writeSanitizedProgress(null, scenarios.length);
     }
 
     writeSanitizedResult({
@@ -88,8 +90,7 @@ void app.whenReady().then(async () => {
         : { code: 'UNCLASSIFIED_PROBE_FAILURE' },
     });
   } finally {
-    rmSync(probeRoot, { recursive: true, force: true });
-    process.exit(0);
+    exitAfterBestEffortCleanup(probeRoot);
   }
 });
 
@@ -103,6 +104,14 @@ function createUtilityEnvironment(inherited: NodeJS.ProcessEnv): NodeJS.ProcessE
   return environment;
 }
 
+function exitAfterBestEffortCleanup(directory: string): never {
+  try {
+    rmSync(directory, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+  } finally {
+    process.exit(0);
+  }
+}
+
 function isInside(candidate: string, parent: string): boolean {
   const relativePath = path.relative(parent, candidate);
   return relativePath === '' || (!relativePath.startsWith('..') && !path.isAbsolute(relativePath));
@@ -111,4 +120,17 @@ function isInside(candidate: string, parent: string): boolean {
 function writeSanitizedResult(value: unknown): void {
   mkdirSync(path.dirname(resultPath as string), { recursive: true });
   writeFileSync(resultPath as string, JSON.stringify(value, null, 2), 'utf8');
+}
+
+function writeSanitizedProgress(currentScenario: string | null, completedScenarioCount: number): void {
+  writeSanitizedResult({
+    schemaVersion: 1,
+    task: '6A.6',
+    source: 'real_sdk',
+    recordedAt: new Date().toISOString(),
+    commandName: 'block6a-electron-utility-output-schema-probe',
+    classification: 'probe_in_progress',
+    assertions: { promptResponseAndRawErrorsExcluded: true },
+    progress: { completedScenarioCount, currentScenario },
+  });
 }

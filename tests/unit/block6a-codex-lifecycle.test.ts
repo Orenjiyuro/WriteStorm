@@ -53,6 +53,24 @@ describe('Block 6A.7 lifecycle and owned-process boundary', () => {
       expect(Object.values(scenario.processAssertions).every(Boolean)).toBe(true);
       expect(scenario.lifecycleEvents.cleanupExecutionCount).toBe(1);
     }
+    expect(evidence.scenarios[0]).toMatchObject({
+      scenario: 'app-timeout',
+      timeoutCleanup: {
+        classification: 'graceful',
+        abortRequested: true,
+        abortObserved: true,
+        sdkPromiseSettled: true,
+        cleanupAcknowledged: true,
+        utilityExitObserved: true,
+      },
+      processAssertions: {
+        runnerTimeoutPathExercised: true,
+        timeoutCleanupGraceful: true,
+        timeoutUtilityExitObserved: true,
+        utilityResidualAbsent: true,
+        cliResidualAbsent: true,
+      },
+    });
     expect(evidence.scenarios[2]?.lifecycleEvents).toMatchObject({
       initialTrigger: 'window-close',
       cleanupRequestCount: 2,

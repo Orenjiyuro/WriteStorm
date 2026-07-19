@@ -6,6 +6,8 @@ import { app, BrowserWindow } from 'electron';
 import {
   CodexFeasibilityRunner,
   CodexFeasibilityRunnerError,
+  type CodexFeasibilityLifecycleOutcome,
+  type CodexTimeoutCleanupSummary,
 } from './runner';
 import {
   createIdempotentLifecycleTrigger,
@@ -74,26 +76,43 @@ void app.whenReady().then(async () => {
     });
 
     let observation: Promise<void> = Promise.resolve();
-    const outcome = await runner.runLifecycleProbe({ scenario, workingDirectory: workspace }, 75_000, {
-      utilityWorkingDirectory: workspace,
-      utilityEnvironment: createUtilityEnvironment(process.env),
-      waitForTrigger: ({ utilityPid }) => {
-        observation = observeOwnedProcesses(utilityPid, expectedCliPath, (utility, cli) => {
-          utilityIdentity = utility;
-          cliIdentity = cli;
-        });
-        if (scenario === 'app-timeout') {
-          setTimeout(() => void triggerGate.request('app-timeout'), 1_500);
-        } else {
-          void observation.finally(() => {
-            if (scenario === 'explicit-cancel') void triggerGate.request('explicit-cancel');
-            if (scenario === 'window-close') probeWindow?.close();
-            if (scenario === 'app-quit') app.quit();
-          });
-        }
-        return triggerPromise;
-      },
-    });
+    let outcome: CodexFeasibilityLifecycleOutcome | undefined;
+    let timeoutCleanup: CodexTimeoutCleanupSummary | undefined;
+    try {
+      outcome = await runner.runLifecycleProbe(
+        { scenario, workingDirectory: workspace },
+        scenario === 'app-timeout' ? 4_000 : 75_000,
+        {
+          utilityWorkingDirectory: workspace,
+          utilityEnvironment: createUtilityEnvironment(process.env),
+          waitForTrigger: ({ utilityPid }) => {
+            observation = observeOwnedProcesses(utilityPid, expectedCliPath, (utility, cli) => {
+              utilityIdentity = utility;
+              cliIdentity = cli;
+            });
+            if (scenario !== 'app-timeout') {
+              void observation.finally(() => {
+                if (scenario === 'explicit-cancel') void triggerGate.request('explicit-cancel');
+                if (scenario === 'window-close') probeWindow?.close();
+                if (scenario === 'app-quit') app.quit();
+              });
+            }
+            return triggerPromise;
+          },
+        },
+      );
+    } catch (error) {
+      if (
+        scenario !== 'app-timeout'
+        || !(error instanceof CodexFeasibilityRunnerError)
+        || error.reason !== 'timeout'
+        || !error.timeoutCleanup
+      ) {
+        throw error;
+      }
+      timeoutCleanup = error.timeoutCleanup;
+      await triggerGate.request('app-timeout');
+    }
     await observation;
     await delay(500);
     const after = readWindowsProcessSnapshots();
@@ -104,12 +123,26 @@ void app.whenReady().then(async () => {
     const cliResidualAbsent = cliIdentity
       ? !isSameProcessIdentityPresent(after, cliIdentity)
       : false;
+    const result = outcome?.result ?? {
+      scenario: 'app-timeout' as const,
+      trigger: 'app-timeout' as const,
+      outcome: timeoutCleanup?.abortObserved ? 'aborted' as const : 'runtime_failed' as const,
+      authClassification: 'unverified' as const,
+      abortRequested: timeoutCleanup?.abortRequested === true,
+      abortObserved: timeoutCleanup?.abortObserved === true,
+      sdkPromiseSettled: timeoutCleanup?.sdkPromiseSettled === true,
+    };
     const lifecycleAssertions = {
-      triggerMatchedScenario: outcome.result.trigger === scenario,
-      abortRequested: outcome.result.abortRequested,
-      abortObserved: outcome.result.abortObserved,
-      sdkPromiseSettled: outcome.result.sdkPromiseSettled,
-      cleanupAcknowledged: outcome.cleanupAcknowledged,
+      triggerMatchedScenario: result.trigger === scenario,
+      abortRequested: result.abortRequested && (timeoutCleanup?.abortRequested ?? true),
+      abortObserved: result.abortObserved,
+      sdkPromiseSettled: result.sdkPromiseSettled && (timeoutCleanup?.sdkPromiseSettled ?? true),
+      cleanupAcknowledged: outcome?.cleanupAcknowledged ?? timeoutCleanup?.cleanupAcknowledged === true,
+      timeoutSupervisorObserved: scenario !== 'app-timeout' || timeoutCleanup !== undefined,
+      timeoutUtilityExitObserved: scenario !== 'app-timeout' || timeoutCleanup?.utilityExitObserved === true,
+      timeoutCleanupClassified: scenario !== 'app-timeout'
+        || timeoutCleanup?.classification === 'graceful'
+        || timeoutCleanup?.classification === 'forced',
       cleanupExecutedOnce: triggerSnapshot.executionCount === 1,
       utilityProcessAttributed: utilityIdentity !== undefined,
       cliObservedBeforeTrigger: cliIdentity !== undefined,
@@ -125,7 +158,7 @@ void app.whenReady().then(async () => {
       recordedAt: new Date().toISOString(),
       commandName: `block6a-electron-lifecycle-${scenario}-probe`,
       classification: Object.values(lifecycleAssertions).every(Boolean)
-        && outcome.result.outcome === 'aborted'
+        && result.outcome === 'aborted'
         ? 'lifecycle_probe_passed'
         : 'lifecycle_probe_failed',
       versions: {
@@ -134,7 +167,8 @@ void app.whenReady().then(async () => {
         codexSdk: '0.144.6',
       },
       assertions: lifecycleAssertions,
-      result: outcome.result,
+      result,
+      timeoutCleanup: timeoutCleanup ?? null,
       lifecycleEvents: {
         initialTrigger: triggerSnapshot.initialTrigger,
         cleanupRequestCount: triggerSnapshot.requestCount,
@@ -177,8 +211,7 @@ void app.whenReady().then(async () => {
   } finally {
     allowFinalQuit = true;
     probeWindow?.destroy();
-    rmSync(probeRoot, { recursive: true, force: true });
-    process.exit(0);
+    exitAfterBestEffortCleanup(probeRoot);
   }
 });
 
@@ -194,6 +227,14 @@ async function observeOwnedProcesses(
     record(utility, cli);
     if (utility && cli) return;
     await delay(100);
+  }
+}
+
+function exitAfterBestEffortCleanup(directory: string): never {
+  try {
+    rmSync(directory, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+  } finally {
+    process.exit(0);
   }
 }
 

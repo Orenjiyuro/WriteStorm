@@ -39,6 +39,7 @@ class FakeCodexUtility extends EventEmitter implements CodexFeasibilityUtilityHa
 
   kill(): boolean {
     this.killCalls += 1;
+    queueMicrotask(() => this.emit('exit', 1));
     return true;
   }
 }
@@ -58,6 +59,134 @@ function createFork(
 }
 
 describe('Block 6A.4 Codex feasibility utility runner', () => {
+  it('supervises a lifecycle timeout through SDK abort, shutdown, and utility exit before rejecting', async () => {
+    const fake = createFork((request, process) => {
+      if (request.command === 'start-lifecycle-probe') {
+        queueMicrotask(() => process.emit('message', {
+          version: 1,
+          requestId: request.requestId,
+          command: request.command,
+          ok: true,
+          utilityPid: process.pid,
+          result: { scenario: request.input.scenario, turnStarted: true },
+        }));
+        return;
+      }
+      if ((request as { command: string }).command === 'cancel-active-probe') {
+        queueMicrotask(() => process.emit('message', {
+          version: 1,
+          requestId: request.requestId,
+          command: 'cancel-active-probe',
+          ok: true,
+          utilityPid: process.pid,
+          abortRequested: true,
+          abortObserved: true,
+          sdkPromiseSettled: true,
+        }));
+        return;
+      }
+      if (request.command === 'shutdown') {
+        queueMicrotask(() => {
+          process.emit('message', {
+            version: 1,
+            requestId: request.requestId,
+            command: 'shutdown',
+            ok: true,
+            utilityPid: process.pid,
+            cleanupAcknowledged: true,
+          });
+          process.emit('exit', 0);
+        });
+      }
+    });
+    const runner = new CodexFeasibilityRunner({
+      modulePath: 'codex-feasibility-entry.js',
+      fork: fake.fork,
+      createRequestId: (() => {
+        let sequence = 0;
+        return () => `timeout-${++sequence}`;
+      })(),
+    });
+
+    const error = await runner.runLifecycleProbe({
+      scenario: 'app-timeout',
+      workingDirectory: 'C:\\probe\\git',
+    }, 5, {
+      utilityWorkingDirectory: 'C:\\probe\\git',
+      utilityEnvironment: {},
+      waitForTrigger: () => new Promise(() => undefined),
+    }).catch((value: unknown) => value);
+
+    expect(error).toBeInstanceOf(CodexFeasibilityRunnerError);
+    expect(error).toMatchObject({
+      reason: 'timeout',
+      timeoutCleanup: {
+        classification: 'graceful',
+        abortRequested: true,
+        abortObserved: true,
+        sdkPromiseSettled: true,
+        cleanupAcknowledged: true,
+        utilityExitObserved: true,
+      },
+    });
+    expect(fake.processes[0]?.requests.map((request) => request.command)).toEqual([
+      'start-lifecycle-probe',
+      'cancel-active-probe',
+      'shutdown',
+    ]);
+    expect(fake.processes[0]?.killCalls).toBe(0);
+  });
+
+  it('classifies a non-responsive timeout as forced and still waits for utility exit', async () => {
+    const fake = createFork((request, process) => {
+      if (request.command === 'start-lifecycle-probe') {
+        queueMicrotask(() => process.emit('message', {
+          version: 1,
+          requestId: request.requestId,
+          command: request.command,
+          ok: true,
+          utilityPid: process.pid,
+          result: { scenario: request.input.scenario, turnStarted: true },
+        }));
+      }
+    });
+    const runner = new CodexFeasibilityRunner({
+      modulePath: 'codex-feasibility-entry.js',
+      fork: fake.fork,
+      timeoutGraceMs: 5,
+      createRequestId: (() => {
+        let sequence = 0;
+        return () => `forced-timeout-${++sequence}`;
+      })(),
+    });
+
+    const error = await runner.runLifecycleProbe({
+      scenario: 'app-timeout',
+      workingDirectory: 'C:\\probe\\git',
+    }, 5, {
+      utilityWorkingDirectory: 'C:\\probe\\git',
+      utilityEnvironment: {},
+      waitForTrigger: () => new Promise(() => undefined),
+    }).catch((value: unknown) => value);
+
+    expect(error).toMatchObject({
+      reason: 'timeout',
+      timeoutCleanup: {
+        classification: 'forced',
+        abortRequested: false,
+        abortObserved: false,
+        sdkPromiseSettled: false,
+        cleanupAcknowledged: false,
+        utilityExitObserved: true,
+      },
+    });
+    expect(fake.processes[0]?.requests.map((request) => request.command)).toEqual([
+      'start-lifecycle-probe',
+      'cancel-active-probe',
+    ]);
+    expect(fake.processes[0]?.killCalls).toBe(1);
+  });
+
   it('uses a typed inspect then shutdown exchange and waits for graceful utility exit', async () => {
     const fake = createFork((request, process) => {
       if (request.command === 'inspect-runtime') {

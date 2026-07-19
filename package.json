@@ -9,12 +9,16 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "build": "electron-forge package",
-    "check": "npm run typecheck && npm run test:unit && npm run test:integration && npm run test:e2e",
+    "check": "npm run typecheck && npm run test:unit && npm run test:integration && npm run test:e2e && npm run test:verification",
     "typecheck": "tsc --noEmit",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:e2e": "npm run build && playwright test",
-    "test:e2e:secondary-display": "npm run build && playwright test --grep @secondary-display"
+    "test:e2e:secondary-display": "npm run build && playwright test --grep @secondary-display",
+    "test:verification": "vitest run tests/verification",
+    "probe:codex:dev": "node scripts/run-block6a-probes.mjs dev",
+    "probe:codex:lifecycle": "node scripts/run-block6a-probes.mjs lifecycle",
+    "probe:codex:packaged": "npm run package && npm run test:verification && node scripts/run-block6a-probes.mjs packaged"
   },
   "engines": {
     "node": ">=22.12.0"

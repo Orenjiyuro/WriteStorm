@@ -1080,7 +1080,7 @@ Decision: Task 6A.8b records `conditional Go — Windows-only feasibility verifi
 
 Rules:
 
-- The Windows x64 decision is backed by the exact official npm SDK/CLI supply chain, dedicated Electron utility boundary, isolated cwd/Git/environment/auth probes, real structured output, timeout/cancel/window-close/app-quit cleanup, package inspection and a real packaged SDK turn.
+- The Windows x64 decision is backed by the exact official npm SDK/CLI supply chain, dedicated Electron utility boundary, isolated cwd/Git/environment/auth probes, real structured output, supervised runner-timeout/cancel/window-close/app-quit cleanup, package inspection and a real packaged SDK turn. Timeout first requests SDK abort, awaits settlement, requests shutdown and waits for utility exit before attributed residual checks; a grace-period forced fallback fails closed without exit and CLI-residual evidence.
 - This is not a full Go, cross-platform compatibility claim, macOS verification or release-readiness decision. macOS packaged runtime remains `deferred-by-user` and must pass an equivalent package and runtime gate before any complete Go claim.
 - The decision expires on relevant SDK/CLI/platform integrity or version changes; dependency-tree or install-script changes; Electron/Node/Forge/Vite/ASAR changes; utility/security/auth/schema/cleanup changes; executable-layout or SDK mechanism changes; target-runtime changes; or a failed required recertification.
 - Auth success is dated execution evidence, not a durable credential fact. A required rerun with `login_required`, `auth_failed` or no real success cannot be upgraded by the old result. Expired-session and natural WriteStorm login experience remain unverified.

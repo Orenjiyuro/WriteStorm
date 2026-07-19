@@ -50,6 +50,15 @@ export type CodexFeasibilityRunnerFailureReason =
   | 'output_schema_failed'
   | 'lifecycle_failed';
 
+export type CodexTimeoutCleanupSummary = {
+  readonly classification: 'graceful' | 'forced';
+  readonly abortRequested: boolean;
+  readonly abortObserved: boolean;
+  readonly sdkPromiseSettled: boolean;
+  readonly cleanupAcknowledged: boolean;
+  readonly utilityExitObserved: boolean;
+};
+
 export class CodexFeasibilityRunnerError extends Error {
   readonly code = 'CODEX_FEASIBILITY_UTILITY_FAILED' as const;
 
@@ -67,6 +76,7 @@ export class CodexFeasibilityRunnerError extends Error {
         | 'cancel-lifecycle'
         | 'shutdown';
     },
+    readonly timeoutCleanup?: CodexTimeoutCleanupSummary,
   ) {
     super(message);
     this.name = 'CodexFeasibilityRunnerError';
@@ -101,15 +111,18 @@ export class CodexFeasibilityRunner {
   private readonly modulePath: string;
   private readonly fork: ForkCodexFeasibilityUtility;
   private readonly createRequestId: () => string;
+  private readonly timeoutGraceMs: number;
 
   constructor(options: {
     readonly modulePath: string;
     readonly fork?: ForkCodexFeasibilityUtility;
     readonly createRequestId?: () => string;
+    readonly timeoutGraceMs?: number;
   }) {
     this.modulePath = options.modulePath;
     this.fork = options.fork ?? electronFork;
     this.createRequestId = options.createRequestId ?? randomUUID;
+    this.timeoutGraceMs = options.timeoutGraceMs ?? 5_000;
   }
 
   inspectRuntime(
@@ -120,6 +133,7 @@ export class CodexFeasibilityRunner {
     },
   ): Promise<CodexFeasibilityInspectionOutcome> {
     const inspectRequestId = this.createRequestId();
+    const timeoutCancelRequestId = this.createRequestId();
     const shutdownRequestId = this.createRequestId();
     const child = this.fork(this.modulePath, [], {
       serviceName: 'WriteStorm Codex Feasibility Utility',
@@ -135,12 +149,16 @@ export class CodexFeasibilityRunner {
       let inspectionFailure: CodexFeasibilityRunnerError | undefined;
       let utilityPid: number | undefined;
       let cleanupAcknowledged = false;
-      const timeout = setTimeout(() => {
-        fail(runnerFailure('timeout'));
-        child.kill();
-      }, timeoutMs);
+      const timeoutSupervisor = createTimeoutSupervisor({
+        child,
+        timeoutMs,
+        graceMs: this.timeoutGraceMs,
+        cancelRequestId: timeoutCancelRequestId,
+        shutdownRequestId,
+        onFinished: (summary) => fail(runnerFailure('timeout', undefined, summary)),
+      });
       const cleanup = (): void => {
-        clearTimeout(timeout);
+        timeoutSupervisor.dispose();
         child.removeListener('spawn', onSpawn);
         child.removeListener('message', onMessage);
         child.removeListener('exit', onExit);
@@ -169,6 +187,7 @@ export class CodexFeasibilityRunner {
         } satisfies CodexFeasibilityRequest);
       };
       const onMessage = (message: unknown): void => {
+        if (timeoutSupervisor.consumeMessage(message)) return;
         if (settled || !isCodexFeasibilityResponse(message)) {
           fail(runnerProtocolFailure(message, phase));
           child.kill();
@@ -205,6 +224,7 @@ export class CodexFeasibilityRunner {
         cleanupAcknowledged = message.cleanupAcknowledged;
       };
       const onExit = (code: number): void => {
+        if (timeoutSupervisor.consumeExit()) return;
         if (settled) return;
         if (phase !== 'shutdown' || !cleanupAcknowledged || code !== 0) {
           fail(runnerFailure('crash'));
@@ -239,6 +259,7 @@ export class CodexFeasibilityRunner {
     },
   ): Promise<CodexFeasibilityCapabilityOutcome> {
     const capabilityRequestId = this.createRequestId();
+    const timeoutCancelRequestId = this.createRequestId();
     const shutdownRequestId = this.createRequestId();
     const child = this.fork(this.modulePath, [], {
       serviceName: 'WriteStorm Codex Feasibility Utility',
@@ -254,12 +275,16 @@ export class CodexFeasibilityRunner {
       let capabilityFailure: CodexFeasibilityRunnerError | undefined;
       let utilityPid: number | undefined;
       let cleanupAcknowledged = false;
-      const timeout = setTimeout(() => {
-        fail(runnerFailure('timeout'));
-        child.kill();
-      }, timeoutMs);
+      const timeoutSupervisor = createTimeoutSupervisor({
+        child,
+        timeoutMs,
+        graceMs: this.timeoutGraceMs,
+        cancelRequestId: timeoutCancelRequestId,
+        shutdownRequestId,
+        onFinished: (summary) => fail(runnerFailure('timeout', undefined, summary)),
+      });
       const cleanup = (): void => {
-        clearTimeout(timeout);
+        timeoutSupervisor.dispose();
         child.removeListener('spawn', onSpawn);
         child.removeListener('message', onMessage);
         child.removeListener('exit', onExit);
@@ -289,6 +314,7 @@ export class CodexFeasibilityRunner {
         } satisfies CodexFeasibilityRequest);
       };
       const onMessage = (message: unknown): void => {
+        if (timeoutSupervisor.consumeMessage(message)) return;
         if (settled || !isCodexFeasibilityResponse(message)) {
           fail(runnerProtocolFailure(message, phase));
           child.kill();
@@ -326,6 +352,7 @@ export class CodexFeasibilityRunner {
         cleanupAcknowledged = message.cleanupAcknowledged;
       };
       const onExit = (code: number): void => {
+        if (timeoutSupervisor.consumeExit()) return;
         if (settled) return;
         if (phase !== 'shutdown' || !cleanupAcknowledged || code !== 0) {
           fail(runnerFailure('crash'));
@@ -359,6 +386,7 @@ export class CodexFeasibilityRunner {
     },
   ): Promise<CodexFeasibilityOutputSchemaOutcome> {
     const probeRequestId = this.createRequestId();
+    const timeoutCancelRequestId = this.createRequestId();
     const shutdownRequestId = this.createRequestId();
     const child = this.fork(this.modulePath, [], {
       serviceName: 'WriteStorm Codex Feasibility Utility',
@@ -374,12 +402,16 @@ export class CodexFeasibilityRunner {
       let probeFailure: CodexFeasibilityRunnerError | undefined;
       let utilityPid: number | undefined;
       let cleanupAcknowledged = false;
-      const timeout = setTimeout(() => {
-        fail(runnerFailure('timeout'));
-        child.kill();
-      }, timeoutMs);
+      const timeoutSupervisor = createTimeoutSupervisor({
+        child,
+        timeoutMs,
+        graceMs: this.timeoutGraceMs,
+        cancelRequestId: timeoutCancelRequestId,
+        shutdownRequestId,
+        onFinished: (summary) => fail(runnerFailure('timeout', undefined, summary)),
+      });
       const cleanup = (): void => {
-        clearTimeout(timeout);
+        timeoutSupervisor.dispose();
         child.removeListener('spawn', onSpawn);
         child.removeListener('message', onMessage);
         child.removeListener('exit', onExit);
@@ -409,6 +441,7 @@ export class CodexFeasibilityRunner {
         } satisfies CodexFeasibilityRequest);
       };
       const onMessage = (message: unknown): void => {
+        if (timeoutSupervisor.consumeMessage(message)) return;
         if (settled || !isCodexFeasibilityResponse(message)) {
           fail(runnerProtocolFailure(message, phase));
           child.kill();
@@ -441,6 +474,7 @@ export class CodexFeasibilityRunner {
         cleanupAcknowledged = message.cleanupAcknowledged;
       };
       const onExit = (code: number): void => {
+        if (timeoutSupervisor.consumeExit()) return;
         if (settled) return;
         if (phase !== 'shutdown' || !cleanupAcknowledged || code !== 0) {
           fail(runnerFailure('crash'));
@@ -476,6 +510,7 @@ export class CodexFeasibilityRunner {
   ): Promise<CodexFeasibilityLifecycleOutcome> {
     const startRequestId = this.createRequestId();
     const cancelRequestId = this.createRequestId();
+    const timeoutCancelRequestId = this.createRequestId();
     const shutdownRequestId = this.createRequestId();
     const child = this.fork(this.modulePath, [], {
       serviceName: 'WriteStorm Codex Feasibility Utility',
@@ -491,12 +526,16 @@ export class CodexFeasibilityRunner {
       let lifecycleFailure: CodexFeasibilityRunnerError | undefined;
       let utilityPid: number | undefined;
       let cleanupAcknowledged = false;
-      const timeout = setTimeout(() => {
-        fail(runnerFailure('timeout'));
-        child.kill();
-      }, timeoutMs);
+      const timeoutSupervisor = createTimeoutSupervisor({
+        child,
+        timeoutMs,
+        graceMs: this.timeoutGraceMs,
+        cancelRequestId: timeoutCancelRequestId,
+        shutdownRequestId,
+        onFinished: (summary) => fail(runnerFailure('timeout', undefined, summary)),
+      });
       const cleanup = (): void => {
-        clearTimeout(timeout);
+        timeoutSupervisor.dispose();
         child.removeListener('spawn', onSpawn);
         child.removeListener('message', onMessage);
         child.removeListener('exit', onExit);
@@ -537,6 +576,7 @@ export class CodexFeasibilityRunner {
         } satisfies CodexFeasibilityRequest);
       };
       const onMessage = (message: unknown): void => {
+        if (timeoutSupervisor.consumeMessage(message)) return;
         if (settled || !isCodexFeasibilityResponse(message)) {
           fail(runnerProtocolFailure(message, phase));
           child.kill();
@@ -591,6 +631,7 @@ export class CodexFeasibilityRunner {
         cleanupAcknowledged = message.cleanupAcknowledged;
       };
       const onExit = (code: number): void => {
+        if (timeoutSupervisor.consumeExit()) return;
         if (settled) return;
         if (phase !== 'shutdown' || !cleanupAcknowledged || code !== 0) {
           fail(runnerFailure('crash'));
@@ -616,9 +657,120 @@ export class CodexFeasibilityRunner {
   }
 }
 
+function createTimeoutSupervisor(options: {
+  readonly child: CodexFeasibilityUtilityHandle;
+  readonly timeoutMs: number;
+  readonly graceMs: number;
+  readonly cancelRequestId: string;
+  readonly shutdownRequestId: string;
+  readonly onFinished: (summary: CodexTimeoutCleanupSummary) => void;
+}): {
+  consumeMessage(message: unknown): boolean;
+  consumeExit(): boolean;
+  dispose(): void;
+} {
+  let active = false;
+  let disposed = false;
+  let finished = false;
+  let forced = false;
+  let abortRequested = false;
+  let abortObserved = false;
+  let sdkPromiseSettled = false;
+  let cleanupAcknowledged = false;
+  let stage: 'cancel' | 'shutdown' | 'exit' = 'cancel';
+  let graceTimer: NodeJS.Timeout | undefined;
+  const timeoutTimer = setTimeout(() => {
+    if (disposed) return;
+    active = true;
+    options.child.postMessage({
+      version: CODEX_FEASIBILITY_PROTOCOL_VERSION,
+      origin: 'main',
+      requestId: options.cancelRequestId,
+      command: 'cancel-active-probe',
+    } satisfies CodexFeasibilityRequest);
+    armGraceTimer();
+  }, options.timeoutMs);
+
+  const finish = (utilityExitObserved: boolean): void => {
+    if (finished) return;
+    finished = true;
+    active = false;
+    clearTimeout(timeoutTimer);
+    if (graceTimer) clearTimeout(graceTimer);
+    options.onFinished({
+      classification: forced ? 'forced' : 'graceful',
+      abortRequested,
+      abortObserved,
+      sdkPromiseSettled,
+      cleanupAcknowledged,
+      utilityExitObserved,
+    });
+  };
+  const forceUtilityExit = (): void => {
+    if (forced || finished) return;
+    forced = true;
+    stage = 'exit';
+    options.child.kill();
+    if (graceTimer) clearTimeout(graceTimer);
+    graceTimer = setTimeout(() => finish(false), options.graceMs);
+  };
+  function armGraceTimer(): void {
+    if (graceTimer) clearTimeout(graceTimer);
+    graceTimer = setTimeout(forceUtilityExit, options.graceMs);
+  }
+
+  return {
+    consumeMessage(message) {
+      if (!active) return false;
+      if (!isCodexFeasibilityResponse(message)) {
+        forceUtilityExit();
+        return true;
+      }
+      if (stage === 'cancel'
+        && message.command === 'cancel-active-probe'
+        && message.requestId === options.cancelRequestId) {
+        abortRequested = message.abortRequested;
+        abortObserved = message.abortObserved;
+        sdkPromiseSettled = message.sdkPromiseSettled;
+        stage = 'shutdown';
+        options.child.postMessage({
+          version: CODEX_FEASIBILITY_PROTOCOL_VERSION,
+          origin: 'main',
+          requestId: options.shutdownRequestId,
+          command: 'shutdown',
+        } satisfies CodexFeasibilityRequest);
+        armGraceTimer();
+        return true;
+      }
+      if (stage === 'shutdown'
+        && message.command === 'shutdown'
+        && message.requestId === options.shutdownRequestId) {
+        cleanupAcknowledged = message.cleanupAcknowledged;
+        stage = 'exit';
+        armGraceTimer();
+        return true;
+      }
+      // The aborted operation may publish its normal sanitized response before
+      // cancel acknowledgement. Timeout supervision owns and discards it.
+      return true;
+    },
+    consumeExit() {
+      if (!active) return false;
+      finish(true);
+      return true;
+    },
+    dispose() {
+      disposed = true;
+      clearTimeout(timeoutTimer);
+      if (graceTimer) clearTimeout(graceTimer);
+    },
+  };
+}
+
 function runnerFailure(
   reason: CodexFeasibilityRunnerFailureReason,
   utilityErrorCode?: CodexFeasibilityUtilityErrorCode,
+  timeoutCleanup?: CodexTimeoutCleanupSummary,
 ): CodexFeasibilityRunnerError {
   const messages = {
     timeout: 'Codex feasibility utility timed out.',
@@ -629,7 +781,13 @@ function runnerFailure(
     output_schema_failed: 'Codex feasibility utility could not run the output schema probe.',
     lifecycle_failed: 'Codex feasibility utility could not run the lifecycle probe.',
   } as const;
-  return new CodexFeasibilityRunnerError(reason, messages[reason], utilityErrorCode);
+  return new CodexFeasibilityRunnerError(
+    reason,
+    messages[reason],
+    utilityErrorCode,
+    undefined,
+    timeoutCleanup,
+  );
 }
 
 function runnerProtocolFailure(

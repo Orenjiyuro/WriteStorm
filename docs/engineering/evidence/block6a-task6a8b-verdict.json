@@ -3,7 +3,7 @@
   "evidenceId": "block6a-6a8b-verdict-windows-001",
   "task": "6A.8b",
   "source": "static_manifest",
-  "recordedAt": "2026-07-19T06:56:00.000Z",
+  "recordedAt": "2026-07-19T08:20:30.006Z",
   "commandName": "block6a-authority-consistency",
   "classification": "conditional_go_windows_only_macos_deferred_by_user",
   "versions": {
@@ -14,13 +14,7 @@
     "platformPackage": "0.144.6-win32-x64"
   },
   "assertions": {
-    "supplyChainPinnedAndAudited": true,
-    "serverSideSdkMechanismVerified": true,
-    "rendererPrivilegeBoundaryVerified": true,
-    "isolatedCwdGitEnvironmentAndAuthVerified": true,
-    "realAuthenticatedStructuredOutputVerified": true,
-    "timeoutCancelWindowCloseAndAppQuitCleanupVerified": true,
-    "windowsPackagedSdkVerified": true,
+    "authoritySourcesReconciledWithoutProvenanceUpgrade": true,
     "macosDeferredByUserRecorded": true,
     "noFallbackAuthorized": true,
     "noTask13Point2AuthorizationIssued": true,
@@ -30,14 +24,60 @@
     "crossPlatformAndReleaseReadinessNotClaimed": true
   },
   "evidenceInputs": [
-    "block6a-task6a3-runtime-semantics.json",
-    "block6a-task6a4-utility-boundary.json",
-    "block6a-task6a5-cwd-git-env-auth.json",
-    "block6a-task6a6-real-output-schema.json",
-    "block6a-task6a6-validator-fixtures.json",
-    "block6a-task6a7-lifecycle-cleanup.json",
-    "block6a-task6a8a-windows-packaged-sdk.json",
-    "block6a-task6a8a-windows-package-boundary.json"
+    {
+      "evidenceId": "block6a-6a3-static-runtime-semantics-001",
+      "source": "static_manifest",
+      "classification": "installed_sdk_semantics_static_verified",
+      "supports": ["supply_chain", "server_side_sdk_mechanism"]
+    },
+    {
+      "evidenceId": "block6a-6a3-real-sdk-esm-import-001",
+      "source": "real_sdk",
+      "classification": "esm_import_only_no_turn",
+      "supports": ["esm_import_and_client_construction_only"]
+    },
+    {
+      "evidenceId": "block6a-6a4-utility-boundary-static-001",
+      "source": "static_manifest",
+      "classification": "source_and_direct_build_boundary_verified_package_pending",
+      "supports": ["utility_process_boundary", "renderer_privilege_guard"]
+    },
+    {
+      "evidenceId": "block6a-6a5-real-sdk-cwd-git-env-auth-001",
+      "source": "real_sdk",
+      "classification": "cwd_git_env_auth_probe_completed",
+      "supports": ["cwd_git_environment", "current_and_isolated_auth"]
+    },
+    {
+      "evidenceId": "block6a-6a6-real-sdk-output-schema-001",
+      "source": "real_sdk",
+      "classification": "output_schema_probe_completed",
+      "supports": ["authenticated_structured_output", "invalid_schema_sdk_rejection"]
+    },
+    {
+      "evidenceId": "block6a-6a6-local-validator-fixture-001",
+      "source": "local_validator_fixture",
+      "classification": "strict_validator_fixture_completed",
+      "supports": ["missing_field_mapping_only", "extra_field_mapping_only"]
+    },
+    {
+      "evidenceId": "block6a-6a7-real-sdk-lifecycle-cleanup-001",
+      "source": "real_sdk",
+      "classification": "lifecycle_probe_matrix_passed",
+      "supports": ["runner_timeout_supervision", "explicit_cancel", "window_close", "app_quit", "owned_process_residual_scan"]
+    },
+    {
+      "evidenceId": "block6a-6a8a-package-boundary-windows-001",
+      "source": "static_manifest",
+      "classification": "windows_package_boundary_passed",
+      "supports": ["windows_package_contents", "renderer_package_guard"]
+    },
+    {
+      "evidenceId": "block6a-6a8a-packaged-sdk-windows-001",
+      "source": "packaged_sdk",
+      "classification": "packaged_sdk_probe_completed",
+      "supports": ["windows_packaged_authenticated_structured_turn"]
+    }
   ],
   "expiryConditions": [
     "The exact @openai/codex-sdk, @openai/codex CLI or Windows platform-package version or integrity changes.",

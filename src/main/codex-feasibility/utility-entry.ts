@@ -32,8 +32,13 @@ type ActiveLifecycleProbe = {
   readonly controller: AbortController;
   readonly settlement: Promise<LifecycleSettlement>;
 };
+type ActiveSdkProbe = {
+  readonly controller: AbortController;
+  readonly settlement: Promise<{ readonly abortObserved: boolean }>;
+};
 
 let activeLifecycleProbe: ActiveLifecycleProbe | undefined;
+let activeSdkProbe: ActiveSdkProbe | undefined;
 
 const cliEnvironmentAllowlist = new Set([
   'all_proxy',
@@ -204,14 +209,23 @@ async function runCapabilityProbe(input: CodexCapabilityProbeInput): Promise<
       networkAccessEnabled: false,
       webSearchMode: 'disabled',
     });
-    const turn = await thread.run(syntheticInput);
+    const controller = new AbortController();
+    const turnPromise = thread.run(syntheticInput, { signal: controller.signal });
+    const active = registerActiveSdkProbe(controller, turnPromise.then(
+      () => ({ abortObserved: false }),
+      (error: unknown) => Promise.reject(error),
+    ));
+    const turn = await turnPromise.finally(() => clearActiveSdkProbe(active));
     return {
       ok: true,
       result: {
         ...resultBase,
         outcome: 'success',
         authClassification: 'authenticated',
-        finalResponseMatched: turn.finalResponse.trim() === expectedResponse.trim(),
+        finalResponseMatched: validateMinimalStructuredOutput(
+          turn.finalResponse,
+          expectedResponse,
+        ).accepted,
       },
     };
   } catch (error) {
@@ -273,7 +287,13 @@ async function runOutputSchemaProbe(input: CodexOutputSchemaProbeInput): Promise
   });
 
   try {
-    const turn = await thread.run(syntheticInput, { outputSchema });
+    const controller = new AbortController();
+    const turnPromise = thread.run(syntheticInput, { outputSchema, signal: controller.signal });
+    const active = registerActiveSdkProbe(controller, turnPromise.then(
+      () => ({ abortObserved: false }),
+      (error: unknown) => Promise.reject(error),
+    ));
+    const turn = await turnPromise.finally(() => clearActiveSdkProbe(active));
     if (input.scenario === 'invalid-schema') {
       return {
         ok: true,
@@ -404,6 +424,9 @@ async function startLifecycleProbe(input: CodexLifecycleProbeInput): Promise<
     },
   );
   activeLifecycleProbe = { scenario: input.scenario, controller, settlement };
+  registerActiveSdkProbe(controller, settlement.then((result) => ({
+    abortObserved: result.abortObserved,
+  })));
   return { ok: true, result: { scenario: input.scenario, turnStarted: true } };
 }
 
@@ -416,6 +439,7 @@ async function cancelLifecycleProbe(trigger: CodexLifecycleTrigger): Promise<
   active.controller.abort();
   const settlement = await active.settlement;
   activeLifecycleProbe = undefined;
+  activeSdkProbe = undefined;
   return {
     ok: true,
     result: {
@@ -427,12 +451,37 @@ async function cancelLifecycleProbe(trigger: CodexLifecycleTrigger): Promise<
   };
 }
 
-async function abortActiveLifecycleForShutdown(): Promise<void> {
-  const active = activeLifecycleProbe;
-  if (!active) return;
+async function cancelActiveSdkProbe(): Promise<{
+  readonly abortRequested: boolean;
+  readonly abortObserved: boolean;
+  readonly sdkPromiseSettled: true;
+}> {
+  const active = activeSdkProbe;
+  if (!active) return { abortRequested: false, abortObserved: false, sdkPromiseSettled: true };
   active.controller.abort();
-  await active.settlement;
+  const settlement = await active.settlement;
+  if (activeSdkProbe === active) activeSdkProbe = undefined;
   activeLifecycleProbe = undefined;
+  return { abortRequested: true, abortObserved: settlement.abortObserved, sdkPromiseSettled: true };
+}
+
+function registerActiveSdkProbe(
+  controller: AbortController,
+  turn: Promise<{ readonly abortObserved: boolean }>,
+): ActiveSdkProbe {
+  const active = {
+    controller,
+    settlement: turn.then(
+      (result) => result,
+      (error: unknown) => ({ abortObserved: error instanceof Error && error.name === 'AbortError' }),
+    ),
+  };
+  activeSdkProbe = active;
+  return active;
+}
+
+function clearActiveSdkProbe(active: ActiveSdkProbe): void {
+  if (activeSdkProbe === active) activeSdkProbe = undefined;
 }
 
 export function buildCodexCliEnvironment(
@@ -538,7 +587,7 @@ if (parentPort) {
     }
 
     if (request.command === 'shutdown') {
-      void abortActiveLifecycleForShutdown().then(() => {
+      void cancelActiveSdkProbe().then(() => {
         parentPort.postMessage({
           version: CODEX_FEASIBILITY_PROTOCOL_VERSION,
           requestId: request.requestId,
@@ -548,6 +597,20 @@ if (parentPort) {
           cleanupAcknowledged: true,
         } satisfies CodexFeasibilityResponse);
         setImmediate(() => process.exit(0));
+      });
+      return;
+    }
+
+    if (request.command === 'cancel-active-probe') {
+      void cancelActiveSdkProbe().then((result) => {
+        parentPort.postMessage({
+          version: CODEX_FEASIBILITY_PROTOCOL_VERSION,
+          requestId: request.requestId,
+          command: 'cancel-active-probe',
+          ok: true,
+          utilityPid: process.pid,
+          ...result,
+        } satisfies CodexFeasibilityResponse);
       });
       return;
     }

@@ -10,7 +10,7 @@ describe('Block 6 local CI gate', () => {
 
     expect(packageJson.scripts['test:integration']).toBe('vitest run tests/integration');
     expect(packageJson.scripts.check).toBe(
-      'npm run typecheck && npm run test:unit && npm run test:integration && npm run test:e2e',
+      'npm run typecheck && npm run test:unit && npm run test:integration && npm run test:e2e && npm run test:verification',
     );
   });
 });

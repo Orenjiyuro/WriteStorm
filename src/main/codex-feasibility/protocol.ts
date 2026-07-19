@@ -15,6 +15,7 @@ export type CodexFeasibilityRequest = RequestBase & (
   | { readonly command: 'run-output-schema-probe'; readonly input: CodexOutputSchemaProbeInput }
   | { readonly command: 'start-lifecycle-probe'; readonly input: CodexLifecycleProbeInput }
   | { readonly command: 'cancel-lifecycle-probe'; readonly trigger: CodexLifecycleTrigger }
+  | { readonly command: 'cancel-active-probe' }
   | { readonly command: 'shutdown' }
 );
 
@@ -137,6 +138,16 @@ export type CodexFeasibilityUtilityErrorCode =
   | 'LIFECYCLE_NOT_ACTIVE';
 
 export type CodexFeasibilityResponse =
+  | {
+      readonly version: typeof CODEX_FEASIBILITY_PROTOCOL_VERSION;
+      readonly requestId: string;
+      readonly command: 'cancel-active-probe';
+      readonly ok: true;
+      readonly utilityPid: number;
+      readonly abortRequested: boolean;
+      readonly abortObserved: boolean;
+      readonly sdkPromiseSettled: true;
+    }
   | {
       readonly version: typeof CODEX_FEASIBILITY_PROTOCOL_VERSION;
       readonly requestId: string;
@@ -280,6 +291,7 @@ const requestSchema = z.discriminatedUnion('command', [
     command: z.literal('cancel-lifecycle-probe'),
     trigger: z.enum(['app-timeout', 'explicit-cancel', 'window-close', 'app-quit']),
   }).strict(),
+  z.object({ ...requestBase, command: z.literal('cancel-active-probe') }).strict(),
   z.object({ ...requestBase, command: z.literal('shutdown') }).strict(),
 ]) as z.ZodType<CodexFeasibilityRequest>;
 
@@ -385,6 +397,14 @@ const utilityErrorCodeSchema = z.enum([
 const responseSchema = z.union([
   z.object({
     ...responseBase,
+    command: z.literal('cancel-active-probe'),
+    ok: z.literal(true),
+    abortRequested: z.boolean(),
+    abortObserved: z.boolean(),
+    sdkPromiseSettled: z.literal(true),
+  }).strict(),
+  z.object({
+    ...responseBase,
     command: z.literal('inspect-runtime'),
     ok: z.literal(true),
     result: inspectionSchema,
@@ -488,6 +508,7 @@ export function diagnoseCodexFeasibilityResponse(
       'run-output-schema-probe',
       'start-lifecycle-probe',
       'cancel-lifecycle-probe',
+      'cancel-active-probe',
       'shutdown',
     ].includes(record.command),
     requestIdPresent: typeof record?.requestId === 'string' && record.requestId.length > 0,

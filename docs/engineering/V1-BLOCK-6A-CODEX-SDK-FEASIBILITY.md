@@ -103,15 +103,15 @@ Residual checks associate the current probe by utility PID, parent PID chain, pr
 
 The graceful cleanup protocol is:
 
-1. Main sends a typed cancel, close or shutdown message.
+1. Main sends a typed cancel, close or timeout `cancel-active-probe` message.
 2. Utility aborts the SDK turn through its `AbortController`.
 3. Utility waits for the SDK promise or stream to settle.
-4. Utility confirms the attributed project-local CLI exited.
-5. Utility sends a cleanup acknowledgement.
-6. Utility exits normally.
-7. Main verifies both attributed CLI and utility processes have no residual instance.
+4. Utility reports whether abort was observed and the SDK promise settled.
+5. Main requests shutdown; utility sends a cleanup acknowledgement and exits normally.
+6. Main waits for actual utility exit before returning success or timeout failure.
+7. The lifecycle observer verifies both attributed CLI and utility identities have no residual instance.
 
-Main may force-kill only its proven utility process after the grace period. Evidence records `graceful | forced`, acknowledgement and residual status. A forced utility exit that leaves an attributed CLI orphan cannot pass Windows feasibility.
+Main may force-kill only its proven utility process after the cancel or shutdown grace period. It must still wait for an exit observation and record `graceful | forced`, AbortController request/observation, SDK settlement, shutdown acknowledgement and utility-exit status. A forced result without actual utility exit, cleanup acknowledgement or an attributed CLI residual scan fails closed; no CLI is terminated directly. The successful Task 6A.7 runner-timeout evidence completed gracefully and therefore did not manufacture the unsafe forced-fallback state.
 
 ## Runtime, cwd and auth classification
 
@@ -172,6 +172,8 @@ Lifecycle cleanup is guarded so cleanup executes at most once. A final-window cl
 
 The committed `real_sdk` record is `docs/engineering/evidence/block6a-task6a7-lifecycle-cleanup.json`. Four separate hidden Electron 43.0.0 processes exercised `app-timeout`, `explicit-cancel`, `window-close` and `app-quit` against `@openai/codex-sdk@0.144.6` under embedded Node 24.17.0. Each used a fixed short synthetic input and an isolated temporary Git workspace. Aborted turns retain `authClassification: unverified`; Task 6A.7 does not infer auth from an interrupted turn and instead relies on the separate completed successes in Tasks 6A.5 and 6A.6.
 
+The repaired `app-timeout` scenario exercises the runner's actual timeout rather than scheduling the same cooperative lifecycle trigger used by explicit cancel. After four seconds, main sent `cancel-active-probe`; utility requested SDK AbortController cancellation, observed `AbortError`, awaited the SDK promise, acknowledged shutdown and exited. Only then did the observer re-read the exact utility and CLI identities attributed before timeout. Both were absent. The sanitized timeout summary is `classification: graceful`, with abort requested/observed, SDK settled, cleanup acknowledged and utility exit observed all true. The forced fallback is separately unit-tested for ordering and classification but cannot pass the real lifecycle gate without the same exit and attributed residual evidence.
+
 Every scenario observed the project-local CLI before its trigger, attributed it through the utility PID parent chain and start time, requested AbortController cancellation, observed SDK `AbortError`, waited for the SDK promise to settle, received utility cleanup acknowledgement, and then found neither the same utility identity nor the same CLI identity. Paths and PIDs remained ephemeral and are not committed. The observer did not classify or terminate by process name, never terminated the CLI directly and never touched an unowned Codex process.
 
 `window-close` and `app-quit` are distinct real event paths. The hidden window-close scenario first observed `window-close`, then `window-all-closed` and `before-quit`; those events requested cleanup twice but the idempotent gate executed cleanup once. The separate app-quit scenario first observed `app-quit` through `before-quit`, executed cleanup once, and did not observe window-close or window-all-closed. The timeout and explicit-cancel scenarios each had one request and one execution.
@@ -181,6 +183,8 @@ The exact installed SDK implementation passes the per-turn signal to Node `spawn
 ## Task 6A.8a Windows packaged SDK result
 
 The committed runtime record is `docs/engineering/evidence/block6a-task6a8a-windows-packaged-sdk.json`, with `source: packaged_sdk`. A hidden packaged Electron 43.0.0 process ran the SDK under embedded Node 24.17.0 on Windows x64 using `@openai/codex-sdk@0.144.6`, CLI `0.144.6` and platform package `0.144.6-win32-x64`. The real structured turn used an isolated temporary Git workspace outside packaged resources and completed as `authenticated`; final JSON parsing, strict local validation, expected-value matching and utility cleanup acknowledgement all passed. API credential environment names were removed from the utility environment. No prompt, response body, absolute path, environment value, credential, PID or raw SDK error was committed; packaged stderr was zero bytes.
+
+The packaged startup gate rejects the probe before any SDK turn unless Electron reports `app.isPackaged`, the target is exactly `win32-x64`, a UUIDv4 run id is valid, and the short input plus expected value match the approved SHA-256 fingerprints and length/newline limits. The result path is not caller-controlled: it is derived under the operating-system temporary directory from the validated run id. `packaged_sdk_probe_completed` includes these gate facts as prerequisites rather than merely recording them afterward.
 
 Forge keeps the SDK and CLI wrapper in `app.asar` and unpacks the exact Windows target beneath the project-owned `app.asar.unpacked/node_modules/@openai/codex-win32-x64/vendor/x86_64-pc-windows-msvc` tree. The utility supplies the exact `bin/codex.exe` in that tree through the SDK's official `codexPathOverride`; WriteStorm does not spawn the CLI directly. This is a packaged-path accommodation inside the SDK execution mechanism, not the forbidden `codex exec` fallback.
 
@@ -192,7 +196,7 @@ A separate packaged manifest-inspection command timed out and is not cited as su
 
 The committed decision summary is `docs/engineering/evidence/block6a-task6a8b-verdict.json`, with `source: static_manifest` and classification `conditional_go_windows_only_macos_deferred_by_user`. It reconciles, but does not upgrade, the independently sourced 6A.3 through 6A.8a records.
 
-The decision is **conditional Go for Windows-only implementation feasibility**. The verified Windows x64 boundary pins the official npm supply chain, server-side TypeScript SDK mechanism, dedicated utility-process isolation, explicit temporary Git cwd, environment filtering, current ChatGPT-managed authentication, strict structured output, timeout and cancellation, distinct window-close and app-quit cleanup, residual-process attribution, Windows package contents and a real packaged SDK turn. No stable Windows blocker remains in the admitted feasibility scope.
+The decision is **conditional Go for Windows-only implementation feasibility**. The verified Windows x64 boundary pins the official npm supply chain, server-side TypeScript SDK mechanism, dedicated utility-process isolation, explicit temporary Git cwd, environment filtering, current ChatGPT-managed authentication, strict structured output, supervised runner timeout and cancellation, distinct window-close and app-quit cleanup, residual-process attribution, Windows package contents and a real packaged SDK turn. The repaired runner-timeout path removes the prior cleanup-evidence blocker; a forced fallback remains fail-closed unless its exit and attributed residual requirements are met.
 
 This is not a full Go. macOS packaged runtime is `deferred-by-user`, so this decision does not establish cross-platform compatibility, macOS support or release readiness. A complete Go claim still requires a macOS packaged package-boundary scan and real SDK runtime probe under the same privacy, auth, schema, cleanup and no-fallback rules. Unsafe-to-manufacture expired-session behavior and a natural WriteStorm login experience also remain unverified; the official SDK/CLI login mechanism is not a WriteStorm product login entry.
 
@@ -214,6 +218,22 @@ The conditional verdict expires and requires focused plus packaged recertificati
 8. Renderer, preload or shared code gains an SDK, filesystem, shell, child-process, environment, token, secret or secure-storage surface.
 
 There is no arbitrary time-only expiry. The authenticated result is not a durable credential fact: every required recertification must classify the then-current state honestly, and `login_required` or `auth_failed` blocks a new success claim without retroactively rewriting this dated run.
+
+## Safe reproduction commands
+
+The approved short synthetic input and expected value are supplied ephemerally through `WRITESTORM_CODEX_SYNTHETIC_INPUT` and `WRITESTORM_CODEX_SYNTHETIC_EXPECTED`. Repository runners verify their frozen SHA-256 fingerprints and length/newline limits but do not contain, print or retain the prompt. They remove API credential environment names, hide Electron windows, ignore raw process output and retain only sanitized summaries under the operating-system temporary directory when `WRITESTORM_CODEX_KEEP_SANITIZED_RESULTS=1` is explicitly set.
+
+After the approved ephemeral values are loaded into the current shell, the reproducible commands are:
+
+```text
+npm run probe:codex:dev
+npm run probe:codex:lifecycle
+npm run probe:codex:packaged
+npm run test:verification
+npm run check
+```
+
+`probe:codex:dev` rebuilds and runs the cwd/auth and outputSchema probes. `probe:codex:lifecycle` rebuilds and runs all four lifecycle scenarios. `probe:codex:packaged` creates a fresh Windows package, runs the static package/build guards and then invokes the packaged-only SDK probe. `npm run check` includes the fixed `test:verification` package-boundary suite after packaged E2E. None of these commands is a product fallback or Task 13 workflow.
 
 ## Historical and current truth
 

@@ -56,12 +56,35 @@ describe('Block 6A Codex SDK feasibility authority', () => {
       source: string;
       classification: string;
       assertions: Record<string, boolean>;
+      evidenceInputs: Array<{
+        evidenceId: string;
+        source: string;
+        classification: string;
+        supports: string[];
+      }>;
       expiryConditions: string[];
     };
 
     expect(evidence.source).toBe('static_manifest');
     expect(evidence.classification).toBe('conditional_go_windows_only_macos_deferred_by_user');
     expect(Object.values(evidence.assertions).every(Boolean)).toBe(true);
+    expect(Object.keys(evidence.assertions)).toEqual([
+      'authoritySourcesReconciledWithoutProvenanceUpgrade',
+      'macosDeferredByUserRecorded',
+      'noFallbackAuthorized',
+      'noTask13Point2AuthorizationIssued',
+      'historicalUnexecutedFactsPreserved',
+      'currentAuthorityOverrideRecorded',
+      'naturalWriteStormLoginNotClaimed',
+      'crossPlatformAndReleaseReadinessNotClaimed',
+    ]);
+    expect(evidence.evidenceInputs.length).toBeGreaterThanOrEqual(8);
+    for (const input of evidence.evidenceInputs) {
+      expect(['real_sdk', 'packaged_sdk', 'local_validator_fixture', 'static_manifest']).toContain(input.source);
+      expect(input.evidenceId).toBeTruthy();
+      expect(input.classification).toBeTruthy();
+      expect(input.supports.length).toBeGreaterThan(0);
+    }
     expect(evidence.expiryConditions.length).toBeGreaterThanOrEqual(6);
     expect(evidenceText).not.toMatch(/"(?:prompt|stdout|stderr|pid|environmentValue|credential)"\s*:/i);
   });

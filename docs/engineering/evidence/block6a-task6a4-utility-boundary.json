@@ -1,0 +1,53 @@
+[
+  {
+    "schemaVersion": 1,
+    "evidenceId": "block6a-6a4-utility-boundary-static-001",
+    "task": "6A.4",
+    "source": "static_manifest",
+    "recordedAt": "2026-07-19T12:40:11.8742532+08:00",
+    "commandName": "block6a-utility-source-and-build-boundary",
+    "classification": "source_and_direct_build_boundary_verified_package_pending",
+    "versions": {
+      "codexSdk": "0.144.6",
+      "codexCli": "0.144.6",
+      "windowsBinary": "0.144.6-win32-x64",
+      "vite": "8.1.3",
+      "electron": "43.0.0"
+    },
+    "assertions": {
+      "typedProtocolStrict": true,
+      "protocolRejectsPromptAndRawErrorFields": true,
+      "utilityIsOnlySdkImporter": true,
+      "sourceHasNoDirectCliImport": true,
+      "rendererPreloadSharedHaveNoPrivilegedSdkImport": true,
+      "productIpcHasNoAiExecutionChannel": true,
+      "preloadHasNoAiExecutionSurface": true,
+      "mainRunnerUsesInspectThenShutdown": true,
+      "mainRunnerWaitsForCleanupAcknowledgementAndExit": true,
+      "runnerMapsStableErrorsWithoutRawSdkMessage": true,
+      "sdkExternalizedFromUtilityBundle": true,
+      "cliExternalizedFromUtilityBundle": true,
+      "rendererBuildGuardPassed": true,
+      "forgeAllowlistContainsOnlyWindowsX64OpenAiRuntime": true,
+      "asarUnpackCoversCompleteWindowsTarget": true,
+      "packageBoundaryVerifierPresent": true,
+      "electronUtilityActuallyExecuted": false,
+      "packagedResourcesActuallyScanned": false,
+      "sdkTurnExecuted": false
+    },
+    "artifacts": {
+      "utilityBuildSha256": "FA090E948CE0D263BF87601221A04945E404DBE9470C91F05500E97527E2FE0C",
+      "rendererBuildFileSha256": [
+        "D57F0F9D385BABFE26CB6E4D818A8CC27F5EB3861166736E5B052A14B0C352CC",
+        "FFD8B5857066FB0A04097F23B53CB242DB0EC912D46B5C951F07F7499E669880",
+        "BDA348EB646958053B747CB9B2065A8B1E7BD8381D0C71E1F0106EB7980ACFF6"
+      ]
+    },
+    "limitations": [
+      "The utility runner was unit-tested with a fake utility handle; Electron utility execution did not run.",
+      "Direct Vite outputs are not an Electron package.",
+      "Package and ASAR assertions are configuration plus verifier readiness only until Task 6A.8a.",
+      "No prompt, authentication, SDK turn, CLI process or cancellation path was exercised."
+    ]
+  }
+]

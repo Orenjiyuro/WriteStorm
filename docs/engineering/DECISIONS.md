@@ -1060,3 +1060,30 @@ Rules:
 - A registry with no current published version remains eligible for its first publication once the existing draft and passed-sample requirements are met.
 - Rollback remains the only operation that can move the pointer to a smaller historically published `templateVersion`; moving to a larger draft remains publish.
 - This is a pure permission/preview guard. It adds no clock, transaction, persistence, migration, repository/service, IPC/preload method, renderer mutation, Prompt body, sample execution, SDK/provider call, or AI behavior.
+
+## D079: Long-Term Multi-Provider Direction And V1 Codex-Only Boundary
+
+Decision: WriteStorm has a long-term multi-provider direction, while V1 admits only Codex SDK.
+
+Rules:
+
+- D007 remains the V1 admission decision. Codex SDK must pass its gate before V1 AI execution, and failure does not authorize `codex exec`, app-server, GUI automation, API Key, a local model, Claude, DeepSeek or another provider as fallback.
+- Long-term provider support requires explicit provider selection. An adapter failure must surface as that provider's failure and must never silently switch providers.
+- Every provider requires an independent supply-chain, authentication, privacy, structured-output, cancellation, error-mapping, packaging and compatibility gate.
+- Formal AI execution must eventually use a thin provider-neutral `AiExecutionPort`, capability contract and adapter/registry boundary. Codex is the first adapter.
+- Codex SDK types, CLI/JSONL events, Git/cwd requirements, authentication details and process semantics are adapter-private. They must not enter JobService, SQLite public models, renderer, shared DTOs or analysis-module domain objects.
+- Task 6A is a Codex-specific feasibility probe. It does not implement the production port, provider registry, Claude/DeepSeek adapters, dynamic plugins, a Job integration or a real AI workflow.
+
+## D080: Codex SDK Feasibility Is Conditional Go For Windows Only
+
+Decision: Task 6A.8b records `conditional Go — Windows-only feasibility verified; macOS deferred-by-user` in `docs/engineering/V1-BLOCK-6A-CODEX-SDK-FEASIBILITY.md`.
+
+Rules:
+
+- The Windows x64 decision is backed by the exact official npm SDK/CLI supply chain, dedicated Electron utility boundary, isolated cwd/Git/environment/auth probes, real structured output, timeout/cancel/window-close/app-quit cleanup, package inspection and a real packaged SDK turn.
+- This is not a full Go, cross-platform compatibility claim, macOS verification or release-readiness decision. macOS packaged runtime remains `deferred-by-user` and must pass an equivalent package and runtime gate before any complete Go claim.
+- The decision expires on relevant SDK/CLI/platform integrity or version changes; dependency-tree or install-script changes; Electron/Node/Forge/Vite/ASAR changes; utility/security/auth/schema/cleanup changes; executable-layout or SDK mechanism changes; target-runtime changes; or a failed required recertification.
+- Auth success is dated execution evidence, not a durable credential fact. A required rerun with `login_required`, `auth_failed` or no real success cannot be upgraded by the old result. Expired-session and natural WriteStorm login experience remain unverified.
+- Direct `codex exec`, app-server, GUI automation, API Key, local model, Claude, DeepSeek and other-provider fallback remain forbidden. The pinned CLI used internally by the SDK, including packaged `codexPathOverride`, is not a WriteStorm fallback surface.
+- Task 6A.8b does not authorize Task 13.2. Only the total thread may review this verdict and explicitly authorize Windows-only implementation work.
+- Historical Block 7/8 and Task 12.10 statements that 6A had not executed at those checkpoints remain historical facts. D080 and the 6A authority are the current decision and must not be interpreted as rewriting those records.

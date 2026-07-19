@@ -9,6 +9,8 @@ Task 20 fresh recertification on 2026-07-14 passed `npm run check`: TypeScript p
 
 Current-state contradiction scans treat this Active V1 section and the implementation-status overrides below as authoritative. Files under `docs/voided/` are explicitly voided records; `docs/superpowers/specs/` and task plans retain historical RED states and planned boundaries as implementation evidence rather than current-state claims. Those historical sources may be excluded from a current-state scan, but active `CONTEXT.md` statements may never be excluded.
 
+`docs/engineering/V1-BLOCK-6A-CODEX-SDK-FEASIBILITY.md` is the current Codex feasibility authority. Its current verdict is conditional Go for Windows-only feasibility: the pinned SDK/CLI supply chain, dedicated utility boundary, isolated cwd/Git/environment/auth behavior, structured output, cancellation/cleanup and Windows x64 packaged SDK turn are verified. macOS packaged runtime is `deferred-by-user`; this is not full Go, cross-platform compatibility or release readiness. The verdict does not authorize Task 13.2, which remains a total-thread review decision. Historical Block 7/8 records that 6A had not run at those checkpoints remain historical facts rather than current authority.
+
 Task 12R-A hardens migration safety before source-worker work: pending migrations are snapshotted from a read-only source before any writable open, retention is ordered by the parsed backup timestamp, and create/open publish a Library session only after a runtime-schema descriptor dynamically derived from the active migration registry matches the resulting database.
 
 Task 12R-A.1 freezes the **empty-database migration replay** contract: the complete `APP_MIGRATIONS` registry must execute in order from a truly empty SQLite database with zero business rows, identify a failing migration by id and name, produce the registry's final version, preserve the WriteStorm application ID and schema epoch, and pass the current runtime-schema validator. Migrations may transform existing data, but every migration must also accept the zero-business-row case used by fresh installation. No test may pre-seed business fixtures to satisfy this contract.
@@ -267,7 +269,7 @@ Current Block 6 native gate facts:
 
 Historical Block 7 gate facts and current override:
 
-- Block 7 6A deferral override: 6A has not run and has no recorded Go/No-Go.
+- Historical wording at that checkpoint: `Block 7 6A deferral override: 6A has not run and has no recorded Go/No-Go.` The later Task 6A.8b authority does not rewrite that historical fact.
 - Block 7 may continue only as non-AI Foundation work under the total-thread override recorded in `docs/engineering/V1-BLOCK-7-STATUS.md`.
 - AI/Codex/prompt/runtime remain blocked.
 - At the Block 7 checkpoint, structure detection and module generation were blocked. Task 19 later completed Block 8A structure detection; module generation remains unimplemented.
@@ -329,7 +331,7 @@ Current Block 8A gate facts:
 - The master Block 8A scope is Tasks 8.1-8.10, 8.12, 8.13, and 8.18. Internal labels are review/execution slices rather than master Task numbers: internal 8A-10 maps to master Task 8.13, while master Task 8.10 is validation.
 - Block 8A local deterministic detection, candidate-side persistence, validation, fixtures, worker/Job lifecycle, and observation-only performance recorder are implemented. Task 8.9 is complete only for candidate persistence and stage-separation foundation.
 - `V1-BLOCK-8-STATUS.md` is the current authority for Block 8 status. A later independent review reopened Block 8 completion; manual aggregate authorization, monotonic replacement lineage, and persistent per-book detection-run ordering were repaired and focused-tested, and the final Windows recertification passed on 2026-07-15. Task 8.16 remains a synchronous DB-only invalidation port; macOS and release boundaries remain unverified.
-- 6A feasibility remains unexecuted and unrecorded. Block 8A does not record a Codex SDK feasibility decision and does not authorize AI prompt/runtime work.
+- At the Block 8A checkpoint, 6A feasibility remained unexecuted and unrecorded. The Block 8A sentence `6A feasibility remains unexecuted and unrecorded` is a historical checkpoint fact, not the current authority. Block 8A does not record a Codex SDK feasibility decision and does not authorize AI prompt/runtime work.
 - Windows packaged performance results are observation-only and do not establish stable regression thresholds. macOS packaged performance evidence has not been recorded.
 - `startDetection` is the only public structure-detection execution entry. Cancellation persists `run=failed` and `Job=cancelled` before aborting the utility process.
 - At the 8A checkpoint, the packaged 5 MiB renderer button was an event-loop probe rather than the later product Detect structure control. Product loading, recovery, correction, confirmation, freeze, and repeat-operation UX are recorded separately in `V1-BLOCK-8-STATUS.md`.
@@ -381,6 +383,10 @@ V1 placeholder only. It may only reserve snapshot-based reference boundaries for
 - Utility/worker process: large file work and future Codex execution boundary.
 - Codex SDK: only V1 AI integration surface.
 - Codex SDK spike: gate before real AI breakdown implementation.
+- V1 admitted provider: Codex SDK only.
+- Long-term AI boundary: AiExecutionPort -> independent ProviderAdapter implementations.
+- Provider selection is explicit; a provider failure never silently falls back to another provider, and every adapter requires its own admission gate.
+- Task 6A remains a Codex-specific feasibility probe and does not implement the future provider-neutral production port or registry.
 - `codex exec`, app-server, GUI automation, API Key, local model and other providers: not V1 fallback paths.
 
 ## 5. Mandatory Boundaries

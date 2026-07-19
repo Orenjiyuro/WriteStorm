@@ -9,7 +9,14 @@ const allowedPackageRuntimePaths = [
   '/node_modules/better-sqlite3',
   '/node_modules/bindings',
   '/node_modules/file-uri-to-path',
+  '/node_modules/@openai/codex-sdk',
+  '/node_modules/@openai/codex',
+  '/node_modules/@openai/codex-win32-x64',
 ] as const;
+
+const windowsCodexRuntimeDirectory =
+  'node_modules/@openai/codex-win32-x64/vendor/x86_64-pc-windows-msvc';
+const asarUnpackPattern = '**/*.node';
 
 function shouldKeepPackagedPath(filePath: string): boolean {
   const normalizedPath = filePath.replaceAll('\\', '/');
@@ -26,7 +33,8 @@ function shouldKeepPackagedPath(filePath: string): boolean {
 const config: ForgeConfig = {
   packagerConfig: {
     asar: {
-      unpack: '**/*.node',
+      unpack: asarUnpackPattern,
+      unpackDir: windowsCodexRuntimeDirectory,
     },
     download: {
       checksums: electronChecksums,
@@ -60,6 +68,11 @@ const config: ForgeConfig = {
         {
           entry: 'src/main/structure/worker/structure-worker-entry.ts',
           config: 'vite.structure-worker.config.ts',
+          target: 'main',
+        },
+        {
+          entry: 'src/main/codex-feasibility/utility-entry.ts',
+          config: 'vite.codex-feasibility.config.ts',
           target: 'main',
         },
       ],

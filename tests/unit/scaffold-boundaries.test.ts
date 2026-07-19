@@ -75,7 +75,8 @@ describe('Forge Vite scaffold', () => {
     expect(forgeConfig).toMatch(/config:\s*['"]vite\.structure-worker\.config\.ts['"]/);
     expect(forgeConfig).toMatch(/name:\s*['"]main_window['"]/);
     expect(forgeConfig).toMatch(/config:\s*['"]vite\.renderer\.config\.ts['"]/);
-    expect(forgeConfig).toMatch(/asar:\s*(true|{[\s\S]*unpack:\s*['"]\*\*\/\*\.node['"])/);
+    expect(forgeConfig).toContain("'**/*.node'");
+    expect(forgeConfig).toContain('asarUnpackPattern');
   });
 
   it('disposes active structure utility workers before the app quits', () => {

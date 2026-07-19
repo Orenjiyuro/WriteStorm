@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "block6a-6a7-real-sdk-lifecycle-cleanup-001",
+  "task": "6A.7",
+  "source": "real_sdk",
+  "recordedAt": "2026-07-19T06:01:33.816Z",
+  "commandName": "block6a-electron-lifecycle-four-scenario-probe",
+  "classification": "lifecycle_probe_matrix_passed",
+  "versions": {
+    "electron": "43.0.0",
+    "nodeRuntime": "24.17.0",
+    "codexSdk": "0.144.6"
+  },
+  "assertions": {
+    "fourDistinctScenariosCompleted": true,
+    "allTriggersMatchedScenario": true,
+    "allAbortRequestsObserved": true,
+    "allSdkPromisesSettled": true,
+    "allCleanupAcknowledged": true,
+    "allCleanupExecutedOnce": true,
+    "allUtilityProcessesAttributed": true,
+    "allCliProcessesObservedBeforeTrigger": true,
+    "allCliProcessesOwnedByUtilityParentChain": true,
+    "allUtilityResidualsAbsent": true,
+    "allCliResidualsAbsent": true,
+    "windowCloseAndAppQuitDistinct": true
+  },
+  "scenarios": [
+    {
+      "scenario": "app-timeout",
+      "recordedAt": "2026-07-19T05:58:53.899Z",
+      "classification": "lifecycle_probe_passed",
+      "result": {
+        "trigger": "app-timeout",
+        "outcome": "aborted",
+        "authClassification": "unverified",
+        "abortRequested": true,
+        "abortObserved": true,
+        "sdkPromiseSettled": true
+      },
+      "processAssertions": {
+        "utilityProcessAttributed": true,
+        "cliObservedBeforeTrigger": true,
+        "cliOwnedByUtilityParentChain": true,
+        "utilityResidualAbsent": true,
+        "cliResidualAbsent": true
+      },
+      "lifecycleEvents": {
+        "initialTrigger": "app-timeout",
+        "cleanupRequestCount": 1,
+        "cleanupExecutionCount": 1,
+        "hiddenWindowUsed": false,
+        "windowCloseObserved": false,
+        "windowAllClosedObserved": false,
+        "beforeQuitObserved": false
+      }
+    },
+    {
+      "scenario": "explicit-cancel",
+      "recordedAt": "2026-07-19T05:59:51.607Z",
+      "classification": "lifecycle_probe_passed",
+      "result": {
+        "trigger": "explicit-cancel",
+        "outcome": "aborted",
+        "authClassification": "unverified",
+        "abortRequested": true,
+        "abortObserved": true,
+        "sdkPromiseSettled": true
+      },
+      "processAssertions": {
+        "utilityProcessAttributed": true,
+        "cliObservedBeforeTrigger": true,
+        "cliOwnedByUtilityParentChain": true,
+        "utilityResidualAbsent": true,
+        "cliResidualAbsent": true
+      },
+      "lifecycleEvents": {
+        "initialTrigger": "explicit-cancel",
+        "cleanupRequestCount": 1,
+        "cleanupExecutionCount": 1,
+        "hiddenWindowUsed": false,
+        "windowCloseObserved": false,
+        "windowAllClosedObserved": false,
+        "beforeQuitObserved": false
+      }
+    },
+    {
+      "scenario": "window-close",
+      "recordedAt": "2026-07-19T06:00:43.003Z",
+      "classification": "lifecycle_probe_passed",
+      "result": {
+        "trigger": "window-close",
+        "outcome": "aborted",
+        "authClassification": "unverified",
+        "abortRequested": true,
+        "abortObserved": true,
+        "sdkPromiseSettled": true
+      },
+      "processAssertions": {
+        "utilityProcessAttributed": true,
+        "cliObservedBeforeTrigger": true,
+        "cliOwnedByUtilityParentChain": true,
+        "utilityResidualAbsent": true,
+        "cliResidualAbsent": true
+      },
+      "lifecycleEvents": {
+        "initialTrigger": "window-close",
+        "cleanupRequestCount": 2,
+        "cleanupExecutionCount": 1,
+        "hiddenWindowUsed": true,
+        "windowCloseObserved": true,
+        "windowAllClosedObserved": true,
+        "beforeQuitObserved": true
+      }
+    },
+    {
+      "scenario": "app-quit",
+      "recordedAt": "2026-07-19T06:01:33.816Z",
+      "classification": "lifecycle_probe_passed",
+      "result": {
+        "trigger": "app-quit",
+        "outcome": "aborted",
+        "authClassification": "unverified",
+        "abortRequested": true,
+        "abortObserved": true,
+        "sdkPromiseSettled": true
+      },
+      "processAssertions": {
+        "utilityProcessAttributed": true,
+        "cliObservedBeforeTrigger": true,
+        "cliOwnedByUtilityParentChain": true,
+        "utilityResidualAbsent": true,
+        "cliResidualAbsent": true
+      },
+      "lifecycleEvents": {
+        "initialTrigger": "app-quit",
+        "cleanupRequestCount": 1,
+        "cleanupExecutionCount": 1,
+        "hiddenWindowUsed": true,
+        "windowCloseObserved": false,
+        "windowAllClosedObserved": false,
+        "beforeQuitObserved": true
+      }
+    }
+  ],
+  "limitations": [
+    "Process identities were ephemeral correlation data; no path, PID, process list, prompt, response, environment value or raw SDK error is retained.",
+    "The observer used utility PID, parent chain, start time and the exact project-local CLI executable path; it did not use global process-name matching.",
+    "No CLI process was terminated directly and no unowned Codex process was touched.",
+    "These are development Electron results, not packaged runtime evidence."
+  ]
+}

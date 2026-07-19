@@ -1,0 +1,77 @@
+[
+  {
+    "schemaVersion": 1,
+    "evidenceId": "block6a-6a3-static-runtime-semantics-001",
+    "task": "6A.3",
+    "source": "static_manifest",
+    "recordedAt": "2026-07-19T12:21:46.8766570+08:00",
+    "commandName": "block6a-installed-sdk-static-semantics",
+    "classification": "installed_sdk_semantics_static_verified",
+    "versions": {
+      "codexSdk": "0.144.6",
+      "codexCli": "0.144.6",
+      "windowsBinary": "0.144.6-win32-x64",
+      "nodeRuntime": "24.14.1"
+    },
+    "assertions": {
+      "officialDocsRequireServerSideNode18OrLater": true,
+      "manifestExposesEsmImport": true,
+      "publicApiExposesAbortSignal": true,
+      "publicApiExposesWorkingDirectory": true,
+      "publicApiExposesSkipGitRepoCheck": true,
+      "publicApiExposesOutputSchema": true,
+      "sdkResolvesPinnedPlatformPackage": true,
+      "sdkSpawnsResolvedExecutable": true,
+      "sdkUsesExecExperimentalJson": true,
+      "sdkWritesInputToChildStdin": true,
+      "sdkParsesChildStdoutAsJsonl": true,
+      "sdkErrorsMayIncludeRawJsonlOrStderr": true,
+      "writeStormMustSanitizeSdkErrors": true,
+      "workingDirectoryMapsToCdArgument": true,
+      "outputSchemaUsesTemporaryFileWithFinallyCleanup": true,
+      "abortSignalPassesToNodeSpawn": true,
+      "writeStormDirectCliFallbackProhibited": true
+    },
+    "limitations": [
+      "Static package inspection is not an authenticated SDK turn.",
+      "Abort API presence does not prove child-process-tree cleanup.",
+      "Cwd, Git, auth, structured output and packaged execution remain unverified."
+    ],
+    "officialSources": [
+      "https://learn.chatgpt.com/docs/codex-sdk",
+      "https://github.com/openai/codex/tree/main/sdk/typescript",
+      "https://nodejs.org/api/child_process.html#child_processspawncommand-args-options"
+    ]
+  },
+  {
+    "schemaVersion": 1,
+    "evidenceId": "block6a-6a3-real-sdk-esm-import-001",
+    "task": "6A.3",
+    "source": "real_sdk",
+    "recordedAt": "2026-07-19T12:21:46.8766570+08:00",
+    "commandName": "block6a-sdk-esm-import-no-turn",
+    "classification": "esm_import_only_no_turn",
+    "versions": {
+      "codexSdk": "0.144.6",
+      "codexCli": "0.144.6",
+      "windowsBinary": "0.144.6-win32-x64",
+      "nodeRuntime": "24.14.1",
+      "platform": "win32-x64"
+    },
+    "assertions": {
+      "esmImportSucceeded": true,
+      "codexClientConstructed": true,
+      "threadConstructed": true,
+      "threadIdInitiallyNull": true,
+      "projectLocalWindowsBinaryResolved": true,
+      "cliProcessStarted": false,
+      "modelTurnExecuted": false,
+      "promptProvided": false
+    },
+    "limitations": [
+      "This import-only probe did not exercise authentication or network access.",
+      "This import-only probe is not real structured-output evidence.",
+      "Node 22 runtime and Electron utility runtime were not exercised."
+    ]
+  }
+]

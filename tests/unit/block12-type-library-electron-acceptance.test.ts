@@ -54,7 +54,7 @@ function admissionOpenInputs(): string {
   const admission = readFileSync(
     'docs/engineering/V1-BLOCK-12-TYPE-LIBRARY-ADMISSION.md',
     'utf8',
-  );
+  ).replaceAll('\r\n', '\n');
   const section = admission.slice(admission.indexOf('## Open Inputs'));
   return section.slice(0, section.indexOf('\n\nThese remaining'));
 }

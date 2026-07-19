@@ -41,7 +41,7 @@ Block 12 freezes seven MainType and seven orthogonal ContentFocus options, user-
 | Renderer tests | React Testing Library | Component tests for empty/error/recovery UI states |
 | E2E tests | Playwright for Electron | Real desktop entry-path verification |
 | IPC | Typed allowlisted channels | Renderer cannot access fs, SQLite, Codex SDK or shell APIs directly |
-| AI | Codex SDK only | User decision; no fallback to exec/app-server/other providers |
+| AI | Codex SDK only in V1 | V1 admission decision; no fallback to exec/app-server/other providers |
 | Package manager | npm | Keep initial scaffold ordinary and compatible with Electron Forge docs |
 
 ## 4. Process Architecture
@@ -60,6 +60,12 @@ flowchart LR
   Jobs --> Codex["Codex SDK adapter"]
   Codex --> CodexSDK["Codex SDK"]
 ```
+
+### Long-term AI provider boundary
+
+The long-term direction is `Job/Pipeline -> AiExecutionPort -> ProviderAdapter`. Each provider adapter owns its SDK types, authentication, event protocol, cwd/config requirements, cancellation semantics, error mapping and packaged runtime. Provider selection is explicit; provider failure never causes a silent switch to another adapter.
+
+Codex is the first V1 adapter, but Codex SDK types, CLI/JSONL events, Git/cwd requirements and child-process semantics must not spread into `JobService`, SQLite public models, renderer, shared DTOs or analysis-module domain objects. Task 6A does not implement the production `AiExecutionPort`, and Task 6A does not implement formal provider registry, non-Codex adapters, dynamic provider loading or a real AI workflow. It creates a Codex-specific feasibility probe only.
 
 ### Main process
 

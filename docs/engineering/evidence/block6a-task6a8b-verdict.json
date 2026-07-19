@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "block6a-6a8b-verdict-windows-001",
+  "task": "6A.8b",
+  "source": "static_manifest",
+  "recordedAt": "2026-07-19T06:56:00.000Z",
+  "commandName": "block6a-authority-consistency",
+  "classification": "conditional_go_windows_only_macos_deferred_by_user",
+  "versions": {
+    "electron": "43.0.0",
+    "nodeRuntime": "24.17.0",
+    "codexSdk": "0.144.6",
+    "codexCli": "0.144.6",
+    "platformPackage": "0.144.6-win32-x64"
+  },
+  "assertions": {
+    "supplyChainPinnedAndAudited": true,
+    "serverSideSdkMechanismVerified": true,
+    "rendererPrivilegeBoundaryVerified": true,
+    "isolatedCwdGitEnvironmentAndAuthVerified": true,
+    "realAuthenticatedStructuredOutputVerified": true,
+    "timeoutCancelWindowCloseAndAppQuitCleanupVerified": true,
+    "windowsPackagedSdkVerified": true,
+    "macosDeferredByUserRecorded": true,
+    "noFallbackAuthorized": true,
+    "noTask13Point2AuthorizationIssued": true,
+    "historicalUnexecutedFactsPreserved": true,
+    "currentAuthorityOverrideRecorded": true,
+    "naturalWriteStormLoginNotClaimed": true,
+    "crossPlatformAndReleaseReadinessNotClaimed": true
+  },
+  "evidenceInputs": [
+    "block6a-task6a3-runtime-semantics.json",
+    "block6a-task6a4-utility-boundary.json",
+    "block6a-task6a5-cwd-git-env-auth.json",
+    "block6a-task6a6-real-output-schema.json",
+    "block6a-task6a6-validator-fixtures.json",
+    "block6a-task6a7-lifecycle-cleanup.json",
+    "block6a-task6a8a-windows-packaged-sdk.json",
+    "block6a-task6a8a-windows-package-boundary.json"
+  ],
+  "expiryConditions": [
+    "The exact @openai/codex-sdk, @openai/codex CLI or Windows platform-package version or integrity changes.",
+    "The resolved dependency tree, install-script inventory or official registry provenance changes.",
+    "The Electron, embedded Node, Forge, Vite, ASAR, externalization or package allowlist configuration changes in a way that can affect this boundary.",
+    "The utility protocol, SDK-only import guard, working-directory policy, environment filter, auth classification, structured-output validator or cleanup supervisor changes.",
+    "The SDK executable layout, codexPathOverride behavior, SDK-owned CLI/JSONL mechanism or ChatGPT-managed authentication mechanism changes.",
+    "The Windows target operating system, architecture, packaging format or release runtime differs from the verified Windows x64 package.",
+    "A required recertification cannot obtain a fresh authenticated real SDK success or returns a different auth, schema, cancellation, cleanup or packaged-runtime result.",
+    "A renderer, preload or shared boundary begins exposing SDK, filesystem, shell, child-process, environment, token, secret or secure-storage capability."
+  ],
+  "limitations": [
+    "This is a conditional Go for Windows-only implementation feasibility, not a full Go.",
+    "macOS packaged runtime evidence is deferred-by-user and is required before any full or cross-platform Go claim.",
+    "Expired-session behavior and the natural WriteStorm login experience remain unverified.",
+    "This decision does not establish release readiness and does not authorize Task 13.2.",
+    "Direct codex exec, app-server, GUI automation, API Key, local-model and alternate-provider fallback remain forbidden."
+  ]
+}

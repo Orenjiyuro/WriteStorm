@@ -27,7 +27,8 @@ describe('Block 6 native SQLite boundary', () => {
     expect(forgeConfig).toContain('/node_modules/better-sqlite3');
     expect(forgeConfig).toContain('/node_modules/bindings');
     expect(forgeConfig).toContain('/node_modules/file-uri-to-path');
-    expect(forgeConfig).toContain("unpack: '**/*.node'");
+    expect(forgeConfig).toContain("'**/*.node'");
+    expect(forgeConfig).toContain('asarUnpackPattern');
   });
 
   it('keeps direct better-sqlite3 imports inside DB adapters and the read-only library probe', () => {

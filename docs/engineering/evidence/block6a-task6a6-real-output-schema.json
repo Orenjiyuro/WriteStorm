@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "block6a-6a6-real-sdk-output-schema-001",
+  "task": "6A.6",
+  "source": "real_sdk",
+  "recordedAt": "2026-07-19T05:38:25.783Z",
+  "commandName": "block6a-electron-utility-output-schema-probe",
+  "classification": "output_schema_probe_completed",
+  "versions": {
+    "electron": "43.0.0",
+    "nodeRuntime": "24.17.0",
+    "codexSdk": "0.144.6"
+  },
+  "assertions": {
+    "probeRootOutsideSourceRepository": true,
+    "workspaceIsTemporaryGitRepository": true,
+    "apiCredentialEnvironmentExcludedFromUtility": true,
+    "promptAndSchemaNotPassedInProtocol": true,
+    "scenarioCount": true
+  },
+  "scenarios": [
+    {
+      "scenario": "valid-minimal",
+      "outcome": "success",
+      "authClassification": "authenticated",
+      "finalJsonParsed": true,
+      "strictValidatorAccepted": true,
+      "expectedValueMatched": true,
+      "invalidSchemaRejectedBySdk": false
+    },
+    {
+      "scenario": "invalid-schema",
+      "outcome": "invalid_schema_rejected",
+      "authClassification": "unverified",
+      "finalJsonParsed": null,
+      "strictValidatorAccepted": null,
+      "expectedValueMatched": null,
+      "invalidSchemaRejectedBySdk": true
+    }
+  ],
+  "limitations": [
+    "No prompt, response body, path, environment value, credential, PID or raw SDK error is retained.",
+    "The invalid schema scenario proves the installed SDK plain-object guard, not a remote model-generated invalid object.",
+    "Missing-field and extra-field behavior is recorded separately as local_validator_fixture."
+  ]
+}

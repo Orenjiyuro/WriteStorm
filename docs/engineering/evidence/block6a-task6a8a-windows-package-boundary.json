@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "block6a-6a8a-package-boundary-windows-001",
+  "task": "6A.8a",
+  "source": "static_manifest",
+  "recordedAt": "2026-07-19T06:37:24.000Z",
+  "commandName": "block6a-codex-package-boundary",
+  "classification": "windows_package_boundary_passed",
+  "versions": {
+    "codexSdk": "0.144.6",
+    "codexCli": "0.144.6",
+    "platformPackage": "0.144.6-win32-x64"
+  },
+  "assertions": {
+    "rendererResourcesPresent": true,
+    "rendererHasNoOpenAiRuntimeSurface": true,
+    "rendererHasNoNodePrivilegeSurface": true,
+    "rendererHasNoSecretBearingSurface": true,
+    "sdkModulePackaged": true,
+    "cliWrapperPackaged": true,
+    "onlyWindowsX64PlatformPackagePresent": true,
+    "windowsCodexExecutableUnpacked": true,
+    "windowsCodeModeHostUnpacked": true,
+    "windowsRipgrepUnpacked": true,
+    "windowsCommandRunnerUnpacked": true,
+    "windowsSandboxSetupUnpacked": true,
+    "windowsCodexManifestUnpacked": true,
+    "positiveRejectionWitnessesPassed": true
+  },
+  "limitations": [
+    "This record is static package inspection and is not runtime or authentication evidence.",
+    "macOS package and runtime evidence remains deferred-by-user."
+  ]
+}

@@ -47,6 +47,7 @@ import { AnalysisModuleInstanceService } from './modules/analysis-module-instanc
 import { JobApplicationService } from './jobs/job-application-service';
 import { ExportStatusService } from './exports/export-status-service';
 import { TypeLibraryService } from './type-library/type-library-service';
+import { runOptionalPackagedCodexProbe } from './codex-feasibility/packaged-probe';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -365,6 +366,9 @@ function registerInternalIpc(): void {
 }
 
 app.whenReady().then(async () => {
+  if (await runOptionalPackagedCodexProbe({ env: process.env, mainBundleDirectory: __dirname })) {
+    return;
+  }
   testDisplayTarget = resolveTestDisplayTarget(process.env);
   if (testDisplayTarget) installTestDisplayGuards();
   installContentSecurityPolicy();

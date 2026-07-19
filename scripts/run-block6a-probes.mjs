@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { build } from 'vite';
+import { admitBlock6aProbeResults } from './block6a-probe-admission.mjs';
 
 const approvedInputHash = '59a9268039bb5bad326151cbe27320c64c89cbf5b054035978c432a4ce5c4a26';
 const approvedExpectedHash = '6fe7aac1e4d9ae4aec0a14e6bfd46af4ee18892c247a2d0aecfa5091f017afab';
@@ -26,15 +27,8 @@ try {
   const results = mode === 'packaged'
     ? [await runPackagedProbe(runId)]
     : await runDevelopmentProbes(mode);
-  const summary = results.map((result) => ({
-    task: result.task,
-    source: result.source,
-    classification: result.classification,
-  }));
+  const summary = admitBlock6aProbeResults(mode, results);
   process.stdout.write(`${JSON.stringify({ mode, results: summary })}\n`);
-  if (summary.some((item) => /failed|rejected|infrastructure/.test(String(item.classification)))) {
-    process.exitCode = 1;
-  }
 } finally {
   if (process.env.WRITESTORM_CODEX_KEEP_SANITIZED_RESULTS !== '1') {
     rmSync(resultRoot, { recursive: true, force: true });

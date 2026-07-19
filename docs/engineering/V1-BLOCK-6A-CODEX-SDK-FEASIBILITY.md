@@ -235,6 +235,8 @@ npm run check
 
 `probe:codex:dev` rebuilds and runs the cwd/auth and outputSchema probes. `probe:codex:lifecycle` rebuilds and runs all four lifecycle scenarios. `probe:codex:packaged` creates a fresh Windows package, runs the static package/build guards and then invokes the packaged-only SDK probe. `npm run check` includes the fixed `test:verification` package-boundary suite after packaged E2E. None of these commands is a product fallback or Task 13 workflow.
 
+The runner admits success through an exact fail-closed contract, not a negative substring scan. Each mode freezes result count, task, source and successful classification; all published assertions must be boolean `true`. Development recertification additionally requires the current-auth SDK turn and valid outputSchema turn to be authenticated successes plus SDK rejection of the invalid schema. Lifecycle recertification requires exactly the four named scenarios, including the graceful runner-timeout cleanup summary. Packaged recertification requires the packaged-only gate, Windows x64 runtime, real SDK turn, authenticated structured output and cleanup assertions. Blocked, unknown, partial, wrong-source, missing, extra or false-assertion results exit non-zero.
+
 ## Historical and current truth
 
 Block 7 and Block 8 documents correctly record that 6A had not executed at their historical checkpoints. Those sentences remain unchanged and must not be globally deleted. This document is the current authority and supersedes the old current-state absence only through the evidence-backed Task 6A.8b conditional verdict; it does not rewrite historical facts.

@@ -45,6 +45,10 @@ describe('Block 6A.8a packaged Codex SDK probe boundary', () => {
     const packageManifest = JSON.parse(readFileSync(path.join(rootDir, 'package.json'), 'utf8')) as {
       scripts: Record<string, string>;
     };
+    const runnerSource = readFileSync(
+      path.join(rootDir, 'scripts/run-block6a-probes.mjs'),
+      'utf8',
+    );
 
     expect(packageManifest.scripts['probe:codex:dev']).toBeTruthy();
     expect(packageManifest.scripts['probe:codex:lifecycle']).toBeTruthy();
@@ -54,6 +58,8 @@ describe('Block 6A.8a packaged Codex SDK probe boundary', () => {
     for (const command of Object.values(packageManifest.scripts).filter((value) => value.includes('codex'))) {
       expect(command).not.toMatch(/WRITESTORM_PROBE_OK|OPENAI_API_KEY|CODEX_ACCESS_TOKEN|stdout|stderr/i);
     }
+    expect(runnerSource).toContain('admitBlock6aProbeResults(mode, results)');
+    expect(runnerSource).not.toMatch(/failed\|rejected\|infrastructure/);
   });
 
   it('keeps prompt, schema, credentials and raw process data outside the packaged result contract', () => {

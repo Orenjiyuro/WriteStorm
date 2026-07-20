@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "block6a-6a6-real-sdk-output-schema-001",
+  "task": "6A.6",
+  "source": "real_sdk",
+  "recordedAt": "2026-07-20T12:33:39.874Z",
+  "commandName": "block6a-electron-utility-output-schema-probe",
+  "classification": "probe_infrastructure_failed",
+  "versions": {
+    "electron": "43.0.0",
+    "nodeRuntime": "24.17.0",
+    "codexSdk": "0.144.6"
+  },
+  "assertions": {
+    "sanitizedFailureRecorded": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r6-assertion-provenance-001",
+      "classification": "sanitized_failure_boundary"
+    }
+  },
+  "failure": {
+    "code": "CODEX_FEASIBILITY_UTILITY_FAILED",
+    "reason": "timeout",
+    "utilityErrorCode": null,
+    "protocolDiagnostic": null,
+    "terminationCleanup": {
+      "classification": "graceful",
+      "abortRequested": true,
+      "abortObserved": true,
+      "sdkPromiseSettled": true,
+      "cleanupAcknowledged": true,
+      "utilityExitObserved": true,
+      "utilityKillOwnershipProven": false,
+      "utilityKillAttempted": false,
+      "residualScanCompleted": true,
+      "utilityResidualAbsent": true,
+      "cliResidualAbsent": true
+    }
+  },
+  "lineage": {
+    "gitHeadAtRun": "74ec65f4d91990caf03a6723140037374d4ba768",
+    "criticalInputsCleanAtRun": true,
+    "packageLockSha256": "bda4d5d4eb77566c9ee228ee77fde5e54e05ab93299a876549a17592b3a8dade",
+    "runtimeBoundarySha256": "ac38dc0bb27fa4e9eff8e3db19981d13acb54b00c78cbc0575dc15526bb19c4b",
+    "packagedArtifactSha256": null,
+    "evidenceInputs": [
+      { "evidenceId": "block6a-remediation-r2-environment-boundary-001", "sha256": "bcb508b4c614465f5d89b9c2161a99fd12e19c1739a84aa5ce0face9989d0e45" },
+      { "evidenceId": "block6a-remediation-r4a-process-ownership-001", "sha256": "028858dc81dd7c7b7c3d0b961ab30ef4096dc2c6365b3e75bb161bd3fce2af02" },
+      { "evidenceId": "block6a-remediation-r4b-safe-termination-001", "sha256": "0116ad182ec70134a56e11fbd7186a0eb0b60bd6fccce2d8aec329b41428a8d1" },
+      { "evidenceId": "block6a-remediation-r5-error-classification-001", "sha256": "650be0a70501c339563754b29a38f14ac55f8eefcf63d58a8a74da031f305d20" },
+      { "evidenceId": "block6a-remediation-r6-assertion-provenance-001", "sha256": "533fe288f4c73ae44e25f813db32e86b070daf49de1347c4dab782e87d0a9c6d" },
+      { "evidenceId": "block6a-remediation-r7-evidence-lineage-001", "sha256": "4ae22a79ab5feb9150bbdfb57135953e9a202380d9c121aaacaa6937ebbb0a8a" }
+    ]
+  }
+}

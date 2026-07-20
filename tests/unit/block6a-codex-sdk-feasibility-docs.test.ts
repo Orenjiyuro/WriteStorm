@@ -10,6 +10,10 @@ const block8aStatusPath = 'docs/engineering/V1-BLOCK-8A-STATUS.md';
 const verdictEvidencePath = 'docs/engineering/evidence/block6a-task6a8b-verdict.json';
 const pendingEvidencePath =
   'docs/engineering/evidence/block6a-remediation-pending-recertification.json';
+const r8aCapabilityAttemptPath =
+  'docs/engineering/evidence/block6a-r8a-windows-dev-capability-attempt.json';
+const r8aOutputSchemaAttemptPath =
+  'docs/engineering/evidence/block6a-r8a-windows-dev-output-schema-attempt.json';
 
 describe('Block 6A Codex SDK feasibility authority', () => {
   it('keeps long-term multi-provider direction compatible with the V1 Codex-only gate', () => {
@@ -78,6 +82,53 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     expect(pending.historicalAuthority).toBe(
       'block6a-task6a8b-verdict.json remains an expired historical decision record',
     );
+  });
+
+  it('records the lineage-bound R8a timeout attempt without upgrading it to accepted evidence', () => {
+    const feasibility = readFileSync(feasibilityPath, 'utf8');
+    const decisions = readFileSync(decisionsPath, 'utf8');
+    const records = [r8aCapabilityAttemptPath, r8aOutputSchemaAttemptPath].map((filePath) =>
+      JSON.parse(readFileSync(filePath, 'utf8')) as {
+        source: string;
+        classification: string;
+        failure: {
+          reason: string;
+          terminationCleanup: Record<string, boolean | string>;
+        };
+        lineage: {
+          gitHeadAtRun: string;
+          criticalInputsCleanAtRun: boolean;
+          evidenceInputs: unknown[];
+        };
+      });
+
+    for (const record of records) {
+      expect(record.source).toBe('real_sdk');
+      expect(record.classification).toBe('probe_infrastructure_failed');
+      expect(record.failure.reason).toBe('timeout');
+      expect(record.failure.terminationCleanup).toMatchObject({
+        classification: 'graceful',
+        abortRequested: true,
+        abortObserved: true,
+        sdkPromiseSettled: true,
+        cleanupAcknowledged: true,
+        utilityExitObserved: true,
+        residualScanCompleted: true,
+        utilityResidualAbsent: true,
+        cliResidualAbsent: true,
+      });
+      expect(record.lineage).toMatchObject({
+        gitHeadAtRun: '74ec65f4d91990caf03a6723140037374d4ba768',
+        criticalInputsCleanAtRun: true,
+      });
+      expect(record.lineage.evidenceInputs).toHaveLength(6);
+      expect(JSON.stringify(record)).not.toMatch(
+        /"(?:prompt|stdout|stderr|pid|environmentValue|credential|executablePath)"\s*:/i,
+      );
+    }
+    expect(feasibility).toContain('### R8a 2026-07-20 Windows development recertification attempt');
+    expect(feasibility).toContain('did not reach `evidenceAccepted`');
+    expect(decisions).toContain('## D082: R8a Development Recertification Attempt Timed Out Fail-Closed');
   });
 
   it('commits a sanitized 6A.8b decision summary with explicit expiry conditions', () => {

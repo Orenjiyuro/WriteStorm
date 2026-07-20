@@ -1104,3 +1104,14 @@ Rules:
 - macOS packaged runtime remains `deferred-by-user`; pending Windows recertification does not establish macOS compatibility, cross-platform support or release readiness.
 - Task 13.1 remains blocked and Task 13.2 is not authorized while recertification is pending.
 - Direct `codex exec`, app-server, GUI automation, API Key, local model or alternate-provider fallback remains forbidden.
+
+## D082: R8a Development Recertification Attempt Timed Out Fail-Closed
+
+Decision: The 2026-07-20 `probe:codex:dev` attempt from clean HEAD `74ec65f` is retained as a lineage-bound failed attempt, not as accepted development evidence or a reissued feasibility verdict.
+
+Rules:
+
+- 6A.5 timed out at its 45-second operation boundary and 6A.6 timed out at its 60-second operation boundary before producing their required complete scenario sets.
+- Both attempts proved graceful coordinator cleanup only: abort, SDK settlement, shutdown acknowledgement, utility exit and attributed residual absence completed without force kill.
+- Exact admission rejected `probe_infrastructure_failed`; the run did not reach `evidenceAccepted` and must not be described as the expected conservative Git/auth blocker evaluation.
+- Current Windows status remains pending recertification. Task 13.1 remains blocked, Task 13.2 is not authorized, and lifecycle/packaged R8 evidence remains absent.

@@ -289,6 +289,10 @@ The current static status record is `docs/engineering/evidence/block6a-remediati
 
 ### R8a 2026-07-20 Windows development recertification attempt
 
+At that pre-deadline-remediation checkpoint, the following text was the current-status line. It is retained as historical authority wording, not the current verdict at the top of this document:
+
+> Historical checkpoint — Verdict: `pending recertification — historical Windows-only conditional Go expired for the current working tree; macOS deferred-by-user`
+
 `probe:codex:dev` ran once from clean committed and pushed HEAD `74ec65f4d91990caf03a6723140037374d4ba768` with the approved fixed synthetic values supplied ephemerally. Both values matched the runner's frozen SHA-256 fingerprints and length limits before execution. Electron ran hidden, raw process output was ignored, API credential environment names were removed, and no prompt, response body, environment value, credential, auth file, PID or executable path was persisted.
 
 The 6A.5 capability producer timed out at its 45-second per-operation boundary before it could emit the complete five-scenario result. The 6A.6 outputSchema producer independently timed out at its 60-second per-operation boundary before it could emit the complete two-scenario result. Both failures used the unified termination coordinator and recorded `graceful` cleanup: abort requested and observed, SDK promise settled, shutdown cleanup acknowledged, utility exit observed, attributed residual scan completed, and both utility/CLI residual absence true. Neither path force-killed the utility.

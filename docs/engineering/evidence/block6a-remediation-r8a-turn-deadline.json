@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "block6a-remediation-r8a-turn-deadline-001",
+  "task": "6A remediation R8a timeout boundary",
+  "source": "static_manifest",
+  "recordedAt": "2026-07-20T12:50:13.756Z",
+  "commandName": "block6a-r8a-turn-deadline-focused-verification",
+  "classification": "sdk_turn_and_session_deadlines_separated",
+  "assertions": {
+    "isolatedAuthTurnDeadlineFrozen": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a-turn-deadline-001",
+      "classification": "turn_deadline_boundary_frozen"
+    },
+    "currentAuthTurnDeadlineFrozen": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a-turn-deadline-001",
+      "classification": "turn_deadline_boundary_frozen"
+    },
+    "outerSessionTimeoutLeavesCleanupGrace": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a-turn-deadline-001",
+      "classification": "turn_deadline_boundary_frozen"
+    },
+    "deadlineAbortUsesExistingTypedTermination": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a-turn-deadline-001",
+      "classification": "turn_deadline_boundary_frozen"
+    },
+    "unstructuredDeadlineFailureRemainsUnverified": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a-turn-deadline-001",
+      "classification": "turn_deadline_boundary_frozen"
+    },
+    "priorRuntimeEvidenceInvalidated": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a-turn-deadline-001",
+      "classification": "recertification_required"
+    }
+  },
+  "limitations": [
+    "This static_manifest proves only the deadline design and focused implementation checks; it is not real_sdk or packaged_sdk evidence.",
+    "The 74ec65f R8a timeout records remain historical failed-attempt evidence and cannot certify this changed runtime boundary.",
+    "Fresh Windows development, lifecycle and packaged probes from the next clean committed runtime HEAD remain required.",
+    "A deadline-triggered unstructured SDK failure remains runtime_failed/unverified and cannot prove Git or auth classification."
+  ]
+}

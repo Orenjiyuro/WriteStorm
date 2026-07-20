@@ -21,6 +21,10 @@ import {
 import { buildCodexCliEnvironment } from './environment';
 import { CODEX_FEASIBILITY_OPERATIONS } from './operations';
 import { validateMinimalStructuredOutput } from './structured-output';
+import {
+  resolveCodexFeasibilityTurnDeadlineMs,
+  settleCodexTurnWithinDeadline,
+} from './turn-deadline';
 
 export { buildCodexCliEnvironment } from './environment';
 
@@ -193,7 +197,11 @@ async function runCapabilityProbe(input: CodexCapabilityProbeInput): Promise<
       () => ({ abortObserved: false }),
       (error: unknown) => Promise.reject(error),
     ));
-    const turn = await turnPromise.finally(() => clearActiveSdkProbe(active));
+    const turn = await settleCodexTurnWithinDeadline(
+      controller,
+      turnPromise,
+      resolveCodexFeasibilityTurnDeadlineMs(input.authMode),
+    ).finally(() => clearActiveSdkProbe(active));
     return {
       ok: true,
       result: {
@@ -272,7 +280,11 @@ async function runOutputSchemaProbe(input: CodexOutputSchemaProbeInput): Promise
       () => ({ abortObserved: false }),
       (error: unknown) => Promise.reject(error),
     ));
-    const turn = await turnPromise.finally(() => clearActiveSdkProbe(active));
+    const turn = await settleCodexTurnWithinDeadline(
+      controller,
+      turnPromise,
+      resolveCodexFeasibilityTurnDeadlineMs('current'),
+    ).finally(() => clearActiveSdkProbe(active));
     if (input.scenario === 'invalid-schema') {
       return {
         ok: true,

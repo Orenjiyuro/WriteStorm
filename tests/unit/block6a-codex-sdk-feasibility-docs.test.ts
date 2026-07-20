@@ -129,6 +129,13 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     expect(feasibility).toContain('### R8a 2026-07-20 Windows development recertification attempt');
     expect(feasibility).toContain('did not reach `evidenceAccepted`');
     expect(decisions).toContain('## D082: R8a Development Recertification Attempt Timed Out Fail-Closed');
+    expect(feasibility).toContain('### R8a turn-deadline remediation boundary');
+    expect(feasibility).toContain(
+      'both R8a attempt records remain historical failed-attempt evidence',
+    );
+    expect(decisions).toContain(
+      '## D083: R8a SDK Turn Deadline Is Separate from Utility Session Supervision',
+    );
   });
 
   it('commits a sanitized 6A.8b decision summary with explicit expiry conditions', () => {

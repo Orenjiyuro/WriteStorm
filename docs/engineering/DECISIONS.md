@@ -1115,3 +1115,15 @@ Rules:
 - Both attempts proved graceful coordinator cleanup only: abort, SDK settlement, shutdown acknowledgement, utility exit and attributed residual absence completed without force kill.
 - Exact admission rejected `probe_infrastructure_failed`; the run did not reach `evidenceAccepted` and must not be described as the expected conservative Git/auth blocker evaluation.
 - Current Windows status remains pending recertification. Task 13.1 remains blocked, Task 13.2 is not authorized, and lifecycle/packaged R8 evidence remains absent.
+
+## D083: R8a SDK Turn Deadline Is Separate from Utility Session Supervision
+
+Decision: The feasibility harness assigns SDK turns an auth-mode-specific internal deadline and retains a longer, independent utility-session timeout. This is a remediation boundary requiring fresh execution, not accepted runtime evidence.
+
+Rules:
+
+- Isolated-empty-auth turns request AbortController cancellation after 15 seconds; current-auth turns request it after 90 seconds. Capability and outputSchema utility operations retain a 110-second outer timeout so the SDK has a bounded settlement/cleanup interval.
+- An internal deadline does not infer login, auth or Git state. Without a stable structured SDK/CLI signal, the result remains `runtime_failed / unverified` and cannot satisfy recertification.
+- Failure to settle before the outer boundary remains `probe_infrastructure_failed` and uses the unified cancel, settlement, shutdown, exit-observation and attributed-residual coordinator.
+- The prior `74ec65f` R8a attempt remains historical failed-attempt evidence. This runtime change requires a new clean committed run HEAD and fresh Windows development, lifecycle and packaged evidence.
+- Current status remains pending recertification; macOS remains `deferred-by-user`, Task 13.1 remains blocked, and Task 13.2 is not authorized.

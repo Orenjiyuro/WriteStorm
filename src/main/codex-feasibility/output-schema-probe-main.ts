@@ -15,6 +15,7 @@ import {
   BLOCK6A_R6_PROVENANCE_EVIDENCE_ID,
   createBlock6aAssertion,
 } from './assertion-provenance';
+import { CODEX_FEASIBILITY_SESSION_TIMEOUT_MS } from './turn-deadline';
 
 const resultPath = process.env.WRITESTORM_CODEX_OUTPUT_SCHEMA_RESULT;
 const utilityModulePath = process.env.WRITESTORM_CODEX_UTILITY_PATH;
@@ -46,7 +47,7 @@ void app.whenReady().then(async () => {
       try {
         const outcome = await runner.runOutputSchemaProbe(
           { scenario, workingDirectory: workspace },
-          60_000,
+          CODEX_FEASIBILITY_SESSION_TIMEOUT_MS,
           {
             utilityWorkingDirectory: workspace,
             utilityEnvironment,

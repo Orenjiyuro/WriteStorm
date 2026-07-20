@@ -19,6 +19,7 @@ import {
   BLOCK6A_R6_PROVENANCE_EVIDENCE_ID,
   createBlock6aAssertion,
 } from './assertion-provenance';
+import { CODEX_FEASIBILITY_SESSION_TIMEOUT_MS } from './turn-deadline';
 
 type ScenarioPlan = {
   readonly input: CodexCapabilityProbeInput;
@@ -118,11 +119,15 @@ void app.whenReady().then(async () => {
         observationStartedAt: Date.now() - 1_000,
       });
       try {
-        const outcome = await runner.runCapabilityProbe(plan.input, 45_000, {
-          utilityWorkingDirectory: plan.utilityWorkingDirectory,
-          utilityEnvironment,
-          terminationOwnership: ownership,
-        });
+        const outcome = await runner.runCapabilityProbe(
+          plan.input,
+          CODEX_FEASIBILITY_SESSION_TIMEOUT_MS,
+          {
+            utilityWorkingDirectory: plan.utilityWorkingDirectory,
+            utilityEnvironment,
+            terminationOwnership: ownership,
+          },
+        );
         scenarios.push(outcome.result);
         writeSanitizedProgress(null, scenarios.length);
       } finally {

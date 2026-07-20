@@ -1127,3 +1127,15 @@ Rules:
 - Failure to settle before the outer boundary remains `probe_infrastructure_failed` and uses the unified cancel, settlement, shutdown, exit-observation and attributed-residual coordinator.
 - The prior `74ec65f` R8a attempt remains historical failed-attempt evidence. This runtime change requires a new clean committed run HEAD and fresh Windows development, lifecycle and packaged evidence.
 - Current status remains pending recertification; macOS remains `deferred-by-user`, Task 13.1 remains blocked, and Task 13.2 is not authorized.
+
+## D084: Fresh R8a Development Evidence Is Valid but Not Admitted
+
+Decision: The post-deadline-remediation `probe:codex:dev` run from clean HEAD `e1db3d2` produced complete, sanitized and lineage-verified evidence, but exact admission correctly rejected its outcomes. Valid evidence retention is not recertification success.
+
+Rules:
+
+- The capability record contains the exact five required scenarios and matched all utility cwd boundaries, but every scenario is `runtime_failed / unverified`; current auth did not complete a real success and isolated runs exposed no stable Git/login classification.
+- The outputSchema record contains the exact valid-minimal and invalid-schema scenarios, but both are `runtime_failed / unverified`; this run therefore does not prove real structured success or the pinned local invalid-schema guard.
+- Admission exits non-zero and the historical Windows-only conditional verdict remains expired. Historical successes cannot upgrade this fresh result, and lifecycle or packaged execution cannot bypass the failed development gate.
+- The records contain no prompt, response body, stdout/stderr, environment value, credential, auth file, PID, executable path or raw SDK error. They bind clean run HEAD `e1db3d2`, lockfile, runtime boundary and ordered static evidence inputs.
+- Current status remains pending recertification; macOS remains `deferred-by-user`, Task 13.1 remains blocked, and Task 13.2 is not authorized.

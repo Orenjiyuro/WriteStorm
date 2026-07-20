@@ -123,7 +123,10 @@ describe('Block 6A.8a packaged Codex SDK probe boundary', () => {
     expect(authority).toContain('## Historical Task 6A.8b decision');
     expect(authority).toContain('The current implementation is not Windows-feasibility verified');
     expect(authority).toContain(
-      'Verdict: `pending recertification — historical Windows-only conditional Go expired for the current working tree; macOS deferred-by-user`',
+      'Verdict: `pending recertification — fresh Windows development evidence was not admitted; historical Windows-only conditional Go remains expired; macOS deferred-by-user`',
+    );
+    expect(authority).toContain(
+      'Windows lifecycle and packaged probes must not be used to bypass this development blocker.',
     );
     expect(authority).toContain('macOS packaged runtime remains `deferred-by-user`');
     expect(authority).not.toContain('No packaged SDK probe');

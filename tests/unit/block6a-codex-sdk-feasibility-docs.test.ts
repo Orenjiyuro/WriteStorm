@@ -14,6 +14,10 @@ const r8aCapabilityAttemptPath =
   'docs/engineering/evidence/block6a-r8a-windows-dev-capability-attempt.json';
 const r8aOutputSchemaAttemptPath =
   'docs/engineering/evidence/block6a-r8a-windows-dev-output-schema-attempt.json';
+const r8aCapabilityBlockedPath =
+  'docs/engineering/evidence/block6a-r8a2-windows-dev-capability-blocked.json';
+const r8aOutputSchemaBlockedPath =
+  'docs/engineering/evidence/block6a-r8a2-windows-dev-output-schema-blocked.json';
 
 describe('Block 6A Codex SDK feasibility authority', () => {
   it('keeps long-term multi-provider direction compatible with the V1 Codex-only gate', () => {
@@ -43,7 +47,7 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     const verdictLine = feasibility.split(/\r?\n/).find((line) => line.startsWith('Verdict:'));
 
     expect(verdictLine).toBe(
-      'Verdict: `pending recertification — historical Windows-only conditional Go expired for the current working tree; macOS deferred-by-user`',
+      'Verdict: `pending recertification — fresh Windows development evidence was not admitted; historical Windows-only conditional Go remains expired; macOS deferred-by-user`',
     );
     expect(feasibility).toContain('Historical Task 6A.8b decision');
     expect(feasibility).toContain('The current implementation is not Windows-feasibility verified');
@@ -136,6 +140,84 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     expect(decisions).toContain(
       '## D083: R8a SDK Turn Deadline Is Separate from Utility Session Supervision',
     );
+  });
+
+  it('retains the fresh complete R8a evidence while blocking recertification admission', () => {
+    const feasibility = readFileSync(feasibilityPath, 'utf8');
+    const context = readFileSync(contextPath, 'utf8');
+    const decisions = readFileSync(decisionsPath, 'utf8');
+    const capability = JSON.parse(readFileSync(r8aCapabilityBlockedPath, 'utf8')) as {
+      source: string;
+      classification: string;
+      scenarios: Array<{
+        scenario: string;
+        outcome: string;
+        authClassification: string;
+        utilityCwdMatchedExpected: boolean;
+      }>;
+      lineage: {
+        gitHeadAtRun: string;
+        criticalInputsCleanAtRun: boolean;
+        packagedArtifactSha256: null;
+        evidenceInputs: unknown[];
+      };
+    };
+    const outputSchema = JSON.parse(readFileSync(r8aOutputSchemaBlockedPath, 'utf8')) as {
+      source: string;
+      classification: string;
+      scenarios: Array<{
+        scenario: string;
+        outcome: string;
+        authClassification: string;
+      }>;
+      lineage: typeof capability.lineage;
+    };
+
+    expect(capability.source).toBe('real_sdk');
+    expect(capability.classification).toBe('cwd_git_env_auth_probe_completed');
+    expect(capability.scenarios.map(({ scenario }) => scenario)).toEqual([
+      'default-git-isolated-auth',
+      'explicit-git-isolated-auth',
+      'explicit-non-git-isolated-auth',
+      'skip-non-git-isolated-auth',
+      'current-auth-explicit-git',
+    ]);
+    expect(capability.scenarios.every((scenario) =>
+      scenario.outcome === 'runtime_failed'
+      && scenario.authClassification === 'unverified'
+      && scenario.utilityCwdMatchedExpected
+    )).toBe(true);
+    expect(outputSchema.source).toBe('real_sdk');
+    expect(outputSchema.classification).toBe('output_schema_probe_completed');
+    expect(outputSchema.scenarios).toEqual([
+      expect.objectContaining({
+        scenario: 'valid-minimal',
+        outcome: 'runtime_failed',
+        authClassification: 'unverified',
+      }),
+      expect.objectContaining({
+        scenario: 'invalid-schema',
+        outcome: 'runtime_failed',
+        authClassification: 'unverified',
+      }),
+    ]);
+    for (const record of [capability, outputSchema]) {
+      expect(record.lineage).toMatchObject({
+        gitHeadAtRun: 'e1db3d2454dc568ca591ae7c72d44b83d92e6723',
+        criticalInputsCleanAtRun: true,
+        packagedArtifactSha256: null,
+      });
+      expect(record.lineage.evidenceInputs).toHaveLength(6);
+      expect(JSON.stringify(record)).not.toMatch(
+        /"(?:prompt|responseBody|stdout|stderr|pid|environmentValue|credential|authFile|executablePath|token)"\s*:/i,
+      );
+    }
+    expect(feasibility).toContain(
+      '### R8a fresh development recertification result after deadline remediation',
+    );
+    expect(feasibility).toContain('Admission rejected the complete evidence');
+    expect(context).toContain('blocked at the development gate');
+    expect(decisions).toContain('## D084: Fresh R8a Development Evidence Is Valid but Not Admitted');
   });
 
   it('commits a sanitized 6A.8b decision summary with explicit expiry conditions', () => {

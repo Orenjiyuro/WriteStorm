@@ -2,9 +2,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
-  buildCodexCliEnvironment,
   classifyCodexFailure,
 } from '../../src/main/codex-feasibility/utility-entry';
+import { buildCodexCliEnvironment } from '../../src/main/codex-feasibility/environment';
 import {
   isCodexFeasibilityRequest,
   isCodexFeasibilityResponse,
@@ -114,7 +114,7 @@ describe('Block 6A.5 cwd, Git, environment and auth boundary', () => {
       isolatedCodexHome: 'C:\\probe\\codex-home-empty',
     });
 
-    expect(current).toMatchObject({ Path: inherited.Path, USERPROFILE: inherited.USERPROFILE });
+    expect(current).toMatchObject({ PATH: inherited.Path, USERPROFILE: inherited.USERPROFILE });
     expect(current.CODEX_HOME).toBe(inherited.CODEX_HOME);
     expect(isolated.CODEX_HOME).toBe('C:\\probe\\codex-home-empty');
     for (const key of [
@@ -128,23 +128,46 @@ describe('Block 6A.5 cwd, Git, environment and auth boundary', () => {
     }
   });
 
-  it('maps raw SDK failures to closed cwd/auth classifications without retaining the raw message', () => {
-    expect(classifyCodexFailure(new Error('not inside a trusted directory'))).toEqual({
-      outcome: 'git_repo_required',
-      authClassification: 'unverified',
-    });
-    expect(classifyCodexFailure(new Error('not logged in; run login'))).toEqual({
-      outcome: 'login_required',
-      authClassification: 'login_required',
-    });
-    expect(classifyCodexFailure(new Error('401 unauthorized'))).toEqual({
-      outcome: 'auth_failed',
-      authClassification: 'auth_failed',
-    });
-    expect(classifyCodexFailure(new Error('unrecognized failure details'))).toEqual({
-      outcome: 'runtime_failed',
-      authClassification: 'unverified',
-    });
+  it('maps every unstructured SDK or CLI failure conservatively without reading message text', () => {
+    for (const error of [
+      new Error('not inside a trusted directory'),
+      new Error('not logged in; run login'),
+      new Error('401 unauthorized'),
+      new Error('unrecognized failure details'),
+      { code: 'invented-provider-code', message: 'login required' },
+      'raw stderr-like text',
+    ]) {
+      expect(classifyCodexFailure(error)).toEqual({
+        outcome: 'runtime_failed',
+        authClassification: 'unverified',
+      });
+    }
+
+    const utilitySource = readFileSync(
+      path.join(rootDir, 'src/main/codex-feasibility/utility-entry.ts'),
+      'utf8',
+    );
+    expect(utilitySource).not.toMatch(/not inside a trusted directory|not logged in|unauthorized/);
+  });
+
+  it('records R5 as static-only error-boundary evidence pending fresh recertification', () => {
+    const evidence = JSON.parse(readFileSync(path.join(
+      rootDir,
+      'docs/engineering/evidence/block6a-remediation-r5-error-classification.json',
+    ), 'utf8')) as {
+      source: string;
+      classification: string;
+      assertions: Record<string, boolean>;
+      limitations: string[];
+    };
+
+    expect(evidence.source).toBe('static_manifest');
+    expect(evidence.classification).toBe('conservative_error_classification_hardened');
+    expect(Object.values(evidence.assertions).every(Boolean)).toBe(true);
+    expect(evidence.limitations).toContain(
+      'Fresh Windows development, lifecycle and packaged recertification remains required before the candidate conditional-Go verdict can be reissued.',
+    );
+    expect(JSON.stringify(evidence)).not.toMatch(/"(?:message|rawError|stdout|stderr)"\s*:/i);
   });
 
   it('keeps the no-window Electron probe isolated and free of a committed synthetic prompt', () => {

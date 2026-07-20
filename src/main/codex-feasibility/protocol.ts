@@ -19,6 +19,19 @@ export type CodexFeasibilityRequest = RequestBase & (
   | { readonly command: 'shutdown' }
 );
 
+export type CodexFeasibilityCommand = CodexFeasibilityRequest['command'];
+
+export type CodexFeasibilityRequestFor<
+  Command extends CodexFeasibilityCommand,
+> = Extract<CodexFeasibilityRequest, { readonly command: Command }>;
+
+export type CodexFeasibilityRequestPayload<
+  Command extends CodexFeasibilityCommand,
+> = Omit<
+  CodexFeasibilityRequestFor<Command>,
+  'version' | 'origin' | 'requestId' | 'command'
+>;
+
 export type CodexLifecycleScenario =
   | 'app-timeout'
   | 'explicit-cancel'
@@ -236,6 +249,10 @@ export type CodexFeasibilityResponse =
       readonly utilityPid: number;
       readonly cleanupAcknowledged: true;
     };
+
+export type CodexFeasibilityResponseFor<
+  Command extends CodexFeasibilityCommand,
+> = Extract<CodexFeasibilityResponse, { readonly command: Command }>;
 
 const requestBase = {
   version: z.literal(CODEX_FEASIBILITY_PROTOCOL_VERSION),

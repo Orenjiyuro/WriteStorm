@@ -5,6 +5,8 @@ import {
   createIdempotentLifecycleTrigger,
   findAttributedProcess,
   isSameProcessIdentityPresent,
+  WindowsOwnedProcessGuard,
+  WindowsOwnedProcessTracker,
   type WindowsProcessSnapshot,
 } from '../../src/main/codex-feasibility/lifecycle';
 import {
@@ -169,6 +171,145 @@ describe('Block 6A.7 lifecycle and owned-process boundary', () => {
     ], identity!)).toBe(false);
   });
 
+  it('freezes PID, creation time, executable path and the observed parent chain for one probe', () => {
+    const tracker = new WindowsOwnedProcessTracker({
+      utilityPid: 100,
+      utilityExecutablePath: 'C:\\project\\electron.exe',
+      cliExecutablePath: 'C:\\project\\codex.exe',
+      observationStartedAt: 1000,
+    });
+    const snapshots: WindowsProcessSnapshot[] = [
+      { pid: 100, parentPid: 1, executablePath: 'C:\\project\\electron.exe', startedAt: 1000 },
+      { pid: 101, parentPid: 100, executablePath: 'C:\\project\\helper.exe', startedAt: 1001 },
+      { pid: 102, parentPid: 101, executablePath: 'C:\\project\\codex.exe', startedAt: 1002 },
+    ];
+
+    tracker.observe(snapshots);
+
+    expect(tracker.evidenceAssertions()).toEqual({
+      utilityIdentityBound: true,
+      cliIdentityBound: true,
+      pidCreationTimeExecutablePathBound: true,
+      observedParentRelationshipBound: true,
+      ownershipFrozenForSession: true,
+    });
+    expect(tracker.residualAssertions(snapshots)).toEqual({
+      utilityResidualAbsent: false,
+      cliResidualAbsent: false,
+    });
+    expect(tracker.residualAssertions([
+      { ...snapshots[0]!, startedAt: 2000 },
+      { ...snapshots[2]!, startedAt: 2002 },
+    ])).toEqual({
+      utilityResidualAbsent: true,
+      cliResidualAbsent: true,
+    });
+  });
+
+  it('fails closed for stale utilities, unrelated CLIs and ambiguous process identities', () => {
+    const createTracker = () => new WindowsOwnedProcessTracker({
+      utilityPid: 100,
+      utilityExecutablePath: 'C:\\project\\electron.exe',
+      cliExecutablePath: 'C:\\project\\codex.exe',
+      observationStartedAt: 1000,
+    });
+    const staleUtility = createTracker();
+    staleUtility.observe([
+      { pid: 100, parentPid: 1, executablePath: 'C:\\project\\electron.exe', startedAt: 999 },
+      { pid: 102, parentPid: 100, executablePath: 'C:\\project\\codex.exe', startedAt: 1002 },
+    ]);
+    expect(Object.values(staleUtility.evidenceAssertions()).some(Boolean)).toBe(false);
+
+    const unrelatedCli = createTracker();
+    unrelatedCli.observe([
+      { pid: 100, parentPid: 1, executablePath: 'C:\\project\\electron.exe', startedAt: 1000 },
+      { pid: 102, parentPid: 77, executablePath: 'C:\\project\\codex.exe', startedAt: 1002 },
+    ]);
+    expect(unrelatedCli.evidenceAssertions()).toMatchObject({
+      utilityIdentityBound: true,
+      cliIdentityBound: false,
+      observedParentRelationshipBound: false,
+      ownershipFrozenForSession: false,
+    });
+
+    const duplicatePid = createTracker();
+    duplicatePid.observe([
+      { pid: 100, parentPid: 1, executablePath: 'C:\\project\\electron.exe', startedAt: 1000 },
+      { pid: 101, parentPid: 100, executablePath: 'C:\\project\\helper.exe', startedAt: 1001 },
+      { pid: 101, parentPid: 77, executablePath: 'C:\\other\\helper.exe', startedAt: 1001 },
+      { pid: 102, parentPid: 101, executablePath: 'C:\\project\\codex.exe', startedAt: 1002 },
+    ]);
+    expect(duplicatePid.evidenceAssertions()).toMatchObject({
+      utilityIdentityBound: true,
+      cliIdentityBound: false,
+      observedParentRelationshipBound: false,
+    });
+  });
+
+  it('never replaces a frozen ownership identity after PID reuse', () => {
+    const tracker = new WindowsOwnedProcessTracker({
+      utilityPid: 100,
+      utilityExecutablePath: 'C:\\project\\electron.exe',
+      cliExecutablePath: 'C:\\project\\codex.exe',
+      observationStartedAt: 1000,
+    });
+    tracker.observe([
+      { pid: 100, parentPid: 1, executablePath: 'C:\\project\\electron.exe', startedAt: 1000 },
+      { pid: 102, parentPid: 100, executablePath: 'C:\\project\\codex.exe', startedAt: 1002 },
+    ]);
+    tracker.observe([
+      { pid: 100, parentPid: 1, executablePath: 'C:\\project\\electron.exe', startedAt: 2000 },
+      { pid: 102, parentPid: 100, executablePath: 'C:\\project\\codex.exe', startedAt: 2002 },
+    ]);
+
+    expect(tracker.evidenceAssertions().ownershipFrozenForSession).toBe(true);
+    expect(tracker.residualAssertions([
+      { pid: 100, parentPid: 1, executablePath: 'C:\\project\\electron.exe', startedAt: 2000 },
+      { pid: 102, parentPid: 100, executablePath: 'C:\\project\\codex.exe', startedAt: 2002 },
+    ])).toEqual({
+      utilityResidualAbsent: true,
+      cliResidualAbsent: true,
+    });
+  });
+
+  it('checks owned utility identity immediately before force and caches the post-exit residual scan', async () => {
+    const ownedSnapshots: WindowsProcessSnapshot[] = [
+      { pid: 100, parentPid: 1, executablePath: 'C:\\project\\electron.exe', startedAt: 1000 },
+      { pid: 102, parentPid: 100, executablePath: 'C:\\project\\codex.exe', startedAt: 1002 },
+    ];
+    let snapshots = ownedSnapshots;
+    let readCount = 0;
+    const guard = new WindowsOwnedProcessGuard({
+      utilityExecutablePath: 'C:\\project\\electron.exe',
+      cliExecutablePath: 'C:\\project\\codex.exe',
+      observationStartedAt: 1000,
+      observationAttempts: 1,
+      observationIntervalMs: 0,
+      residualDelayMs: 0,
+      readSnapshots: () => {
+        readCount += 1;
+        return snapshots;
+      },
+    });
+    guard.bindUtility(100);
+    expect(guard.isUtilityOwnedAndRunning()).toBe(true);
+    snapshots = [
+      { ...ownedSnapshots[0]!, startedAt: 2000 },
+      { ...ownedSnapshots[1]!, startedAt: 2002 },
+    ];
+
+    await expect(guard.scanResiduals()).resolves.toEqual({
+      ownershipObserved: true,
+      residualScanCompleted: true,
+      utilityResidualAbsent: true,
+      cliResidualAbsent: true,
+    });
+    const readsAfterFirstScan = readCount;
+    await guard.scanResiduals();
+    expect(readCount).toBe(readsAfterFirstScan);
+    expect(guard.isUtilityOwnedAndRunning()).toBe(false);
+  });
+
   it('keeps window-close and app-quit as hidden, distinct initial triggers', () => {
     const source = readFileSync(
       path.join(rootDir, 'src/main/codex-feasibility/lifecycle-probe-main.ts'),
@@ -180,7 +321,37 @@ describe('Block 6A.7 lifecycle and owned-process boundary', () => {
     expect(source).toContain("app.on('window-all-closed'");
     expect(source).toContain("'window-close'");
     expect(source).toContain("'app-quit'");
+    expect(source).toContain('new WindowsOwnedProcessGuard');
+    expect(source).not.toContain('findProcessByPidAndPath');
     expect(source).not.toContain('BrowserWindow({ show: true');
     expect(source).not.toMatch(/Get-Process.*ProcessName|Stop-Process.*codex/i);
+  });
+
+  it('records the R4a ownership repair as static-only evidence without process values', () => {
+    const evidence = JSON.parse(readFileSync(path.join(
+      rootDir,
+      'docs/engineering/evidence/block6a-remediation-r4a-process-ownership.json',
+    ), 'utf8')) as {
+      source: string;
+      classification: string;
+      identityComponents: string[];
+      assertions: Record<string, boolean>;
+      limitations: string[];
+    };
+
+    expect(evidence.source).toBe('static_manifest');
+    expect(evidence.classification).toBe('owned_process_attribution_hardened');
+    expect(evidence.identityComponents).toEqual([
+      'pid',
+      'startedAt',
+      'executablePath',
+      'parentPid',
+      'observedParentChain',
+    ]);
+    expect(Object.values(evidence.assertions).every(Boolean)).toBe(true);
+    expect(evidence.limitations).toContain(
+      'Fresh Windows lifecycle recertification remains required before the final conditional-Go verdict can be reissued.',
+    );
+    expect(JSON.stringify(evidence)).not.toMatch(/[A-Z]:\\\\|"(?:pid|path|startedAt|parentPid)"\s*:/i);
   });
 });

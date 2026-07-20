@@ -1086,4 +1086,21 @@ Rules:
 - Auth success is dated execution evidence, not a durable credential fact. A required rerun with `login_required`, `auth_failed` or no real success cannot be upgraded by the old result. Expired-session and natural WriteStorm login experience remain unverified.
 - Direct `codex exec`, app-server, GUI automation, API Key, local model, Claude, DeepSeek and other-provider fallback remain forbidden. The pinned CLI used internally by the SDK, including packaged `codexPathOverride`, is not a WriteStorm fallback surface.
 - Task 6A.8b does not authorize Task 13.2. Only the total thread may review this verdict and explicitly authorize Windows-only implementation work.
-- Historical Block 7/8 and Task 12.10 statements that 6A had not executed at those checkpoints remain historical facts. D080 and the 6A authority are the current decision and must not be interpreted as rewriting those records.
+- Historical Block 7/8 and Task 12.10 statements that 6A had not executed at those checkpoints remain historical facts. At the D080 checkpoint, D080 and the 6A authority were the current decision and did not rewrite those earlier records. D081 later supersedes only the current status because the implementation changed; it does not erase D080.
+
+## D081: Current Codex Feasibility Verdict Is Pending Recertification
+
+Decision: D080 remains a historical decision and is expired for the current working tree. The current Task 6A status is pending Windows recertification; it is neither a reissued conditional Go nor a No-Go.
+
+Rules:
+
+- R1–R7 changed the evidence admission contract, utility environment, typed protocol, unified utility-session orchestration, session/termination supervision, process ownership, cleanup behavior, error classification, assertion provenance and evidence lineage. These changes satisfy D080's expiry conditions.
+- R5 treats every message-only SDK/CLI failure as `runtime_failed / unverified`. The R5b exact-package audit proves that 0.144.6 exports message-only `ThreadError`/`ThreadErrorEvent`, reduces `turn.failed` to a plain `Error`, and exposes non-zero CLI exit as another text-only error. Auth, Git, login and expired-session labels therefore have no stable structured SDK signal in this version; arbitrary English messages and stderr are not business error codes. The pinned invalid-outputSchema probe remains feasibility-only and is identified from its exact version, closed scenario, fixed non-object input and rejection rather than error text.
+- Exact sanitized `runtime_failed / unverified` results are accepted as evidence but never admitted as recertification success. The repository runner records closed blocker codes and exits non-zero; evidence retention is not a conditional-Go result.
+- Fresh assertions carry exact `value`, `source`, `evidenceId` and `classification` leaves. Runtime record sources do not flow into local workspace, environment or protocol assertions; legacy booleans and incorrect provenance fail admission.
+- Fresh runtime records bind the clean committed run HEAD, lockfile, complete runtime boundary, packaged artifact and ordered static evidence inputs. Final HEAD must descend from the run HEAD and may differ only by Block 6A evidence, current authority, and corresponding consistency tests; any other drift requires a new run.
+- Historical real SDK and packaged records remain dated evidence and must not be rewritten, deleted or applied to the changed runtime as current verification.
+- Fresh R8 Windows lifecycle and packaged probes, final evidence binding and total-thread review are required before the candidate Windows-only conditional verdict may be reissued.
+- macOS packaged runtime remains `deferred-by-user`; pending Windows recertification does not establish macOS compatibility, cross-platform support or release readiness.
+- Task 13.1 remains blocked and Task 13.2 is not authorized while recertification is pending.
+- Direct `codex exec`, app-server, GUI automation, API Key, local model or alternate-provider fallback remains forbidden.

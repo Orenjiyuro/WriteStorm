@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "block6a-remediation-r4b-safe-termination-001",
+  "task": "6A remediation R4b",
+  "source": "static_manifest",
+  "recordedAt": "2026-07-20T01:20:00.000Z",
+  "commandName": "block6a-r4b-focused-safe-termination-verification",
+  "classification": "unified_safe_termination_hardened",
+  "terminationSequence": [
+    "typed_cancel",
+    "sdk_settlement",
+    "typed_shutdown",
+    "graceful_utility_exit_wait",
+    "ownership_proven_utility_force_only_if_required",
+    "utility_exit_observation",
+    "attributed_residual_scan"
+  ],
+  "assertions": {
+    "allRunnerAbnormalPathsUseOneCoordinator": true,
+    "protocolFailureUsesTypedCleanup": true,
+    "requestOrPidMismatchUsesTypedCleanup": true,
+    "waitForTriggerRejectionUsesTypedCleanup": true,
+    "allNormalSessionSendsUseOneGuardedDriver": true,
+    "requestConstructionFailureBeginsTermination": true,
+    "synchronousPostFailureBeginsTermination": true,
+    "transportFailureDetailIsDiscarded": true,
+    "cancelGracePrecedesShutdownGrace": true,
+    "ownedUtilityCheckPrecedesForceKill": true,
+    "unprovenUtilityIsNeverKilled": true,
+    "utilityExitPrecedesResidualResult": true,
+    "runnerContainsNoDirectKill": true,
+    "rawErrorsAndProcessValuesExcluded": true
+  },
+  "limitations": [
+    "This static_manifest and its unit tests do not replace fresh real_sdk lifecycle execution.",
+    "Earlier Task 6A.7 and packaged evidence remain historical and cannot recertify the repaired runtime.",
+    "Fresh Windows lifecycle and packaged recertification remains required before the final conditional-Go verdict can be reissued.",
+    "No CLI process is terminated directly and no unowned Codex process may be terminated."
+  ]
+}

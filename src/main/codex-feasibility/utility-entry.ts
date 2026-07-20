@@ -18,7 +18,11 @@ import {
   type CodexOutputSchemaProbeResult,
   type CodexRuntimeInspection,
 } from './protocol';
+import { buildCodexCliEnvironment } from './environment';
+import { CODEX_FEASIBILITY_OPERATIONS } from './operations';
 import { validateMinimalStructuredOutput } from './structured-output';
+
+export { buildCodexCliEnvironment } from './environment';
 
 type PackageManifest = { readonly version: string };
 type CodexWithResolvedExecutable = { readonly exec?: { readonly executablePath?: unknown } };
@@ -40,33 +44,6 @@ type ActiveSdkProbe = {
 let activeLifecycleProbe: ActiveLifecycleProbe | undefined;
 let activeSdkProbe: ActiveSdkProbe | undefined;
 
-const cliEnvironmentAllowlist = new Set([
-  'all_proxy',
-  'appdata',
-  'codex_home',
-  'comspec',
-  'home',
-  'homedrive',
-  'homepath',
-  'http_proxy',
-  'https_proxy',
-  'localappdata',
-  'node_extra_ca_certs',
-  'no_proxy',
-  'path',
-  'pathext',
-  'ssl_cert_dir',
-  'ssl_cert_file',
-  'systemdrive',
-  'systemroot',
-  'temp',
-  'tmp',
-  'userdomain',
-  'username',
-  'userprofile',
-  'windir',
-]);
-
 const packageByTarget = {
   'win32-x64': '@openai/codex-win32-x64',
   'win32-arm64': '@openai/codex-win32-arm64',
@@ -85,6 +62,7 @@ const windowsPackagedCodexRelativePath = path.join(
   'bin',
   'codex.exe',
 );
+const PINNED_CODEX_SDK_FEASIBILITY_VERSION = '0.144.6';
 
 async function inspectInstalledRuntime(): Promise<
   | { readonly ok: true; readonly result: CodexRuntimeInspection }
@@ -277,6 +255,7 @@ async function runOutputSchemaProbe(input: CodexOutputSchemaProbeInput): Promise
         additionalProperties: false,
       }
     : [];
+  const installedSdkVersion = resolveInstalledCodexSdkVersion();
   const thread = client.startThread({
     workingDirectory: input.workingDirectory,
     skipGitRepoCheck: false,
@@ -322,11 +301,11 @@ async function runOutputSchemaProbe(input: CodexOutputSchemaProbeInput): Promise
       },
     };
   } catch (error) {
-    if (
-      input.scenario === 'invalid-schema'
-      && error instanceof Error
-      && error.message === 'outputSchema must be a plain JSON object'
-    ) {
+    if (isPinnedSdkLocalOutputSchemaGuardProbe(
+      input.scenario,
+      outputSchema,
+      installedSdkVersion,
+    )) {
       return {
         ok: true,
         result: {
@@ -484,49 +463,29 @@ function clearActiveSdkProbe(active: ActiveSdkProbe): void {
   if (activeSdkProbe === active) activeSdkProbe = undefined;
 }
 
-export function buildCodexCliEnvironment(
-  inherited: NodeJS.ProcessEnv,
-  options: {
-    readonly authMode: 'current' | 'isolated-empty';
-    readonly isolatedCodexHome?: string;
-  },
-): Record<string, string> {
-  const environment: Record<string, string> = {};
-  const admittedLowercaseKeys = new Set<string>();
-  for (const [key, value] of Object.entries(inherited)) {
-    const normalizedKey = key.toLowerCase();
-    if (
-      value === undefined ||
-      !cliEnvironmentAllowlist.has(normalizedKey) ||
-      admittedLowercaseKeys.has(normalizedKey)
-    ) {
-      continue;
-    }
-    environment[key] = value;
-    admittedLowercaseKeys.add(normalizedKey);
-  }
-
-  const inheritedCodexHomeKey = Object.keys(environment).find((key) => key.toLowerCase() === 'codex_home');
-  if (options.authMode === 'isolated-empty') {
-    if (inheritedCodexHomeKey) delete environment[inheritedCodexHomeKey];
-    if (options.isolatedCodexHome) environment.CODEX_HOME = options.isolatedCodexHome;
-  }
-
-  return environment;
+export function classifyCodexFailure(_error: unknown): FailureClassification {
+  return { outcome: 'runtime_failed', authClassification: 'unverified' };
 }
 
-export function classifyCodexFailure(error: unknown): FailureClassification {
-  const message = error instanceof Error ? error.message : String(error);
-  if (/not inside a trusted directory|not a git repository|git repo(?:sitory)? (?:is )?required/i.test(message)) {
-    return { outcome: 'git_repo_required', authClassification: 'unverified' };
+export function isPinnedSdkLocalOutputSchemaGuardProbe(
+  scenario: CodexOutputSchemaProbeInput['scenario'],
+  outputSchema: unknown,
+  installedSdkVersion: string | undefined,
+): boolean {
+  return installedSdkVersion === PINNED_CODEX_SDK_FEASIBILITY_VERSION
+    && scenario === 'invalid-schema'
+    && Array.isArray(outputSchema);
+}
+
+function resolveInstalledCodexSdkVersion(): string | undefined {
+  try {
+    const moduleRequire = createRequire(import.meta.url);
+    const sdkEntryPath = moduleRequire.resolve('@openai/codex-sdk');
+    const sdkPackagePath = path.resolve(path.dirname(sdkEntryPath), '..', 'package.json');
+    return readManifest(sdkPackagePath).version;
+  } catch {
+    return undefined;
   }
-  if (/\b401\b|\b403\b|unauthorized|forbidden|expired|invalid (?:token|credential|session)/i.test(message)) {
-    return { outcome: 'auth_failed', authClassification: 'auth_failed' };
-  }
-  if (/not logged in|login required|sign in required|run (?:codex )?login|authentication required|missing (?:auth|credential)|no (?:auth|credential)/i.test(message)) {
-    return { outcome: 'login_required', authClassification: 'login_required' };
-  }
-  return { outcome: 'runtime_failed', authClassification: 'unverified' };
 }
 
 function pathsEqual(left: string, right: string): boolean {
@@ -586,12 +545,12 @@ if (parentPort) {
       return;
     }
 
-    if (request.command === 'shutdown') {
+    if (request.command === CODEX_FEASIBILITY_OPERATIONS.shutdown.command) {
       void cancelActiveSdkProbe().then(() => {
         parentPort.postMessage({
           version: CODEX_FEASIBILITY_PROTOCOL_VERSION,
           requestId: request.requestId,
-          command: 'shutdown',
+          command: CODEX_FEASIBILITY_OPERATIONS.shutdown.command,
           ok: true,
           utilityPid: process.pid,
           cleanupAcknowledged: true,
@@ -601,12 +560,12 @@ if (parentPort) {
       return;
     }
 
-    if (request.command === 'cancel-active-probe') {
+    if (request.command === CODEX_FEASIBILITY_OPERATIONS.cancelActive.command) {
       void cancelActiveSdkProbe().then((result) => {
         parentPort.postMessage({
           version: CODEX_FEASIBILITY_PROTOCOL_VERSION,
           requestId: request.requestId,
-          command: 'cancel-active-probe',
+          command: CODEX_FEASIBILITY_OPERATIONS.cancelActive.command,
           ok: true,
           utilityPid: process.pid,
           ...result,
@@ -615,12 +574,12 @@ if (parentPort) {
       return;
     }
 
-    if (request.command === 'start-lifecycle-probe') {
+    if (request.command === CODEX_FEASIBILITY_OPERATIONS.startLifecycle.command) {
       void startLifecycleProbe(request.input).then((outcome) => {
         parentPort.postMessage({
           version: CODEX_FEASIBILITY_PROTOCOL_VERSION,
           requestId: request.requestId,
-          command: 'start-lifecycle-probe',
+          command: CODEX_FEASIBILITY_OPERATIONS.startLifecycle.command,
           utilityPid: process.pid,
           ...(outcome.ok
             ? { ok: true as const, result: outcome.result }
@@ -630,12 +589,12 @@ if (parentPort) {
       return;
     }
 
-    if (request.command === 'cancel-lifecycle-probe') {
+    if (request.command === CODEX_FEASIBILITY_OPERATIONS.cancelLifecycle.command) {
       void cancelLifecycleProbe(request.trigger).then((outcome) => {
         parentPort.postMessage({
           version: CODEX_FEASIBILITY_PROTOCOL_VERSION,
           requestId: request.requestId,
-          command: 'cancel-lifecycle-probe',
+          command: CODEX_FEASIBILITY_OPERATIONS.cancelLifecycle.command,
           utilityPid: process.pid,
           ...(outcome.ok
             ? { ok: true as const, result: outcome.result }
@@ -645,12 +604,12 @@ if (parentPort) {
       return;
     }
 
-    if (request.command === 'run-capability-probe') {
+    if (request.command === CODEX_FEASIBILITY_OPERATIONS.capability.command) {
       void runCapabilityProbe(request.input).then((outcome) => {
         parentPort.postMessage({
           version: CODEX_FEASIBILITY_PROTOCOL_VERSION,
           requestId: request.requestId,
-          command: 'run-capability-probe',
+          command: CODEX_FEASIBILITY_OPERATIONS.capability.command,
           utilityPid: process.pid,
           ...(outcome.ok
             ? { ok: true as const, result: outcome.result }
@@ -660,12 +619,12 @@ if (parentPort) {
       return;
     }
 
-    if (request.command === 'run-output-schema-probe') {
+    if (request.command === CODEX_FEASIBILITY_OPERATIONS.outputSchema.command) {
       void runOutputSchemaProbe(request.input).then((outcome) => {
         parentPort.postMessage({
           version: CODEX_FEASIBILITY_PROTOCOL_VERSION,
           requestId: request.requestId,
-          command: 'run-output-schema-probe',
+          command: CODEX_FEASIBILITY_OPERATIONS.outputSchema.command,
           utilityPid: process.pid,
           ...(outcome.ok
             ? { ok: true as const, result: outcome.result }
@@ -679,7 +638,7 @@ if (parentPort) {
       parentPort.postMessage({
         version: CODEX_FEASIBILITY_PROTOCOL_VERSION,
         requestId: request.requestId,
-        command: 'inspect-runtime',
+        command: CODEX_FEASIBILITY_OPERATIONS.inspect.command,
         utilityPid: process.pid,
         ...(outcome.ok
           ? { ok: true as const, result: outcome.result }

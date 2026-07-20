@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "block6a-remediation-r4a-process-ownership-001",
+  "task": "6A remediation R4a",
+  "source": "static_manifest",
+  "recordedAt": "2026-07-19T12:30:00.000Z",
+  "commandName": "block6a-r4a-focused-process-ownership-verification",
+  "classification": "owned_process_attribution_hardened",
+  "identityComponents": [
+    "pid",
+    "startedAt",
+    "executablePath",
+    "parentPid",
+    "observedParentChain"
+  ],
+  "assertions": {
+    "utilityCreationBoundaryRequired": true,
+    "duplicatePidObservationRejected": true,
+    "exactParentChainRequired": true,
+    "parentChildCreationOrderRequired": true,
+    "firstCompleteOwnershipFrozenForSession": true,
+    "pidReuseCannotReplaceFrozenIdentity": true,
+    "residualScanUsesExactFrozenIdentity": true,
+    "globalProcessNameMatchingForbidden": true
+  },
+  "limitations": [
+    "This static_manifest records code and contract structure only; it is not real_sdk or packaged_sdk execution evidence.",
+    "R4a does not implement or certify the R4b termination sequence.",
+    "Fresh Windows lifecycle recertification remains required before the final conditional-Go verdict can be reissued.",
+    "No PID, executable path, process enumeration, command line or environment value is persisted."
+  ]
+}

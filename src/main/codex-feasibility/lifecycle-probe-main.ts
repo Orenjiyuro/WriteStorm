@@ -9,16 +9,17 @@ import {
   type CodexFeasibilityLifecycleOutcome,
   type CodexTimeoutCleanupSummary,
 } from './runner';
+import { createCodexUtilityEnvironment } from './environment';
 import {
   createIdempotentLifecycleTrigger,
-  findAttributedProcess,
-  findProcessByPidAndPath,
-  isSameProcessIdentityPresent,
-  readWindowsProcessSnapshots,
+  WindowsOwnedProcessGuard,
   WindowsProcessObserverError,
-  type WindowsProcessSnapshot,
 } from './lifecycle';
 import type { CodexLifecycleScenario, CodexLifecycleTrigger } from './protocol';
+import {
+  BLOCK6A_R6_PROVENANCE_EVIDENCE_ID,
+  createBlock6aAssertion,
+} from './assertion-provenance';
 
 const resultPath = process.env.WRITESTORM_CODEX_LIFECYCLE_RESULT;
 const utilityModulePath = process.env.WRITESTORM_CODEX_UTILITY_PATH;
@@ -35,6 +36,11 @@ void app.whenReady().then(async () => {
   const probeRoot = mkdtempSync(path.join(os.tmpdir(), 'writestorm-codex-lifecycle-'));
   const workspace = path.join(probeRoot, 'workspace-git');
   const runner = new CodexFeasibilityRunner({ modulePath: utilityModulePath });
+  const ownedProcesses = new WindowsOwnedProcessGuard({
+    utilityExecutablePath: process.execPath,
+    cliExecutablePath: expectedCliPath,
+    observationStartedAt: Date.now() - 1_000,
+  });
   let probeWindow: BrowserWindow | undefined;
   let allowFinalQuit = false;
   const events = {
@@ -42,8 +48,6 @@ void app.whenReady().then(async () => {
     windowAllClosedObserved: false,
     beforeQuitObserved: false,
   };
-  let utilityIdentity: WindowsProcessSnapshot | undefined;
-  let cliIdentity: WindowsProcessSnapshot | undefined;
   let resolveTrigger!: (trigger: CodexLifecycleTrigger) => void;
   const triggerPromise = new Promise<CodexLifecycleTrigger>((resolve) => {
     resolveTrigger = resolve;
@@ -75,7 +79,6 @@ void app.whenReady().then(async () => {
       }
     });
 
-    let observation: Promise<void> = Promise.resolve();
     let outcome: CodexFeasibilityLifecycleOutcome | undefined;
     let timeoutCleanup: CodexTimeoutCleanupSummary | undefined;
     try {
@@ -84,14 +87,11 @@ void app.whenReady().then(async () => {
         scenario === 'app-timeout' ? 4_000 : 75_000,
         {
           utilityWorkingDirectory: workspace,
-          utilityEnvironment: createUtilityEnvironment(process.env),
-          waitForTrigger: ({ utilityPid }) => {
-            observation = observeOwnedProcesses(utilityPid, expectedCliPath, (utility, cli) => {
-              utilityIdentity = utility;
-              cliIdentity = cli;
-            });
+          utilityEnvironment: createCodexUtilityEnvironment(process.env),
+          terminationOwnership: ownedProcesses,
+          waitForTrigger: () => {
             if (scenario !== 'app-timeout') {
-              void observation.finally(() => {
+              void waitForOwnedProcessObservation(ownedProcesses).finally(() => {
                 if (scenario === 'explicit-cancel') void triggerGate.request('explicit-cancel');
                 if (scenario === 'window-close') probeWindow?.close();
                 if (scenario === 'app-quit') app.quit();
@@ -113,16 +113,9 @@ void app.whenReady().then(async () => {
       timeoutCleanup = error.timeoutCleanup;
       await triggerGate.request('app-timeout');
     }
-    await observation;
-    await delay(500);
-    const after = readWindowsProcessSnapshots();
+    const residualAssertions = await ownedProcesses.scanResiduals();
     const triggerSnapshot = triggerGate.snapshot();
-    const utilityResidualAbsent = utilityIdentity
-      ? !isSameProcessIdentityPresent(after, utilityIdentity)
-      : false;
-    const cliResidualAbsent = cliIdentity
-      ? !isSameProcessIdentityPresent(after, cliIdentity)
-      : false;
+    const ownershipAssertions = ownedProcesses.evidenceAssertions();
     const result = outcome?.result ?? {
       scenario: 'app-timeout' as const,
       trigger: 'app-timeout' as const,
@@ -132,32 +125,64 @@ void app.whenReady().then(async () => {
       abortObserved: timeoutCleanup?.abortObserved === true,
       sdkPromiseSettled: timeoutCleanup?.sdkPromiseSettled === true,
     };
+    const evidenceId = `block6a-6a7-real-sdk-${scenario}-001`;
+    const lifecycleAssertion = (value: boolean) => createBlock6aAssertion(
+      value, 'real_sdk', evidenceId, 'lifecycle_probe_passed',
+    );
+    const processAssertion = (value: boolean) => createBlock6aAssertion(
+      value, 'real_sdk', evidenceId, 'owned_process_observation_completed',
+    );
     const lifecycleAssertions = {
-      triggerMatchedScenario: result.trigger === scenario,
-      abortRequested: result.abortRequested && (timeoutCleanup?.abortRequested ?? true),
-      abortObserved: result.abortObserved,
-      sdkPromiseSettled: result.sdkPromiseSettled && (timeoutCleanup?.sdkPromiseSettled ?? true),
-      cleanupAcknowledged: outcome?.cleanupAcknowledged ?? timeoutCleanup?.cleanupAcknowledged === true,
-      timeoutSupervisorObserved: scenario !== 'app-timeout' || timeoutCleanup !== undefined,
-      timeoutUtilityExitObserved: scenario !== 'app-timeout' || timeoutCleanup?.utilityExitObserved === true,
-      timeoutCleanupClassified: scenario !== 'app-timeout'
-        || timeoutCleanup?.classification === 'graceful'
-        || timeoutCleanup?.classification === 'forced',
-      cleanupExecutedOnce: triggerSnapshot.executionCount === 1,
-      utilityProcessAttributed: utilityIdentity !== undefined,
-      cliObservedBeforeTrigger: cliIdentity !== undefined,
-      cliOwnedByUtilityParentChain: cliIdentity !== undefined,
-      utilityResidualAbsent,
-      cliResidualAbsent,
+      triggerMatchedScenario: lifecycleAssertion(result.trigger === scenario),
+      abortRequested: lifecycleAssertion(
+        result.abortRequested && (timeoutCleanup?.abortRequested ?? true),
+      ),
+      abortObserved: lifecycleAssertion(result.abortObserved),
+      sdkPromiseSettled: lifecycleAssertion(
+        result.sdkPromiseSettled && (timeoutCleanup?.sdkPromiseSettled ?? true),
+      ),
+      cleanupAcknowledged: lifecycleAssertion(
+        outcome?.cleanupAcknowledged ?? timeoutCleanup?.cleanupAcknowledged === true,
+      ),
+      timeoutSupervisorObserved: lifecycleAssertion(
+        scenario !== 'app-timeout' || timeoutCleanup !== undefined,
+      ),
+      timeoutUtilityExitObserved: lifecycleAssertion(
+        scenario !== 'app-timeout' || timeoutCleanup?.utilityExitObserved === true,
+      ),
+      timeoutCleanupClassified: lifecycleAssertion(
+        scenario !== 'app-timeout'
+          || timeoutCleanup?.classification === 'graceful'
+          || timeoutCleanup?.classification === 'forced',
+      ),
+      cleanupExecutedOnce: lifecycleAssertion(triggerSnapshot.executionCount === 1),
+    };
+    const processAssertions = {
+      utilityProcessAttributed: processAssertion(ownershipAssertions.utilityIdentityBound),
+      cliObservedBeforeTrigger: processAssertion(ownershipAssertions.cliIdentityBound),
+      cliOwnedByUtilityParentChain: processAssertion(
+        ownershipAssertions.observedParentRelationshipBound,
+      ),
+      pidCreationTimeExecutablePathBound: processAssertion(
+        ownershipAssertions.pidCreationTimeExecutablePathBound,
+      ),
+      observedParentRelationshipBound: processAssertion(
+        ownershipAssertions.observedParentRelationshipBound,
+      ),
+      ownershipFrozenForSession: processAssertion(ownershipAssertions.ownershipFrozenForSession),
+      residualScanCompleted: processAssertion(residualAssertions.residualScanCompleted),
+      utilityResidualAbsent: processAssertion(residualAssertions.utilityResidualAbsent),
+      cliResidualAbsent: processAssertion(residualAssertions.cliResidualAbsent),
     };
     writeSanitizedResult({
       schemaVersion: 1,
-      evidenceId: `block6a-6a7-real-sdk-${scenario}-001`,
+      evidenceId,
       task: '6A.7',
       source: 'real_sdk',
       recordedAt: new Date().toISOString(),
       commandName: `block6a-electron-lifecycle-${scenario}-probe`,
       classification: Object.values(lifecycleAssertions).every(Boolean)
+        && Object.values(processAssertions).every(Boolean)
         && result.outcome === 'aborted'
         ? 'lifecycle_probe_passed'
         : 'lifecycle_probe_failed',
@@ -167,6 +192,7 @@ void app.whenReady().then(async () => {
         codexSdk: '0.144.6',
       },
       assertions: lifecycleAssertions,
+      processAssertions,
       result,
       timeoutCleanup: timeoutCleanup ?? null,
       lifecycleEvents: {
@@ -196,13 +222,19 @@ void app.whenReady().then(async () => {
         nodeRuntime: process.versions.node,
         codexSdk: '0.144.6',
       },
-      assertions: { sanitizedFailureRecorded: true },
+      assertions: {
+        sanitizedFailureRecorded: createBlock6aAssertion(
+          true, 'static_manifest', BLOCK6A_R6_PROVENANCE_EVIDENCE_ID,
+          'sanitized_failure_boundary',
+        ),
+      },
       failure: error instanceof CodexFeasibilityRunnerError
         ? {
             code: error.code,
             reason: error.reason,
             utilityErrorCode: error.utilityErrorCode ?? null,
             protocolDiagnostic: error.protocolDiagnostic ?? null,
+            terminationCleanup: error.terminationCleanup ?? null,
           }
         : error instanceof WindowsProcessObserverError
           ? { code: error.code }
@@ -210,22 +242,15 @@ void app.whenReady().then(async () => {
     });
   } finally {
     allowFinalQuit = true;
+    ownedProcesses.dispose();
     probeWindow?.destroy();
     exitAfterBestEffortCleanup(probeRoot);
   }
 });
 
-async function observeOwnedProcesses(
-  utilityPid: number,
-  cliPath: string,
-  record: (utility: WindowsProcessSnapshot | undefined, cli: WindowsProcessSnapshot | undefined) => void,
-): Promise<void> {
-  for (let attempt = 0; attempt < 12; attempt += 1) {
-    const snapshots = readWindowsProcessSnapshots();
-    const utility = findProcessByPidAndPath(snapshots, utilityPid, process.execPath);
-    const cli = utility ? findAttributedProcess(snapshots, utility, cliPath) : undefined;
-    record(utility, cli);
-    if (utility && cli) return;
+async function waitForOwnedProcessObservation(guard: WindowsOwnedProcessGuard): Promise<void> {
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    if (guard.evidenceAssertions().ownershipFrozenForSession) return;
     await delay(100);
   }
 }
@@ -236,16 +261,6 @@ function exitAfterBestEffortCleanup(directory: string): never {
   } finally {
     process.exit(0);
   }
-}
-
-function createUtilityEnvironment(inherited: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
-  const environment = { ...inherited };
-  for (const key of Object.keys(environment)) {
-    if (/^(?:OPENAI_API_KEY|CODEX_API_KEY|CODEX_ACCESS_TOKEN)$/i.test(key)) {
-      delete environment[key];
-    }
-  }
-  return environment;
 }
 
 function parseScenario(value: string | undefined): CodexLifecycleScenario | undefined {

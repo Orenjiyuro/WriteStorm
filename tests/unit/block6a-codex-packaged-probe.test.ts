@@ -58,7 +58,10 @@ describe('Block 6A.8a packaged Codex SDK probe boundary', () => {
     for (const command of Object.values(packageManifest.scripts).filter((value) => value.includes('codex'))) {
       expect(command).not.toMatch(/WRITESTORM_PROBE_OK|OPENAI_API_KEY|CODEX_ACCESS_TOKEN|stdout|stderr/i);
     }
-    expect(runnerSource).toContain('admitBlock6aProbeResults(mode, results)');
+    expect(runnerSource).toContain('evaluateBlock6aProbeResults(mode, results)');
+    expect(runnerSource).toContain(
+      'if (!evaluation.recertificationAdmitted) process.exitCode = 1;',
+    );
     expect(runnerSource).not.toMatch(/failed\|rejected\|infrastructure/);
   });
 
@@ -106,14 +109,22 @@ describe('Block 6A.8a packaged Codex SDK probe boundary', () => {
     }
   });
 
-  it('records packaged completion without prematurely issuing the 6A.8b verdict', () => {
+  it('preserves historical packaged completion while current recertification remains pending', () => {
     const authority = readFileSync(
       path.join(rootDir, 'docs/engineering/V1-BLOCK-6A-CODEX-SDK-FEASIBILITY.md'),
       'utf8',
     );
 
-    expect(authority).toContain('Task 6A.8a completed the Windows x64 packaged SDK gate');
+    expect(authority).toContain('## Task 6A.8a Windows packaged SDK result');
+    expect(authority).toContain(
+      'The committed runtime record is `docs/engineering/evidence/block6a-task6a8a-windows-packaged-sdk.json`, with `source: packaged_sdk`.',
+    );
     expect(authority).toContain('does not itself issue the Task 6A.8b Windows Go/conditional Go/No-Go decision');
+    expect(authority).toContain('## Historical Task 6A.8b decision');
+    expect(authority).toContain('The current implementation is not Windows-feasibility verified');
+    expect(authority).toContain(
+      'Verdict: `pending recertification — historical Windows-only conditional Go expired for the current working tree; macOS deferred-by-user`',
+    );
     expect(authority).toContain('macOS packaged runtime remains `deferred-by-user`');
     expect(authority).not.toContain('No packaged SDK probe');
   });

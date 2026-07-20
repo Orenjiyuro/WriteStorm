@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "block6a-remediation-pending-recertification-001",
+  "task": "6A remediation authority status",
+  "source": "static_manifest",
+  "recordedAt": "2026-07-19T15:55:00.000Z",
+  "commandName": "block6a-authority-status-consistency",
+  "classification": "windows_conditional_verdict_pending_recertification",
+  "versions": {
+    "codexSdk": "0.144.6"
+  },
+  "assertions": {
+    "historicalConditionalVerdictPreserved": true,
+    "expiryConditionTriggeredByRuntimeBoundaryChanges": true,
+    "currentWindowsVerificationNotClaimed": true,
+    "freshR8LifecycleAndPackagedEvidenceRequired": true,
+    "macosDeferredByUserPreserved": true,
+    "task13Point1RemainsBlocked": true,
+    "task13Point2NotAuthorized": true
+  },
+  "historicalAuthority": "block6a-task6a8b-verdict.json remains an expired historical decision record",
+  "limitations": [
+    "This static_manifest records current authority state only and is not real_sdk or packaged_sdk execution evidence.",
+    "The candidate Windows-only conditional verdict cannot be reissued before fresh R8 recertification and total-thread review."
+  ]
+}

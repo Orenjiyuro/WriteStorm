@@ -8,6 +8,13 @@ import {
   CodexFeasibilityRunnerError,
   createElectronCodexFeasibilityRunner,
 } from './runner';
+import { createCodexUtilityEnvironment } from './environment';
+import { WindowsOwnedProcessGuard } from './lifecycle';
+import {
+  BLOCK6A_R2_ENVIRONMENT_EVIDENCE_ID,
+  BLOCK6A_R6_PROVENANCE_EVIDENCE_ID,
+  createBlock6aAssertion,
+} from './assertion-provenance';
 
 const approvedSyntheticInputSha256 = '59a9268039bb5bad326151cbe27320c64c89cbf5b054035978c432a4ce5c4a26';
 const approvedSyntheticExpectedSha256 = '6fe7aac1e4d9ae4aec0a14e6bfd46af4ee18892c247a2d0aecfa5091f017afab';
@@ -70,12 +77,18 @@ export async function runOptionalPackagedCodexProbe(options: {
     if (gate.resultPath) {
       writeSanitizedResult(gate.resultPath, {
         schemaVersion: 1,
+        evidenceId: 'block6a-6a8a-packaged-sdk-windows-001',
         task: '6A.8a',
         source: 'packaged_sdk',
         recordedAt: new Date().toISOString(),
         commandName: 'writestorm-packaged-codex-sdk-probe',
         classification: 'packaged_probe_gate_rejected',
-        assertions: { realSdkTurnStarted: false },
+        assertions: {
+          realSdkTurnStarted: createBlock6aAssertion(
+            false, 'packaged_sdk', 'block6a-6a8a-packaged-sdk-windows-001',
+            'packaged_probe_gate_rejected',
+          ),
+        },
         failure: { code: gate.reason },
       });
     }
@@ -91,7 +104,22 @@ export async function runOptionalPackagedCodexProbe(options: {
   const probeRoot = mkdtempSync(path.join(os.tmpdir(), 'writestorm-codex-packaged-'));
   const workspace = path.join(probeRoot, 'workspace-git');
   const runner = createElectronCodexFeasibilityRunner(options.mainBundleDirectory);
-  const utilityEnvironment = createUtilityEnvironment(options.env);
+  const utilityEnvironment = createCodexUtilityEnvironment(options.env);
+  const ownership = new WindowsOwnedProcessGuard({
+    utilityExecutablePath: process.execPath,
+    cliExecutablePath: path.join(
+      process.resourcesPath,
+      'app.asar.unpacked',
+      'node_modules',
+      '@openai',
+      'codex-win32-x64',
+      'vendor',
+      'x86_64-pc-windows-msvc',
+      'bin',
+      'codex.exe',
+    ),
+    observationStartedAt: Date.now() - 1_000,
+  });
   const stage = 'structured' as const;
 
   try {
@@ -103,6 +131,7 @@ export async function runOptionalPackagedCodexProbe(options: {
     }, 75_000, {
       utilityWorkingDirectory: workspace,
       utilityEnvironment,
+      terminationOwnership: ownership,
     });
     const structuredResult = structured.result;
     const packagedTurnSucceeded = gate.accepted
@@ -114,16 +143,21 @@ export async function runOptionalPackagedCodexProbe(options: {
       && structuredResult.finalJsonParsed === true
       && structuredResult.strictValidatorAccepted === true
       && structuredResult.expectedValueMatched === true;
+    const evidenceId = 'block6a-6a8a-packaged-sdk-windows-001';
+    const classification = packagedTurnSucceeded
+      ? 'packaged_sdk_probe_completed'
+      : 'packaged_sdk_probe_failed';
+    const packagedAssertion = (value: boolean) => createBlock6aAssertion(
+      value, 'packaged_sdk', evidenceId, classification,
+    );
     writeSanitizedResult(resultPath, {
       schemaVersion: 1,
-      evidenceId: 'block6a-6a8a-packaged-sdk-windows-001',
+      evidenceId,
       task: '6A.8a',
       source: 'packaged_sdk',
       recordedAt: new Date().toISOString(),
       commandName: 'writestorm-packaged-codex-sdk-probe',
-      classification: packagedTurnSucceeded
-        ? 'packaged_sdk_probe_completed'
-        : 'packaged_sdk_probe_failed',
+      classification,
       versions: {
         electron: process.versions.electron ?? 'unavailable',
         nodeRuntime: process.versions.node,
@@ -132,23 +166,44 @@ export async function runOptionalPackagedCodexProbe(options: {
         platformPackage: '0.144.6-win32-x64',
       },
       assertions: {
-        packagedProbeGateAccepted: gate.accepted,
-        appIsPackaged: app.isPackaged,
-        windowsX64Runtime: process.platform === 'win32' && process.arch === 'x64',
-        approvedSyntheticInputHashMatched: true,
-        approvedSyntheticExpectedHashMatched: true,
-        resultPathDerivedFromValidatedRunIdUnderOsTemp: true,
+        packagedProbeGateAccepted: packagedAssertion(gate.accepted),
+        appIsPackaged: packagedAssertion(app.isPackaged),
+        windowsX64Runtime: packagedAssertion(
+          process.platform === 'win32' && process.arch === 'x64',
+        ),
+        approvedSyntheticInputHashMatched: packagedAssertion(true),
+        approvedSyntheticExpectedHashMatched: packagedAssertion(true),
+        resultPathDerivedFromValidatedRunIdUnderOsTemp: packagedAssertion(true),
         packagedSdkImportConstructAndCliExecutionProvedByTurn:
-          packagedTurnSucceeded,
-        structuredTurnSucceeded: structuredResult.outcome === 'success',
-        structuredAuthAuthenticated: structuredResult.authClassification === 'authenticated',
-        structuredFinalJsonParsed: structuredResult.finalJsonParsed === true,
-        structuredValidatorAccepted: structuredResult.strictValidatorAccepted === true,
-        structuredExpectedValueMatched: structuredResult.expectedValueMatched === true,
-        structuredCleanupAcknowledged: structured.cleanupAcknowledged,
-        workspaceOutsidePackagedResources: !isInside(workspace, process.resourcesPath),
-        apiCredentialEnvironmentExcludedFromUtility: true,
-        promptAndSchemaNotPassedInProtocol: true,
+          packagedAssertion(packagedTurnSucceeded),
+        structuredTurnSucceeded: packagedAssertion(structuredResult.outcome === 'success'),
+        structuredAuthAuthenticated: packagedAssertion(
+          structuredResult.authClassification === 'authenticated',
+        ),
+        structuredFinalJsonParsed: packagedAssertion(structuredResult.finalJsonParsed === true),
+        structuredValidatorAccepted: packagedAssertion(
+          structuredResult.strictValidatorAccepted === true,
+        ),
+        structuredExpectedValueMatched: packagedAssertion(
+          structuredResult.expectedValueMatched === true,
+        ),
+        structuredCleanupAcknowledged: packagedAssertion(structured.cleanupAcknowledged),
+        workspaceOutsidePackagedResources: packagedAssertion(
+          !isInside(workspace, process.resourcesPath),
+        ),
+        apiCredentialEnvironmentExcludedFromUtility: createBlock6aAssertion(
+          true, 'static_manifest', BLOCK6A_R2_ENVIRONMENT_EVIDENCE_ID,
+          'utility_environment_boundary_frozen',
+        ),
+        promptAndSchemaNotPassedInProtocol: createBlock6aAssertion(
+          true, 'static_manifest', BLOCK6A_R6_PROVENANCE_EVIDENCE_ID,
+          'typed_protocol_boundary_frozen',
+        ),
+      },
+      syntheticBoundary: {
+        inputSha256: approvedSyntheticInputSha256,
+        expectedSha256: approvedSyntheticExpectedSha256,
+        resultPathPolicy: 'os_temp_validated_uuid_v4',
       },
       runtime: { platform: process.platform, architecture: process.arch },
       structuredResult,
@@ -173,7 +228,12 @@ export async function runOptionalPackagedCodexProbe(options: {
         nodeRuntime: process.versions.node,
         codexSdk: '0.144.6',
       },
-      assertions: { sanitizedFailureRecorded: true },
+      assertions: {
+        sanitizedFailureRecorded: createBlock6aAssertion(
+          true, 'static_manifest', BLOCK6A_R6_PROVENANCE_EVIDENCE_ID,
+          'sanitized_failure_boundary',
+        ),
+      },
       failure: error instanceof CodexFeasibilityRunnerError
         ? {
             stage,
@@ -181,10 +241,12 @@ export async function runOptionalPackagedCodexProbe(options: {
             reason: error.reason,
             utilityErrorCode: error.utilityErrorCode ?? null,
             protocolDiagnostic: error.protocolDiagnostic ?? null,
+            terminationCleanup: error.terminationCleanup ?? null,
           }
         : { stage, code: 'UNCLASSIFIED_PACKAGED_PROBE_FAILURE' },
     });
   } finally {
+    ownership.dispose();
     exitAfterBestEffortCleanup(probeRoot);
   }
   return true;
@@ -196,16 +258,6 @@ function exitAfterBestEffortCleanup(directory: string): never {
   } finally {
     process.exit(0);
   }
-}
-
-function createUtilityEnvironment(inherited: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
-  const environment = { ...inherited };
-  for (const key of Object.keys(environment)) {
-    if (/^(?:OPENAI_API_KEY|CODEX_API_KEY|CODEX_ACCESS_TOKEN)$/i.test(key)) {
-      delete environment[key];
-    }
-  }
-  return environment;
 }
 
 function isInside(candidate: string, parent: string): boolean {

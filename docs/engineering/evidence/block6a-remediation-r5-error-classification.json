@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "block6a-remediation-r5-error-classification-001",
+  "task": "6A remediation R5",
+  "source": "static_manifest",
+  "recordedAt": "2026-07-20T12:10:36.607Z",
+  "commandName": "block6a-r5-focused-error-classification-verification",
+  "classification": "conservative_error_classification_hardened",
+  "sdkErrorSignalAudit": {
+    "sdkVersion": "0.144.6",
+    "exportedFailureShape": "message_only",
+    "runFailureShape": "plain_error_message_only",
+    "processFailureShape": "plain_error_exit_and_stderr_text_only",
+    "inspectedPackageFiles": [
+      "node_modules/@openai/codex-sdk/package.json",
+      "node_modules/@openai/codex-sdk/dist/index.d.ts",
+      "node_modules/@openai/codex-sdk/dist/index.js"
+    ],
+    "officialSourceUrls": [
+      "https://github.com/openai/codex/blob/main/sdk/typescript/README.md",
+      "https://github.com/openai/codex/blob/main/sdk/typescript/src/events.ts",
+      "https://github.com/openai/codex/blob/main/sdk/typescript/src/thread.ts"
+    ]
+  },
+  "assertions": {
+    "messageRegexClassificationRemoved": true,
+    "unstructuredSdkFailureIsRuntimeFailed": true,
+    "unstructuredAuthClassificationIsUnverified": true,
+    "rawErrorAndStderrExcluded": true,
+    "abortSignalRemainsStructured": true,
+    "localValidatorContractRemainsStable": true,
+    "invalidSchemaMessageComparisonRemoved": true,
+    "invalidSchemaRequiresExactPinnedVersion": true,
+    "invalidSchemaRequiresClosedScenarioAndFixedShape": true,
+    "unverifiedEvidenceEnvelopeAccepted": true,
+    "unverifiedRecertificationRejected": true,
+    "blockedRunnerExitIsNonZero": true,
+    "messageDerivedFreshLabelsRejected": true,
+    "pinnedSdkThreadErrorIsMessageOnly": true,
+    "pinnedSdkThreadErrorEventIsMessageOnly": true,
+    "pinnedSdkRunDiscardsThreadFailureStructure": true,
+    "pinnedSdkNonzeroExitIsTextOnly": true,
+    "stableAuthSignalUnavailable": true,
+    "stableGitSignalUnavailable": true,
+    "task13ErrorMappingRemainsSeparate": true
+  },
+  "limitations": [
+    "This static_manifest does not reclassify or replace historical real_sdk evidence.",
+    "The locked SDK exposes no stable structured auth, Git, login or expired-session error code through Thread.run.",
+    "Fresh Windows development, lifecycle and packaged recertification remains required before the candidate conditional-Go verdict can be reissued.",
+    "Task 13 Job error mapping and renderer-safe localization are not implemented by this feasibility repair."
+  ]
+}

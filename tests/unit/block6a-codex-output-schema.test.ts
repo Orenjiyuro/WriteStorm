@@ -6,6 +6,7 @@ import {
   isCodexFeasibilityResponse,
 } from '../../src/main/codex-feasibility/protocol';
 import { validateMinimalStructuredOutput } from '../../src/main/codex-feasibility/structured-output';
+import { isPinnedSdkLocalOutputSchemaGuardProbe } from '../../src/main/codex-feasibility/utility-entry';
 
 const rootDir = path.resolve(__dirname, '../..');
 
@@ -52,8 +53,22 @@ describe('Block 6A.6 minimal outputSchema boundary', () => {
       path.join(rootDir, 'docs/engineering/V1-BLOCK-6A-CODEX-SDK-FEASIBILITY.md'),
       'utf8',
     );
-    expect(authority).toContain('Task 6A.6 completed the minimal structured-output gate');
+    expect(authority).toContain('## Task 6A.6 minimal outputSchema result');
+    expect(authority).toContain('pending recertification');
     expect(authority).not.toContain('Tasks 6A.6 and 6A.8a remain blocked');
+  });
+
+  it('recognizes the pinned local SDK schema-guard probe without inspecting error text', () => {
+    expect(isPinnedSdkLocalOutputSchemaGuardProbe('invalid-schema', [], '0.144.6')).toBe(true);
+    expect(isPinnedSdkLocalOutputSchemaGuardProbe('valid-minimal', [], '0.144.6')).toBe(false);
+    expect(isPinnedSdkLocalOutputSchemaGuardProbe('invalid-schema', {}, '0.144.6')).toBe(false);
+    expect(isPinnedSdkLocalOutputSchemaGuardProbe('invalid-schema', [], 'future-version')).toBe(false);
+
+    const utilitySource = readFileSync(
+      path.join(rootDir, 'src/main/codex-feasibility/utility-entry.ts'),
+      'utf8',
+    );
+    expect(utilitySource).not.toContain('outputSchema must be a plain JSON object');
   });
 
   it('admits only closed output-schema scenarios without prompt or schema injection', () => {

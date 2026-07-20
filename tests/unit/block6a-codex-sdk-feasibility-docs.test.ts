@@ -8,6 +8,8 @@ const decisionsPath = 'docs/engineering/DECISIONS.md';
 const feasibilityPath = 'docs/engineering/V1-BLOCK-6A-CODEX-SDK-FEASIBILITY.md';
 const block8aStatusPath = 'docs/engineering/V1-BLOCK-8A-STATUS.md';
 const verdictEvidencePath = 'docs/engineering/evidence/block6a-task6a8b-verdict.json';
+const pendingEvidencePath =
+  'docs/engineering/evidence/block6a-remediation-pending-recertification.json';
 
 describe('Block 6A Codex SDK feasibility authority', () => {
   it('keeps long-term multi-provider direction compatible with the V1 Codex-only gate', () => {
@@ -31,12 +33,24 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     expect(decisions).toContain('Decision: V1 AI integration supports Codex SDK only.');
   });
 
-  it('records the Windows-only conditional Go without claiming cross-platform completion', () => {
+  it('marks the current implementation pending recertification without erasing the historical verdict', () => {
     expect(existsSync(feasibilityPath)).toBe(true);
     const feasibility = readFileSync(feasibilityPath, 'utf8');
+    const verdictLine = feasibility.split(/\r?\n/).find((line) => line.startsWith('Verdict:'));
 
-    expect(feasibility).toContain('Verdict: `conditional Go — Windows-only feasibility verified; macOS deferred-by-user`');
-    expect(feasibility).not.toContain('Verdict: `pending`');
+    expect(verdictLine).toBe(
+      'Verdict: `pending recertification — historical Windows-only conditional Go expired for the current working tree; macOS deferred-by-user`',
+    );
+    expect(feasibility).toContain('Historical Task 6A.8b decision');
+    expect(feasibility).toContain('The current implementation is not Windows-feasibility verified');
+    expect(feasibility).toContain('Fresh R8 Windows lifecycle and packaged evidence is required');
+    expect(feasibility).toContain('every other unstructured SDK/CLI failure becomes `runtime_failed / unverified`');
+    expect(feasibility).toContain('This feasibility classifier is not the Task 13 Job error contract');
+    expect(feasibility).toContain('Evidence validation and recertification admission are separate states');
+    expect(feasibility).toContain('`recertificationAdmitted: false`');
+    expect(feasibility).toContain('### R7 remediation: final evidence lineage and artifact binding');
+    expect(feasibility).toContain('criticalInputsCleanAtRun');
+    expect(feasibility).toContain('git merge-base --is-ancestor');
     expect(feasibility).toContain('This is not a full Go');
     expect(feasibility).toContain('does not authorize Task 13.2');
     expect(feasibility).toContain('real_sdk');
@@ -47,6 +61,23 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     expect(feasibility).toContain('Prompts, complete stdout/stderr, environment values, credentials, auth files, and raw temporary PID logs are not committed');
     expect(feasibility).toContain('ephemeral_correlation_only');
     expect(feasibility).toContain('source = real_sdk | packaged_sdk | local_validator_fixture | static_manifest');
+  });
+
+  it('records a static current-status override without rewriting historical runtime evidence', () => {
+    expect(existsSync(pendingEvidencePath)).toBe(true);
+    const pending = JSON.parse(readFileSync(pendingEvidencePath, 'utf8')) as {
+      source: string;
+      classification: string;
+      assertions: Record<string, boolean>;
+      historicalAuthority: string;
+    };
+
+    expect(pending.source).toBe('static_manifest');
+    expect(pending.classification).toBe('windows_conditional_verdict_pending_recertification');
+    expect(Object.values(pending.assertions).every(Boolean)).toBe(true);
+    expect(pending.historicalAuthority).toBe(
+      'block6a-task6a8b-verdict.json remains an expired historical decision record',
+    );
   });
 
   it('commits a sanitized 6A.8b decision summary with explicit expiry conditions', () => {
@@ -94,12 +125,17 @@ describe('Block 6A Codex SDK feasibility authority', () => {
 
     expect(feasibility).toContain('Lockfile may contain all official optional platform records');
     expect(feasibility).toContain('Task 6A.2 must discover and record the actual project-local CLI path');
-    expect(feasibility).toContain('utility PID, parent PID chain, process start time, and project-local executable path');
+    expect(feasibility).toContain('Every identity binds PID, parent PID, creation time and executable path; PID alone is never identity');
+    expect(feasibility).toContain('freezes those exact identities for that session');
+    expect(feasibility).toContain('duplicate PID observation, incomplete chain or multiple attributed CLI candidates fails closed');
     expect(feasibility).toContain('Never terminate a Codex process whose ownership by the current probe is not proven');
     expect(feasibility).toContain('authenticated | login_required | auth_failed | unverified');
     expect(feasibility).toContain('A real success probe is blocked when authenticated state is unavailable');
     expect(feasibility).toContain('window close and app quit are distinct trigger scenarios');
     expect(feasibility).toContain('cleanup executes at most once');
+    expect(feasibility).toContain('freezes the complete top-level evidence envelope');
+    expect(feasibility).toContain('`prompt`, `stdout`, `stderr`, arbitrary producer fields');
+    expect(feasibility).toContain('exact string allowlist rather than a free-text channel');
   });
 
   it('preserves historical unexecuted facts while naming the new authority as current', () => {
@@ -110,12 +146,14 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     const activeContext = context.slice(0, context.indexOf('Task 12R-A hardens'));
 
     expect(context).toContain('V1-BLOCK-6A-CODEX-SDK-FEASIBILITY.md');
-    expect(context).toContain('current verdict is conditional Go for Windows-only feasibility');
+    expect(context).toContain('current status is pending Windows recertification');
     expect(context).not.toContain('Task 6A.1 establishes `docs/engineering/V1-BLOCK-6A-CODEX-SDK-FEASIBILITY.md` as the current Codex feasibility authority with verdict `pending`');
     expect(activeContext).not.toMatch(/no SDK dependency is installed|no probe has run|no Go\/No-Go decision/i);
     expect(feasibility.match(/^Verdict:/gm)).toHaveLength(1);
-    expect(feasibility).not.toContain('No Windows feasibility verdict');
+    expect(feasibility).toContain('No current Windows feasibility verdict may be reissued before R8');
     expect(decisions).toContain('## D080: Codex SDK Feasibility Is Conditional Go For Windows Only');
+    expect(decisions).toContain('## D081: Current Codex Feasibility Verdict Is Pending Recertification');
+    expect(decisions).toContain('D080 remains a historical decision and is expired for the current working tree');
     expect(context).toContain('At the Block 8A checkpoint, 6A feasibility remained unexecuted and unrecorded.');
     expect(block8aStatus).toContain('6A/Codex SDK feasibility remains unexecuted and unrecorded');
     expect(decisions).toContain('The early Codex feasibility gate remains unexecuted and has no Go decision.');

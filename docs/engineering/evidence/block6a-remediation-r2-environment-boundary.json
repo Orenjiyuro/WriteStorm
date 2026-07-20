@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "block6a-remediation-r2-environment-boundary-001",
+  "task": "6A.R2",
+  "source": "static_manifest",
+  "recordedAt": "2026-07-19T11:24:57.187Z",
+  "commandName": "block6a-utility-environment-policy-and-sdk-source-guard",
+  "classification": "utility_environment_boundary_frozen",
+  "versions": {
+    "codexSdk": "0.144.6"
+  },
+  "writeStormUtilityAllowlistKeys": [
+    "ALL_PROXY",
+    "APPDATA",
+    "CODEX_HOME",
+    "COMSPEC",
+    "HOME",
+    "HOMEDRIVE",
+    "HOMEPATH",
+    "HTTP_PROXY",
+    "HTTPS_PROXY",
+    "LOCALAPPDATA",
+    "NODE_EXTRA_CA_CERTS",
+    "NO_PROXY",
+    "PATH",
+    "PATHEXT",
+    "SSL_CERT_DIR",
+    "SSL_CERT_FILE",
+    "SYSTEMDRIVE",
+    "SYSTEMROOT",
+    "TEMP",
+    "TMP",
+    "USERDOMAIN",
+    "USERNAME",
+    "USERPROFILE",
+    "WINDIR",
+    "WRITESTORM_CODEX_SYNTHETIC_EXPECTED",
+    "WRITESTORM_CODEX_SYNTHETIC_INPUT"
+  ],
+  "writeStormCliBaseAllowlistKeys": [
+    "ALL_PROXY",
+    "APPDATA",
+    "CODEX_HOME",
+    "COMSPEC",
+    "HOME",
+    "HOMEDRIVE",
+    "HOMEPATH",
+    "HTTP_PROXY",
+    "HTTPS_PROXY",
+    "LOCALAPPDATA",
+    "NODE_EXTRA_CA_CERTS",
+    "NO_PROXY",
+    "PATH",
+    "PATHEXT",
+    "SSL_CERT_DIR",
+    "SSL_CERT_FILE",
+    "SYSTEMDRIVE",
+    "SYSTEMROOT",
+    "TEMP",
+    "TMP",
+    "USERDOMAIN",
+    "USERNAME",
+    "USERPROFILE",
+    "WINDIR"
+  ],
+  "sdkEnvironmentOverlay": {
+    "alwaysInjectedKeys": [
+      "CODEX_INTERNAL_ORIGINATOR_OVERRIDE"
+    ],
+    "apiKeyOptionConditionalKeys": [
+      "CODEX_API_KEY"
+    ],
+    "automaticResolutionMutatedKeys": [
+      "PATH"
+    ]
+  },
+  "assertions": {
+    "utilityUsesExplicitAllowlist": true,
+    "unknownParentKeysExcludedFromUtility": true,
+    "nodeOptionsExcludedFromUtility": true,
+    "apiCredentialKeysExcludedFromUtilityBase": true,
+    "syntheticControlsExcludedFromCliBase": true,
+    "isolatedAuthRequiresExplicitCodexHome": true,
+    "sdkOverlayMatchesInstalledSource": true,
+    "writeStormDoesNotUseSdkApiKeyOption": true,
+    "environmentValuesExcludedFromEvidence": true
+  },
+  "limitations": [
+    "This static manifest records environment key names and booleans only; it does not record, print or export any environment value.",
+    "CODEX_API_KEY is an SDK 0.144.6 conditional overlay capability only when the apiKey option is supplied; WriteStorm does not supply that option.",
+    "The SDK may prepend its resolved platform-package directory to the existing PATH during automatic development resolution; packaged Windows execution uses codexPathOverride.",
+    "Fresh development and packaged runtime recertification remains pending until R8."
+  ]
+}

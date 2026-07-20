@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "block6a-remediation-r7-evidence-lineage-001",
+  "task": "6A remediation R7",
+  "source": "static_manifest",
+  "recordedAt": "2026-07-20T07:15:00.000Z",
+  "commandName": "block6a-r7-focused-evidence-lineage-verification",
+  "classification": "evidence_lineage_contract_frozen",
+  "assertions": {
+    "runHeadAndCriticalCleanlinessBound": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r7-evidence-lineage-001",
+      "classification": "evidence_lineage_contract_frozen"
+    },
+    "lockRuntimeArtifactAndInputsHashed": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r7-evidence-lineage-001",
+      "classification": "evidence_lineage_contract_frozen"
+    },
+    "finalHeadMustDescendFromRunHead": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r7-evidence-lineage-001",
+      "classification": "evidence_lineage_contract_frozen"
+    },
+    "postRunChangesAreEvidenceOnly": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r7-evidence-lineage-001",
+      "classification": "evidence_lineage_contract_frozen"
+    }
+  },
+  "limitations": [
+    "This static_manifest proves the fail-closed lineage contract, not a fresh SDK or packaged run.",
+    "The current uncommitted remediation working tree cannot produce criticalInputsCleanAtRun true.",
+    "Fresh R8 must run from a committed critical boundary and be followed only by evidence, authority, and corresponding consistency-test changes."
+  ]
+}

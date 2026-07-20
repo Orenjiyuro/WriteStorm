@@ -1,10 +1,14 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { build } from 'vite';
-import { admitBlock6aProbeResults } from './block6a-probe-admission.mjs';
+import { evaluateBlock6aProbeResults } from './block6a-probe-admission.mjs';
+import {
+  createBlock6aLineageSnapshot,
+  verifyBlock6aEvidenceLineageAtRepository,
+} from './block6a-evidence-lineage.mjs';
 
 const approvedInputHash = '59a9268039bb5bad326151cbe27320c64c89cbf5b054035978c432a4ce5c4a26';
 const approvedExpectedHash = '6fe7aac1e4d9ae4aec0a14e6bfd46af4ee18892c247a2d0aecfa5091f017afab';
@@ -21,14 +25,20 @@ assertApprovedSyntheticValue(syntheticExpected, approvedExpectedHash, 64, 'expec
 
 const runId = randomUUID();
 const resultRoot = path.join(os.tmpdir(), 'writestorm-block6a-reproduction', runId);
+const packagedArtifactRoot = mode === 'packaged'
+  ? path.join(root, 'out', 'writestorm-win32-x64')
+  : undefined;
+const lineage = createBlock6aLineageSnapshot(root, mode, packagedArtifactRoot);
 mkdirSync(resultRoot, { recursive: true });
 
 try {
   const results = mode === 'packaged'
     ? [await runPackagedProbe(runId)]
     : await runDevelopmentProbes(mode);
-  const summary = admitBlock6aProbeResults(mode, results);
-  process.stdout.write(`${JSON.stringify({ mode, results: summary })}\n`);
+  verifyBlock6aEvidenceLineageAtRepository(lineage, root, packagedArtifactRoot);
+  const evaluation = evaluateBlock6aProbeResults(mode, results);
+  process.stdout.write(`${JSON.stringify({ mode, evaluation })}\n`);
+  if (!evaluation.recertificationAdmitted) process.exitCode = 1;
 } finally {
   if (process.env.WRITESTORM_CODEX_KEEP_SANITIZED_RESULTS !== '1') {
     rmSync(resultRoot, { recursive: true, force: true });
@@ -40,9 +50,21 @@ async function runDevelopmentProbes(selectedMode) {
   await buildProbeEntries(buildRoot);
   const utilityPath = path.join(buildRoot, 'utility-entry.cjs');
   const electronPath = path.join(root, 'node_modules', 'electron', 'dist', 'electron.exe');
+  const cliPath = path.join(
+    root,
+    'node_modules',
+    '@openai',
+    'codex-win32-x64',
+    'vendor',
+    'x86_64-pc-windows-msvc',
+    'bin',
+    'codex.exe',
+  );
+  if (!existsSync(cliPath)) throw new Error('Project-local Windows Codex executable is missing.');
   const safeEnvironment = createSafeEnvironment({
     WRITESTORM_CODEX_UTILITY_PATH: utilityPath,
     WRITESTORM_CODEX_SOURCE_ROOT: root,
+    WRITESTORM_CODEX_CLI_PATH: cliPath,
   });
   if (selectedMode === 'dev') {
     const capabilityPath = path.join(resultRoot, 'capability.json');
@@ -58,17 +80,6 @@ async function runDevelopmentProbes(selectedMode) {
     return [readSanitizedResult(capabilityPath), readSanitizedResult(outputSchemaPath)];
   }
 
-  const cliPath = path.join(
-    root,
-    'node_modules',
-    '@openai',
-    'codex-win32-x64',
-    'vendor',
-    'x86_64-pc-windows-msvc',
-    'bin',
-    'codex.exe',
-  );
-  if (!existsSync(cliPath)) throw new Error('Project-local Windows Codex executable is missing.');
   const results = [];
   for (const scenario of ['app-timeout', 'explicit-cancel', 'window-close', 'app-quit']) {
     const resultPath = path.join(resultRoot, `lifecycle-${scenario}.json`);
@@ -167,7 +178,12 @@ function readSanitizedResult(filePath) {
   if (!result || typeof result !== 'object' || typeof result.classification !== 'string') {
     throw new Error('Probe did not produce a sanitized classification.');
   }
-  return result;
+  const boundResult = { ...result, lineage };
+  writeFileSync(filePath, `${JSON.stringify(boundResult, null, 2)}\n`, {
+    encoding: 'utf8',
+    flag: 'w',
+  });
+  return boundResult;
 }
 
 function assertApprovedSyntheticValue(value, expectedHash, maximumLength, label) {

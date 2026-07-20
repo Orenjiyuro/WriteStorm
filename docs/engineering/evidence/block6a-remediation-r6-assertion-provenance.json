@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "block6a-remediation-r6-assertion-provenance-001",
+  "task": "6A remediation R6",
+  "source": "static_manifest",
+  "recordedAt": "2026-07-20T05:00:00.000Z",
+  "commandName": "block6a-r6-focused-assertion-provenance-verification",
+  "classification": "assertion_provenance_contract_frozen",
+  "assertions": {
+    "freshAssertionsUseExactLeafShape": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r6-assertion-provenance-001",
+      "classification": "assertion_provenance_contract_frozen"
+    },
+    "runtimeSourcesDoNotUpgradeStaticBoundaries": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r6-assertion-provenance-001",
+      "classification": "assertion_provenance_contract_frozen"
+    },
+    "admissionRejectsLegacyBooleanAndWrongProvenance": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r6-assertion-provenance-001",
+      "classification": "assertion_provenance_contract_frozen"
+    }
+  },
+  "limitations": [
+    "This static_manifest does not replace fresh real_sdk or packaged_sdk execution.",
+    "Historical pre-R6 runtime records remain dated evidence and are not rewritten into the new shape.",
+    "Git/auth structured classification and final source/package/artifact lineage remain separate blockers."
+  ]
+}

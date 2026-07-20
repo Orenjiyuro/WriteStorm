@@ -2,12 +2,12 @@ import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { utilityProcess } from 'electron';
 import {
-  CODEX_FEASIBILITY_PROTOCOL_VERSION,
   diagnoseCodexFeasibilityResponse,
   isCodexFeasibilityResponse,
   type CodexCapabilityProbeInput,
   type CodexCapabilityProbeResult,
-  type CodexFeasibilityRequest,
+  type CodexFeasibilityRequestPayload,
+  type CodexFeasibilityResponse,
   type CodexFeasibilityResponseDiagnostic,
   type CodexFeasibilityUtilityErrorCode,
   type CodexLifecycleProbeInput,
@@ -17,6 +17,18 @@ import {
   type CodexOutputSchemaProbeResult,
   type CodexRuntimeInspection,
 } from './protocol';
+import {
+  CODEX_FEASIBILITY_OPERATIONS,
+  type CodexFeasibilityOperationFailureReason,
+  type CodexFeasibilityOperationDescriptor,
+  type CodexFeasibilityRunnerPhase,
+} from './operations';
+import { CodexFeasibilitySessionSupervisor } from './session-supervisor';
+import {
+  CodexFeasibilityTerminationSupervisor,
+  type CodexFeasibilityTerminationOwnership,
+  type CodexFeasibilityTerminationSummary,
+} from './termination-supervisor';
 
 export type CodexFeasibilityUtilityHandle = {
   readonly pid: number | undefined;
@@ -45,41 +57,26 @@ export type CodexFeasibilityRunnerFailureReason =
   | 'timeout'
   | 'crash'
   | 'protocol'
-  | 'inspection_failed'
-  | 'capability_failed'
-  | 'output_schema_failed'
-  | 'lifecycle_failed';
+  | CodexFeasibilityOperationFailureReason;
 
-export type CodexTimeoutCleanupSummary = {
-  readonly classification: 'graceful' | 'forced';
-  readonly abortRequested: boolean;
-  readonly abortObserved: boolean;
-  readonly sdkPromiseSettled: boolean;
-  readonly cleanupAcknowledged: boolean;
-  readonly utilityExitObserved: boolean;
-};
+export type CodexTimeoutCleanupSummary = CodexFeasibilityTerminationSummary;
 
 export class CodexFeasibilityRunnerError extends Error {
   readonly code = 'CODEX_FEASIBILITY_UTILITY_FAILED' as const;
+  readonly timeoutCleanup: CodexTimeoutCleanupSummary | undefined;
 
   constructor(
     readonly reason: CodexFeasibilityRunnerFailureReason,
     message: string,
     readonly utilityErrorCode?: CodexFeasibilityUtilityErrorCode,
     readonly protocolDiagnostic?: CodexFeasibilityResponseDiagnostic & {
-      readonly phase:
-        | 'inspect'
-        | 'capability'
-        | 'output-schema'
-        | 'start-lifecycle'
-        | 'await-trigger'
-        | 'cancel-lifecycle'
-        | 'shutdown';
+      readonly phase: CodexFeasibilityRunnerPhase;
     },
-    readonly timeoutCleanup?: CodexTimeoutCleanupSummary,
+    readonly terminationCleanup?: CodexFeasibilityTerminationSummary,
   ) {
     super(message);
     this.name = 'CodexFeasibilityRunnerError';
+    this.timeoutCleanup = reason === 'timeout' ? terminationCleanup : undefined;
   }
 }
 
@@ -107,6 +104,51 @@ export type CodexFeasibilityLifecycleOutcome = {
   readonly result: CodexLifecycleProbeResult;
 };
 
+type CodexFeasibilityUtilitySessionOptions = {
+  readonly utilityWorkingDirectory?: string;
+  readonly utilityEnvironment?: NodeJS.ProcessEnv;
+  readonly terminationOwnership?: CodexFeasibilityTerminationOwnership;
+};
+
+type CodexFeasibilitySingleOperationCommand =
+  | 'inspect-runtime'
+  | 'run-capability-probe'
+  | 'run-output-schema-probe';
+
+type CodexFeasibilityOperationResult<Command extends CodexFeasibilitySingleOperationCommand> =
+  Command extends 'inspect-runtime'
+    ? CodexRuntimeInspection
+    : Command extends 'run-capability-probe'
+      ? CodexCapabilityProbeResult
+      : CodexOutputSchemaProbeResult;
+
+type CodexFeasibilityUtilitySessionOutcome<Result> = {
+  readonly utilityPid: number;
+  readonly cleanupAcknowledged: true;
+  readonly result: Result;
+};
+
+type CodexFeasibilityUtilitySessionContext = {
+  readonly session: CodexFeasibilitySessionSupervisor;
+  readonly send: (createMessage: () => unknown) => boolean;
+  readonly requestShutdown: () => void;
+  readonly beginTermination: (error: CodexFeasibilityRunnerError) => void;
+  readonly isTerminating: () => boolean;
+};
+
+type CodexFeasibilityUtilitySessionConfig<Result> =
+  CodexFeasibilityUtilitySessionOptions & {
+    readonly timeoutMs: number;
+    readonly fallbackPhase: CodexFeasibilityRunnerPhase;
+    readonly start: (context: CodexFeasibilityUtilitySessionContext) => void;
+    readonly consumeOperationResponse: (
+      message: CodexFeasibilityResponse,
+      context: CodexFeasibilityUtilitySessionContext,
+    ) => void;
+    readonly getResult: () => Result | undefined;
+    readonly getFailure: () => CodexFeasibilityRunnerError | undefined;
+  };
+
 export class CodexFeasibilityRunner {
   private readonly modulePath: string;
   private readonly fork: ForkCodexFeasibilityUtility;
@@ -130,124 +172,15 @@ export class CodexFeasibilityRunner {
     options?: {
       readonly utilityWorkingDirectory: string;
       readonly utilityEnvironment: NodeJS.ProcessEnv;
+      readonly terminationOwnership?: CodexFeasibilityTerminationOwnership;
     },
   ): Promise<CodexFeasibilityInspectionOutcome> {
-    const inspectRequestId = this.createRequestId();
-    const timeoutCancelRequestId = this.createRequestId();
-    const shutdownRequestId = this.createRequestId();
-    const child = this.fork(this.modulePath, [], {
-      serviceName: 'WriteStorm Codex Feasibility Utility',
-      stdio: 'pipe',
-      cwd: options?.utilityWorkingDirectory,
-      env: options?.utilityEnvironment,
-    });
-
-    return new Promise((resolve, reject) => {
-      let settled = false;
-      let phase: 'inspect' | 'shutdown' = 'inspect';
-      let inspection: CodexRuntimeInspection | undefined;
-      let inspectionFailure: CodexFeasibilityRunnerError | undefined;
-      let utilityPid: number | undefined;
-      let cleanupAcknowledged = false;
-      const timeoutSupervisor = createTimeoutSupervisor({
-        child,
-        timeoutMs,
-        graceMs: this.timeoutGraceMs,
-        cancelRequestId: timeoutCancelRequestId,
-        shutdownRequestId,
-        onFinished: (summary) => fail(runnerFailure('timeout', undefined, summary)),
-      });
-      const cleanup = (): void => {
-        timeoutSupervisor.dispose();
-        child.removeListener('spawn', onSpawn);
-        child.removeListener('message', onMessage);
-        child.removeListener('exit', onExit);
-      };
-      const fail = (error: CodexFeasibilityRunnerError): void => {
-        if (settled) return;
-        settled = true;
-        cleanup();
-        reject(error);
-      };
-      const onSpawn = (): void => {
-        child.postMessage({
-          version: CODEX_FEASIBILITY_PROTOCOL_VERSION,
-          origin: 'main',
-          requestId: inspectRequestId,
-          command: 'inspect-runtime',
-        } satisfies CodexFeasibilityRequest);
-      };
-      const requestShutdown = (): void => {
-        phase = 'shutdown';
-        child.postMessage({
-          version: CODEX_FEASIBILITY_PROTOCOL_VERSION,
-          origin: 'main',
-          requestId: shutdownRequestId,
-          command: 'shutdown',
-        } satisfies CodexFeasibilityRequest);
-      };
-      const onMessage = (message: unknown): void => {
-        if (timeoutSupervisor.consumeMessage(message)) return;
-        if (settled || !isCodexFeasibilityResponse(message)) {
-          fail(runnerProtocolFailure(message, phase));
-          child.kill();
-          return;
-        }
-
-        if (utilityPid !== undefined && message.utilityPid !== utilityPid) {
-          fail(runnerFailure('protocol'));
-          child.kill();
-          return;
-        }
-        utilityPid = message.utilityPid;
-
-        if (phase === 'inspect') {
-          if (message.command !== 'inspect-runtime' || message.requestId !== inspectRequestId) {
-            fail(runnerFailure('protocol'));
-            child.kill();
-            return;
-          }
-          if (message.ok) {
-            inspection = message.result;
-          } else {
-            inspectionFailure = runnerFailure('inspection_failed', message.error.code);
-          }
-          requestShutdown();
-          return;
-        }
-
-        if (message.command !== 'shutdown' || message.requestId !== shutdownRequestId) {
-          fail(runnerFailure('protocol'));
-          child.kill();
-          return;
-        }
-        cleanupAcknowledged = message.cleanupAcknowledged;
-      };
-      const onExit = (code: number): void => {
-        if (timeoutSupervisor.consumeExit()) return;
-        if (settled) return;
-        if (phase !== 'shutdown' || !cleanupAcknowledged || code !== 0) {
-          fail(runnerFailure('crash'));
-          return;
-        }
-
-        if (inspectionFailure) {
-          fail(inspectionFailure);
-          return;
-        }
-        if (!inspection || utilityPid === undefined) {
-          fail(runnerFailure('protocol'));
-          return;
-        }
-        settled = true;
-        cleanup();
-        resolve({ utilityPid, cleanupAcknowledged: true, result: inspection });
-      };
-
-      child.on('spawn', onSpawn);
-      child.on('message', onMessage);
-      child.on('exit', onExit);
-    });
+    return this.runSingleOperation(
+      CODEX_FEASIBILITY_OPERATIONS.inspect,
+      {},
+      timeoutMs,
+      options,
+    );
   }
 
   runCapabilityProbe(
@@ -256,125 +189,15 @@ export class CodexFeasibilityRunner {
     options: {
       readonly utilityWorkingDirectory: string;
       readonly utilityEnvironment: NodeJS.ProcessEnv;
+      readonly terminationOwnership?: CodexFeasibilityTerminationOwnership;
     },
   ): Promise<CodexFeasibilityCapabilityOutcome> {
-    const capabilityRequestId = this.createRequestId();
-    const timeoutCancelRequestId = this.createRequestId();
-    const shutdownRequestId = this.createRequestId();
-    const child = this.fork(this.modulePath, [], {
-      serviceName: 'WriteStorm Codex Feasibility Utility',
-      stdio: 'pipe',
-      cwd: options.utilityWorkingDirectory,
-      env: options.utilityEnvironment,
-    });
-
-    return new Promise((resolve, reject) => {
-      let settled = false;
-      let phase: 'capability' | 'shutdown' = 'capability';
-      let capabilityResult: CodexCapabilityProbeResult | undefined;
-      let capabilityFailure: CodexFeasibilityRunnerError | undefined;
-      let utilityPid: number | undefined;
-      let cleanupAcknowledged = false;
-      const timeoutSupervisor = createTimeoutSupervisor({
-        child,
-        timeoutMs,
-        graceMs: this.timeoutGraceMs,
-        cancelRequestId: timeoutCancelRequestId,
-        shutdownRequestId,
-        onFinished: (summary) => fail(runnerFailure('timeout', undefined, summary)),
-      });
-      const cleanup = (): void => {
-        timeoutSupervisor.dispose();
-        child.removeListener('spawn', onSpawn);
-        child.removeListener('message', onMessage);
-        child.removeListener('exit', onExit);
-      };
-      const fail = (error: CodexFeasibilityRunnerError): void => {
-        if (settled) return;
-        settled = true;
-        cleanup();
-        reject(error);
-      };
-      const onSpawn = (): void => {
-        child.postMessage({
-          version: CODEX_FEASIBILITY_PROTOCOL_VERSION,
-          origin: 'main',
-          requestId: capabilityRequestId,
-          command: 'run-capability-probe',
-          input,
-        } satisfies CodexFeasibilityRequest);
-      };
-      const requestShutdown = (): void => {
-        phase = 'shutdown';
-        child.postMessage({
-          version: CODEX_FEASIBILITY_PROTOCOL_VERSION,
-          origin: 'main',
-          requestId: shutdownRequestId,
-          command: 'shutdown',
-        } satisfies CodexFeasibilityRequest);
-      };
-      const onMessage = (message: unknown): void => {
-        if (timeoutSupervisor.consumeMessage(message)) return;
-        if (settled || !isCodexFeasibilityResponse(message)) {
-          fail(runnerProtocolFailure(message, phase));
-          child.kill();
-          return;
-        }
-
-
-        if (utilityPid !== undefined && message.utilityPid !== utilityPid) {
-          fail(runnerFailure('protocol'));
-          child.kill();
-          return;
-        }
-        utilityPid = message.utilityPid;
-
-        if (phase === 'capability') {
-          if (message.command !== 'run-capability-probe' || message.requestId !== capabilityRequestId) {
-            fail(runnerFailure('protocol'));
-            child.kill();
-            return;
-          }
-          if (message.ok) {
-            capabilityResult = message.result;
-          } else {
-            capabilityFailure = runnerFailure('capability_failed', message.error.code);
-          }
-          requestShutdown();
-          return;
-        }
-
-        if (message.command !== 'shutdown' || message.requestId !== shutdownRequestId) {
-          fail(runnerFailure('protocol'));
-          child.kill();
-          return;
-        }
-        cleanupAcknowledged = message.cleanupAcknowledged;
-      };
-      const onExit = (code: number): void => {
-        if (timeoutSupervisor.consumeExit()) return;
-        if (settled) return;
-        if (phase !== 'shutdown' || !cleanupAcknowledged || code !== 0) {
-          fail(runnerFailure('crash'));
-          return;
-        }
-        if (capabilityFailure) {
-          fail(capabilityFailure);
-          return;
-        }
-        if (!capabilityResult || utilityPid === undefined) {
-          fail(runnerFailure('protocol'));
-          return;
-        }
-        settled = true;
-        cleanup();
-        resolve({ utilityPid, cleanupAcknowledged: true, result: capabilityResult });
-      };
-
-      child.on('spawn', onSpawn);
-      child.on('message', onMessage);
-      child.on('exit', onExit);
-    });
+    return this.runSingleOperation(
+      CODEX_FEASIBILITY_OPERATIONS.capability,
+      { input },
+      timeoutMs,
+      options,
+    );
   }
 
   runOutputSchemaProbe(
@@ -383,120 +206,15 @@ export class CodexFeasibilityRunner {
     options: {
       readonly utilityWorkingDirectory: string;
       readonly utilityEnvironment: NodeJS.ProcessEnv;
+      readonly terminationOwnership?: CodexFeasibilityTerminationOwnership;
     },
   ): Promise<CodexFeasibilityOutputSchemaOutcome> {
-    const probeRequestId = this.createRequestId();
-    const timeoutCancelRequestId = this.createRequestId();
-    const shutdownRequestId = this.createRequestId();
-    const child = this.fork(this.modulePath, [], {
-      serviceName: 'WriteStorm Codex Feasibility Utility',
-      stdio: 'pipe',
-      cwd: options.utilityWorkingDirectory,
-      env: options.utilityEnvironment,
-    });
-
-    return new Promise((resolve, reject) => {
-      let settled = false;
-      let phase: 'output-schema' | 'shutdown' = 'output-schema';
-      let probeResult: CodexOutputSchemaProbeResult | undefined;
-      let probeFailure: CodexFeasibilityRunnerError | undefined;
-      let utilityPid: number | undefined;
-      let cleanupAcknowledged = false;
-      const timeoutSupervisor = createTimeoutSupervisor({
-        child,
-        timeoutMs,
-        graceMs: this.timeoutGraceMs,
-        cancelRequestId: timeoutCancelRequestId,
-        shutdownRequestId,
-        onFinished: (summary) => fail(runnerFailure('timeout', undefined, summary)),
-      });
-      const cleanup = (): void => {
-        timeoutSupervisor.dispose();
-        child.removeListener('spawn', onSpawn);
-        child.removeListener('message', onMessage);
-        child.removeListener('exit', onExit);
-      };
-      const fail = (error: CodexFeasibilityRunnerError): void => {
-        if (settled) return;
-        settled = true;
-        cleanup();
-        reject(error);
-      };
-      const onSpawn = (): void => {
-        child.postMessage({
-          version: CODEX_FEASIBILITY_PROTOCOL_VERSION,
-          origin: 'main',
-          requestId: probeRequestId,
-          command: 'run-output-schema-probe',
-          input,
-        } satisfies CodexFeasibilityRequest);
-      };
-      const requestShutdown = (): void => {
-        phase = 'shutdown';
-        child.postMessage({
-          version: CODEX_FEASIBILITY_PROTOCOL_VERSION,
-          origin: 'main',
-          requestId: shutdownRequestId,
-          command: 'shutdown',
-        } satisfies CodexFeasibilityRequest);
-      };
-      const onMessage = (message: unknown): void => {
-        if (timeoutSupervisor.consumeMessage(message)) return;
-        if (settled || !isCodexFeasibilityResponse(message)) {
-          fail(runnerProtocolFailure(message, phase));
-          child.kill();
-          return;
-        }
-        if (utilityPid !== undefined && message.utilityPid !== utilityPid) {
-          fail(runnerFailure('protocol'));
-          child.kill();
-          return;
-        }
-        utilityPid = message.utilityPid;
-
-        if (phase === 'output-schema') {
-          if (message.command !== 'run-output-schema-probe' || message.requestId !== probeRequestId) {
-            fail(runnerFailure('protocol'));
-            child.kill();
-            return;
-          }
-          if (message.ok) probeResult = message.result;
-          else probeFailure = runnerFailure('output_schema_failed', message.error.code);
-          requestShutdown();
-          return;
-        }
-
-        if (message.command !== 'shutdown' || message.requestId !== shutdownRequestId) {
-          fail(runnerFailure('protocol'));
-          child.kill();
-          return;
-        }
-        cleanupAcknowledged = message.cleanupAcknowledged;
-      };
-      const onExit = (code: number): void => {
-        if (timeoutSupervisor.consumeExit()) return;
-        if (settled) return;
-        if (phase !== 'shutdown' || !cleanupAcknowledged || code !== 0) {
-          fail(runnerFailure('crash'));
-          return;
-        }
-        if (probeFailure) {
-          fail(probeFailure);
-          return;
-        }
-        if (!probeResult || utilityPid === undefined) {
-          fail(runnerFailure('protocol'));
-          return;
-        }
-        settled = true;
-        cleanup();
-        resolve({ utilityPid, cleanupAcknowledged: true, result: probeResult });
-      };
-
-      child.on('spawn', onSpawn);
-      child.on('message', onMessage);
-      child.on('exit', onExit);
-    });
+    return this.runSingleOperation(
+      CODEX_FEASIBILITY_OPERATIONS.outputSchema,
+      { input },
+      timeoutMs,
+      options,
+    );
   }
 
   runLifecycleProbe(
@@ -506,148 +224,235 @@ export class CodexFeasibilityRunner {
       readonly utilityWorkingDirectory: string;
       readonly utilityEnvironment: NodeJS.ProcessEnv;
       readonly waitForTrigger: (context: { readonly utilityPid: number }) => Promise<CodexLifecycleTrigger>;
+      readonly terminationOwnership?: CodexFeasibilityTerminationOwnership;
     },
   ): Promise<CodexFeasibilityLifecycleOutcome> {
     const startRequestId = this.createRequestId();
     const cancelRequestId = this.createRequestId();
+    let lifecycleResult: CodexLifecycleProbeResult | undefined;
+    let lifecycleFailure: CodexFeasibilityRunnerError | undefined;
+
+    return this.runUtilitySession({
+      timeoutMs,
+      utilityWorkingDirectory: options.utilityWorkingDirectory,
+      utilityEnvironment: options.utilityEnvironment,
+      terminationOwnership: options.terminationOwnership,
+      fallbackPhase: CODEX_FEASIBILITY_OPERATIONS.startLifecycle.phase,
+      start: (context) => {
+        context.send(() => context.session.beginOperation(
+          CODEX_FEASIBILITY_OPERATIONS.startLifecycle,
+          startRequestId,
+          { input },
+        ));
+      },
+      consumeOperationResponse: (message, context) => {
+        const phase = context.session.currentPhase(
+          CODEX_FEASIBILITY_OPERATIONS.startLifecycle.phase,
+        );
+        if (phase === CODEX_FEASIBILITY_OPERATIONS.startLifecycle.phase) {
+          const response = context.session.acceptOperationResponse(
+            CODEX_FEASIBILITY_OPERATIONS.startLifecycle,
+            startRequestId,
+            message,
+          );
+          if (!response.ok) {
+            lifecycleFailure = runnerFailure(
+              CODEX_FEASIBILITY_OPERATIONS.startLifecycle.failureReason,
+              response.error.code,
+            );
+            context.requestShutdown();
+            return;
+          }
+          context.session.awaitContinuation('await-trigger');
+          void options.waitForTrigger({ utilityPid: response.utilityPid }).then(
+            (trigger) => {
+              if (context.isTerminating()
+                || context.session.isFinal()
+                || context.session.currentPhase('await-trigger') !== 'await-trigger') return;
+              context.send(() => context.session.beginOperation(
+                CODEX_FEASIBILITY_OPERATIONS.cancelLifecycle,
+                cancelRequestId,
+                { trigger },
+              ));
+            },
+            () => context.beginTermination(runnerFailure(
+              CODEX_FEASIBILITY_OPERATIONS.startLifecycle.failureReason,
+            )),
+          );
+          return;
+        }
+        if (phase !== CODEX_FEASIBILITY_OPERATIONS.cancelLifecycle.phase) {
+          throw new Error('Unexpected lifecycle phase.');
+        }
+        const response = context.session.acceptOperationResponse(
+          CODEX_FEASIBILITY_OPERATIONS.cancelLifecycle,
+          cancelRequestId,
+          message,
+        );
+        if (response.ok) lifecycleResult = response.result;
+        else lifecycleFailure = runnerFailure(
+          CODEX_FEASIBILITY_OPERATIONS.cancelLifecycle.failureReason,
+          response.error.code,
+        );
+        context.requestShutdown();
+      },
+      getResult: () => lifecycleResult,
+      getFailure: () => lifecycleFailure,
+    });
+  }
+
+  private runSingleOperation<Command extends CodexFeasibilitySingleOperationCommand>(
+    descriptor: CodexFeasibilityOperationDescriptor<Command> & {
+      readonly failureReason: CodexFeasibilityOperationFailureReason;
+    },
+    payload: CodexFeasibilityRequestPayload<Command>,
+    timeoutMs: number,
+    options?: CodexFeasibilityUtilitySessionOptions,
+  ): Promise<CodexFeasibilityUtilitySessionOutcome<CodexFeasibilityOperationResult<Command>>> {
+    const requestId = this.createRequestId();
+    let result: CodexFeasibilityOperationResult<Command> | undefined;
+    let failure: CodexFeasibilityRunnerError | undefined;
+
+    return this.runUtilitySession({
+      timeoutMs,
+      utilityWorkingDirectory: options?.utilityWorkingDirectory,
+      utilityEnvironment: options?.utilityEnvironment,
+      terminationOwnership: options?.terminationOwnership,
+      fallbackPhase: descriptor.phase,
+      start: (context) => {
+        context.send(() => context.session.beginOperation(descriptor, requestId, payload));
+      },
+      consumeOperationResponse: (message, context) => {
+        const response = context.session.acceptOperationResponse(
+          descriptor,
+          requestId,
+          message,
+        ) as CodexFeasibilityResponse;
+        if (response.ok) {
+          if (!('result' in response)) throw new Error('Operation result missing.');
+          result = response.result as CodexFeasibilityOperationResult<Command>;
+        } else {
+          failure = runnerFailure(
+            descriptor.failureReason,
+            response.error.code,
+          );
+        }
+        context.requestShutdown();
+      },
+      getResult: () => result,
+      getFailure: () => failure,
+    });
+  }
+
+  private runUtilitySession<Result>(
+    config: CodexFeasibilityUtilitySessionConfig<Result>,
+  ): Promise<CodexFeasibilityUtilitySessionOutcome<Result>> {
     const timeoutCancelRequestId = this.createRequestId();
     const shutdownRequestId = this.createRequestId();
     const child = this.fork(this.modulePath, [], {
       serviceName: 'WriteStorm Codex Feasibility Utility',
       stdio: 'pipe',
-      cwd: options.utilityWorkingDirectory,
-      env: options.utilityEnvironment,
+      cwd: config.utilityWorkingDirectory,
+      env: config.utilityEnvironment,
     });
 
     return new Promise((resolve, reject) => {
-      let settled = false;
-      let phase: 'start-lifecycle' | 'await-trigger' | 'cancel-lifecycle' | 'shutdown' = 'start-lifecycle';
-      let lifecycleResult: CodexLifecycleProbeResult | undefined;
-      let lifecycleFailure: CodexFeasibilityRunnerError | undefined;
-      let utilityPid: number | undefined;
-      let cleanupAcknowledged = false;
-      const timeoutSupervisor = createTimeoutSupervisor({
+      const session = new CodexFeasibilitySessionSupervisor();
+      let terminating = false;
+      const terminationSupervisor = new CodexFeasibilityTerminationSupervisor<CodexFeasibilityRunnerError>({
         child,
-        timeoutMs,
         graceMs: this.timeoutGraceMs,
         cancelRequestId: timeoutCancelRequestId,
         shutdownRequestId,
-        onFinished: (summary) => fail(runnerFailure('timeout', undefined, summary)),
+        ownership: config.terminationOwnership,
+        onFinished: (failure, summary) => settleFailure(withTerminationCleanup(failure, summary)),
       });
+      terminationSupervisor.armTimeout(config.timeoutMs, runnerFailure('timeout'));
       const cleanup = (): void => {
-        timeoutSupervisor.dispose();
+        terminationSupervisor.dispose();
         child.removeListener('spawn', onSpawn);
         child.removeListener('message', onMessage);
         child.removeListener('exit', onExit);
       };
-      const fail = (error: CodexFeasibilityRunnerError): void => {
-        if (settled) return;
-        settled = true;
+      const settleFailure = (error: CodexFeasibilityRunnerError): void => {
+        if (!session.fail()) return;
         cleanup();
         reject(error);
       };
+      const beginTermination = (error: CodexFeasibilityRunnerError): void => {
+        terminating = true;
+        terminationSupervisor.begin(error);
+      };
+      const context: CodexFeasibilityUtilitySessionContext = {
+        session,
+        send: (createMessage) => !terminating
+          && sendSessionMessage(child, createMessage, beginTermination),
+        requestShutdown: () => {
+          context.send(() => session.beginShutdown(shutdownRequestId));
+        },
+        beginTermination,
+        isTerminating: () => terminating,
+      };
       const onSpawn = (): void => {
-        child.postMessage({
-          version: CODEX_FEASIBILITY_PROTOCOL_VERSION,
-          origin: 'main',
-          requestId: startRequestId,
-          command: 'start-lifecycle-probe',
-          input,
-        } satisfies CodexFeasibilityRequest);
-      };
-      const requestShutdown = (): void => {
-        phase = 'shutdown';
-        child.postMessage({
-          version: CODEX_FEASIBILITY_PROTOCOL_VERSION,
-          origin: 'main',
-          requestId: shutdownRequestId,
-          command: 'shutdown',
-        } satisfies CodexFeasibilityRequest);
-      };
-      const requestCancel = (trigger: CodexLifecycleTrigger): void => {
-        if (settled || phase !== 'await-trigger') return;
-        phase = 'cancel-lifecycle';
-        child.postMessage({
-          version: CODEX_FEASIBILITY_PROTOCOL_VERSION,
-          origin: 'main',
-          requestId: cancelRequestId,
-          command: 'cancel-lifecycle-probe',
-          trigger,
-        } satisfies CodexFeasibilityRequest);
+        if (child.pid === undefined) {
+          beginTermination(runnerFailure('crash'));
+          return;
+        }
+        try {
+          session.bindUtilityPid(child.pid);
+          terminationSupervisor.bindUtility(child.pid);
+          config.start(context);
+        } catch {
+          beginTermination(runnerFailure('crash'));
+        }
       };
       const onMessage = (message: unknown): void => {
-        if (timeoutSupervisor.consumeMessage(message)) return;
-        if (settled || !isCodexFeasibilityResponse(message)) {
-          fail(runnerProtocolFailure(message, phase));
-          child.kill();
+        if (terminationSupervisor.consumeMessage(message)) return;
+        if (session.isFinal() || !isCodexFeasibilityResponse(message)) {
+          beginTermination(runnerProtocolFailure(
+            message,
+            session.currentPhase(config.fallbackPhase),
+          ));
           return;
         }
-        if (utilityPid !== undefined && message.utilityPid !== utilityPid) {
-          fail(runnerFailure('protocol'));
-          child.kill();
-          return;
-        }
-        utilityPid = message.utilityPid;
-
-        if (phase === 'start-lifecycle') {
-          if (message.command !== 'start-lifecycle-probe' || message.requestId !== startRequestId) {
-            fail(runnerFailure('protocol'));
-            child.kill();
-            return;
+        try {
+          if (session.currentPhase(config.fallbackPhase)
+            === CODEX_FEASIBILITY_OPERATIONS.shutdown.phase) {
+            session.acceptShutdownResponse(shutdownRequestId, message);
+          } else {
+            config.consumeOperationResponse(message, context);
           }
-          if (!message.ok) {
-            lifecycleFailure = runnerFailure('lifecycle_failed', message.error.code);
-            requestShutdown();
-            return;
-          }
-          phase = 'await-trigger';
-          void options.waitForTrigger({ utilityPid: message.utilityPid }).then(
-            requestCancel,
-            () => {
-              fail(runnerFailure('lifecycle_failed'));
-              child.kill();
-            },
-          );
-          return;
+        } catch {
+          beginTermination(runnerProtocolFailure(
+            message,
+            session.currentPhase(config.fallbackPhase),
+          ));
         }
-
-        if (phase === 'cancel-lifecycle') {
-          if (message.command !== 'cancel-lifecycle-probe' || message.requestId !== cancelRequestId) {
-            fail(runnerFailure('protocol'));
-            child.kill();
-            return;
-          }
-          if (message.ok) lifecycleResult = message.result;
-          else lifecycleFailure = runnerFailure('lifecycle_failed', message.error.code);
-          requestShutdown();
-          return;
-        }
-
-        if (phase !== 'shutdown' || message.command !== 'shutdown' || message.requestId !== shutdownRequestId) {
-          fail(runnerFailure('protocol'));
-          child.kill();
-          return;
-        }
-        cleanupAcknowledged = message.cleanupAcknowledged;
       };
       const onExit = (code: number): void => {
-        if (timeoutSupervisor.consumeExit()) return;
-        if (settled) return;
-        if (phase !== 'shutdown' || !cleanupAcknowledged || code !== 0) {
-          fail(runnerFailure('crash'));
+        if (terminationSupervisor.consumeExit()) return;
+        if (session.isFinal()) return;
+        try {
+          session.acceptUtilityExit(code);
+        } catch {
+          beginTermination(runnerFailure('crash'));
+          terminationSupervisor.consumeExit();
           return;
         }
-        if (lifecycleFailure) {
-          fail(lifecycleFailure);
+        const failure = config.getFailure();
+        if (failure) {
+          settleFailure(failure);
           return;
         }
-        if (!lifecycleResult || utilityPid === undefined) {
-          fail(runnerFailure('protocol'));
+        const utilityPid = session.getUtilityPid();
+        const result = config.getResult();
+        if (result === undefined || utilityPid === undefined) {
+          settleFailure(runnerFailure('protocol'));
           return;
         }
-        settled = true;
+        session.complete();
         cleanup();
-        resolve({ utilityPid, cleanupAcknowledged: true, result: lifecycleResult });
+        resolve({ utilityPid, cleanupAcknowledged: true, result });
       };
 
       child.on('spawn', onSpawn);
@@ -655,116 +460,6 @@ export class CodexFeasibilityRunner {
       child.on('exit', onExit);
     });
   }
-}
-
-function createTimeoutSupervisor(options: {
-  readonly child: CodexFeasibilityUtilityHandle;
-  readonly timeoutMs: number;
-  readonly graceMs: number;
-  readonly cancelRequestId: string;
-  readonly shutdownRequestId: string;
-  readonly onFinished: (summary: CodexTimeoutCleanupSummary) => void;
-}): {
-  consumeMessage(message: unknown): boolean;
-  consumeExit(): boolean;
-  dispose(): void;
-} {
-  let active = false;
-  let disposed = false;
-  let finished = false;
-  let forced = false;
-  let abortRequested = false;
-  let abortObserved = false;
-  let sdkPromiseSettled = false;
-  let cleanupAcknowledged = false;
-  let stage: 'cancel' | 'shutdown' | 'exit' = 'cancel';
-  let graceTimer: NodeJS.Timeout | undefined;
-  const timeoutTimer = setTimeout(() => {
-    if (disposed) return;
-    active = true;
-    options.child.postMessage({
-      version: CODEX_FEASIBILITY_PROTOCOL_VERSION,
-      origin: 'main',
-      requestId: options.cancelRequestId,
-      command: 'cancel-active-probe',
-    } satisfies CodexFeasibilityRequest);
-    armGraceTimer();
-  }, options.timeoutMs);
-
-  const finish = (utilityExitObserved: boolean): void => {
-    if (finished) return;
-    finished = true;
-    active = false;
-    clearTimeout(timeoutTimer);
-    if (graceTimer) clearTimeout(graceTimer);
-    options.onFinished({
-      classification: forced ? 'forced' : 'graceful',
-      abortRequested,
-      abortObserved,
-      sdkPromiseSettled,
-      cleanupAcknowledged,
-      utilityExitObserved,
-    });
-  };
-  const forceUtilityExit = (): void => {
-    if (forced || finished) return;
-    forced = true;
-    stage = 'exit';
-    options.child.kill();
-    if (graceTimer) clearTimeout(graceTimer);
-    graceTimer = setTimeout(() => finish(false), options.graceMs);
-  };
-  function armGraceTimer(): void {
-    if (graceTimer) clearTimeout(graceTimer);
-    graceTimer = setTimeout(forceUtilityExit, options.graceMs);
-  }
-
-  return {
-    consumeMessage(message) {
-      if (!active) return false;
-      if (!isCodexFeasibilityResponse(message)) {
-        forceUtilityExit();
-        return true;
-      }
-      if (stage === 'cancel'
-        && message.command === 'cancel-active-probe'
-        && message.requestId === options.cancelRequestId) {
-        abortRequested = message.abortRequested;
-        abortObserved = message.abortObserved;
-        sdkPromiseSettled = message.sdkPromiseSettled;
-        stage = 'shutdown';
-        options.child.postMessage({
-          version: CODEX_FEASIBILITY_PROTOCOL_VERSION,
-          origin: 'main',
-          requestId: options.shutdownRequestId,
-          command: 'shutdown',
-        } satisfies CodexFeasibilityRequest);
-        armGraceTimer();
-        return true;
-      }
-      if (stage === 'shutdown'
-        && message.command === 'shutdown'
-        && message.requestId === options.shutdownRequestId) {
-        cleanupAcknowledged = message.cleanupAcknowledged;
-        stage = 'exit';
-        armGraceTimer();
-        return true;
-      }
-      // The aborted operation may publish its normal sanitized response before
-      // cancel acknowledgement. Timeout supervision owns and discards it.
-      return true;
-    },
-    consumeExit() {
-      if (!active) return false;
-      finish(true);
-      return true;
-    },
-    dispose() {
-      disposed = true;
-      clearTimeout(timeoutTimer);
-      if (graceTimer) clearTimeout(graceTimer);
-    },
-  };
 }
 
 function runnerFailure(
@@ -790,22 +485,42 @@ function runnerFailure(
   );
 }
 
+export function sendSessionMessage(
+  child: Pick<CodexFeasibilityUtilityHandle, 'postMessage'>,
+  createMessage: () => unknown,
+  beginTermination: (error: CodexFeasibilityRunnerError) => void,
+): boolean {
+  try {
+    child.postMessage(createMessage());
+    return true;
+  } catch {
+    beginTermination(runnerFailure('crash'));
+    return false;
+  }
+}
+
 function runnerProtocolFailure(
   message: unknown,
-  phase:
-    | 'inspect'
-    | 'capability'
-    | 'output-schema'
-    | 'start-lifecycle'
-    | 'await-trigger'
-    | 'cancel-lifecycle'
-    | 'shutdown',
+  phase: CodexFeasibilityRunnerPhase,
 ): CodexFeasibilityRunnerError {
   return new CodexFeasibilityRunnerError(
     'protocol',
     'Codex feasibility utility returned an invalid response.',
     undefined,
     { phase, ...diagnoseCodexFeasibilityResponse(message) },
+  );
+}
+
+function withTerminationCleanup(
+  error: CodexFeasibilityRunnerError,
+  summary: CodexFeasibilityTerminationSummary,
+): CodexFeasibilityRunnerError {
+  return new CodexFeasibilityRunnerError(
+    error.reason,
+    error.message,
+    error.utilityErrorCode,
+    error.protocolDiagnostic,
+    summary,
   );
 }
 

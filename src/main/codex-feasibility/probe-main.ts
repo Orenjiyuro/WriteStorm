@@ -7,11 +7,18 @@ import {
   CodexFeasibilityRunner,
   CodexFeasibilityRunnerError,
 } from './runner';
+import { createCodexUtilityEnvironment } from './environment';
+import { WindowsOwnedProcessGuard } from './lifecycle';
 import type {
   CodexCapabilityProbeInput,
   CodexCapabilityProbeResult,
 } from './protocol';
 import { validateMinimalStructuredOutput } from './structured-output';
+import {
+  BLOCK6A_R2_ENVIRONMENT_EVIDENCE_ID,
+  BLOCK6A_R6_PROVENANCE_EVIDENCE_ID,
+  createBlock6aAssertion,
+} from './assertion-provenance';
 
 type ScenarioPlan = {
   readonly input: CodexCapabilityProbeInput;
@@ -21,9 +28,10 @@ type ScenarioPlan = {
 const resultPath = process.env.WRITESTORM_CODEX_CAPABILITY_RESULT;
 const utilityModulePath = process.env.WRITESTORM_CODEX_UTILITY_PATH;
 const sourceRoot = process.env.WRITESTORM_CODEX_SOURCE_ROOT;
+const expectedCliPath = process.env.WRITESTORM_CODEX_CLI_PATH;
 
 void app.whenReady().then(async () => {
-  if (!resultPath || !utilityModulePath || !sourceRoot) {
+  if (!resultPath || !utilityModulePath || !sourceRoot || !expectedCliPath) {
     process.exit(31);
     return;
   }
@@ -35,7 +43,7 @@ void app.whenReady().then(async () => {
   const explicitGit = path.join(workspacesRoot, 'explicit-git');
   const nonGit = path.join(workspacesRoot, 'non-git');
   const emptyCodexHome = path.join(probeRoot, 'codex-home-empty');
-  const utilityEnvironment = createUtilityEnvironment(process.env);
+  const utilityEnvironment = createCodexUtilityEnvironment(process.env);
   const runner = new CodexFeasibilityRunner({ modulePath: utilityModulePath });
 
   try {
@@ -104,12 +112,22 @@ void app.whenReady().then(async () => {
     const scenarios: CodexCapabilityProbeResult[] = [];
     for (const plan of scenarioPlans) {
       writeSanitizedProgress(plan.input.scenario, scenarios.length);
-      const outcome = await runner.runCapabilityProbe(plan.input, 45_000, {
-        utilityWorkingDirectory: plan.utilityWorkingDirectory,
-        utilityEnvironment,
+      const ownership = new WindowsOwnedProcessGuard({
+        utilityExecutablePath: process.execPath,
+        cliExecutablePath: expectedCliPath,
+        observationStartedAt: Date.now() - 1_000,
       });
-      scenarios.push(outcome.result);
-      writeSanitizedProgress(null, scenarios.length);
+      try {
+        const outcome = await runner.runCapabilityProbe(plan.input, 45_000, {
+          utilityWorkingDirectory: plan.utilityWorkingDirectory,
+          utilityEnvironment,
+          terminationOwnership: ownership,
+        });
+        scenarios.push(outcome.result);
+        writeSanitizedProgress(null, scenarios.length);
+      } finally {
+        ownership.dispose();
+      }
     }
 
     writeSanitizedResult({
@@ -126,18 +144,38 @@ void app.whenReady().then(async () => {
         codexSdk: '0.144.6',
       },
       assertions: {
-        probeRootOutsideSourceRepository: !isInside(probeRoot, sourceRoot),
-        workspacesOutsideLibraryRoot: !isInside(workspacesRoot, libraryRoot),
-        workspacesOutsidePackagedResources: !isInside(workspacesRoot, process.resourcesPath),
-        apiCredentialEnvironmentExcludedFromUtility: true,
-        syntheticInputNotPassedInProtocol: true,
-        scenarioCount: scenarios.length === 5,
+        probeRootOutsideSourceRepository: createBlock6aAssertion(
+          !isInside(probeRoot, sourceRoot), 'static_manifest',
+          BLOCK6A_R6_PROVENANCE_EVIDENCE_ID, 'local_probe_boundary_observed',
+        ),
+        workspacesOutsideLibraryRoot: createBlock6aAssertion(
+          !isInside(workspacesRoot, libraryRoot), 'static_manifest',
+          BLOCK6A_R6_PROVENANCE_EVIDENCE_ID, 'local_probe_boundary_observed',
+        ),
+        workspacesOutsidePackagedResources: createBlock6aAssertion(
+          !isInside(workspacesRoot, process.resourcesPath), 'static_manifest',
+          BLOCK6A_R6_PROVENANCE_EVIDENCE_ID, 'local_probe_boundary_observed',
+        ),
+        apiCredentialEnvironmentExcludedFromUtility: createBlock6aAssertion(
+          true, 'static_manifest', BLOCK6A_R2_ENVIRONMENT_EVIDENCE_ID,
+          'utility_environment_boundary_frozen',
+        ),
+        syntheticInputNotPassedInProtocol: createBlock6aAssertion(
+          true, 'static_manifest', BLOCK6A_R6_PROVENANCE_EVIDENCE_ID,
+          'typed_protocol_boundary_frozen',
+        ),
+        scenarioCount: createBlock6aAssertion(
+          scenarios.length === 5, 'real_sdk',
+          'block6a-6a5-real-sdk-cwd-git-env-auth-001',
+          'cwd_git_env_auth_probe_completed',
+        ),
       },
       scenarios,
       limitations: [
         'No prompt, path, environment value, credential, PID or raw SDK error is retained.',
         'The current-auth scenario classifies the existing state but does not create or modify login state.',
         'WriteStorm has no product login UI in Task 6A.5.',
+        'Unstructured SDK or CLI failures are retained only as runtime_failed / unverified and block recertification.',
       ],
     });
   } catch (error) {
@@ -155,7 +193,10 @@ void app.whenReady().then(async () => {
         codexSdk: '0.144.6',
       },
       assertions: {
-        sanitizedFailureRecorded: true,
+        sanitizedFailureRecorded: createBlock6aAssertion(
+          true, 'static_manifest', BLOCK6A_R6_PROVENANCE_EVIDENCE_ID,
+          'sanitized_failure_boundary',
+        ),
       },
       failure: error instanceof CodexFeasibilityRunnerError
         ? {
@@ -163,6 +204,7 @@ void app.whenReady().then(async () => {
             reason: error.reason,
             utilityErrorCode: error.utilityErrorCode ?? null,
             protocolDiagnostic: error.protocolDiagnostic ?? null,
+            terminationCleanup: error.terminationCleanup ?? null,
           }
         : { code: 'UNCLASSIFIED_PROBE_FAILURE' },
     });
@@ -183,16 +225,6 @@ function exitAfterBestEffortCleanup(directory: string): never {
   }
 }
 
-function createUtilityEnvironment(inherited: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
-  const environment = { ...inherited };
-  for (const key of Object.keys(environment)) {
-    if (/^(?:OPENAI_API_KEY|CODEX_API_KEY|CODEX_ACCESS_TOKEN)$/i.test(key)) {
-      delete environment[key];
-    }
-  }
-  return environment;
-}
-
 function isInside(candidate: string, parent: string): boolean {
   const relativePath = path.relative(parent, candidate);
   return relativePath === '' || (!relativePath.startsWith('..') && !path.isAbsolute(relativePath));
@@ -211,7 +243,12 @@ function writeSanitizedProgress(currentScenario: string | null, completedScenari
     recordedAt: new Date().toISOString(),
     commandName: 'block6a-electron-utility-cwd-git-env-auth-probe',
     classification: 'probe_in_progress',
-    assertions: { promptResponseAndRawErrorsExcluded: true },
+    assertions: {
+      promptResponseAndRawErrorsExcluded: createBlock6aAssertion(
+        true, 'static_manifest', BLOCK6A_R6_PROVENANCE_EVIDENCE_ID,
+        'sanitized_progress_boundary',
+      ),
+    },
     progress: { completedScenarioCount, currentScenario },
   });
 }

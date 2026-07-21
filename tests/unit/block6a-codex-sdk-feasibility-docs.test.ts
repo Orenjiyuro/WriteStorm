@@ -18,6 +18,10 @@ const r8aCapabilityBlockedPath =
   'docs/engineering/evidence/block6a-r8a2-windows-dev-capability-blocked.json';
 const r8aOutputSchemaBlockedPath =
   'docs/engineering/evidence/block6a-r8a2-windows-dev-output-schema-blocked.json';
+const r8a3CapabilityBlockedPath =
+  'docs/engineering/evidence/block6a-r8a3-windows-dev-capability-blocked.json';
+const r8a3OutputSchemaBlockedPath =
+  'docs/engineering/evidence/block6a-r8a3-windows-dev-output-schema-blocked.json';
 
 describe('Block 6A Codex SDK feasibility authority', () => {
   it('keeps long-term multi-provider direction compatible with the V1 Codex-only gate', () => {
@@ -223,6 +227,72 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     expect(feasibility).toContain('`sdk_unstructured`');
     expect(feasibility).toContain('future runtime evidence therefore carries eight input ids and hashes');
     expect(decisions).toContain('## D085: Runtime Failure Attribution Is Local and Non-Causal');
+  });
+
+  it('records the fresh R8a3 origins without promoting them to causal classifications', () => {
+    const feasibility = readFileSync(feasibilityPath, 'utf8');
+    const decisions = readFileSync(decisionsPath, 'utf8');
+    const capability = JSON.parse(readFileSync(r8a3CapabilityBlockedPath, 'utf8')) as {
+      source: string;
+      classification: string;
+      scenarios: Array<{
+        scenario: string;
+        outcome: string;
+        authClassification: string;
+        runtimeFailureOrigin: string;
+      }>;
+      lineage: {
+        gitHeadAtRun: string;
+        criticalInputsCleanAtRun: boolean;
+        evidenceInputs: unknown[];
+      };
+    };
+    const outputSchema = JSON.parse(readFileSync(r8a3OutputSchemaBlockedPath, 'utf8')) as {
+      source: string;
+      classification: string;
+      scenarios: typeof capability.scenarios;
+      lineage: typeof capability.lineage;
+    };
+
+    expect(capability.source).toBe('real_sdk');
+    expect(capability.classification).toBe('cwd_git_env_auth_probe_completed');
+    expect(capability.scenarios.map(({ scenario, runtimeFailureOrigin }) => ({
+      scenario,
+      runtimeFailureOrigin,
+    }))).toEqual([
+      { scenario: 'default-git-isolated-auth', runtimeFailureOrigin: 'local_turn_deadline' },
+      { scenario: 'explicit-git-isolated-auth', runtimeFailureOrigin: 'local_turn_deadline' },
+      { scenario: 'explicit-non-git-isolated-auth', runtimeFailureOrigin: 'sdk_unstructured' },
+      { scenario: 'skip-non-git-isolated-auth', runtimeFailureOrigin: 'local_turn_deadline' },
+      { scenario: 'current-auth-explicit-git', runtimeFailureOrigin: 'local_turn_deadline' },
+    ]);
+    expect(outputSchema.source).toBe('real_sdk');
+    expect(outputSchema.classification).toBe('output_schema_probe_completed');
+    expect(outputSchema.scenarios.map(({ scenario, runtimeFailureOrigin }) => ({
+      scenario,
+      runtimeFailureOrigin,
+    }))).toEqual([
+      { scenario: 'valid-minimal', runtimeFailureOrigin: 'local_turn_deadline' },
+      { scenario: 'invalid-schema', runtimeFailureOrigin: 'sdk_unstructured' },
+    ]);
+    for (const record of [capability, outputSchema]) {
+      expect(record.scenarios.every((scenario) =>
+        scenario.outcome === 'runtime_failed'
+        && scenario.authClassification === 'unverified'
+      )).toBe(true);
+      expect(record.lineage).toMatchObject({
+        gitHeadAtRun: 'c7fa67271aac1f0a8b0fc7ec112e4a74080004dd',
+        criticalInputsCleanAtRun: true,
+      });
+      expect(record.lineage.evidenceInputs).toHaveLength(8);
+      expect(JSON.stringify(record)).not.toMatch(
+        /"(?:prompt|responseBody|stdout|stderr|pid|environmentValue|credential|authFile|executablePath|rawError|token)"\s*:/i,
+      );
+    }
+    expect(feasibility).toContain('### R8a3 fresh development result with safe failure origins');
+    expect(feasibility).toContain('`evidenceAccepted: true`');
+    expect(feasibility).toContain('`recertificationAdmitted: false`');
+    expect(decisions).toContain('## D086: Fresh R8a3 Development Run Remains Blocked with Safe Origins');
   });
 
   it('commits a sanitized 6A.8b decision summary with explicit expiry conditions', () => {

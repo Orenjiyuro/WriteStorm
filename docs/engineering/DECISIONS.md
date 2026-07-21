@@ -1153,3 +1153,16 @@ Rules:
 - R8a3 changes runtime, protocol and admission after the `e1db3d2` run. Those records remain historical blocked evidence, and a new clean development run is required before lifecycle or packaged execution.
 - Future lineage requires eight ordered static evidence inputs: the original six plus the R8a deadline and R8a3 attribution manifests. Historical six-input records are preserved rather than rewritten.
 - Current status remains pending recertification; macOS remains `deferred-by-user`, Task 13.1 remains blocked, and Task 13.2 is not authorized.
+
+## D086: Fresh R8a3 Development Run Remains Blocked with Safe Origins
+
+Decision: The clean `c7fa672` development run produced complete, sanitized, eight-input lineage evidence and a machine-readable blocked evaluation. Safe local origin attribution narrows timing but does not establish the cause of any SDK failure.
+
+Rules:
+
+- Four capability scenarios reached their local deadlines; explicit non-Git with Git checking rejected earlier as `sdk_unstructured`. All five remain `runtime_failed / unverified`.
+- Current auth did not complete a real authenticated turn within 90 seconds. This does not prove login-required, auth failure, network failure or provider failure.
+- Valid-minimal outputSchema reached its local deadline. Invalid-schema rejected earlier as `sdk_unstructured` but did not satisfy the fixed-version local-guard classification; real structured success and the guard remain unavailable.
+- Admission retained both exact records, returned five closed blockers, set `recertificationAdmitted: false` and exited non-zero. Lifecycle/package execution cannot bypass this result.
+- Both records exclude prompt, response body, stdout/stderr, environment value, credential, auth file, PID, executable path and raw SDK error; both pass final evidence lineage verification.
+- Current status remains pending recertification; macOS remains `deferred-by-user`, Task 13.1 remains blocked, and Task 13.2 is not authorized.

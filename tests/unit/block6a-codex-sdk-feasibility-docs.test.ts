@@ -24,6 +24,10 @@ const r8a3OutputSchemaBlockedPath =
   'docs/engineering/evidence/block6a-r8a3-windows-dev-output-schema-blocked.json';
 const r8a5GatePath =
   'docs/engineering/evidence/block6a-remediation-r8a5-conditional-development-gate.json';
+const r8a5CapabilityAdmittedPath =
+  'docs/engineering/evidence/block6a-r8a5-windows-dev-capability-admitted-with-conditions.json';
+const r8a5OutputSchemaAdmittedPath =
+  'docs/engineering/evidence/block6a-r8a5-windows-dev-output-schema-admitted-with-conditions.json';
 
 describe('Block 6A Codex SDK feasibility authority', () => {
   it('keeps long-term multi-provider direction compatible with the V1 Codex-only gate', () => {
@@ -53,7 +57,7 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     const verdictLine = feasibility.split(/\r?\n/).find((line) => line.startsWith('Verdict:'));
 
     expect(verdictLine).toBe(
-      'Verdict: `pending recertification — R8a5 conditional development gate awaits fresh Windows evidence; historical Windows-only conditional Go remains expired; macOS deferred-by-user`',
+      'Verdict: `pending recertification — R8a5 development admitted with conditions; fresh Windows lifecycle and packaged evidence remain required; macOS deferred-by-user`',
     );
     expect(feasibility).toContain('Historical Task 6A.8b decision');
     expect(feasibility).toContain('The current implementation is not Windows-feasibility verified');
@@ -98,6 +102,52 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     expect(decisions).toContain(
       '## D089: Development Admission Uses Positive Capabilities and Conditional Diagnostics',
     );
+  });
+
+  it('records the fresh R8a5 admitted-with-conditions development evidence', () => {
+    const records = [r8a5CapabilityAdmittedPath, r8a5OutputSchemaAdmittedPath].map(
+      (recordPath) => JSON.parse(readFileSync(recordPath, 'utf8')) as {
+        source: string;
+        classification: string;
+        scenarios: Array<Record<string, unknown>>;
+        lineage: { gitHeadAtRun: string; criticalInputsCleanAtRun: boolean; evidenceInputs: unknown[] };
+      },
+    );
+    const capability = records[0];
+    const outputSchema = records[1];
+    const feasibility = readFileSync(feasibilityPath, 'utf8');
+    const decisions = readFileSync(decisionsPath, 'utf8');
+
+    expect(capability.scenarios).toHaveLength(7);
+    expect(capability.scenarios).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        scenario: 'current-auth-non-git-check',
+        outcome: 'runtime_failed',
+        safeFailureCode: 'SDK_RUNTIME_UNAVAILABLE',
+      }),
+      expect.objectContaining({
+        scenario: 'current-auth-non-git-skip',
+        outcome: 'success',
+        safeFailureCode: null,
+        finalResponseMatched: true,
+      }),
+    ]));
+    expect(outputSchema.scenarios).toEqual(expect.arrayContaining([
+      expect.objectContaining({ scenario: 'valid-minimal', outcome: 'success' }),
+      expect.objectContaining({ scenario: 'invalid-schema', outcome: 'invalid_schema_rejected' }),
+    ]));
+    for (const record of records) {
+      expect(record.source).toBe('real_sdk');
+      expect(record.lineage.gitHeadAtRun).toBe('9eb679cb2b20c33f1e14a12a48f6ff246d4aaf24');
+      expect(record.lineage.criticalInputsCleanAtRun).toBe(true);
+      expect(record.lineage.evidenceInputs).toHaveLength(10);
+      expect(JSON.stringify(record)).not.toMatch(
+        /"(?:prompt|responseBody|stdout|stderr|pid|environmentValue|credential|authFile|executablePath|rawError|token)"\s*:/i,
+      );
+    }
+    expect(feasibility).toContain('### R8a5 fresh development result');
+    expect(feasibility).toContain('`admission: admitted_with_conditions`');
+    expect(decisions).toContain('## D090: Fresh R8a5 Development Gate Is Admitted With Conditions');
   });
 
   it('records a static current-status override without rewriting historical runtime evidence', () => {

@@ -1204,3 +1204,16 @@ Rules:
 - V1 depends on an existing ChatGPT-managed auth session. It provides no WriteStorm login entry or precise expired-session diagnosis; future Job/UI mapping may expose only generic safe recovery guidance until a separately designed stable signal exists.
 - R8a5 adds a tenth static lineage input and expires application of the nine-input `964979c` checkpoint to the new producer/protocol/admission boundary. No SDK turn ran in this remediation; fresh development evidence is required before lifecycle.
 - Lifecycle remains prerequisite to Windows packaged execution. Windows status remains pending recertification; macOS remains `deferred-by-user`, Task 13.1 remains blocked, and Task 13.2 is not authorized.
+
+## D090: Fresh R8a5 Development Gate Is Admitted With Conditions
+
+Decision: The clean `9eb679c` development run passes the R8a5 gate as `admitted_with_conditions` and authorizes fresh lifecycle feasibility execution, but does not itself restore the Windows-only conditional verdict.
+
+Rules:
+
+- Current-auth Git, valid-minimal outputSchema, pinned invalid-schema and all privacy/lineage requirements passed with no hard blocker.
+- Holding current auth and non-Git workspace constant, Git checking enabled produced only `SDK_RUNTIME_UNAVAILABLE` while `skipGitRepoCheck=true` produced an authenticated expected-result success. This proves bypass behavior without classifying the checked failure's cause.
+- The admitted result retains exactly four conditional limitations: missing structured Git/auth discriminant, isolated-auth deadline observation, isolated-auth generic unavailable observation and generic-only checked non-Git failure classification.
+- The two sanitized records bind clean run HEAD `9eb679c`, lockfile/runtime hashes and ten ordered evidence inputs. They contain no synthetic value, response body, raw output, environment value, credential, auth file, process identity, executable path or raw error.
+- Development admission permits lifecycle only. Packaged execution still requires lifecycle success; Windows conditional Go still requires packaged success and total-thread review.
+- Windows status remains pending recertification; macOS remains `deferred-by-user`, Task 13.1 remains blocked, and Task 13.2 is not authorized.

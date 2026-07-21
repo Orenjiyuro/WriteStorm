@@ -2,17 +2,17 @@
 
 Date: 2026-07-19
 
-Verdict: `pending recertification — R8a5 development admitted with conditions and fresh Windows lifecycle passed; fresh Windows packaged evidence remains required; macOS deferred-by-user`
+Verdict: `conditional Go — Windows-only feasibility verified; macOS deferred-by-user`
 
 ## Authority and scope
 
-This document is the current authority for Task 6A.1 through Task 6A.8b and the subsequent remediation. Tasks 6A.1–6A.8b record the original spike and its historical Windows-only conditional verdict. R1–R7 subsequently changed admission, environment, protocol, supervision, process ownership, cleanup, error classification, assertion provenance and evidence lineage behavior. Those changes triggered the recorded expiry conditions. The R8a–R8a4 development attempts remain valid historical evidence for their exact boundaries. The fresh R8a5 development run from clean HEAD `9eb679c` passed as `admitted_with_conditions`, and the subsequent fresh lifecycle run from clean HEAD `b29c859` passed all four scenarios. Windows remains pending because the fresh packaged gate has not run.
+This document is the current authority for Task 6A.1 through Task 6A.8b and the subsequent remediation. Tasks 6A.1–6A.8b record the original spike and its historical Windows-only conditional verdict. R1–R7 subsequently changed admission, environment, protocol, supervision, process ownership, cleanup, error classification, assertion provenance and evidence lineage behavior. Those changes triggered the recorded expiry conditions. The R8a–R8a4 development attempts remain valid historical evidence for their exact boundaries. The fresh R8a5 development run from clean HEAD `9eb679c` passed as `admitted_with_conditions`, the fresh lifecycle run from clean HEAD `b29c859` passed all four scenarios, and the fresh Windows x64 packaged run from clean HEAD `e741bda` passed the package boundary and real packaged SDK turn.
 
 V1 admits Codex SDK only. WriteStorm has a long-term multi-provider direction, but this task does not install, implement or call Claude, DeepSeek or another provider, and it never uses another provider as fallback. It does not implement a production `AiExecutionPort`, provider registry, Job integration, Settings connection flow, renderer AI action, Prompt runtime, module body generation or real breakdown pipeline.
 
 The probe uses only fixed, short, non-sensitive synthetic input. Repository source, Library contents, user manuscripts, prompts from production, secrets and credential material are outside the probe input boundary.
 
-macOS packaged runtime evidence is `deferred-by-user`. The pending Windows status is not a full Go and does not claim current Windows verification, cross-platform compatibility, macOS verification or release readiness.
+macOS packaged runtime evidence is `deferred-by-user`. The Windows-only conditional verdict is not a full Go and does not claim cross-platform compatibility, macOS verification or release readiness.
 
 ## Evidence record format
 
@@ -279,13 +279,13 @@ The committed historical decision summary is `docs/engineering/evidence/block6a-
 
 At that historical checkpoint, the decision was **conditional Go for Windows-only implementation feasibility**. Its dated Windows x64 evidence covered the official npm supply chain, server-side TypeScript SDK mechanism, dedicated utility-process isolation, explicit temporary Git cwd, environment filtering, current ChatGPT-managed authentication, strict structured output, supervised runner timeout and cancellation, distinct window-close and app-quit cleanup, residual-process attribution, Windows package contents and a real packaged SDK turn.
 
-### Current status: pending recertification
+### Current status: Windows-only conditional Go
 
-R1–R7 changed the evidence admission contract, utility environment, typed protocol, unified utility-session orchestration, session/termination supervision, owned-process cleanup, error classification, assertion provenance and evidence lineage. These are explicit expiry-condition changes. The current implementation is not Windows-feasibility verified, and the historical Task 6A.8b record cannot be applied to the changed working tree.
+R1–R7 changed the evidence admission contract, utility environment, typed protocol, unified utility-session orchestration, session/termination supervision, owned-process cleanup, error classification, assertion provenance and evidence lineage. Those expiry-condition changes invalidated application of the historical Task 6A.8b record to the repaired implementation. R8a5 then supplied fresh development, lifecycle and Windows x64 packaged evidence against clean committed run boundaries, so Windows implementation feasibility is now verified under the recorded conditions.
 
-Fresh R8 Windows packaged evidence is still required before the total thread may reissue the candidate `conditional Go — Windows-only feasibility verified; macOS deferred-by-user`. Passing the fresh lifecycle gate does not by itself restore that verdict. This pending state is not a No-Go, does not erase the dated 6A.5–6A.8 evidence and does not authorize Task 13.2.
+The current decision is `conditional Go — Windows-only feasibility verified; macOS deferred-by-user`. It depends on existing ChatGPT-managed auth and retains generic-only handling for SDK/CLI failures without a stable structured signal. It is not a full Go, cross-platform claim or release-readiness claim. It does not erase the dated 6A.5–6A.8 evidence, automatically unblock Task 13.1 or authorize Task 13.2.
 
-The current static status record is `docs/engineering/evidence/block6a-remediation-pending-recertification.json`. It records only authority state; it is not `real_sdk` or `packaged_sdk` evidence and cannot satisfy R8.
+The current static decision record is `docs/engineering/evidence/block6a-r8a5-windows-conditional-go-verdict.json`. It reconciles seven independently sourced fresh records without upgrading their provenance. `docs/engineering/evidence/block6a-remediation-pending-recertification.json` remains the historical R1–R7 pending-status checkpoint and is no longer the current decision.
 
 ### R8a 2026-07-20 Windows development recertification attempt
 
@@ -381,6 +381,20 @@ Window close caused both window-close and subsequent quit notifications, so it m
 
 Each record binds clean run HEAD `b29c859`, the unchanged lockfile/runtime hashes and ten ordered static evidence inputs; `packagedArtifactSha256` remains null because this was not a packaged run. The records retain no synthetic value, response body, stdout/stderr, environment value, credential, auth file, PID, executable path, process list or raw SDK error. Fresh lifecycle success authorizes only the next Windows packaged feasibility gate. It does not restore the Windows conditional verdict, unblock Task 13.1 or authorize Task 13.2; macOS remains `deferred-by-user`.
 
+### R8a5 fresh Windows packaged result
+
+`probe:codex:packaged` ran once from clean committed and pushed HEAD `e741bda473466f374f4a473ecb9beb3dd4f3f418`. The command created a fresh Electron Forge package for Windows x64, then ran the fixed package-boundary suite before launching the packaged executable. The package guard passed 7/7 verification tests. The packaged runner returned `evidenceAccepted: true`, `admission: admitted`, `recertificationAdmitted: true`, no blockers and no conditional limitations.
+
+The exact `packaged_sdk` record is `docs/engineering/evidence/block6a-r8a5-windows-packaged-sdk.json`. Its packaged-only gate proves `app.isPackaged`, Windows x64, both approved fixed-value hashes and an OS-temporary result path derived from the validated run UUID before starting the turn. The real packaged SDK turn imported and constructed SDK 0.144.6, executed its pinned 0.144.6 Windows CLI, authenticated through the existing ChatGPT-managed session, parsed the final JSON, passed the strict local validator, matched the expected value and acknowledged cleanup. The isolated Git workspace was outside packaged resources.
+
+The record binds run HEAD `e741bda`, the unchanged lockfile/runtime-boundary hashes, ten ordered static evidence inputs and the concrete packaged artifact SHA-256. The artifact contains only the required Windows platform runtime under the enforced allowlist/unpack boundary; the package suite rejects another platform record in actual resources or a missing required Windows runtime file. The record contains no synthetic value, response body, stdout/stderr, environment value, credential, auth file, PID, executable path, process list or raw SDK error. Its two static boundary assertions retain `static_manifest` provenance instead of inheriting `packaged_sdk`.
+
+Development, lifecycle and packaged gates now support the current `conditional Go — Windows-only feasibility verified; macOS deferred-by-user` decision. This remains a feasibility verdict only. Task 13.1 remains blocked until the total thread reviews the final branch and evidence; Task 13.2 is not authorized. No direct CLI, app-server, GUI automation, API-key, local-model or alternate-provider fallback is authorized.
+
+### Fresh full-check status
+
+The final `npm run check` attempt completed typecheck, all 165 unit files with 830/830 tests, and all 35 integration files with 290/290 tests. Packaged E2E completed 14/15 tests. The sole failure was `tests/e2e/app-router-session.spec.ts`, which detects the Library-session React Query cache defect intentionally isolated from this branch under the separate `602500f` salvage decision. This 6A branch must not absorb that unrelated renderer fix. Because E2E stopped on that failure, the chained verification stage did not run inside `npm run check`; the packaged command and focused verification independently passed the package-boundary suite 7/7. This record does not claim a fully green repository check.
+
 This is not a full Go. macOS packaged runtime is `deferred-by-user`, so this decision does not establish cross-platform compatibility, macOS support or release readiness. A complete Go claim still requires a macOS packaged package-boundary scan and real SDK runtime probe under the same privacy, auth, schema, cleanup and no-fallback rules. Unsafe-to-manufacture expired-session behavior and a natural WriteStorm login experience also remain unverified; the official SDK/CLI login mechanism is not a WriteStorm product login entry.
 
 The conditional verdict does not authorize Task 13.2. Only the total thread may review this record and explicitly decide whether Windows-only Task 13 work may begin. Until that review, existing renderer actions remain disabled and this feasibility harness remains outside production Job, Prompt, module-body and workflow integration.
@@ -389,7 +403,7 @@ Direct `codex exec`, app-server, GUI automation, API Key, local model, Claude, D
 
 ### Expiry conditions
 
-The historical conditional verdict expires and requires focused plus packaged recertification when any of these conditions occurs. Condition 4 has occurred in the current working tree:
+The conditional verdict expires and requires focused plus packaged recertification when any of these conditions occurs. Condition 4 caused the R1–R7 expiry and has been recertified by the R8a5 evidence above:
 
 1. The exact SDK, CLI or Windows platform-package version or integrity changes.
 2. The resolved dependency tree, install-script inventory or official registry provenance changes.
@@ -425,6 +439,6 @@ This R1 admission-contract revision intentionally makes the earlier persisted pr
 
 ## Historical and current truth
 
-Block 7 and Block 8 documents correctly record that 6A had not executed at their historical checkpoints. Those sentences remain unchanged and must not be globally deleted. This document remains the current authority: it preserves the later historical Task 6A.8b decision while recording that the changed working tree is pending R8 recertification. It does not rewrite either historical fact.
+Block 7 and Block 8 documents correctly record that 6A had not executed at their historical checkpoints. Those sentences remain unchanged and must not be globally deleted. This document remains the current authority: it preserves the later historical Task 6A.8b decision, the subsequent pending-recertification state and the fresh R8a5 Windows-only conditional reissue. It does not rewrite any historical fact.
 
 Task 6A.8b does not authorize Task 13.2. Only the total thread may review this verdict and authorize subsequent work.

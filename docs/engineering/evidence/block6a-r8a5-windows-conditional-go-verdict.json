@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "block6a-r8a5-static-windows-conditional-go-verdict-001",
+  "task": "6A.8b",
+  "source": "static_manifest",
+  "recordedAt": "2026-07-21T08:43:44.7069701Z",
+  "commandName": "block6a-r8a5-authority-reconciliation",
+  "classification": "conditional_go_windows_only_macos_deferred_by_user",
+  "verdict": "conditional Go — Windows-only feasibility verified; macOS deferred-by-user",
+  "assertions": {
+    "verdictDerivedFromProvenanceBearingEvidenceInputs": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-r8a5-static-windows-conditional-go-verdict-001",
+      "classification": "authority_consistency_verified"
+    },
+    "candidateScopedToWindowsOnly": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-r8a5-static-windows-conditional-go-verdict-001",
+      "classification": "authority_consistency_verified"
+    },
+    "macosDeferredByUserRecorded": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-r8a5-static-windows-conditional-go-verdict-001",
+      "classification": "authority_consistency_verified"
+    },
+    "fullGoNotClaimed": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-r8a5-static-windows-conditional-go-verdict-001",
+      "classification": "authority_consistency_verified"
+    },
+    "crossPlatformCompatibilityNotClaimed": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-r8a5-static-windows-conditional-go-verdict-001",
+      "classification": "authority_consistency_verified"
+    },
+    "releaseReadinessNotClaimed": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-r8a5-static-windows-conditional-go-verdict-001",
+      "classification": "authority_consistency_verified"
+    },
+    "task13Point1NotUnblockedByThisRecord": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-r8a5-static-windows-conditional-go-verdict-001",
+      "classification": "authority_consistency_verified"
+    },
+    "task13Point2NotAuthorized": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-r8a5-static-windows-conditional-go-verdict-001",
+      "classification": "authority_consistency_verified"
+    },
+    "fallbackNotAuthorized": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-r8a5-static-windows-conditional-go-verdict-001",
+      "classification": "authority_consistency_verified"
+    }
+  },
+  "evidenceInputs": [
+    {
+      "evidenceId": "block6a-6a5-real-sdk-cwd-git-env-auth-001",
+      "source": "real_sdk",
+      "classification": "cwd_git_env_auth_probe_completed",
+      "sha256": "b94d2d0673f568fb9075c71dbcb8935c7240fcb2846e931ad6e9663f6e5f54be",
+      "supports": ["current_auth_positive_core", "git_bypass_behavioral_differential"]
+    },
+    {
+      "evidenceId": "block6a-6a6-real-sdk-output-schema-001",
+      "source": "real_sdk",
+      "classification": "output_schema_probe_completed",
+      "sha256": "6ae5cf29133a725682f2d55a10796cef4c6e848eb01fd1466150ddf9b27ee611",
+      "supports": ["structured_output_positive_core", "pinned_invalid_schema_guard"]
+    },
+    {
+      "evidenceId": "block6a-6a7-real-sdk-app-timeout-001",
+      "source": "real_sdk",
+      "classification": "lifecycle_probe_passed",
+      "sha256": "34043c6f0805ee94ed2a4c4051af1e298b8119a17da99fac3cbbba1d35207729",
+      "supports": ["app_timeout_cleanup", "owned_process_zero_residual"]
+    },
+    {
+      "evidenceId": "block6a-6a7-real-sdk-explicit-cancel-001",
+      "source": "real_sdk",
+      "classification": "lifecycle_probe_passed",
+      "sha256": "dc5c050d66e25397bbdb7fc744495319dcd19c8f1f578786fc8abacdcff3ef01",
+      "supports": ["explicit_cancel_cleanup", "owned_process_zero_residual"]
+    },
+    {
+      "evidenceId": "block6a-6a7-real-sdk-window-close-001",
+      "source": "real_sdk",
+      "classification": "lifecycle_probe_passed",
+      "sha256": "bd5fb5992f37a4355ef44c2f06baf65dd66b16fb48310f3619795ce63ebaf6c4",
+      "supports": ["window_close_cleanup_once", "owned_process_zero_residual"]
+    },
+    {
+      "evidenceId": "block6a-6a7-real-sdk-app-quit-001",
+      "source": "real_sdk",
+      "classification": "lifecycle_probe_passed",
+      "sha256": "e59aa1ffbbb547aeba118198bd2e6b1e4dad9bb82682c109ab3de4bd336ff391",
+      "supports": ["app_quit_cleanup_once", "owned_process_zero_residual"]
+    },
+    {
+      "evidenceId": "block6a-6a8a-packaged-sdk-windows-001",
+      "source": "packaged_sdk",
+      "classification": "packaged_sdk_probe_completed",
+      "sha256": "d02a4452b2d1141fc67028c6b80a838ffccc945ac8c8cba3dfe03774272a8fcb",
+      "supports": ["windows_x64_packaged_sdk_turn", "packaged_artifact_lineage"]
+    }
+  ],
+  "conditionalLimitations": [
+    "sdk_0_144_6_has_no_structured_git_auth_failure_discriminant",
+    "isolated_empty_auth_may_end_as_generic_runtime_unavailable",
+    "v1_depends_on_existing_chatgpt_managed_auth",
+    "writestorm_login_entry_not_verified",
+    "expired_session_not_verified",
+    "macos_packaged_runtime_deferred_by_user"
+  ],
+  "expiryConditions": [
+    "sdk_cli_or_platform_package_version_or_integrity_changes",
+    "lockfile_dependency_tree_or_install_script_inventory_changes",
+    "electron_node_forge_vite_asar_or_package_boundary_changes",
+    "utility_protocol_environment_auth_schema_or_cleanup_behavior_changes",
+    "packaged_artifact_differs_from_the_bound_sha256",
+    "target_differs_from_windows_x64",
+    "fresh_authenticated_recertification_no_longer_succeeds",
+    "renderer_preload_or_shared_gains_a_forbidden_capability"
+  ]
+}

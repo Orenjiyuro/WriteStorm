@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
@@ -34,6 +35,10 @@ const r8a5LifecyclePaths = [
   'docs/engineering/evidence/block6a-r8a5-windows-lifecycle-window-close.json',
   'docs/engineering/evidence/block6a-r8a5-windows-lifecycle-app-quit.json',
 ];
+const r8a5PackagedPath =
+  'docs/engineering/evidence/block6a-r8a5-windows-packaged-sdk.json';
+const r8a5VerdictPath =
+  'docs/engineering/evidence/block6a-r8a5-windows-conditional-go-verdict.json';
 
 describe('Block 6A Codex SDK feasibility authority', () => {
   it('keeps long-term multi-provider direction compatible with the V1 Codex-only gate', () => {
@@ -57,17 +62,17 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     expect(decisions).toContain('Decision: V1 AI integration supports Codex SDK only.');
   });
 
-  it('marks the current implementation pending recertification without erasing the historical verdict', () => {
+  it('records the current Windows-only conditional verdict without erasing historical states', () => {
     expect(existsSync(feasibilityPath)).toBe(true);
     const feasibility = readFileSync(feasibilityPath, 'utf8');
     const verdictLine = feasibility.split(/\r?\n/).find((line) => line.startsWith('Verdict:'));
 
     expect(verdictLine).toBe(
-      'Verdict: `pending recertification — R8a5 development admitted with conditions and fresh Windows lifecycle passed; fresh Windows packaged evidence remains required; macOS deferred-by-user`',
+      'Verdict: `conditional Go — Windows-only feasibility verified; macOS deferred-by-user`',
     );
     expect(feasibility).toContain('Historical Task 6A.8b decision');
-    expect(feasibility).toContain('The current implementation is not Windows-feasibility verified');
-    expect(feasibility).toContain('Fresh R8 Windows packaged evidence is still required');
+    expect(feasibility).toContain('Windows implementation feasibility is now verified under the recorded conditions');
+    expect(feasibility).toContain('### R8a5 fresh Windows packaged result');
     expect(feasibility).toContain('every other unstructured SDK/CLI failure becomes `runtime_failed / unverified`');
     expect(feasibility).toContain('This feasibility classifier is not the Task 13 Job error contract');
     expect(feasibility).toContain('Evidence validation and recertification admission are separate states');
@@ -222,7 +227,120 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     );
   });
 
-  it('records a static current-status override without rewriting historical runtime evidence', () => {
+  it('binds the fresh Windows packaged result and conditional verdict to exact evidence', () => {
+    const packagedText = readFileSync(r8a5PackagedPath, 'utf8');
+    const packaged = JSON.parse(packagedText) as {
+      source: string;
+      classification: string;
+      assertions: Record<string, {
+        value: boolean;
+        source: string;
+        evidenceId: string;
+        classification: string;
+      }>;
+      runtime: { platform: string; architecture: string };
+      structuredResult: {
+        outcome: string;
+        authClassification: string;
+        finalJsonParsed: boolean;
+        strictValidatorAccepted: boolean;
+        expectedValueMatched: boolean;
+      };
+      lineage: {
+        gitHeadAtRun: string;
+        criticalInputsCleanAtRun: boolean;
+        packagedArtifactSha256: string;
+        evidenceInputs: unknown[];
+      };
+    };
+    const verdict = JSON.parse(readFileSync(r8a5VerdictPath, 'utf8')) as {
+      source: string;
+      classification: string;
+      verdict: string;
+      assertions: Record<string, { value: boolean; source: string }>;
+      evidenceInputs: Array<{
+        evidenceId: string;
+        source: string;
+        classification: string;
+        sha256: string;
+        supports: string[];
+      }>;
+    };
+    const inputPaths = new Map([
+      ['block6a-6a5-real-sdk-cwd-git-env-auth-001', r8a5CapabilityAdmittedPath],
+      ['block6a-6a6-real-sdk-output-schema-001', r8a5OutputSchemaAdmittedPath],
+      ['block6a-6a7-real-sdk-app-timeout-001', r8a5LifecyclePaths[0]],
+      ['block6a-6a7-real-sdk-explicit-cancel-001', r8a5LifecyclePaths[1]],
+      ['block6a-6a7-real-sdk-window-close-001', r8a5LifecyclePaths[2]],
+      ['block6a-6a7-real-sdk-app-quit-001', r8a5LifecyclePaths[3]],
+      ['block6a-6a8a-packaged-sdk-windows-001', r8a5PackagedPath],
+    ]);
+
+    expect(packaged.source).toBe('packaged_sdk');
+    expect(packaged.classification).toBe('packaged_sdk_probe_completed');
+    expect(packaged.runtime).toEqual({ platform: 'win32', architecture: 'x64' });
+    expect(packaged.structuredResult).toMatchObject({
+      outcome: 'success',
+      authClassification: 'authenticated',
+      finalJsonParsed: true,
+      strictValidatorAccepted: true,
+      expectedValueMatched: true,
+    });
+    expect(Object.values(packaged.assertions).every((assertion) => assertion.value)).toBe(true);
+    expect(packaged.assertions.apiCredentialEnvironmentExcludedFromUtility.source).toBe(
+      'static_manifest',
+    );
+    expect(packaged.assertions.promptAndSchemaNotPassedInProtocol.source).toBe('static_manifest');
+    expect(Object.entries(packaged.assertions)
+      .filter(([key]) => ![
+        'apiCredentialEnvironmentExcludedFromUtility',
+        'promptAndSchemaNotPassedInProtocol',
+      ].includes(key))
+      .every(([, assertion]) => assertion.source === 'packaged_sdk')).toBe(true);
+    expect(packaged.lineage).toMatchObject({
+      gitHeadAtRun: 'e741bda473466f374f4a473ecb9beb3dd4f3f418',
+      criticalInputsCleanAtRun: true,
+    });
+    expect(packaged.lineage.packagedArtifactSha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(packaged.lineage.evidenceInputs).toHaveLength(10);
+    expect(packagedText).not.toMatch(
+      /"(?:prompt|responseBody|stdout|stderr|pid|environmentValue|credential|authFile|executablePath|processList|rawError|token)"\s*:/i,
+    );
+
+    expect(verdict.source).toBe('static_manifest');
+    expect(verdict.classification).toBe(
+      'conditional_go_windows_only_macos_deferred_by_user',
+    );
+    expect(verdict.verdict).toBe(
+      'conditional Go — Windows-only feasibility verified; macOS deferred-by-user',
+    );
+    expect(Object.values(verdict.assertions).every(
+      (assertion) => assertion.value && assertion.source === 'static_manifest',
+    )).toBe(true);
+    expect(verdict.evidenceInputs).toHaveLength(7);
+    for (const input of verdict.evidenceInputs) {
+      const inputPath = inputPaths.get(input.evidenceId);
+      expect(inputPath).toBeTruthy();
+      expect(input.sha256).toBe(
+        createHash('sha256').update(readFileSync(inputPath as string)).digest('hex'),
+      );
+      expect(['real_sdk', 'packaged_sdk']).toContain(input.source);
+      expect(input.classification).toBeTruthy();
+      expect(input.supports.length).toBeGreaterThan(0);
+    }
+    expect(readFileSync(feasibilityPath, 'utf8')).toContain(
+      '### R8a5 fresh Windows packaged result',
+    );
+    expect(readFileSync(decisionsPath, 'utf8')).toContain(
+      '## D092: Fresh Packaged Evidence Restores Windows-Only Conditional Go',
+    );
+    expect(readFileSync(feasibilityPath, 'utf8')).toContain('### Fresh full-check status');
+    expect(readFileSync(feasibilityPath, 'utf8')).toContain(
+      'This record does not claim a fully green repository check',
+    );
+  });
+
+  it('retains the historical pending-status checkpoint without making it current', () => {
     expect(existsSync(pendingEvidencePath)).toBe(true);
     const pending = JSON.parse(readFileSync(pendingEvidencePath, 'utf8')) as {
       source: string;
@@ -236,6 +354,9 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     expect(Object.values(pending.assertions).every(Boolean)).toBe(true);
     expect(pending.historicalAuthority).toBe(
       'block6a-task6a8b-verdict.json remains an expired historical decision record',
+    );
+    expect(readFileSync(feasibilityPath, 'utf8')).toContain(
+      'remains the historical R1–R7 pending-status checkpoint and is no longer the current decision',
     );
   });
 
@@ -508,11 +629,16 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     const activeContext = context.slice(0, context.indexOf('Task 12R-A hardens'));
 
     expect(context).toContain('V1-BLOCK-6A-CODEX-SDK-FEASIBILITY.md');
-    expect(context).toContain('current status is pending Windows recertification');
+    expect(context).toContain(
+      'current verdict is `conditional Go — Windows-only feasibility verified; macOS deferred-by-user`',
+    );
     expect(context).not.toContain('Task 6A.1 establishes `docs/engineering/V1-BLOCK-6A-CODEX-SDK-FEASIBILITY.md` as the current Codex feasibility authority with verdict `pending`');
     expect(activeContext).not.toMatch(/no SDK dependency is installed|no probe has run|no Go\/No-Go decision/i);
     expect(feasibility.match(/^Verdict:/gm)).toHaveLength(1);
-    expect(feasibility).toContain('Passing the fresh lifecycle gate does not by itself restore that verdict');
+    expect(feasibility).toContain(
+      'Windows implementation feasibility is now verified under the recorded conditions',
+    );
+    expect(feasibility).toContain('the fresh R8a5 Windows-only conditional reissue');
     expect(decisions).toContain('## D080: Codex SDK Feasibility Is Conditional Go For Windows Only');
     expect(decisions).toContain('## D081: Current Codex Feasibility Verdict Is Pending Recertification');
     expect(decisions).toContain('D080 remains a historical decision and is expired for the current working tree');

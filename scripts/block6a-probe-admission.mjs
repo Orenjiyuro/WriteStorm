@@ -104,6 +104,8 @@ const requiredLineageEvidenceIds = [
   'block6a-remediation-r5-error-classification-001',
   'block6a-remediation-r6-assertion-provenance-001',
   'block6a-remediation-r7-evidence-lineage-001',
+  'block6a-remediation-r8a-turn-deadline-001',
+  'block6a-remediation-r8a3-runtime-failure-origin-001',
 ];
 const staticAssertion = (evidenceId, classification) => ({
   source: 'static_manifest', evidenceId, classification,
@@ -189,18 +191,10 @@ function validateDevelopmentResults(results) {
     true,
     false,
   );
-  requireExactScenario(
+  requireUnverifiedCapabilityScenario(
     exactScenario(capability.scenarios, 'explicit-non-git-isolated-auth'),
-    {
-      scenario: 'explicit-non-git-isolated-auth',
-      utilityCwdMatchedExpected: true,
-      explicitWorkingDirectoryRequested: true,
-      skipGitRepoCheck: false,
-      envPolicy: 'explicit_allowlist_no_api_credentials',
-      outcome: 'runtime_failed',
-      authClassification: 'unverified',
-      finalResponseMatched: null,
-    },
+    true,
+    false,
   );
   requireUnverifiedCapabilityScenario(
     exactScenario(capability.scenarios, 'skip-non-git-isolated-auth'),
@@ -219,6 +213,7 @@ function validateDevelopmentResults(results) {
       envPolicy: 'explicit_allowlist_no_api_credentials',
       outcome: 'success',
       authClassification: 'authenticated',
+      runtimeFailureOrigin: null,
       finalResponseMatched: true,
     });
   } else {
@@ -249,35 +244,47 @@ function validateDevelopmentResults(results) {
       scenario: 'valid-minimal',
       outcome: 'success',
       authClassification: 'authenticated',
+      runtimeFailureOrigin: null,
       finalJsonParsed: true,
       strictValidatorAccepted: true,
       expectedValueMatched: true,
       invalidSchemaRejectedBySdk: false,
     });
   } else {
-    requireExactScenario(validOutputSchema, {
-      scenario: 'valid-minimal',
-      outcome: 'runtime_failed',
+    requireUnverifiedOutputSchemaScenario(validOutputSchema);
+  }
+  const invalidOutputSchema = exactScenario(outputSchema.scenarios, 'invalid-schema');
+  const invalidSchemaGuardSucceeded = invalidOutputSchema.outcome === 'invalid_schema_rejected'
+    && invalidOutputSchema.invalidSchemaRejectedBySdk === true;
+  if (invalidSchemaGuardSucceeded) {
+    requireExactScenario(invalidOutputSchema, {
+      scenario: 'invalid-schema',
+      outcome: 'invalid_schema_rejected',
       authClassification: 'unverified',
+      runtimeFailureOrigin: null,
       finalJsonParsed: null,
       strictValidatorAccepted: null,
       expectedValueMatched: null,
-      invalidSchemaRejectedBySdk: false,
+      invalidSchemaRejectedBySdk: true,
     });
+  } else {
+    requireUnverifiedOutputSchemaScenario(invalidOutputSchema);
   }
-  requireExactScenario(exactScenario(outputSchema.scenarios, 'invalid-schema'), {
-    scenario: 'invalid-schema',
-    outcome: 'invalid_schema_rejected',
-    authClassification: 'unverified',
-    finalJsonParsed: null,
-    strictValidatorAccepted: null,
-    expectedValueMatched: null,
-    invalidSchemaRejectedBySdk: true,
-  });
+  const runtimeFailureOrigins = [
+    ...capability.scenarios,
+    ...outputSchema.scenarios,
+  ].map((scenario) => scenario.runtimeFailureOrigin).filter(Boolean);
   return [
     'git_auth_structured_classification_unavailable',
     ...(!authenticatedCapabilitySucceeded || !authenticatedOutputSchemaSucceeded
       ? ['authenticated_sdk_success_unavailable']
+      : []),
+    ...(!invalidSchemaGuardSucceeded ? ['output_schema_guard_unavailable'] : []),
+    ...(runtimeFailureOrigins.includes('local_turn_deadline')
+      ? ['local_sdk_turn_deadline_exceeded']
+      : []),
+    ...(runtimeFailureOrigins.includes('sdk_unstructured')
+      ? ['sdk_unstructured_runtime_failure']
       : []),
   ];
 }
@@ -368,6 +375,7 @@ function admitPackagedResults(results) {
     scenario: 'valid-minimal',
     outcome: 'success',
     authClassification: 'authenticated',
+    runtimeFailureOrigin: null,
     finalJsonParsed: true,
     strictValidatorAccepted: true,
     expectedValueMatched: true,
@@ -433,7 +441,20 @@ function requireUnverifiedCapabilityScenario(
   explicitWorkingDirectoryRequested,
   skipGitRepoCheck,
 ) {
-  requireExactScenario(scenario, {
+  requireExactScenario(scenario, exactUnverifiedCapabilityScenario(
+    scenario,
+    explicitWorkingDirectoryRequested,
+    skipGitRepoCheck,
+  ));
+}
+
+function exactUnverifiedCapabilityScenario(
+  scenario,
+  explicitWorkingDirectoryRequested,
+  skipGitRepoCheck,
+) {
+  const runtimeFailureOrigin = requireRuntimeFailureOrigin(scenario);
+  return {
     scenario: scenario.scenario,
     utilityCwdMatchedExpected: true,
     explicitWorkingDirectoryRequested,
@@ -441,8 +462,30 @@ function requireUnverifiedCapabilityScenario(
     envPolicy: 'explicit_allowlist_no_api_credentials',
     outcome: 'runtime_failed',
     authClassification: 'unverified',
+    runtimeFailureOrigin,
     finalResponseMatched: null,
+  };
+}
+
+function requireUnverifiedOutputSchemaScenario(scenario) {
+  const runtimeFailureOrigin = requireRuntimeFailureOrigin(scenario);
+  requireExactScenario(scenario, {
+    scenario: scenario.scenario,
+    outcome: 'runtime_failed',
+    authClassification: 'unverified',
+    runtimeFailureOrigin,
+    finalJsonParsed: null,
+    strictValidatorAccepted: null,
+    expectedValueMatched: null,
+    invalidSchemaRejectedBySdk: false,
   });
+}
+
+function requireRuntimeFailureOrigin(scenario) {
+  if (!['local_turn_deadline', 'sdk_unstructured'].includes(scenario.runtimeFailureOrigin)) {
+    deny();
+  }
+  return scenario.runtimeFailureOrigin;
 }
 
 function requireLifecycleEvents(events, scenario) {

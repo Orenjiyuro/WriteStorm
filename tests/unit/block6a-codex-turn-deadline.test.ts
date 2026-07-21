@@ -3,6 +3,8 @@ import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   CODEX_FEASIBILITY_SESSION_TIMEOUT_MS,
+  CodexFeasibilityTurnDeadlineExceededError,
+  classifyCodexTurnRuntimeFailureOrigin,
   resolveCodexFeasibilityTurnDeadlineMs,
   settleCodexTurnWithinDeadline,
 } from '../../src/main/codex-feasibility/turn-deadline';
@@ -34,11 +36,24 @@ describe('Block 6A R8a SDK turn deadline boundary', () => {
       turn,
       resolveCodexFeasibilityTurnDeadlineMs('isolated-empty'),
     );
-    const rejection = expect(settlement).rejects.toMatchObject({ name: 'AbortError' });
+    const failure = settlement.catch((error: unknown) => error);
 
     await vi.advanceTimersByTimeAsync(15_000);
-    await rejection;
+    const error = await failure;
+    expect(error).toBeInstanceOf(CodexFeasibilityTurnDeadlineExceededError);
+    expect(error).toMatchObject({ message: 'Codex feasibility turn deadline exceeded' });
+    expect(error).not.toHaveProperty('cause');
     expect(controller.signal.aborted).toBe(true);
+  });
+
+  it('separates a local deadline from an earlier unstructured SDK rejection', () => {
+    const sdkError = new Error('fixture detail must be discarded');
+    expect(classifyCodexTurnRuntimeFailureOrigin(sdkError)).toBe('sdk_unstructured');
+
+    const deadlineError = new CodexFeasibilityTurnDeadlineExceededError();
+    expect(classifyCodexTurnRuntimeFailureOrigin(deadlineError)).toBe('local_turn_deadline');
+    expect(deadlineError).not.toHaveProperty('cause');
+    expect(deadlineError.message).not.toContain('fixture');
   });
 
   it('clears its deadline when the SDK turn settles first', async () => {
@@ -70,6 +85,7 @@ describe('Block 6A R8a SDK turn deadline boundary', () => {
     ), 'utf8');
 
     expect(utilitySource.match(/settleCodexTurnWithinDeadline\(/g)).toHaveLength(2);
+    expect(utilitySource.match(/classifyCodexTurnRuntimeFailureOrigin\(error\)/g)).toHaveLength(2);
     expect(capabilitySource).toContain('CODEX_FEASIBILITY_SESSION_TIMEOUT_MS');
     expect(outputSchemaSource).toContain('CODEX_FEASIBILITY_SESSION_TIMEOUT_MS');
     expect(capabilitySource).not.toContain('45_000');
@@ -108,6 +124,40 @@ describe('Block 6A R8a SDK turn deadline boundary', () => {
     );
     expect(JSON.stringify(evidence)).not.toMatch(
       /"(?:prompt|stdout|stderr|pid|environmentValue|credential|executablePath)"\s*:/i,
+    );
+  });
+
+  it('freezes R8a3 attribution as static-only non-causal evidence', () => {
+    const rootDir = path.resolve(__dirname, '../..');
+    const evidence = JSON.parse(readFileSync(path.join(
+      rootDir,
+      'docs/engineering/evidence/block6a-remediation-r8a3-runtime-failure-origin.json',
+    ), 'utf8')) as {
+      source: string;
+      classification: string;
+      assertions: Record<string, {
+        value: boolean;
+        source: string;
+        evidenceId: string;
+        classification: string;
+      }>;
+      limitations: string[];
+    };
+
+    expect(evidence.source).toBe('static_manifest');
+    expect(evidence.classification).toBe('local_runtime_failure_origin_frozen');
+    for (const assertion of Object.values(evidence.assertions)) {
+      expect(assertion.value).toBe(true);
+      expect(assertion.source).toBe('static_manifest');
+      expect(assertion.evidenceId).toBe(
+        'block6a-remediation-r8a3-runtime-failure-origin-001',
+      );
+    }
+    expect(evidence.limitations).toContain(
+      "local_turn_deadline identifies WriteStorm's own timer only; sdk_unstructured identifies no auth, Git, network or provider cause.",
+    );
+    expect(JSON.stringify(evidence)).not.toMatch(
+      /"(?:prompt|stdout|stderr|rawError|cause|environmentValue|credential|token)"\s*:/i,
     );
   });
 });

@@ -22,6 +22,7 @@ import { buildCodexCliEnvironment } from './environment';
 import { CODEX_FEASIBILITY_OPERATIONS } from './operations';
 import { validateMinimalStructuredOutput } from './structured-output';
 import {
+  classifyCodexTurnRuntimeFailureOrigin,
   resolveCodexFeasibilityTurnDeadlineMs,
   settleCodexTurnWithinDeadline,
 } from './turn-deadline';
@@ -208,6 +209,7 @@ async function runCapabilityProbe(input: CodexCapabilityProbeInput): Promise<
         ...resultBase,
         outcome: 'success',
         authClassification: 'authenticated',
+        runtimeFailureOrigin: null,
         finalResponseMatched: validateMinimalStructuredOutput(
           turn.finalResponse,
           expectedResponse,
@@ -221,6 +223,7 @@ async function runCapabilityProbe(input: CodexCapabilityProbeInput): Promise<
       result: {
         ...resultBase,
         ...classification,
+        runtimeFailureOrigin: classifyCodexTurnRuntimeFailureOrigin(error),
         finalResponseMatched: null,
       },
     };
@@ -292,6 +295,7 @@ async function runOutputSchemaProbe(input: CodexOutputSchemaProbeInput): Promise
           scenario: input.scenario,
           outcome: 'invalid_schema_not_rejected',
           authClassification: 'unverified',
+          runtimeFailureOrigin: null,
           finalJsonParsed: null,
           strictValidatorAccepted: null,
           expectedValueMatched: null,
@@ -306,6 +310,7 @@ async function runOutputSchemaProbe(input: CodexOutputSchemaProbeInput): Promise
         scenario: input.scenario,
         outcome: validation.accepted ? 'success' : 'output_validation_failed',
         authClassification: 'authenticated',
+        runtimeFailureOrigin: null,
         finalJsonParsed: validation.classification !== 'invalid_json',
         strictValidatorAccepted: validation.accepted,
         expectedValueMatched: validation.expectedValueMatched,
@@ -324,6 +329,7 @@ async function runOutputSchemaProbe(input: CodexOutputSchemaProbeInput): Promise
           scenario: input.scenario,
           outcome: 'invalid_schema_rejected',
           authClassification: 'unverified',
+          runtimeFailureOrigin: null,
           finalJsonParsed: null,
           strictValidatorAccepted: null,
           expectedValueMatched: null,
@@ -340,6 +346,7 @@ async function runOutputSchemaProbe(input: CodexOutputSchemaProbeInput): Promise
           ? 'runtime_failed'
           : classification.outcome,
         authClassification: classification.authClassification,
+        runtimeFailureOrigin: classifyCodexTurnRuntimeFailureOrigin(error),
         finalJsonParsed: null,
         strictValidatorAccepted: null,
         expectedValueMatched: null,

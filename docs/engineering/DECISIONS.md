@@ -1139,3 +1139,17 @@ Rules:
 - Admission exits non-zero and the historical Windows-only conditional verdict remains expired. Historical successes cannot upgrade this fresh result, and lifecycle or packaged execution cannot bypass the failed development gate.
 - The records contain no prompt, response body, stdout/stderr, environment value, credential, auth file, PID, executable path or raw SDK error. They bind clean run HEAD `e1db3d2`, lockfile, runtime boundary and ordered static evidence inputs.
 - Current status remains pending recertification; macOS remains `deferred-by-user`, Task 13.1 remains blocked, and Task 13.2 is not authorized.
+
+## D085: Runtime Failure Attribution Is Local and Non-Causal
+
+Decision: R8a3 records whether WriteStorm's own turn deadline fired before settlement or the SDK rejected earlier without a stable structured signal. It does not classify the cause of the SDK failure and does not weaken recertification admission.
+
+Rules:
+
+- `runtimeFailureOrigin` is exactly `local_turn_deadline | sdk_unstructured | null`. The deadline wrapper emits a stable local error without preserving the original SDK message or cause.
+- `local_turn_deadline` proves only that WriteStorm's timer fired first. `sdk_unstructured` proves only that the SDK promise rejected earlier. Neither value establishes auth, login, Git, network, rate-limit or provider state.
+- Every capability/outputSchema result carries the field. Missing, extra or invented values fail closed; success and other non-runtime outcomes require `null`.
+- An invalid-schema runtime failure may be retained as valid blocked evidence with `output_schema_guard_unavailable`; it is not accepted as `invalid_schema_rejected` and does not restore recertification.
+- R8a3 changes runtime, protocol and admission after the `e1db3d2` run. Those records remain historical blocked evidence, and a new clean development run is required before lifecycle or packaged execution.
+- Future lineage requires eight ordered static evidence inputs: the original six plus the R8a deadline and R8a3 attribution manifests. Historical six-input records are preserved rather than rewritten.
+- Current status remains pending recertification; macOS remains `deferred-by-user`, Task 13.1 remains blocked, and Task 13.2 is not authorized.

@@ -218,6 +218,11 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     expect(feasibility).toContain('Admission rejected the complete evidence');
     expect(context).toContain('blocked at the development gate');
     expect(decisions).toContain('## D084: Fresh R8a Development Evidence Is Valid but Not Admitted');
+    expect(feasibility).toContain('### R8a3 safe runtime-failure attribution');
+    expect(feasibility).toContain('`local_turn_deadline`');
+    expect(feasibility).toContain('`sdk_unstructured`');
+    expect(feasibility).toContain('future runtime evidence therefore carries eight input ids and hashes');
+    expect(decisions).toContain('## D085: Runtime Failure Attribution Is Local and Non-Causal');
   });
 
   it('commits a sanitized 6A.8b decision summary with explicit expiry conditions', () => {

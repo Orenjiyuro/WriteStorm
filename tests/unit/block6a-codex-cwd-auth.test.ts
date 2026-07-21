@@ -87,6 +87,7 @@ describe('Block 6A.5 cwd, Git, environment and auth boundary', () => {
         scenario: 'explicit-git-isolated-auth',
         outcome: 'login_required',
         authClassification: 'login_required',
+        runtimeFailureOrigin: null,
         utilityCwdMatchedExpected: true,
         explicitWorkingDirectoryRequested: true,
         skipGitRepoCheck: false,

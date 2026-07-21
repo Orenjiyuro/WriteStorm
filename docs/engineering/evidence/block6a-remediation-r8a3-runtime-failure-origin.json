@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "block6a-remediation-r8a3-runtime-failure-origin-001",
+  "task": "6A remediation R8a3 failure attribution",
+  "source": "static_manifest",
+  "recordedAt": "2026-07-21T01:32:00.000Z",
+  "commandName": "block6a-r8a3-focused-runtime-failure-origin-verification",
+  "classification": "local_runtime_failure_origin_frozen",
+  "assertions": {
+    "localDeadlineOriginIsDeterministic": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a3-runtime-failure-origin-001",
+      "classification": "runtime_failure_origin_contract_frozen"
+    },
+    "earlySdkRejectionRemainsUnstructured": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a3-runtime-failure-origin-001",
+      "classification": "runtime_failure_origin_contract_frozen"
+    },
+    "rawErrorAndCauseDiscarded": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a3-runtime-failure-origin-001",
+      "classification": "runtime_failure_origin_contract_frozen"
+    },
+    "protocolRequiresClosedOriginVocabulary": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a3-runtime-failure-origin-001",
+      "classification": "runtime_failure_origin_contract_frozen"
+    },
+    "admissionRejectsMissingOrInventedOrigin": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a3-runtime-failure-origin-001",
+      "classification": "runtime_failure_origin_contract_frozen"
+    },
+    "failureOriginNeverProvesAuthOrGit": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a3-runtime-failure-origin-001",
+      "classification": "recertification_still_blocked"
+    },
+    "priorRuntimeEvidenceInvalidated": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a3-runtime-failure-origin-001",
+      "classification": "recertification_required"
+    }
+  },
+  "limitations": [
+    "This static_manifest proves only the local diagnostic contract and is not real_sdk or packaged_sdk evidence.",
+    "local_turn_deadline identifies WriteStorm's own timer only; sdk_unstructured identifies no auth, Git, network or provider cause.",
+    "The e1db3d2 development records remain valid historical blocked evidence but cannot certify this changed runtime boundary.",
+    "Fresh Windows development execution from the next clean committed runtime HEAD remains required before any later lifecycle or packaged gate."
+  ]
+}

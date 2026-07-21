@@ -33,6 +33,8 @@ function lineage(packaged: boolean) {
       'block6a-remediation-r5-error-classification-001',
       'block6a-remediation-r6-assertion-provenance-001',
       'block6a-remediation-r7-evidence-lineage-001',
+      'block6a-remediation-r8a-turn-deadline-001',
+      'block6a-remediation-r8a3-runtime-failure-origin-001',
     ].map((evidenceId, index) => ({
       evidenceId,
       sha256: String(index + 1).repeat(64),
@@ -104,6 +106,7 @@ const packagedSuccess = {
     scenario: 'valid-minimal',
     outcome: 'success',
     authClassification: 'authenticated',
+    runtimeFailureOrigin: null,
     finalJsonParsed: true,
     strictValidatorAccepted: true,
     expectedValueMatched: true,
@@ -122,6 +125,7 @@ const capabilityScenarios = [
     envPolicy: 'explicit_allowlist_no_api_credentials',
     outcome: 'runtime_failed',
     authClassification: 'unverified',
+    runtimeFailureOrigin: 'sdk_unstructured',
     finalResponseMatched: null,
   },
   {
@@ -132,6 +136,7 @@ const capabilityScenarios = [
     envPolicy: 'explicit_allowlist_no_api_credentials',
     outcome: 'runtime_failed',
     authClassification: 'unverified',
+    runtimeFailureOrigin: 'sdk_unstructured',
     finalResponseMatched: null,
   },
   {
@@ -142,6 +147,7 @@ const capabilityScenarios = [
     envPolicy: 'explicit_allowlist_no_api_credentials',
     outcome: 'runtime_failed',
     authClassification: 'unverified',
+    runtimeFailureOrigin: 'sdk_unstructured',
     finalResponseMatched: null,
   },
   {
@@ -152,6 +158,7 @@ const capabilityScenarios = [
     envPolicy: 'explicit_allowlist_no_api_credentials',
     outcome: 'runtime_failed',
     authClassification: 'unverified',
+    runtimeFailureOrigin: 'sdk_unstructured',
     finalResponseMatched: null,
   },
   {
@@ -162,6 +169,7 @@ const capabilityScenarios = [
     envPolicy: 'explicit_allowlist_no_api_credentials',
     outcome: 'success',
     authClassification: 'authenticated',
+    runtimeFailureOrigin: null,
     finalResponseMatched: true,
   },
 ];
@@ -209,6 +217,7 @@ const devSuccess = [
         scenario: 'valid-minimal',
         outcome: 'success',
         authClassification: 'authenticated',
+        runtimeFailureOrigin: null,
         finalJsonParsed: true,
         strictValidatorAccepted: true,
         expectedValueMatched: true,
@@ -218,6 +227,7 @@ const devSuccess = [
         scenario: 'invalid-schema',
         outcome: 'invalid_schema_rejected',
         authClassification: 'unverified',
+        runtimeFailureOrigin: null,
         finalJsonParsed: null,
         strictValidatorAccepted: null,
         expectedValueMatched: null,
@@ -379,7 +389,10 @@ describe('Block 6A recertification result admission', () => {
     expect(evaluateBlock6aProbeResults('dev', devSuccess)).toEqual({
       evidenceAccepted: true,
       recertificationAdmitted: false,
-      blockers: ['git_auth_structured_classification_unavailable'],
+      blockers: [
+        'git_auth_structured_classification_unavailable',
+        'sdk_unstructured_runtime_failure',
+      ],
       results: [
         {
           task: '6A.5',
@@ -403,11 +416,13 @@ describe('Block 6A recertification result admission', () => {
     Object.assign(unavailable[0].scenarios[4], {
       outcome: 'runtime_failed',
       authClassification: 'unverified',
+      runtimeFailureOrigin: 'sdk_unstructured',
       finalResponseMatched: null,
     });
     Object.assign(unavailable[1].scenarios[0], {
       outcome: 'runtime_failed',
       authClassification: 'unverified',
+      runtimeFailureOrigin: 'sdk_unstructured',
       finalJsonParsed: null,
       strictValidatorAccepted: null,
       expectedValueMatched: null,
@@ -420,9 +435,34 @@ describe('Block 6A recertification result admission', () => {
       blockers: [
         'git_auth_structured_classification_unavailable',
         'authenticated_sdk_success_unavailable',
+        'sdk_unstructured_runtime_failure',
       ],
     });
     expect(() => admitBlock6aProbeResults('dev', unavailable)).toThrow();
+  });
+
+  it('retains a local invalid-schema deadline as evidence with exact blockers', () => {
+    const unavailable = structuredClone(devSuccess);
+    Object.assign(unavailable[1].scenarios[1], {
+      outcome: 'runtime_failed',
+      authClassification: 'unverified',
+      runtimeFailureOrigin: 'local_turn_deadline',
+      finalJsonParsed: null,
+      strictValidatorAccepted: null,
+      expectedValueMatched: null,
+      invalidSchemaRejectedBySdk: false,
+    });
+
+    expect(evaluateBlock6aProbeResults('dev', unavailable)).toMatchObject({
+      evidenceAccepted: true,
+      recertificationAdmitted: false,
+      blockers: [
+        'git_auth_structured_classification_unavailable',
+        'output_schema_guard_unavailable',
+        'local_sdk_turn_deadline_exceeded',
+        'sdk_unstructured_runtime_failure',
+      ],
+    });
   });
 
   it('makes an accepted-but-blocked evaluation exit non-zero in the repository runner', () => {
@@ -478,6 +518,19 @@ describe('Block 6A recertification result admission', () => {
     const changedRuntimeHash = structuredClone(devSuccess);
     changedRuntimeHash[0].lineage.runtimeBoundarySha256 = 'not-a-hash';
     expect(() => evaluateBlock6aProbeResults('dev', changedRuntimeHash)).toThrow();
+
+    const missingFailureOrigin = structuredClone(devSuccess);
+    delete (missingFailureOrigin[0].scenarios[0] as Record<string, unknown>)
+      .runtimeFailureOrigin;
+    expect(() => evaluateBlock6aProbeResults('dev', missingFailureOrigin)).toThrow();
+
+    const inventedFailureOrigin = structuredClone(devSuccess);
+    inventedFailureOrigin[0].scenarios[0].runtimeFailureOrigin = 'producer-invented-origin';
+    expect(() => evaluateBlock6aProbeResults('dev', inventedFailureOrigin)).toThrow();
+
+    const successWithFailureOrigin = structuredClone(devSuccess);
+    successWithFailureOrigin[0].scenarios[4].runtimeFailureOrigin = 'sdk_unstructured';
+    expect(() => evaluateBlock6aProbeResults('dev', successWithFailureOrigin)).toThrow();
 
     const blocked = structuredClone(devSuccess);
     Object.assign(blocked[0].scenarios[4], {

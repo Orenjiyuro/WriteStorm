@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { z } from 'zod';
+import type { CodexTurnRuntimeFailureOrigin } from './turn-deadline';
 
 export const CODEX_FEASIBILITY_PROTOCOL_VERSION = 1 as const;
 
@@ -76,6 +77,7 @@ export type CodexOutputSchemaProbeResult = {
     | 'login_required'
     | 'runtime_failed';
   readonly authClassification: CodexAuthClassification;
+  readonly runtimeFailureOrigin: CodexTurnRuntimeFailureOrigin | null;
   readonly finalJsonParsed: boolean | null;
   readonly strictValidatorAccepted: boolean | null;
   readonly expectedValueMatched: boolean | null;
@@ -115,6 +117,7 @@ export type CodexCapabilityProbeResult = {
   readonly scenario: CodexCapabilityProbeScenario;
   readonly outcome: CodexCapabilityProbeOutcome;
   readonly authClassification: CodexAuthClassification;
+  readonly runtimeFailureOrigin: CodexTurnRuntimeFailureOrigin | null;
   readonly utilityCwdMatchedExpected: boolean;
   readonly explicitWorkingDirectoryRequested: boolean;
   readonly skipGitRepoCheck: boolean;
@@ -346,6 +349,7 @@ const capabilityResultSchema = z.object({
     'runtime_failed',
   ]),
   authClassification: z.enum(['authenticated', 'login_required', 'auth_failed', 'unverified']),
+  runtimeFailureOrigin: z.enum(['local_turn_deadline', 'sdk_unstructured']).nullable(),
   utilityCwdMatchedExpected: z.boolean(),
   explicitWorkingDirectoryRequested: z.boolean(),
   skipGitRepoCheck: z.boolean(),
@@ -365,6 +369,7 @@ const outputSchemaResultSchema = z.object({
     'runtime_failed',
   ]),
   authClassification: z.enum(['authenticated', 'login_required', 'auth_failed', 'unverified']),
+  runtimeFailureOrigin: z.enum(['local_turn_deadline', 'sdk_unstructured']).nullable(),
   finalJsonParsed: z.boolean().nullable(),
   strictValidatorAccepted: z.boolean().nullable(),
   expectedValueMatched: z.boolean().nullable(),

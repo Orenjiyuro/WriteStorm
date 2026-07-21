@@ -99,6 +99,7 @@ describe('Block 6A.6 minimal outputSchema boundary', () => {
         scenario: 'valid-minimal',
         outcome: 'success',
         authClassification: 'authenticated',
+        runtimeFailureOrigin: null,
         finalJsonParsed: true,
         strictValidatorAccepted: true,
         expectedValueMatched: true,

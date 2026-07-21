@@ -1,4 +1,14 @@
 export type CodexFeasibilityAuthMode = 'current' | 'isolated-empty';
+export type CodexTurnRuntimeFailureOrigin =
+  | 'local_turn_deadline'
+  | 'sdk_unstructured';
+
+export class CodexFeasibilityTurnDeadlineExceededError extends Error {
+  constructor() {
+    super('Codex feasibility turn deadline exceeded');
+    this.name = 'CodexFeasibilityTurnDeadlineExceededError';
+  }
+}
 
 const ISOLATED_AUTH_TURN_DEADLINE_MS = 15_000;
 const CURRENT_AUTH_TURN_DEADLINE_MS = 90_000;
@@ -22,10 +32,25 @@ export async function settleCodexTurnWithinDeadline<T>(
     throw new TypeError('Codex feasibility turn deadline must be positive and finite');
   }
 
-  const deadline = setTimeout(() => controller.abort(), deadlineMs);
+  let deadlineExpired = false;
+  const deadline = setTimeout(() => {
+    deadlineExpired = true;
+    controller.abort();
+  }, deadlineMs);
   try {
     return await turn;
+  } catch (error) {
+    if (deadlineExpired) throw new CodexFeasibilityTurnDeadlineExceededError();
+    throw error;
   } finally {
     clearTimeout(deadline);
   }
+}
+
+export function classifyCodexTurnRuntimeFailureOrigin(
+  error: unknown,
+): CodexTurnRuntimeFailureOrigin {
+  return error instanceof CodexFeasibilityTurnDeadlineExceededError
+    ? 'local_turn_deadline'
+    : 'sdk_unstructured';
 }

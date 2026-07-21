@@ -11,6 +11,8 @@ const evidenceInputPaths = [
   'docs/engineering/evidence/block6a-remediation-r5-error-classification.json',
   'docs/engineering/evidence/block6a-remediation-r6-assertion-provenance.json',
   'docs/engineering/evidence/block6a-remediation-r7-evidence-lineage.json',
+  'docs/engineering/evidence/block6a-remediation-r8a-turn-deadline.json',
+  'docs/engineering/evidence/block6a-remediation-r8a3-runtime-failure-origin.json',
 ];
 const fixedRuntimeBoundaryPaths = [
   'package.json',

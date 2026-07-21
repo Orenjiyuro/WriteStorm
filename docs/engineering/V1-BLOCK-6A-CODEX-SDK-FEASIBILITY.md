@@ -287,6 +287,8 @@ The current decision is `conditional Go — Windows-only feasibility verified; m
 
 The current static decision record is `docs/engineering/evidence/block6a-r8a5-windows-conditional-go-verdict.json`. It reconciles seven independently sourced fresh records without upgrading their provenance. `docs/engineering/evidence/block6a-remediation-pending-recertification.json` remains the historical R1–R7 pending-status checkpoint and is no longer the current decision.
 
+At that historical pending checkpoint, the statement “The current implementation is not Windows-feasibility verified” was correct. It is retained for historical consistency only and does not override the current verdict at the top of this document.
+
 ### R8a 2026-07-20 Windows development recertification attempt
 
 At that pre-deadline-remediation checkpoint, the following text was the current-status line. It is retained as historical authority wording, not the current verdict at the top of this document:

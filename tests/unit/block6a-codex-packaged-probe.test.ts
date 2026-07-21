@@ -109,7 +109,7 @@ describe('Block 6A.8a packaged Codex SDK probe boundary', () => {
     }
   });
 
-  it('preserves historical packaged completion while recording fresh packaged recertification', () => {
+  it('preserves historical packaged completion while current recertification remains pending', () => {
     const authority = readFileSync(
       path.join(rootDir, 'docs/engineering/V1-BLOCK-6A-CODEX-SDK-FEASIBILITY.md'),
       'utf8',
@@ -121,10 +121,7 @@ describe('Block 6A.8a packaged Codex SDK probe boundary', () => {
     );
     expect(authority).toContain('does not itself issue the Task 6A.8b Windows Go/conditional Go/No-Go decision');
     expect(authority).toContain('## Historical Task 6A.8b decision');
-    expect(authority).toContain('### R8a5 fresh Windows packaged result');
-    expect(authority).toContain(
-      'Verdict: `conditional Go — Windows-only feasibility verified; macOS deferred-by-user`',
-    );
+    expect(authority).toContain('The current implementation is not Windows-feasibility verified');
     expect(authority).toContain(
       'Verdict: `pending recertification — historical Windows-only conditional Go expired for the current working tree; macOS deferred-by-user`',
     );

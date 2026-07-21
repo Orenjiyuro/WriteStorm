@@ -3,7 +3,7 @@
   "evidenceId": "block6a-r8a5-static-windows-conditional-go-verdict-001",
   "task": "6A.8b",
   "source": "static_manifest",
-  "recordedAt": "2026-07-21T09:11:13.109Z",
+  "recordedAt": "2026-07-21T09:47:44.9187957Z",
   "commandName": "block6a-r8a5-authority-reconciliation",
   "classification": "conditional_go_windows_only_macos_deferred_by_user",
   "verdict": "conditional Go — Windows-only feasibility verified; macOS deferred-by-user",
@@ -68,49 +68,49 @@
       "evidenceId": "block6a-6a5-real-sdk-cwd-git-env-auth-001",
       "source": "real_sdk",
       "classification": "cwd_git_env_auth_probe_completed",
-      "sha256": "b94d2d0673f568fb9075c71dbcb8935c7240fcb2846e931ad6e9663f6e5f54be",
+      "sha256": "be64837d23ffff50bdb262a353023af4a3207e495b9d491fc13889ec717a577a",
       "supports": ["current_auth_positive_core", "git_bypass_behavioral_differential"]
     },
     {
       "evidenceId": "block6a-6a6-real-sdk-output-schema-001",
       "source": "real_sdk",
       "classification": "output_schema_probe_completed",
-      "sha256": "6ae5cf29133a725682f2d55a10796cef4c6e848eb01fd1466150ddf9b27ee611",
+      "sha256": "e8366aa86b080569c1f079dafb5b78d757a7180255e7cc0693e8b6fe719e30fb",
       "supports": ["structured_output_positive_core", "pinned_invalid_schema_guard"]
     },
     {
       "evidenceId": "block6a-6a7-real-sdk-app-timeout-001",
       "source": "real_sdk",
       "classification": "lifecycle_probe_passed",
-      "sha256": "34043c6f0805ee94ed2a4c4051af1e298b8119a17da99fac3cbbba1d35207729",
+      "sha256": "9110c7952c6333e3b18af066abebaf37ef2c2a4970d2631f9172f87e0af2c6d0",
       "supports": ["app_timeout_cleanup", "owned_process_zero_residual"]
     },
     {
       "evidenceId": "block6a-6a7-real-sdk-explicit-cancel-001",
       "source": "real_sdk",
       "classification": "lifecycle_probe_passed",
-      "sha256": "dc5c050d66e25397bbdb7fc744495319dcd19c8f1f578786fc8abacdcff3ef01",
+      "sha256": "e9dbd4550d489526b2d4129e8ec7b0e6bae159b9c1f6466b802b5895876dd0d8",
       "supports": ["explicit_cancel_cleanup", "owned_process_zero_residual"]
     },
     {
       "evidenceId": "block6a-6a7-real-sdk-window-close-001",
       "source": "real_sdk",
       "classification": "lifecycle_probe_passed",
-      "sha256": "bd5fb5992f37a4355ef44c2f06baf65dd66b16fb48310f3619795ce63ebaf6c4",
+      "sha256": "5befa1c01fd5ae0b303d3d62697135c867a55bd706b7c9dccf66823cc20fe190",
       "supports": ["window_close_cleanup_once", "owned_process_zero_residual"]
     },
     {
       "evidenceId": "block6a-6a7-real-sdk-app-quit-001",
       "source": "real_sdk",
       "classification": "lifecycle_probe_passed",
-      "sha256": "e59aa1ffbbb547aeba118198bd2e6b1e4dad9bb82682c109ab3de4bd336ff391",
+      "sha256": "7bf8de5fc559a1b3d8645c3773773752496b705ab3af26e41a27f2edf92920d9",
       "supports": ["app_quit_cleanup_once", "owned_process_zero_residual"]
     },
     {
       "evidenceId": "block6a-6a8a-packaged-sdk-windows-001",
       "source": "packaged_sdk",
       "classification": "packaged_sdk_probe_completed",
-      "sha256": "2d050225e2630ef3fdaf9a8840c737cd65c0556dffb9dd72455d6bf58e46ddc1",
+      "sha256": "79c913a5bcbfa17711384f5a4fae23d6937a877dfbfbd6bd388781e7ba7d4d22",
       "supports": ["windows_x64_packaged_sdk_turn", "packaged_artifact_lineage"]
     }
   ],

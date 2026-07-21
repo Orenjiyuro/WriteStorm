@@ -149,7 +149,7 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     ]));
     for (const record of records) {
       expect(record.source).toBe('real_sdk');
-      expect(record.lineage.gitHeadAtRun).toBe('9eb679cb2b20c33f1e14a12a48f6ff246d4aaf24');
+      expect(record.lineage.gitHeadAtRun).toBe('2389170481d95e644c8663af25fd0a7f8cec5d7c');
       expect(record.lineage.criticalInputsCleanAtRun).toBe(true);
       expect(record.lineage.evidenceInputs).toHaveLength(10);
       expect(JSON.stringify(record)).not.toMatch(
@@ -205,7 +205,7 @@ describe('Block 6A Codex SDK feasibility authority', () => {
       expect(record.lifecycleEvents.initialTrigger).toBe(record.result.scenario);
       expect(record.lifecycleEvents.cleanupExecutionCount).toBe(1);
       expect(record.lineage).toMatchObject({
-        gitHeadAtRun: 'b29c8599ec432eb03d197b05f3e9ccb571511f22',
+        gitHeadAtRun: '2389170481d95e644c8663af25fd0a7f8cec5d7c',
         criticalInputsCleanAtRun: true,
         packagedArtifactSha256: null,
       });
@@ -221,7 +221,7 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     expect(records[2].lifecycleEvents.cleanupRequestCount).toBe(2);
     expect(records[3].lifecycleEvents.cleanupRequestCount).toBe(1);
     expect(feasibility).toContain('### R8a5 fresh Windows lifecycle result');
-    expect(feasibility).toContain('Fresh lifecycle success authorizes only the next Windows packaged feasibility gate');
+    expect(feasibility).toContain('Fresh lifecycle success authorizes only the Windows packaged feasibility gate');
     expect(decisions).toContain(
       '## D091: Fresh Windows Lifecycle Gate Passes and Unlocks Packaged Recertification',
     );
@@ -298,7 +298,7 @@ describe('Block 6A Codex SDK feasibility authority', () => {
       ].includes(key))
       .every(([, assertion]) => assertion.source === 'packaged_sdk')).toBe(true);
     expect(packaged.lineage).toMatchObject({
-      gitHeadAtRun: 'da756385552d9e2ff83e4baa37cc4e15ce5528ff',
+      gitHeadAtRun: '2389170481d95e644c8663af25fd0a7f8cec5d7c',
       criticalInputsCleanAtRun: true,
     });
     expect(packaged.lineage.packagedArtifactSha256).toMatch(/^[0-9a-f]{64}$/);
@@ -334,9 +334,12 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     expect(readFileSync(decisionsPath, 'utf8')).toContain(
       '## D092: Fresh Packaged Evidence Restores Windows-Only Conditional Go',
     );
-    expect(readFileSync(feasibilityPath, 'utf8')).toContain('### Fresh full-check status');
+    expect(readFileSync(feasibilityPath, 'utf8')).toContain('### Fresh integration full-check status');
     expect(readFileSync(feasibilityPath, 'utf8')).toContain(
-      'This record does not claim a fully green repository check',
+      'packaged E2E with 15/15 tests',
+    );
+    expect(readFileSync(decisionsPath, 'utf8')).toContain(
+      '## D093: Integration Candidate Revalidates Full Check and All Windows Feasibility Gates',
     );
   });
 

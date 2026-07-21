@@ -3,7 +3,7 @@
   "evidenceId": "block6a-6a7-real-sdk-window-close-001",
   "task": "6A.7",
   "source": "real_sdk",
-  "recordedAt": "2026-07-21T08:16:10.679Z",
+  "recordedAt": "2026-07-21T09:45:33.289Z",
   "commandName": "block6a-electron-lifecycle-window-close-probe",
   "classification": "lifecycle_probe_passed",
   "versions": {
@@ -148,7 +148,7 @@
     "No CLI process is terminated directly; an unowned Codex process is never touched."
   ],
   "lineage": {
-    "gitHeadAtRun": "b29c8599ec432eb03d197b05f3e9ccb571511f22",
+    "gitHeadAtRun": "2389170481d95e644c8663af25fd0a7f8cec5d7c",
     "criticalInputsCleanAtRun": true,
     "packageLockSha256": "bda4d5d4eb77566c9ee228ee77fde5e54e05ab93299a876549a17592b3a8dade",
     "runtimeBoundarySha256": "856fccd61748f8c4fcced69a5994fa8bfac120ccf0accf919a89d7ceb5c5ab03",

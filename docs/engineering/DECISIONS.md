@@ -1245,3 +1245,17 @@ Rules:
 - This is not full Go, cross-platform compatibility, macOS verification or release readiness. macOS packaged runtime remains `deferred-by-user` and must be supplied before any complete-Go claim.
 - The feasibility verdict does not automatically unblock Task 13.1 and does not authorize Task 13.2. Only the total thread may review this final branch and separately make that decision.
 - Direct `codex exec`, app-server, GUI automation, API Key, local model and alternate-provider fallback remain forbidden.
+
+## D093: Integration Candidate Revalidates Full Check and All Windows Feasibility Gates
+
+Decision: After explicit authorization, the two-file Library-session cache fix `602500f` is integrated as clean and pushed commit `2389170`, and that same integration HEAD passes the full repository check plus fresh development, lifecycle and packaged SDK recertification.
+
+Rules:
+
+- `npm run check` passes typecheck, 831/831 unit tests, 290/290 integration tests, packaged E2E 15/15 and the chained package-boundary suite 7/7.
+- Fresh development is `admitted_with_conditions` with no blocker; the four existing Git/auth diagnostic limitations remain unchanged and are not promoted into business error codes.
+- All four lifecycle scenarios pass abort, settlement, cleanup, owned-process exit and zero-residual assertions.
+- The packaged-only turn runs against the exact artifact created by the full check and binds its SHA-256 to clean integration HEAD `2389170`, the lockfile/runtime boundary and ten static inputs.
+- The full 6A delivery includes package/lockfile, Forge and feasibility-runtime changes across its history; only the final evidence-only closure commits omit those files.
+- The result remains `conditional Go — Windows-only feasibility verified; macOS deferred-by-user`. It is not full Go, cross-platform compatibility or release readiness.
+- Task 13.1 remains subject to total-thread review and Task 13.2 remains unauthorized until that separate decision.

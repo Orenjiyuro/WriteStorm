@@ -6,13 +6,18 @@ export type Block6aProbeSummary = {
 
 export type Block6aProbeEvaluation = {
   readonly evidenceAccepted: true;
+  readonly admission: 'admitted' | 'admitted_with_conditions' | 'blocked';
   readonly recertificationAdmitted: boolean;
   readonly blockers: readonly (
-    | 'git_auth_structured_classification_unavailable'
     | 'authenticated_sdk_success_unavailable'
     | 'output_schema_guard_unavailable'
-    | 'local_sdk_turn_deadline_exceeded'
-    | 'sdk_unstructured_runtime_failure'
+    | 'git_bypass_differential_unavailable'
+  )[];
+  readonly conditionalLimitations: readonly (
+    | 'git_auth_structured_classification_unavailable'
+    | 'isolated_auth_local_turn_deadline_observed'
+    | 'isolated_auth_sdk_runtime_unavailable_observed'
+    | 'current_auth_non_git_check_failure_generic_only'
   )[];
   readonly results: Block6aProbeSummary[];
 };

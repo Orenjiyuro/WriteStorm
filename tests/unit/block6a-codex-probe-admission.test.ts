@@ -36,9 +36,10 @@ function lineage(packaged: boolean) {
       'block6a-remediation-r8a-turn-deadline-001',
       'block6a-remediation-r8a3-runtime-failure-origin-001',
       'block6a-remediation-r8a4-cjs-module-anchor-001',
+      'block6a-remediation-r8a5-conditional-development-gate-001',
     ].map((evidenceId, index) => ({
       evidenceId,
-      sha256: String(index + 1).repeat(64),
+      sha256: String((index + 1) % 10).repeat(64),
     })),
   };
 }
@@ -47,7 +48,9 @@ const capabilityLimitations = [
   'No prompt, path, environment value, credential, PID or raw SDK error is retained.',
   'The current-auth scenario classifies the existing state but does not create or modify login state.',
   'WriteStorm has no product login UI in Task 6A.5.',
-  'Unstructured SDK or CLI failures are retained only as runtime_failed / unverified and block recertification.',
+  'SDK 0.144.6 exposes no stable structured Git or auth error discriminant.',
+  'Unknown SDK or CLI failures are retained only as runtime_failed / unverified with SDK_RUNTIME_UNAVAILABLE.',
+  'Isolated-empty-auth failures are diagnostic limitations when the positive core and current-auth Git bypass differential pass.',
 ];
 const outputSchemaLimitations = [
   'No prompt, response body, path, environment value, credential, PID or raw SDK error is retained.',
@@ -108,6 +111,7 @@ const packagedSuccess = {
     outcome: 'success',
     authClassification: 'authenticated',
     runtimeFailureOrigin: null,
+    safeFailureCode: null,
     finalJsonParsed: true,
     strictValidatorAccepted: true,
     expectedValueMatched: true,
@@ -127,6 +131,7 @@ const capabilityScenarios = [
     outcome: 'runtime_failed',
     authClassification: 'unverified',
     runtimeFailureOrigin: 'sdk_unstructured',
+    safeFailureCode: 'SDK_RUNTIME_UNAVAILABLE',
     finalResponseMatched: null,
   },
   {
@@ -138,6 +143,7 @@ const capabilityScenarios = [
     outcome: 'runtime_failed',
     authClassification: 'unverified',
     runtimeFailureOrigin: 'sdk_unstructured',
+    safeFailureCode: 'SDK_RUNTIME_UNAVAILABLE',
     finalResponseMatched: null,
   },
   {
@@ -149,6 +155,7 @@ const capabilityScenarios = [
     outcome: 'runtime_failed',
     authClassification: 'unverified',
     runtimeFailureOrigin: 'sdk_unstructured',
+    safeFailureCode: 'SDK_RUNTIME_UNAVAILABLE',
     finalResponseMatched: null,
   },
   {
@@ -160,6 +167,7 @@ const capabilityScenarios = [
     outcome: 'runtime_failed',
     authClassification: 'unverified',
     runtimeFailureOrigin: 'sdk_unstructured',
+    safeFailureCode: 'SDK_RUNTIME_UNAVAILABLE',
     finalResponseMatched: null,
   },
   {
@@ -171,6 +179,31 @@ const capabilityScenarios = [
     outcome: 'success',
     authClassification: 'authenticated',
     runtimeFailureOrigin: null,
+    safeFailureCode: null,
+    finalResponseMatched: true,
+  },
+  {
+    scenario: 'current-auth-non-git-check',
+    utilityCwdMatchedExpected: true,
+    explicitWorkingDirectoryRequested: true,
+    skipGitRepoCheck: false,
+    envPolicy: 'explicit_allowlist_no_api_credentials',
+    outcome: 'runtime_failed',
+    authClassification: 'unverified',
+    runtimeFailureOrigin: 'sdk_unstructured',
+    safeFailureCode: 'SDK_RUNTIME_UNAVAILABLE',
+    finalResponseMatched: null,
+  },
+  {
+    scenario: 'current-auth-non-git-skip',
+    utilityCwdMatchedExpected: true,
+    explicitWorkingDirectoryRequested: true,
+    skipGitRepoCheck: true,
+    envPolicy: 'explicit_allowlist_no_api_credentials',
+    outcome: 'success',
+    authClassification: 'authenticated',
+    runtimeFailureOrigin: null,
+    safeFailureCode: null,
     finalResponseMatched: true,
   },
 ];
@@ -219,6 +252,7 @@ const devSuccess = [
         outcome: 'success',
         authClassification: 'authenticated',
         runtimeFailureOrigin: null,
+        safeFailureCode: null,
         finalJsonParsed: true,
         strictValidatorAccepted: true,
         expectedValueMatched: true,
@@ -229,6 +263,7 @@ const devSuccess = [
         outcome: 'invalid_schema_rejected',
         authClassification: 'unverified',
         runtimeFailureOrigin: null,
+        safeFailureCode: null,
         finalJsonParsed: null,
         strictValidatorAccepted: null,
         expectedValueMatched: null,
@@ -312,6 +347,21 @@ const lifecycleSuccess = [
 }));
 
 describe('Block 6A recertification result admission', () => {
+  it('admits the positive core plus current-auth Git-bypass differential with conditions', () => {
+    const differential = structuredClone(devSuccess);
+
+    expect(evaluateBlock6aProbeResults('dev', differential)).toMatchObject({
+      evidenceAccepted: true,
+      admission: 'admitted_with_conditions',
+      recertificationAdmitted: true,
+      blockers: [],
+      conditionalLimitations: expect.arrayContaining([
+        'git_auth_structured_classification_unavailable',
+        'isolated_auth_sdk_runtime_unavailable_observed',
+      ]),
+    });
+  });
+
   it('admits only the complete packaged success contract', () => {
     expect(admitBlock6aProbeResults('packaged', [packagedSuccess])).toEqual([
       {
@@ -386,13 +436,16 @@ describe('Block 6A recertification result admission', () => {
     expect(() => admitBlock6aProbeResults('packaged', [packagedSuccess, packagedSuccess])).toThrow();
   });
 
-  it('accepts complete unverified development evidence but blocks recertification', () => {
+  it('admits complete positive development evidence with conditional limitations', () => {
     expect(evaluateBlock6aProbeResults('dev', devSuccess)).toEqual({
       evidenceAccepted: true,
-      recertificationAdmitted: false,
-      blockers: [
+      admission: 'admitted_with_conditions',
+      recertificationAdmitted: true,
+      blockers: [],
+      conditionalLimitations: [
         'git_auth_structured_classification_unavailable',
-        'sdk_unstructured_runtime_failure',
+        'isolated_auth_sdk_runtime_unavailable_observed',
+        'current_auth_non_git_check_failure_generic_only',
       ],
       results: [
         {
@@ -407,9 +460,7 @@ describe('Block 6A recertification result admission', () => {
         },
       ],
     });
-    expect(() => admitBlock6aProbeResults('dev', devSuccess)).toThrow(
-      'Block 6A recertification result was not admitted.',
-    );
+    expect(admitBlock6aProbeResults('dev', devSuccess)).toHaveLength(2);
   });
 
   it('retains an unavailable authenticated run as evidence and adds a closed blocker', () => {
@@ -418,12 +469,14 @@ describe('Block 6A recertification result admission', () => {
       outcome: 'runtime_failed',
       authClassification: 'unverified',
       runtimeFailureOrigin: 'sdk_unstructured',
+      safeFailureCode: 'SDK_RUNTIME_UNAVAILABLE',
       finalResponseMatched: null,
     });
     Object.assign(unavailable[1].scenarios[0], {
       outcome: 'runtime_failed',
       authClassification: 'unverified',
       runtimeFailureOrigin: 'sdk_unstructured',
+      safeFailureCode: 'SDK_RUNTIME_UNAVAILABLE',
       finalJsonParsed: null,
       strictValidatorAccepted: null,
       expectedValueMatched: null,
@@ -434,9 +487,7 @@ describe('Block 6A recertification result admission', () => {
       evidenceAccepted: true,
       recertificationAdmitted: false,
       blockers: [
-        'git_auth_structured_classification_unavailable',
         'authenticated_sdk_success_unavailable',
-        'sdk_unstructured_runtime_failure',
       ],
     });
     expect(() => admitBlock6aProbeResults('dev', unavailable)).toThrow();
@@ -448,6 +499,7 @@ describe('Block 6A recertification result admission', () => {
       outcome: 'runtime_failed',
       authClassification: 'unverified',
       runtimeFailureOrigin: 'local_turn_deadline',
+      safeFailureCode: 'SDK_RUNTIME_UNAVAILABLE',
       finalJsonParsed: null,
       strictValidatorAccepted: null,
       expectedValueMatched: null,
@@ -458,11 +510,38 @@ describe('Block 6A recertification result admission', () => {
       evidenceAccepted: true,
       recertificationAdmitted: false,
       blockers: [
-        'git_auth_structured_classification_unavailable',
         'output_schema_guard_unavailable',
-        'local_sdk_turn_deadline_exceeded',
-        'sdk_unstructured_runtime_failure',
       ],
+    });
+  });
+
+  it('blocks when the current-auth non-Git bypass differential is unavailable', () => {
+    const unavailable = structuredClone(devSuccess);
+    Object.assign(unavailable[0].scenarios[6], {
+      outcome: 'runtime_failed',
+      authClassification: 'unverified',
+      runtimeFailureOrigin: 'local_turn_deadline',
+      safeFailureCode: 'SDK_RUNTIME_UNAVAILABLE',
+      finalResponseMatched: null,
+    });
+    expect(evaluateBlock6aProbeResults('dev', unavailable)).toMatchObject({
+      admission: 'blocked',
+      recertificationAdmitted: false,
+      blockers: ['git_bypass_differential_unavailable'],
+    });
+  });
+
+  it('keeps isolated-auth deadline and unstructured failures as conditional limitations', () => {
+    const conditional = structuredClone(devSuccess);
+    conditional[0].scenarios[0].runtimeFailureOrigin = 'local_turn_deadline';
+    expect(evaluateBlock6aProbeResults('dev', conditional)).toMatchObject({
+      admission: 'admitted_with_conditions',
+      recertificationAdmitted: true,
+      blockers: [],
+      conditionalLimitations: expect.arrayContaining([
+        'isolated_auth_local_turn_deadline_observed',
+        'isolated_auth_sdk_runtime_unavailable_observed',
+      ]),
     });
   });
 
@@ -528,6 +607,19 @@ describe('Block 6A recertification result admission', () => {
     const inventedFailureOrigin = structuredClone(devSuccess);
     inventedFailureOrigin[0].scenarios[0].runtimeFailureOrigin = 'producer-invented-origin';
     expect(() => evaluateBlock6aProbeResults('dev', inventedFailureOrigin)).toThrow();
+
+    const missingSafeFailureCode = structuredClone(devSuccess);
+    delete (missingSafeFailureCode[0].scenarios[0] as Record<string, unknown>)
+      .safeFailureCode;
+    expect(() => evaluateBlock6aProbeResults('dev', missingSafeFailureCode)).toThrow();
+
+    const inventedSafeFailureCode = structuredClone(devSuccess);
+    inventedSafeFailureCode[0].scenarios[0].safeFailureCode = 'AUTH_FAILED';
+    expect(() => evaluateBlock6aProbeResults('dev', inventedSafeFailureCode)).toThrow();
+
+    const successWithSafeFailureCode = structuredClone(devSuccess);
+    successWithSafeFailureCode[0].scenarios[4].safeFailureCode = 'SDK_RUNTIME_UNAVAILABLE';
+    expect(() => evaluateBlock6aProbeResults('dev', successWithSafeFailureCode)).toThrow();
 
     const successWithFailureOrigin = structuredClone(devSuccess);
     successWithFailureOrigin[0].scenarios[4].runtimeFailureOrigin = 'sdk_unstructured';

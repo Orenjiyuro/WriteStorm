@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "block6a-remediation-r8a5-conditional-development-gate-001",
+  "task": "6A remediation R8a5 conditional development gate",
+  "source": "static_manifest",
+  "recordedAt": "2026-07-21T06:20:00.000Z",
+  "commandName": "block6a-r8a5-focused-conditional-development-gate-verification",
+  "classification": "conditional_development_gate_frozen",
+  "assertions": {
+    "positiveCoreRequirementsFrozen": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a5-conditional-development-gate-001",
+      "classification": "development_positive_core_frozen"
+    },
+    "currentAuthNonGitDifferentialFrozen": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a5-conditional-development-gate-001",
+      "classification": "git_bypass_behavioral_differential_frozen"
+    },
+    "structuredGitAuthSignalIsConditionalLimitation": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a5-conditional-development-gate-001",
+      "classification": "conditional_limitation_frozen"
+    },
+    "isolatedAuthFailuresAreDiagnostic": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a5-conditional-development-gate-001",
+      "classification": "conditional_limitation_frozen"
+    },
+    "unknownRuntimeFailureUsesSafeGenericCode": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a5-conditional-development-gate-001",
+      "classification": "safe_failure_mapping_frozen"
+    },
+    "englishErrorParsingRemainsForbidden": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a5-conditional-development-gate-001",
+      "classification": "safe_failure_mapping_frozen"
+    },
+    "admittedWithConditionsIsMachineReadable": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a5-conditional-development-gate-001",
+      "classification": "development_admission_contract_frozen"
+    },
+    "lifecycleStillRequiresDevelopmentAdmission": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a5-conditional-development-gate-001",
+      "classification": "layered_recertification_gate_preserved"
+    },
+    "priorRuntimeEvidenceInvalidated": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a5-conditional-development-gate-001",
+      "classification": "recertification_required"
+    }
+  },
+  "limitations": [
+    "This static_manifest proves only the R8a5 local gate contract and is not real_sdk or packaged_sdk evidence.",
+    "SDK 0.144.6 remains message-only for Git and auth failures; R8a5 does not invent a stable provider error code.",
+    "SDK_RUNTIME_UNAVAILABLE is a generic sanitized recovery category and never proves AUTH_FAILED or GIT_REQUIRED.",
+    "The 964979c development records remain valid historical blocked evidence but cannot certify this changed seven-scenario boundary.",
+    "Fresh Windows development execution from the next clean committed runtime HEAD is required before lifecycle or packaged execution."
+  ]
+}

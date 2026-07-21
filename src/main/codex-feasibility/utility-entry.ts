@@ -34,6 +34,7 @@ type CodexWithResolvedExecutable = { readonly exec?: { readonly executablePath?:
 type FailureClassification = {
   readonly outcome: Exclude<CodexCapabilityProbeOutcome, 'success'>;
   readonly authClassification: Exclude<CodexAuthClassification, 'authenticated'>;
+  readonly safeFailureCode: 'SDK_RUNTIME_UNAVAILABLE';
 };
 type LifecycleSettlement = Omit<CodexLifecycleProbeResult, 'scenario' | 'trigger' | 'abortRequested'>;
 type ActiveLifecycleProbe = {
@@ -207,6 +208,7 @@ async function runCapabilityProbe(input: CodexCapabilityProbeInput): Promise<
         outcome: 'success',
         authClassification: 'authenticated',
         runtimeFailureOrigin: null,
+        safeFailureCode: null,
         finalResponseMatched: validateMinimalStructuredOutput(
           turn.finalResponse,
           expectedResponse,
@@ -293,6 +295,7 @@ async function runOutputSchemaProbe(input: CodexOutputSchemaProbeInput): Promise
           outcome: 'invalid_schema_not_rejected',
           authClassification: 'unverified',
           runtimeFailureOrigin: null,
+          safeFailureCode: null,
           finalJsonParsed: null,
           strictValidatorAccepted: null,
           expectedValueMatched: null,
@@ -308,6 +311,7 @@ async function runOutputSchemaProbe(input: CodexOutputSchemaProbeInput): Promise
         outcome: validation.accepted ? 'success' : 'output_validation_failed',
         authClassification: 'authenticated',
         runtimeFailureOrigin: null,
+        safeFailureCode: null,
         finalJsonParsed: validation.classification !== 'invalid_json',
         strictValidatorAccepted: validation.accepted,
         expectedValueMatched: validation.expectedValueMatched,
@@ -327,6 +331,7 @@ async function runOutputSchemaProbe(input: CodexOutputSchemaProbeInput): Promise
           outcome: 'invalid_schema_rejected',
           authClassification: 'unverified',
           runtimeFailureOrigin: null,
+          safeFailureCode: null,
           finalJsonParsed: null,
           strictValidatorAccepted: null,
           expectedValueMatched: null,
@@ -344,6 +349,7 @@ async function runOutputSchemaProbe(input: CodexOutputSchemaProbeInput): Promise
           : classification.outcome,
         authClassification: classification.authClassification,
         runtimeFailureOrigin: classifyCodexTurnRuntimeFailureOrigin(error),
+        safeFailureCode: classification.safeFailureCode,
         finalJsonParsed: null,
         strictValidatorAccepted: null,
         expectedValueMatched: null,
@@ -480,7 +486,11 @@ function clearActiveSdkProbe(active: ActiveSdkProbe): void {
 }
 
 export function classifyCodexFailure(_error: unknown): FailureClassification {
-  return { outcome: 'runtime_failed', authClassification: 'unverified' };
+  return {
+    outcome: 'runtime_failed',
+    authClassification: 'unverified',
+    safeFailureCode: 'SDK_RUNTIME_UNAVAILABLE',
+  };
 }
 
 export function isPinnedSdkLocalOutputSchemaGuardProbe(

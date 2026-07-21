@@ -36,7 +36,9 @@ const capabilityLimitations = [
   'No prompt, path, environment value, credential, PID or raw SDK error is retained.',
   'The current-auth scenario classifies the existing state but does not create or modify login state.',
   'WriteStorm has no product login UI in Task 6A.5.',
-  'Unstructured SDK or CLI failures are retained only as runtime_failed / unverified and block recertification.',
+  'SDK 0.144.6 exposes no stable structured Git or auth error discriminant.',
+  'Unknown SDK or CLI failures are retained only as runtime_failed / unverified with SDK_RUNTIME_UNAVAILABLE.',
+  'Isolated-empty-auth failures are diagnostic limitations when the positive core and current-auth Git bypass differential pass.',
 ];
 const outputSchemaLimitations = [
   'No prompt, response body, path, environment value, credential, PID or raw SDK error is retained.',
@@ -107,6 +109,7 @@ const requiredLineageEvidenceIds = [
   'block6a-remediation-r8a-turn-deadline-001',
   'block6a-remediation-r8a3-runtime-failure-origin-001',
   'block6a-remediation-r8a4-cjs-module-anchor-001',
+  'block6a-remediation-r8a5-conditional-development-gate-001',
 ];
 const staticAssertion = (evidenceId, classification) => ({
   source: 'static_manifest', evidenceId, classification,
@@ -140,15 +143,24 @@ export function evaluateBlock6aProbeResults(mode, results) {
   if (!Array.isArray(results)) deny();
 
   let blockers = [];
-  if (mode === 'dev') blockers = validateDevelopmentResults(results);
+  let conditionalLimitations = [];
+  if (mode === 'dev') ({ blockers, conditionalLimitations } = validateDevelopmentResults(results));
   else if (mode === 'lifecycle') admitLifecycleResults(results);
   else if (mode === 'packaged') admitPackagedResults(results);
   else deny();
 
+  const admission = blockers.length > 0
+    ? 'blocked'
+    : conditionalLimitations.length > 0
+      ? 'admitted_with_conditions'
+      : 'admitted';
+
   return {
     evidenceAccepted: true,
-    recertificationAdmitted: blockers.length === 0,
+    admission,
+    recertificationAdmitted: admission !== 'blocked',
     blockers,
+    conditionalLimitations,
     results: results.map((result) => ({
       task: result.task,
       source: result.source,
@@ -180,6 +192,8 @@ function validateDevelopmentResults(results) {
     'explicit-non-git-isolated-auth',
     'skip-non-git-isolated-auth',
     'current-auth-explicit-git',
+    'current-auth-non-git-check',
+    'current-auth-non-git-skip',
   ]);
 
   requireUnverifiedCapabilityScenario(
@@ -215,10 +229,56 @@ function validateDevelopmentResults(results) {
       outcome: 'success',
       authClassification: 'authenticated',
       runtimeFailureOrigin: null,
+      safeFailureCode: null,
       finalResponseMatched: true,
     });
   } else {
     requireUnverifiedCapabilityScenario(currentAuth, true, false);
+  }
+  const currentAuthNonGitCheck = exactScenario(
+    capability.scenarios,
+    'current-auth-non-git-check',
+  );
+  const currentAuthNonGitCheckFailedGenerically = currentAuthNonGitCheck.outcome === 'runtime_failed'
+    && currentAuthNonGitCheck.authClassification === 'unverified';
+  if (currentAuthNonGitCheckFailedGenerically) {
+    requireUnverifiedCapabilityScenario(currentAuthNonGitCheck, true, false);
+  } else if (currentAuthNonGitCheck.outcome === 'success'
+    && currentAuthNonGitCheck.authClassification === 'authenticated') {
+    requireExactScenario(currentAuthNonGitCheck, {
+      scenario: 'current-auth-non-git-check',
+      utilityCwdMatchedExpected: true,
+      explicitWorkingDirectoryRequested: true,
+      skipGitRepoCheck: false,
+      envPolicy: 'explicit_allowlist_no_api_credentials',
+      outcome: 'success',
+      authClassification: 'authenticated',
+      runtimeFailureOrigin: null,
+      safeFailureCode: null,
+      finalResponseMatched: true,
+    });
+  } else deny();
+  const currentAuthNonGitSkip = exactScenario(
+    capability.scenarios,
+    'current-auth-non-git-skip',
+  );
+  const currentAuthNonGitSkipSucceeded = currentAuthNonGitSkip.outcome === 'success'
+    && currentAuthNonGitSkip.authClassification === 'authenticated';
+  if (currentAuthNonGitSkipSucceeded) {
+    requireExactScenario(currentAuthNonGitSkip, {
+      scenario: 'current-auth-non-git-skip',
+      utilityCwdMatchedExpected: true,
+      explicitWorkingDirectoryRequested: true,
+      skipGitRepoCheck: true,
+      envPolicy: 'explicit_allowlist_no_api_credentials',
+      outcome: 'success',
+      authClassification: 'authenticated',
+      runtimeFailureOrigin: null,
+      safeFailureCode: null,
+      finalResponseMatched: true,
+    });
+  } else {
+    requireUnverifiedCapabilityScenario(currentAuthNonGitSkip, true, true);
   }
 
   const outputSchema = exactResult(
@@ -246,6 +306,7 @@ function validateDevelopmentResults(results) {
       outcome: 'success',
       authClassification: 'authenticated',
       runtimeFailureOrigin: null,
+      safeFailureCode: null,
       finalJsonParsed: true,
       strictValidatorAccepted: true,
       expectedValueMatched: true,
@@ -263,6 +324,7 @@ function validateDevelopmentResults(results) {
       outcome: 'invalid_schema_rejected',
       authClassification: 'unverified',
       runtimeFailureOrigin: null,
+      safeFailureCode: null,
       finalJsonParsed: null,
       strictValidatorAccepted: null,
       expectedValueMatched: null,
@@ -271,23 +333,32 @@ function validateDevelopmentResults(results) {
   } else {
     requireUnverifiedOutputSchemaScenario(invalidOutputSchema);
   }
-  const runtimeFailureOrigins = [
-    ...capability.scenarios,
-    ...outputSchema.scenarios,
-  ].map((scenario) => scenario.runtimeFailureOrigin).filter(Boolean);
-  return [
-    'git_auth_structured_classification_unavailable',
+  const isolatedFailureOrigins = capability.scenarios
+    .filter((scenario) => scenario.scenario.endsWith('-isolated-auth'))
+    .map((scenario) => scenario.runtimeFailureOrigin)
+    .filter(Boolean);
+  const blockers = [
     ...(!authenticatedCapabilitySucceeded || !authenticatedOutputSchemaSucceeded
       ? ['authenticated_sdk_success_unavailable']
       : []),
     ...(!invalidSchemaGuardSucceeded ? ['output_schema_guard_unavailable'] : []),
-    ...(runtimeFailureOrigins.includes('local_turn_deadline')
-      ? ['local_sdk_turn_deadline_exceeded']
-      : []),
-    ...(runtimeFailureOrigins.includes('sdk_unstructured')
-      ? ['sdk_unstructured_runtime_failure']
+    ...(!currentAuthNonGitCheckFailedGenerically || !currentAuthNonGitSkipSucceeded
+      ? ['git_bypass_differential_unavailable']
       : []),
   ];
+  const conditionalLimitations = [
+    'git_auth_structured_classification_unavailable',
+    ...(isolatedFailureOrigins.includes('local_turn_deadline')
+      ? ['isolated_auth_local_turn_deadline_observed']
+      : []),
+    ...(isolatedFailureOrigins.includes('sdk_unstructured')
+      ? ['isolated_auth_sdk_runtime_unavailable_observed']
+      : []),
+    ...(currentAuthNonGitCheckFailedGenerically
+      ? ['current_auth_non_git_check_failure_generic_only']
+      : []),
+  ];
+  return { blockers, conditionalLimitations };
 }
 
 function admitLifecycleResults(results) {
@@ -377,6 +448,7 @@ function admitPackagedResults(results) {
     outcome: 'success',
     authClassification: 'authenticated',
     runtimeFailureOrigin: null,
+    safeFailureCode: null,
     finalJsonParsed: true,
     strictValidatorAccepted: true,
     expectedValueMatched: true,
@@ -464,6 +536,7 @@ function exactUnverifiedCapabilityScenario(
     outcome: 'runtime_failed',
     authClassification: 'unverified',
     runtimeFailureOrigin,
+    safeFailureCode: 'SDK_RUNTIME_UNAVAILABLE',
     finalResponseMatched: null,
   };
 }
@@ -475,6 +548,7 @@ function requireUnverifiedOutputSchemaScenario(scenario) {
     outcome: 'runtime_failed',
     authClassification: 'unverified',
     runtimeFailureOrigin,
+    safeFailureCode: 'SDK_RUNTIME_UNAVAILABLE',
     finalJsonParsed: null,
     strictValidatorAccepted: null,
     expectedValueMatched: null,

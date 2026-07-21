@@ -22,6 +22,8 @@ const r8a3CapabilityBlockedPath =
   'docs/engineering/evidence/block6a-r8a3-windows-dev-capability-blocked.json';
 const r8a3OutputSchemaBlockedPath =
   'docs/engineering/evidence/block6a-r8a3-windows-dev-output-schema-blocked.json';
+const r8a5GatePath =
+  'docs/engineering/evidence/block6a-remediation-r8a5-conditional-development-gate.json';
 
 describe('Block 6A Codex SDK feasibility authority', () => {
   it('keeps long-term multi-provider direction compatible with the V1 Codex-only gate', () => {
@@ -51,7 +53,7 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     const verdictLine = feasibility.split(/\r?\n/).find((line) => line.startsWith('Verdict:'));
 
     expect(verdictLine).toBe(
-      'Verdict: `pending recertification — fresh Windows development evidence was not admitted; historical Windows-only conditional Go remains expired; macOS deferred-by-user`',
+      'Verdict: `pending recertification — R8a5 conditional development gate awaits fresh Windows evidence; historical Windows-only conditional Go remains expired; macOS deferred-by-user`',
     );
     expect(feasibility).toContain('Historical Task 6A.8b decision');
     expect(feasibility).toContain('The current implementation is not Windows-feasibility verified');
@@ -73,6 +75,29 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     expect(feasibility).toContain('Prompts, complete stdout/stderr, environment values, credentials, auth files, and raw temporary PID logs are not committed');
     expect(feasibility).toContain('ephemeral_correlation_only');
     expect(feasibility).toContain('source = real_sdk | packaged_sdk | local_validator_fixture | static_manifest');
+  });
+
+  it('freezes R8a5 positive-core admission and safe conditional diagnostics', () => {
+    const feasibility = readFileSync(feasibilityPath, 'utf8');
+    const decisions = readFileSync(decisionsPath, 'utf8');
+    const evidence = JSON.parse(readFileSync(r8a5GatePath, 'utf8')) as {
+      source: string;
+      classification: string;
+      assertions: Record<string, { value: boolean; source: string }>;
+    };
+
+    expect(evidence.source).toBe('static_manifest');
+    expect(evidence.classification).toBe('conditional_development_gate_frozen');
+    expect(Object.values(evidence.assertions).every(
+      (assertion) => assertion.value && assertion.source === 'static_manifest',
+    )).toBe(true);
+    expect(feasibility).toContain('admission: admitted_with_conditions');
+    expect(feasibility).toContain('safeFailureCode: SDK_RUNTIME_UNAVAILABLE');
+    expect(feasibility).toContain('current-auth non-Git behavioral differential');
+    expect(feasibility).toContain('tenth ordered lineage input');
+    expect(decisions).toContain(
+      '## D089: Development Admission Uses Positive Capabilities and Conditional Diagnostics',
+    );
   });
 
   it('records a static current-status override without rewriting historical runtime evidence', () => {

@@ -14,6 +14,7 @@ const evidenceInputPaths = [
   'docs/engineering/evidence/block6a-remediation-r8a-turn-deadline.json',
   'docs/engineering/evidence/block6a-remediation-r8a3-runtime-failure-origin.json',
   'docs/engineering/evidence/block6a-remediation-r8a4-cjs-module-anchor.json',
+  'docs/engineering/evidence/block6a-remediation-r8a5-conditional-development-gate.json',
 ];
 const fixedRuntimeBoundaryPaths = [
   'package.json',

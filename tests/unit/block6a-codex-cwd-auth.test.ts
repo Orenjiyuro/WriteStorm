@@ -88,6 +88,7 @@ describe('Block 6A.5 cwd, Git, environment and auth boundary', () => {
         outcome: 'login_required',
         authClassification: 'login_required',
         runtimeFailureOrigin: null,
+        safeFailureCode: null,
         utilityCwdMatchedExpected: true,
         explicitWorkingDirectoryRequested: true,
         skipGitRepoCheck: false,
@@ -141,6 +142,7 @@ describe('Block 6A.5 cwd, Git, environment and auth boundary', () => {
       expect(classifyCodexFailure(error)).toEqual({
         outcome: 'runtime_failed',
         authClassification: 'unverified',
+        safeFailureCode: 'SDK_RUNTIME_UNAVAILABLE',
       });
     }
 
@@ -149,6 +151,16 @@ describe('Block 6A.5 cwd, Git, environment and auth boundary', () => {
       'utf8',
     );
     expect(utilitySource).not.toMatch(/not inside a trusted directory|not logged in|unauthorized/);
+  });
+
+  it('freezes the current-auth non-Git behavioral differential without message parsing', () => {
+    const source = readFileSync(
+      path.join(rootDir, 'src/main/codex-feasibility/probe-main.ts'),
+      'utf8',
+    );
+    expect(source).toContain("scenario: 'current-auth-non-git-check'");
+    expect(source).toContain("scenario: 'current-auth-non-git-skip'");
+    expect(source).toContain('scenarios.length === 7');
   });
 
   it('records R5 as static-only error-boundary evidence pending fresh recertification', () => {

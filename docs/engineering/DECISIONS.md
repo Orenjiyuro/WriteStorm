@@ -1190,3 +1190,17 @@ Rules:
 - Admission accepts and retains the exact evidence envelope but returns the three closed blockers `git_auth_structured_classification_unavailable`, `local_sdk_turn_deadline_exceeded` and `sdk_unstructured_runtime_failure`, then exits non-zero.
 - Both records bind clean run HEAD `964979c`, lockfile and runtime hashes, and nine ordered evidence inputs. They retain no synthetic value, response body, raw output, environment value, credential, auth file, process identity, executable path or raw SDK error.
 - Lifecycle and packaged probes cannot bypass the failed development gate. Windows status remains pending recertification; macOS remains `deferred-by-user`, Task 13.1 remains blocked, and Task 13.2 is not authorized.
+
+## D089: Development Admission Uses Positive Capabilities and Conditional Diagnostics
+
+Decision: R8a5 removes the impossible requirement for a structured SDK Git/auth error and admits development with conditions only when the positive SDK core and a current-auth non-Git Git-bypass differential both pass.
+
+Rules:
+
+- Hard requirements are current-auth Git success, valid-minimal structured success, the exact pinned invalid-schema guard, privacy/process/lineage integrity, generic safe failure mapping and the two-scenario current-auth non-Git differential.
+- The differential holds auth and workspace constant: Git checking enabled must produce only the generic unavailable result, and `skipGitRepoCheck=true` must produce an authenticated expected-result match. It proves bypass behavior without assigning a cause to the checked failure.
+- SDK 0.144.6's unavailable structured Git/auth discriminant, isolated-auth local deadlines and isolated-auth unstructured rejection are `conditionalLimitations`, not unconditional blockers. The admitted state is explicitly `admitted_with_conditions`.
+- Unknown SDK/CLI failures are exactly `runtime_failed / unverified / SDK_RUNTIME_UNAVAILABLE`. No English message or raw error is inspected, and this generic category is never upgraded to auth, login or Git business facts.
+- V1 depends on an existing ChatGPT-managed auth session. It provides no WriteStorm login entry or precise expired-session diagnosis; future Job/UI mapping may expose only generic safe recovery guidance until a separately designed stable signal exists.
+- R8a5 adds a tenth static lineage input and expires application of the nine-input `964979c` checkpoint to the new producer/protocol/admission boundary. No SDK turn ran in this remediation; fresh development evidence is required before lifecycle.
+- Lifecycle remains prerequisite to Windows packaged execution. Windows status remains pending recertification; macOS remains `deferred-by-user`, Task 13.1 remains blocked, and Task 13.2 is not authorized.

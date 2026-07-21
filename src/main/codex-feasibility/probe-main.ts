@@ -108,6 +108,26 @@ void app.whenReady().then(async () => {
         },
         utilityWorkingDirectory: nonGit,
       },
+      {
+        input: {
+          scenario: 'current-auth-non-git-check',
+          expectedUtilityWorkingDirectory: defaultGit,
+          workingDirectory: nonGit,
+          skipGitRepoCheck: false,
+          authMode: 'current',
+        },
+        utilityWorkingDirectory: defaultGit,
+      },
+      {
+        input: {
+          scenario: 'current-auth-non-git-skip',
+          expectedUtilityWorkingDirectory: defaultGit,
+          workingDirectory: nonGit,
+          skipGitRepoCheck: true,
+          authMode: 'current',
+        },
+        utilityWorkingDirectory: defaultGit,
+      },
     ];
 
     const scenarios: CodexCapabilityProbeResult[] = [];
@@ -170,7 +190,7 @@ void app.whenReady().then(async () => {
           'typed_protocol_boundary_frozen',
         ),
         scenarioCount: createBlock6aAssertion(
-          scenarios.length === 5, 'real_sdk',
+          scenarios.length === 7, 'real_sdk',
           'block6a-6a5-real-sdk-cwd-git-env-auth-001',
           'cwd_git_env_auth_probe_completed',
         ),
@@ -180,7 +200,9 @@ void app.whenReady().then(async () => {
         'No prompt, path, environment value, credential, PID or raw SDK error is retained.',
         'The current-auth scenario classifies the existing state but does not create or modify login state.',
         'WriteStorm has no product login UI in Task 6A.5.',
-        'Unstructured SDK or CLI failures are retained only as runtime_failed / unverified and block recertification.',
+        'SDK 0.144.6 exposes no stable structured Git or auth error discriminant.',
+        'Unknown SDK or CLI failures are retained only as runtime_failed / unverified with SDK_RUNTIME_UNAVAILABLE.',
+        'Isolated-empty-auth failures are diagnostic limitations when the positive core and current-auth Git bypass differential pass.',
       ],
     });
   } catch (error) {

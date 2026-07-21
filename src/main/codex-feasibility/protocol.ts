@@ -78,6 +78,7 @@ export type CodexOutputSchemaProbeResult = {
     | 'runtime_failed';
   readonly authClassification: CodexAuthClassification;
   readonly runtimeFailureOrigin: CodexTurnRuntimeFailureOrigin | null;
+  readonly safeFailureCode: CodexSafeFailureCode | null;
   readonly finalJsonParsed: boolean | null;
   readonly strictValidatorAccepted: boolean | null;
   readonly expectedValueMatched: boolean | null;
@@ -89,7 +90,11 @@ export type CodexCapabilityProbeScenario =
   | 'explicit-git-isolated-auth'
   | 'explicit-non-git-isolated-auth'
   | 'skip-non-git-isolated-auth'
-  | 'current-auth-explicit-git';
+  | 'current-auth-explicit-git'
+  | 'current-auth-non-git-check'
+  | 'current-auth-non-git-skip';
+
+export type CodexSafeFailureCode = 'SDK_RUNTIME_UNAVAILABLE';
 
 export type CodexCapabilityProbeInput = {
   readonly scenario: CodexCapabilityProbeScenario;
@@ -118,6 +123,7 @@ export type CodexCapabilityProbeResult = {
   readonly outcome: CodexCapabilityProbeOutcome;
   readonly authClassification: CodexAuthClassification;
   readonly runtimeFailureOrigin: CodexTurnRuntimeFailureOrigin | null;
+  readonly safeFailureCode: CodexSafeFailureCode | null;
   readonly utilityCwdMatchedExpected: boolean;
   readonly explicitWorkingDirectoryRequested: boolean;
   readonly skipGitRepoCheck: boolean;
@@ -275,6 +281,8 @@ const requestSchema = z.discriminatedUnion('command', [
         'explicit-non-git-isolated-auth',
         'skip-non-git-isolated-auth',
         'current-auth-explicit-git',
+        'current-auth-non-git-check',
+        'current-auth-non-git-skip',
       ]),
       expectedUtilityWorkingDirectory: z.string().min(1).refine((value) => path.isAbsolute(value)),
       workingDirectory: z.string().min(1).refine((value) => path.isAbsolute(value)).optional(),
@@ -340,6 +348,8 @@ const capabilityResultSchema = z.object({
     'explicit-non-git-isolated-auth',
     'skip-non-git-isolated-auth',
     'current-auth-explicit-git',
+    'current-auth-non-git-check',
+    'current-auth-non-git-skip',
   ]),
   outcome: z.enum([
     'success',
@@ -350,6 +360,7 @@ const capabilityResultSchema = z.object({
   ]),
   authClassification: z.enum(['authenticated', 'login_required', 'auth_failed', 'unverified']),
   runtimeFailureOrigin: z.enum(['local_turn_deadline', 'sdk_unstructured']).nullable(),
+  safeFailureCode: z.literal('SDK_RUNTIME_UNAVAILABLE').nullable(),
   utilityCwdMatchedExpected: z.boolean(),
   explicitWorkingDirectoryRequested: z.boolean(),
   skipGitRepoCheck: z.boolean(),
@@ -370,6 +381,7 @@ const outputSchemaResultSchema = z.object({
   ]),
   authClassification: z.enum(['authenticated', 'login_required', 'auth_failed', 'unverified']),
   runtimeFailureOrigin: z.enum(['local_turn_deadline', 'sdk_unstructured']).nullable(),
+  safeFailureCode: z.literal('SDK_RUNTIME_UNAVAILABLE').nullable(),
   finalJsonParsed: z.boolean().nullable(),
   strictValidatorAccepted: z.boolean().nullable(),
   expectedValueMatched: z.boolean().nullable(),

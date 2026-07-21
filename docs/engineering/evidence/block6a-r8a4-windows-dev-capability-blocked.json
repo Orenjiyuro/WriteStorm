@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "block6a-6a5-real-sdk-cwd-git-env-auth-001",
+  "task": "6A.5",
+  "source": "real_sdk",
+  "recordedAt": "2026-07-21T05:31:16.755Z",
+  "commandName": "block6a-electron-utility-cwd-git-env-auth-probe",
+  "classification": "cwd_git_env_auth_probe_completed",
+  "versions": {
+    "electron": "43.0.0",
+    "nodeRuntime": "24.17.0",
+    "codexSdk": "0.144.6"
+  },
+  "assertions": {
+    "probeRootOutsideSourceRepository": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r6-assertion-provenance-001",
+      "classification": "local_probe_boundary_observed"
+    },
+    "workspacesOutsideLibraryRoot": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r6-assertion-provenance-001",
+      "classification": "local_probe_boundary_observed"
+    },
+    "workspacesOutsidePackagedResources": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r6-assertion-provenance-001",
+      "classification": "local_probe_boundary_observed"
+    },
+    "apiCredentialEnvironmentExcludedFromUtility": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r2-environment-boundary-001",
+      "classification": "utility_environment_boundary_frozen"
+    },
+    "syntheticInputNotPassedInProtocol": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r6-assertion-provenance-001",
+      "classification": "typed_protocol_boundary_frozen"
+    },
+    "scenarioCount": {
+      "value": true,
+      "source": "real_sdk",
+      "evidenceId": "block6a-6a5-real-sdk-cwd-git-env-auth-001",
+      "classification": "cwd_git_env_auth_probe_completed"
+    }
+  },
+  "scenarios": [
+    {
+      "scenario": "default-git-isolated-auth",
+      "utilityCwdMatchedExpected": true,
+      "explicitWorkingDirectoryRequested": false,
+      "skipGitRepoCheck": false,
+      "envPolicy": "explicit_allowlist_no_api_credentials",
+      "outcome": "runtime_failed",
+      "authClassification": "unverified",
+      "runtimeFailureOrigin": "local_turn_deadline",
+      "finalResponseMatched": null
+    },
+    {
+      "scenario": "explicit-git-isolated-auth",
+      "utilityCwdMatchedExpected": true,
+      "explicitWorkingDirectoryRequested": true,
+      "skipGitRepoCheck": false,
+      "envPolicy": "explicit_allowlist_no_api_credentials",
+      "outcome": "runtime_failed",
+      "authClassification": "unverified",
+      "runtimeFailureOrigin": "local_turn_deadline",
+      "finalResponseMatched": null
+    },
+    {
+      "scenario": "explicit-non-git-isolated-auth",
+      "utilityCwdMatchedExpected": true,
+      "explicitWorkingDirectoryRequested": true,
+      "skipGitRepoCheck": false,
+      "envPolicy": "explicit_allowlist_no_api_credentials",
+      "outcome": "runtime_failed",
+      "authClassification": "unverified",
+      "runtimeFailureOrigin": "sdk_unstructured",
+      "finalResponseMatched": null
+    },
+    {
+      "scenario": "skip-non-git-isolated-auth",
+      "utilityCwdMatchedExpected": true,
+      "explicitWorkingDirectoryRequested": true,
+      "skipGitRepoCheck": true,
+      "envPolicy": "explicit_allowlist_no_api_credentials",
+      "outcome": "runtime_failed",
+      "authClassification": "unverified",
+      "runtimeFailureOrigin": "local_turn_deadline",
+      "finalResponseMatched": null
+    },
+    {
+      "scenario": "current-auth-explicit-git",
+      "utilityCwdMatchedExpected": true,
+      "explicitWorkingDirectoryRequested": true,
+      "skipGitRepoCheck": false,
+      "envPolicy": "explicit_allowlist_no_api_credentials",
+      "outcome": "success",
+      "authClassification": "authenticated",
+      "runtimeFailureOrigin": null,
+      "finalResponseMatched": true
+    }
+  ],
+  "limitations": [
+    "No prompt, path, environment value, credential, PID or raw SDK error is retained.",
+    "The current-auth scenario classifies the existing state but does not create or modify login state.",
+    "WriteStorm has no product login UI in Task 6A.5.",
+    "Unstructured SDK or CLI failures are retained only as runtime_failed / unverified and block recertification."
+  ],
+  "lineage": {
+    "gitHeadAtRun": "964979c6a415e11a1b549cf6f4f31de3c7599d6f",
+    "criticalInputsCleanAtRun": true,
+    "packageLockSha256": "bda4d5d4eb77566c9ee228ee77fde5e54e05ab93299a876549a17592b3a8dade",
+    "runtimeBoundarySha256": "f645d322ee184f471abd492a2918f99aa76e990c692192b7b2dce24357f97df8",
+    "packagedArtifactSha256": null,
+    "evidenceInputs": [
+      { "evidenceId": "block6a-remediation-r2-environment-boundary-001", "sha256": "bcb508b4c614465f5d89b9c2161a99fd12e19c1739a84aa5ce0face9989d0e45" },
+      { "evidenceId": "block6a-remediation-r4a-process-ownership-001", "sha256": "028858dc81dd7c7b7c3d0b961ab30ef4096dc2c6365b3e75bb161bd3fce2af02" },
+      { "evidenceId": "block6a-remediation-r4b-safe-termination-001", "sha256": "0116ad182ec70134a56e11fbd7186a0eb0b60bd6fccce2d8aec329b41428a8d1" },
+      { "evidenceId": "block6a-remediation-r5-error-classification-001", "sha256": "650be0a70501c339563754b29a38f14ac55f8eefcf63d58a8a74da031f305d20" },
+      { "evidenceId": "block6a-remediation-r6-assertion-provenance-001", "sha256": "533fe288f4c73ae44e25f813db32e86b070daf49de1347c4dab782e87d0a9c6d" },
+      { "evidenceId": "block6a-remediation-r7-evidence-lineage-001", "sha256": "4ae22a79ab5feb9150bbdfb57135953e9a202380d9c121aaacaa6937ebbb0a8a" },
+      { "evidenceId": "block6a-remediation-r8a-turn-deadline-001", "sha256": "5bf5b17657f631de0c4653a865297c09787a72558643551e411171a3ce040b46" },
+      { "evidenceId": "block6a-remediation-r8a3-runtime-failure-origin-001", "sha256": "12e4009d5da7d2a562abb2a7bb54b5802eed567871d70bf5517c76b3dafa6312" },
+      { "evidenceId": "block6a-remediation-r8a4-cjs-module-anchor-001", "sha256": "f6f8ff9a4da18d57f153fb2f710e273b3fbf9b2af2b1cebdec216f3fa5720c19" }
+    ]
+  }
+}

@@ -1178,3 +1178,15 @@ Rules:
 - R8a4 adds one `static_manifest` lineage input after R8a3, so future runtime evidence requires nine ordered input ids and hashes. Historical six- and eight-input records are preserved rather than rewritten.
 - This runtime change invalidates application of the `c7fa672` records to the repaired boundary. No SDK turn ran in R8a4; a fresh clean-HEAD development run is required before lifecycle or packaged execution.
 - Current status remains pending recertification; macOS remains `deferred-by-user`, Task 13.1 remains blocked, and Task 13.2 is not authorized.
+
+## D088: Fresh R8a4 Development Evidence Resolves Success and Schema but Not Isolated Git/Auth
+
+Decision: The clean `964979c` development run is complete, sanitized and lineage-valid, and it re-establishes current-auth real SDK success plus both required outputSchema outcomes. It does not admit recertification because the pinned SDK exposes no stable structured Git/auth classification in the isolated scenarios.
+
+Rules:
+
+- Current ChatGPT-managed auth produced a real successful turn with the expected result. Valid-minimal outputSchema passed parsing and strict validation, and invalid-schema satisfied the exact pinned-version local guard without inspecting English error text.
+- Three isolated-auth scenarios reached the local turn deadline. Explicit non-Git with Git checking rejected earlier only as `sdk_unstructured`; neither result is upgraded to login-required, auth-failed or Git-required.
+- Admission accepts and retains the exact evidence envelope but returns the three closed blockers `git_auth_structured_classification_unavailable`, `local_sdk_turn_deadline_exceeded` and `sdk_unstructured_runtime_failure`, then exits non-zero.
+- Both records bind clean run HEAD `964979c`, lockfile and runtime hashes, and nine ordered evidence inputs. They retain no synthetic value, response body, raw output, environment value, credential, auth file, process identity, executable path or raw SDK error.
+- Lifecycle and packaged probes cannot bypass the failed development gate. Windows status remains pending recertification; macOS remains `deferred-by-user`, Task 13.1 remains blocked, and Task 13.2 is not authorized.

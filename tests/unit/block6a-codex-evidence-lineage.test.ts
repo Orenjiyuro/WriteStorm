@@ -79,7 +79,7 @@ describe('Block 6A R7 evidence lineage binding', () => {
     expect(isAllowedBlock6aEvidenceOnlyPath('package-lock.json')).toBe(false);
   });
 
-  it('binds the deadline and failure-attribution manifests in future runtime evidence', () => {
+  it('binds the deadline, failure-attribution and CJS-anchor manifests in future runtime evidence', () => {
     const source = readFileSync(path.resolve(
       __dirname,
       '../../scripts/block6a-evidence-lineage.mjs',
@@ -89,6 +89,9 @@ describe('Block 6A R7 evidence lineage binding', () => {
     );
     expect(source).toContain(
       'docs/engineering/evidence/block6a-remediation-r8a3-runtime-failure-origin.json',
+    );
+    expect(source).toContain(
+      'docs/engineering/evidence/block6a-remediation-r8a4-cjs-module-anchor.json',
     );
   });
 

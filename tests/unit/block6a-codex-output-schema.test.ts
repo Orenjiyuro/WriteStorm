@@ -1,12 +1,19 @@
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { build } from 'vite';
 import {
   isCodexFeasibilityRequest,
   isCodexFeasibilityResponse,
 } from '../../src/main/codex-feasibility/protocol';
 import { validateMinimalStructuredOutput } from '../../src/main/codex-feasibility/structured-output';
-import { isPinnedSdkLocalOutputSchemaGuardProbe } from '../../src/main/codex-feasibility/utility-entry';
+import {
+  isPinnedSdkLocalOutputSchemaGuardProbe,
+  resolveInstalledCodexSdkVersion,
+  resolvePackageManifestPath,
+  resolveUtilityModuleAnchor,
+} from '../../src/main/codex-feasibility/utility-entry';
 
 const rootDir = path.resolve(__dirname, '../..');
 
@@ -69,6 +76,53 @@ describe('Block 6A.6 minimal outputSchema boundary', () => {
       'utf8',
     );
     expect(utilitySource).not.toContain('outputSchema must be a plain JSON object');
+  });
+
+  it('keeps the utility CJS bundle module-resolution anchor valid', async () => {
+    const outDir = mkdtempSync(path.join(os.tmpdir(), 'writestorm-block6a-cjs-anchor-'));
+    try {
+      await build({
+        configFile: false,
+        logLevel: 'silent',
+        build: {
+          target: 'node22',
+          outDir,
+          emptyOutDir: true,
+          minify: false,
+          sourcemap: false,
+          lib: {
+            entry: path.join(rootDir, 'src/main/codex-feasibility/utility-entry.ts'),
+            formats: ['cjs'],
+            fileName: () => 'utility-entry.cjs',
+          },
+          rollupOptions: {
+            external: (id) => id === 'electron'
+              || id === '@openai/codex-sdk'
+              || id === '@openai/codex'
+              || id.startsWith('node:'),
+          },
+        },
+      });
+      const bundled = readFileSync(path.join(outDir, 'utility-entry.cjs'), 'utf8');
+      expect(bundled).not.toMatch(/createRequire\)\(\{\}\.url\)/);
+      expect(bundled).toContain('resolveUtilityModuleAnchor');
+      expect(bundled).not.toMatch(/\.resolve\(["']@openai\/codex-sdk["']\)/);
+    } finally {
+      rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+
+  it('resolves the project-local pinned SDK version from both utility anchor forms', () => {
+    const cjsFilename = path.join(rootDir, '.vite', 'utility-entry.cjs');
+    expect(resolveUtilityModuleAnchor(cjsFilename, rootDir)).toBe(cjsFilename);
+    expect(resolveUtilityModuleAnchor(null, rootDir)).toBe(
+      path.join(rootDir, 'package.json'),
+    );
+    expect(resolvePackageManifestPath('@openai/codex-sdk', cjsFilename)).toBe(
+      path.join(rootDir, 'node_modules', '@openai', 'codex-sdk', 'package.json'),
+    );
+    expect(resolvePackageManifestPath('../outside', cjsFilename)).toBeUndefined();
+    expect(resolveInstalledCodexSdkVersion()).toBe('0.144.6');
   });
 
   it('admits only closed output-schema scenarios without prompt or schema injection', () => {

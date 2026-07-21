@@ -29,7 +29,7 @@ import {
 
 export { buildCodexCliEnvironment } from './environment';
 
-type PackageManifest = { readonly version: string };
+type PackageManifest = { readonly name?: string; readonly version: string };
 type CodexWithResolvedExecutable = { readonly exec?: { readonly executablePath?: unknown } };
 type FailureClassification = {
   readonly outcome: Exclude<CodexCapabilityProbeOutcome, 'success'>;
@@ -68,6 +68,17 @@ const windowsPackagedCodexRelativePath = path.join(
   'codex.exe',
 );
 const PINNED_CODEX_SDK_FEASIBILITY_VERSION = '0.144.6';
+const utilityModuleAnchor = resolveUtilityModuleAnchor();
+const utilityModuleRequire = createRequire(utilityModuleAnchor);
+
+export function resolveUtilityModuleAnchor(
+  commonJsFilename: string | null | undefined = typeof __filename === 'string'
+    ? __filename
+    : undefined,
+  workingDirectory: string = process.cwd(),
+): string {
+  return commonJsFilename ?? path.join(workingDirectory, 'package.json');
+}
 
 async function inspectInstalledRuntime(): Promise<
   | { readonly ok: true; readonly result: CodexRuntimeInspection }
@@ -91,26 +102,12 @@ async function inspectInstalledRuntime(): Promise<
     return { ok: false, code: 'SDK_CONSTRUCT_FAILED' };
   }
 
-  const moduleRequire = createRequire(import.meta.url);
-  let sdkPackagePath: string;
-  let cliPackagePath: string;
-  let platformPackagePath: string;
-  try {
-    const sdkEntryPath = moduleRequire.resolve('@openai/codex-sdk');
-    sdkPackagePath = path.resolve(path.dirname(sdkEntryPath), '..', 'package.json');
-  } catch {
-    return { ok: false, code: 'SDK_PACKAGE_MANIFEST_UNRESOLVED' };
-  }
-  try {
-    cliPackagePath = moduleRequire.resolve('@openai/codex/package.json');
-  } catch {
-    return { ok: false, code: 'CLI_PACKAGE_MANIFEST_UNRESOLVED' };
-  }
-  try {
-    platformPackagePath = moduleRequire.resolve(`${packageName}/package.json`);
-  } catch {
-    return { ok: false, code: 'PLATFORM_PACKAGE_MANIFEST_UNRESOLVED' };
-  }
+  const sdkPackagePath = resolvePackageManifestPath('@openai/codex-sdk');
+  if (!sdkPackagePath) return { ok: false, code: 'SDK_PACKAGE_MANIFEST_UNRESOLVED' };
+  const cliPackagePath = resolvePackageManifestPath('@openai/codex');
+  if (!cliPackagePath) return { ok: false, code: 'CLI_PACKAGE_MANIFEST_UNRESOLVED' };
+  const platformPackagePath = resolvePackageManifestPath(packageName);
+  if (!platformPackagePath) return { ok: false, code: 'PLATFORM_PACKAGE_MANIFEST_UNRESOLVED' };
 
   const platformPackageRoot = path.dirname(platformPackagePath);
   const executablePath = (client as unknown as CodexWithResolvedExecutable).exec?.executablePath;
@@ -496,14 +493,37 @@ export function isPinnedSdkLocalOutputSchemaGuardProbe(
     && Array.isArray(outputSchema);
 }
 
-function resolveInstalledCodexSdkVersion(): string | undefined {
+export function resolveInstalledCodexSdkVersion(): string | undefined {
+  const sdkPackagePath = resolvePackageManifestPath('@openai/codex-sdk');
+  return sdkPackagePath ? readManifest(sdkPackagePath).version : undefined;
+}
+
+export function resolvePackageManifestPath(
+  packageName: string,
+  moduleAnchor: string = utilityModuleAnchor,
+): string | undefined {
+  if (!/^(@[a-z0-9._-]+\/)?[a-z0-9._-]+$/i.test(packageName)) return undefined;
+  const projectRoot = resolveWriteStormPackageRoot(moduleAnchor);
+  if (!projectRoot) return undefined;
+  const manifestPath = path.join(projectRoot, 'node_modules', ...packageName.split('/'), 'package.json');
   try {
-    const moduleRequire = createRequire(import.meta.url);
-    const sdkEntryPath = moduleRequire.resolve('@openai/codex-sdk');
-    const sdkPackagePath = path.resolve(path.dirname(sdkEntryPath), '..', 'package.json');
-    return readManifest(sdkPackagePath).version;
+    return readManifest(manifestPath).name === packageName ? manifestPath : undefined;
   } catch {
     return undefined;
+  }
+}
+
+function resolveWriteStormPackageRoot(moduleAnchor: string): string | undefined {
+  let directory = path.dirname(moduleAnchor);
+  while (true) {
+    try {
+      if (readManifest(path.join(directory, 'package.json')).name === 'writestorm') return directory;
+    } catch {
+      // Continue toward the filesystem root without retaining the local read error.
+    }
+    const parent = path.dirname(directory);
+    if (parent === directory) return undefined;
+    directory = parent;
   }
 }
 
@@ -516,7 +536,7 @@ function pathsEqual(left: string, right: string): boolean {
 }
 
 function readManifest(manifestPath: string): PackageManifest {
-  return createRequire(import.meta.url)(manifestPath) as PackageManifest;
+  return utilityModuleRequire(manifestPath) as PackageManifest;
 }
 
 function isInside(filePath: string, directoryPath: string): boolean {

@@ -35,6 +35,7 @@ function lineage(packaged: boolean) {
       'block6a-remediation-r7-evidence-lineage-001',
       'block6a-remediation-r8a-turn-deadline-001',
       'block6a-remediation-r8a3-runtime-failure-origin-001',
+      'block6a-remediation-r8a4-cjs-module-anchor-001',
     ].map((evidenceId, index) => ({
       evidenceId,
       sha256: String(index + 1).repeat(64),

@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "block6a-remediation-r8a4-cjs-module-anchor-001",
+  "task": "6A remediation R8a4 CJS module anchor",
+  "source": "static_manifest",
+  "recordedAt": "2026-07-21T03:15:00.000Z",
+  "commandName": "block6a-r8a4-focused-cjs-module-anchor-verification",
+  "classification": "utility_cjs_module_anchor_frozen",
+  "assertions": {
+    "cjsBundleUsesValidModuleAnchor": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a4-cjs-module-anchor-001",
+      "classification": "cjs_bundle_contract_frozen"
+    },
+    "brokenImportMetaUrlTransformRejected": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a4-cjs-module-anchor-001",
+      "classification": "cjs_bundle_contract_frozen"
+    },
+    "projectLocalSdkManifestResolves": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a4-cjs-module-anchor-001",
+      "classification": "local_dependency_resolution_verified"
+    },
+    "pinnedSdkManifestVersionResolves": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a4-cjs-module-anchor-001",
+      "classification": "local_dependency_resolution_verified"
+    },
+    "rawSdkErrorRemainsUninspected": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a4-cjs-module-anchor-001",
+      "classification": "error_privacy_boundary_preserved"
+    },
+    "priorRuntimeEvidenceInvalidated": {
+      "value": true,
+      "source": "static_manifest",
+      "evidenceId": "block6a-remediation-r8a4-cjs-module-anchor-001",
+      "classification": "recertification_required"
+    }
+  },
+  "limitations": [
+    "This static_manifest proves only the local CJS module-resolution contract and is not real_sdk or packaged_sdk evidence.",
+    "The prior c7fa672 development records remain valid historical blocked evidence but cannot certify this changed runtime boundary.",
+    "No SDK turn ran during R8a4; a fresh Windows development run from the next clean committed runtime HEAD is required.",
+    "Lifecycle and packaged recertification remain subsequent independent gates; macOS remains deferred-by-user."
+  ]
+}

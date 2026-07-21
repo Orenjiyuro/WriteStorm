@@ -1166,3 +1166,15 @@ Rules:
 - Admission retained both exact records, returned five closed blockers, set `recertificationAdmitted: false` and exited non-zero. Lifecycle/package execution cannot bypass this result.
 - Both records exclude prompt, response body, stdout/stderr, environment value, credential, auth file, PID, executable path and raw SDK error; both pass final evidence lineage verification.
 - Current status remains pending recertification; macOS remains `deferred-by-user`, Task 13.1 remains blocked, and Task 13.2 is not authorized.
+
+## D087: Utility CJS Resolution Uses a Stable Local Module Anchor
+
+Decision: The feasibility utility anchors one `createRequire` instance to CommonJS `__filename`, rather than `import.meta.url`, and resolves dependency manifests under the nearest verified WriteStorm package root. This avoids both Vite's erased CJS URL and `require.resolve` failure against the SDK's import-only root export.
+
+Rules:
+
+- A focused regression builds the real utility entry as CommonJS and rejects the invalid `createRequire({}.url)` transform. Source-level execution uses an explicit repository `package.json` fallback only when no CommonJS filename exists.
+- The requested dependency manifest must be under the verified WriteStorm root's local `node_modules` and must contain the exact package name. The SDK manifest and exact installed version `0.144.6` must resolve through that boundary. The guard still requires the fixed invalid-schema probe shape and an early SDK rejection; it never inspects or retains the error message.
+- R8a4 adds one `static_manifest` lineage input after R8a3, so future runtime evidence requires nine ordered input ids and hashes. Historical six- and eight-input records are preserved rather than rewritten.
+- This runtime change invalidates application of the `c7fa672` records to the repaired boundary. No SDK turn ran in R8a4; a fresh clean-HEAD development run is required before lifecycle or packaged execution.
+- Current status remains pending recertification; macOS remains `deferred-by-user`, Task 13.1 remains blocked, and Task 13.2 is not authorized.

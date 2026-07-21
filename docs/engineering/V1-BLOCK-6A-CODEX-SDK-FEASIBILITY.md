@@ -2,11 +2,11 @@
 
 Date: 2026-07-19
 
-Verdict: `pending recertification — R8a5 development admitted with conditions; fresh Windows lifecycle and packaged evidence remain required; macOS deferred-by-user`
+Verdict: `pending recertification — R8a5 development admitted with conditions and fresh Windows lifecycle passed; fresh Windows packaged evidence remains required; macOS deferred-by-user`
 
 ## Authority and scope
 
-This document is the current authority for Task 6A.1 through Task 6A.8b and the subsequent remediation. Tasks 6A.1–6A.8b record the original spike and its historical Windows-only conditional verdict. R1–R7 subsequently changed admission, environment, protocol, supervision, process ownership, cleanup, error classification, assertion provenance and evidence lineage behavior. Those changes triggered the recorded expiry conditions. The R8a–R8a4 development attempts remain valid historical evidence for their exact boundaries. The fresh R8a5 development run from clean HEAD `9eb679c` passed as `admitted_with_conditions`; Windows remains pending while fresh lifecycle and packaged gates are still absent.
+This document is the current authority for Task 6A.1 through Task 6A.8b and the subsequent remediation. Tasks 6A.1–6A.8b record the original spike and its historical Windows-only conditional verdict. R1–R7 subsequently changed admission, environment, protocol, supervision, process ownership, cleanup, error classification, assertion provenance and evidence lineage behavior. Those changes triggered the recorded expiry conditions. The R8a–R8a4 development attempts remain valid historical evidence for their exact boundaries. The fresh R8a5 development run from clean HEAD `9eb679c` passed as `admitted_with_conditions`, and the subsequent fresh lifecycle run from clean HEAD `b29c859` passed all four scenarios. Windows remains pending because the fresh packaged gate has not run.
 
 V1 admits Codex SDK only. WriteStorm has a long-term multi-provider direction, but this task does not install, implement or call Claude, DeepSeek or another provider, and it never uses another provider as fallback. It does not implement a production `AiExecutionPort`, provider registry, Job integration, Settings connection flow, renderer AI action, Prompt runtime, module body generation or real breakdown pipeline.
 
@@ -283,7 +283,7 @@ At that historical checkpoint, the decision was **conditional Go for Windows-onl
 
 R1–R7 changed the evidence admission contract, utility environment, typed protocol, unified utility-session orchestration, session/termination supervision, owned-process cleanup, error classification, assertion provenance and evidence lineage. These are explicit expiry-condition changes. The current implementation is not Windows-feasibility verified, and the historical Task 6A.8b record cannot be applied to the changed working tree.
 
-Fresh R8 Windows lifecycle and packaged evidence is required before the total thread may reissue the candidate `conditional Go — Windows-only feasibility verified; macOS deferred-by-user`. No current Windows feasibility verdict may be reissued before R8. This pending state is not a No-Go, does not erase the dated 6A.5–6A.8 evidence and does not authorize Task 13.2.
+Fresh R8 Windows packaged evidence is still required before the total thread may reissue the candidate `conditional Go — Windows-only feasibility verified; macOS deferred-by-user`. Passing the fresh lifecycle gate does not by itself restore that verdict. This pending state is not a No-Go, does not erase the dated 6A.5–6A.8 evidence and does not authorize Task 13.2.
 
 The current static status record is `docs/engineering/evidence/block6a-remediation-pending-recertification.json`. It records only authority state; it is not `real_sdk` or `packaged_sdk` evidence and cannot satisfy R8.
 
@@ -370,6 +370,16 @@ All positive requirements passed. Current-auth in the explicit Git workspace com
 The isolated diagnostic matrix remained conservative: three scenarios reached WriteStorm's local turn deadline and one rejected earlier only as `sdk_unstructured`; all four expose only `SDK_RUNTIME_UNAVAILABLE`. No result is upgraded to login, auth or Git business facts. The exact records are `docs/engineering/evidence/block6a-r8a5-windows-dev-capability-admitted-with-conditions.json` and `docs/engineering/evidence/block6a-r8a5-windows-dev-output-schema-admitted-with-conditions.json`. They bind clean run HEAD `9eb679c`, lockfile/runtime hashes and ten ordered inputs, and contain no synthetic value, response body, stdout/stderr, environment value, credential, auth file, process identity, executable path or raw SDK error.
 
 Development admission now authorizes only the next feasibility gate: fresh Windows lifecycle execution. It does not itself reissue a Windows conditional verdict, authorize packaged execution before lifecycle passes, unblock Task 13.1 or authorize Task 13.2. Windows remains pending; macOS remains `deferred-by-user`.
+
+### R8a5 fresh Windows lifecycle result
+
+`probe:codex:lifecycle` ran once from clean committed and pushed HEAD `b29c8599ec432eb03d197b05f3e9ccb571511f22`, after the R8a5 development gate had admitted lifecycle execution. The runner returned `evidenceAccepted: true`, `admission: admitted`, `recertificationAdmitted: true`, no blockers and no conditional limitations. The exact sanitized records are `docs/engineering/evidence/block6a-r8a5-windows-lifecycle-app-timeout.json`, `docs/engineering/evidence/block6a-r8a5-windows-lifecycle-explicit-cancel.json`, `docs/engineering/evidence/block6a-r8a5-windows-lifecycle-window-close.json` and `docs/engineering/evidence/block6a-r8a5-windows-lifecycle-app-quit.json`.
+
+All four `real_sdk` scenarios matched their distinct trigger and completed the same supervised sequence: abort requested and observed, SDK promise settled, cleanup acknowledged, utility exit observed, and attributed residual scan completed with both utility and CLI absent. Process attribution bound the session utility and observed CLI to PID, creation time, executable path and the observed parent chain, then froze that ownership for the session; no process was matched or terminated by global name. The app-timeout path settled gracefully without force-killing the utility. Explicit cancel, window close and app quit remained distinct initial triggers.
+
+Window close caused both window-close and subsequent quit notifications, so it made two cleanup requests while the single-flight coordinator executed cleanup exactly once. App quit began from `app-quit`, observed `before-quit`, and also executed cleanup exactly once. This preserves the required distinction between initial trigger and downstream Electron lifecycle events.
+
+Each record binds clean run HEAD `b29c859`, the unchanged lockfile/runtime hashes and ten ordered static evidence inputs; `packagedArtifactSha256` remains null because this was not a packaged run. The records retain no synthetic value, response body, stdout/stderr, environment value, credential, auth file, PID, executable path, process list or raw SDK error. Fresh lifecycle success authorizes only the next Windows packaged feasibility gate. It does not restore the Windows conditional verdict, unblock Task 13.1 or authorize Task 13.2; macOS remains `deferred-by-user`.
 
 This is not a full Go. macOS packaged runtime is `deferred-by-user`, so this decision does not establish cross-platform compatibility, macOS support or release readiness. A complete Go claim still requires a macOS packaged package-boundary scan and real SDK runtime probe under the same privacy, auth, schema, cleanup and no-fallback rules. Unsafe-to-manufacture expired-session behavior and a natural WriteStorm login experience also remain unverified; the official SDK/CLI login mechanism is not a WriteStorm product login entry.
 

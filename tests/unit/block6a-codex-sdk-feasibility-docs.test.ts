@@ -28,6 +28,12 @@ const r8a5CapabilityAdmittedPath =
   'docs/engineering/evidence/block6a-r8a5-windows-dev-capability-admitted-with-conditions.json';
 const r8a5OutputSchemaAdmittedPath =
   'docs/engineering/evidence/block6a-r8a5-windows-dev-output-schema-admitted-with-conditions.json';
+const r8a5LifecyclePaths = [
+  'docs/engineering/evidence/block6a-r8a5-windows-lifecycle-app-timeout.json',
+  'docs/engineering/evidence/block6a-r8a5-windows-lifecycle-explicit-cancel.json',
+  'docs/engineering/evidence/block6a-r8a5-windows-lifecycle-window-close.json',
+  'docs/engineering/evidence/block6a-r8a5-windows-lifecycle-app-quit.json',
+];
 
 describe('Block 6A Codex SDK feasibility authority', () => {
   it('keeps long-term multi-provider direction compatible with the V1 Codex-only gate', () => {
@@ -57,11 +63,11 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     const verdictLine = feasibility.split(/\r?\n/).find((line) => line.startsWith('Verdict:'));
 
     expect(verdictLine).toBe(
-      'Verdict: `pending recertification — R8a5 development admitted with conditions; fresh Windows lifecycle and packaged evidence remain required; macOS deferred-by-user`',
+      'Verdict: `pending recertification — R8a5 development admitted with conditions and fresh Windows lifecycle passed; fresh Windows packaged evidence remains required; macOS deferred-by-user`',
     );
     expect(feasibility).toContain('Historical Task 6A.8b decision');
     expect(feasibility).toContain('The current implementation is not Windows-feasibility verified');
-    expect(feasibility).toContain('Fresh R8 Windows lifecycle and packaged evidence is required');
+    expect(feasibility).toContain('Fresh R8 Windows packaged evidence is still required');
     expect(feasibility).toContain('every other unstructured SDK/CLI failure becomes `runtime_failed / unverified`');
     expect(feasibility).toContain('This feasibility classifier is not the Task 13 Job error contract');
     expect(feasibility).toContain('Evidence validation and recertification admission are separate states');
@@ -148,6 +154,72 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     expect(feasibility).toContain('### R8a5 fresh development result');
     expect(feasibility).toContain('`admission: admitted_with_conditions`');
     expect(decisions).toContain('## D090: Fresh R8a5 Development Gate Is Admitted With Conditions');
+  });
+
+  it('records the fresh R8a5 Windows lifecycle evidence without restoring the verdict', () => {
+    const records = r8a5LifecyclePaths.map((recordPath) =>
+      JSON.parse(readFileSync(recordPath, 'utf8')) as {
+        source: string;
+        classification: string;
+        assertions: Record<string, { value: boolean; source: string }>;
+        processAssertions: Record<string, { value: boolean; source: string }>;
+        result: { scenario: string; trigger: string };
+        timeoutCleanup: null | { classification: string; utilityKillAttempted: boolean };
+        lifecycleEvents: {
+          initialTrigger: string;
+          cleanupRequestCount: number;
+          cleanupExecutionCount: number;
+        };
+        lineage: {
+          gitHeadAtRun: string;
+          criticalInputsCleanAtRun: boolean;
+          packagedArtifactSha256: null;
+          evidenceInputs: unknown[];
+        };
+      },
+    );
+    const feasibility = readFileSync(feasibilityPath, 'utf8');
+    const decisions = readFileSync(decisionsPath, 'utf8');
+
+    expect(records.map((record) => record.result.scenario)).toEqual([
+      'app-timeout',
+      'explicit-cancel',
+      'window-close',
+      'app-quit',
+    ]);
+    for (const record of records) {
+      expect(record.source).toBe('real_sdk');
+      expect(record.classification).toBe('lifecycle_probe_passed');
+      expect(record.result.trigger).toBe(record.result.scenario);
+      expect(Object.values(record.assertions).every(
+        (assertion) => assertion.value && assertion.source === 'real_sdk',
+      )).toBe(true);
+      expect(Object.values(record.processAssertions).every(
+        (assertion) => assertion.value && assertion.source === 'real_sdk',
+      )).toBe(true);
+      expect(record.lifecycleEvents.initialTrigger).toBe(record.result.scenario);
+      expect(record.lifecycleEvents.cleanupExecutionCount).toBe(1);
+      expect(record.lineage).toMatchObject({
+        gitHeadAtRun: 'b29c8599ec432eb03d197b05f3e9ccb571511f22',
+        criticalInputsCleanAtRun: true,
+        packagedArtifactSha256: null,
+      });
+      expect(record.lineage.evidenceInputs).toHaveLength(10);
+      expect(JSON.stringify(record)).not.toMatch(
+        /"(?:prompt|responseBody|stdout|stderr|pid|environmentValue|credential|authFile|executablePath|processList|rawError|token)"\s*:/i,
+      );
+    }
+    expect(records[0].timeoutCleanup).toEqual(expect.objectContaining({
+      classification: 'graceful',
+      utilityKillAttempted: false,
+    }));
+    expect(records[2].lifecycleEvents.cleanupRequestCount).toBe(2);
+    expect(records[3].lifecycleEvents.cleanupRequestCount).toBe(1);
+    expect(feasibility).toContain('### R8a5 fresh Windows lifecycle result');
+    expect(feasibility).toContain('Fresh lifecycle success authorizes only the next Windows packaged feasibility gate');
+    expect(decisions).toContain(
+      '## D091: Fresh Windows Lifecycle Gate Passes and Unlocks Packaged Recertification',
+    );
   });
 
   it('records a static current-status override without rewriting historical runtime evidence', () => {
@@ -440,7 +512,7 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     expect(context).not.toContain('Task 6A.1 establishes `docs/engineering/V1-BLOCK-6A-CODEX-SDK-FEASIBILITY.md` as the current Codex feasibility authority with verdict `pending`');
     expect(activeContext).not.toMatch(/no SDK dependency is installed|no probe has run|no Go\/No-Go decision/i);
     expect(feasibility.match(/^Verdict:/gm)).toHaveLength(1);
-    expect(feasibility).toContain('No current Windows feasibility verdict may be reissued before R8');
+    expect(feasibility).toContain('Passing the fresh lifecycle gate does not by itself restore that verdict');
     expect(decisions).toContain('## D080: Codex SDK Feasibility Is Conditional Go For Windows Only');
     expect(decisions).toContain('## D081: Current Codex Feasibility Verdict Is Pending Recertification');
     expect(decisions).toContain('D080 remains a historical decision and is expired for the current working tree');

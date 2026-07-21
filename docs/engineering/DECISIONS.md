@@ -1217,3 +1217,16 @@ Rules:
 - The two sanitized records bind clean run HEAD `9eb679c`, lockfile/runtime hashes and ten ordered evidence inputs. They contain no synthetic value, response body, raw output, environment value, credential, auth file, process identity, executable path or raw error.
 - Development admission permits lifecycle only. Packaged execution still requires lifecycle success; Windows conditional Go still requires packaged success and total-thread review.
 - Windows status remains pending recertification; macOS remains `deferred-by-user`, Task 13.1 remains blocked, and Task 13.2 is not authorized.
+
+## D091: Fresh Windows Lifecycle Gate Passes and Unlocks Packaged Recertification
+
+Decision: The clean `b29c859` lifecycle run passes all four required Windows scenarios and permits the independent Windows packaged feasibility gate, but does not itself restore the Windows-only conditional verdict.
+
+Rules:
+
+- App timeout, explicit cancel, window close and app quit are exact distinct scenarios; each requests and observes abort, observes SDK settlement, acknowledges cleanup, observes utility exit and completes the attributed residual scan with utility and CLI absent.
+- Process ownership is bound to the current session by PID, creation time, executable path and observed parent chain, then frozen. No global process-name matching or termination is accepted as evidence.
+- Window close may cause downstream quit notifications, but its initial trigger remains `window-close` and cleanup executes exactly once. App quit begins from `app-quit` and is separately evidenced.
+- The app-timeout path completed graceful cancellation and utility exit without a force kill. Failure to observe any required cleanup or residual assertion would block packaged execution.
+- The four sanitized `real_sdk` records bind clean run HEAD `b29c859`, lockfile/runtime hashes and ten ordered static inputs. They persist no synthetic value, raw output, credential, auth material, process identity, path, process list or raw SDK error.
+- Packaged execution is now the sole remaining Windows recertification gate. Windows status remains pending; macOS remains `deferred-by-user`, Task 13.1 remains blocked, and Task 13.2 is not authorized.

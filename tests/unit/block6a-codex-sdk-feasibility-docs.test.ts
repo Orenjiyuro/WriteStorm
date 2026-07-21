@@ -298,7 +298,7 @@ describe('Block 6A Codex SDK feasibility authority', () => {
       ].includes(key))
       .every(([, assertion]) => assertion.source === 'packaged_sdk')).toBe(true);
     expect(packaged.lineage).toMatchObject({
-      gitHeadAtRun: 'e741bda473466f374f4a473ecb9beb3dd4f3f418',
+      gitHeadAtRun: '94dd415d0772984e770d6a8c82b95a954802821b',
       criticalInputsCleanAtRun: true,
     });
     expect(packaged.lineage.packagedArtifactSha256).toMatch(/^[0-9a-f]{64}$/);

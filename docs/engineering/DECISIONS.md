@@ -1233,13 +1233,13 @@ Rules:
 
 ## D092: Fresh Packaged Evidence Restores Windows-Only Conditional Go
 
-Decision: The clean `e741bda` Windows x64 packaged run passes both the static package boundary and a real packaged SDK turn, restoring the narrowly scoped verdict `conditional Go — Windows-only feasibility verified; macOS deferred-by-user`.
+Decision: Windows x64 packaging and a real packaged SDK turn pass; after the required full check rebuilt the artifact, the clean `94dd415` packaged-only turn rebinds the final artifact and restores the narrowly scoped verdict `conditional Go — Windows-only feasibility verified; macOS deferred-by-user`.
 
 Rules:
 
 - The packaged-only gate requires `app.isPackaged`, Windows x64, both frozen synthetic hashes and an OS-temporary result path derived from the validated run UUID before a turn can start.
 - The real packaged SDK 0.144.6 turn used its pinned Windows CLI, existing ChatGPT-managed auth and strict local structured-result validation. It completed with authenticated success and cleanup acknowledgement.
-- The persisted `packaged_sdk` record binds clean run HEAD `e741bda`, lockfile/runtime hashes, ten ordered static inputs and the concrete packaged artifact hash. Package verification passed 7/7 and enforces required Windows files plus absence of another installed platform runtime.
+- The persisted `packaged_sdk` record binds clean run HEAD `94dd415`, lockfile/runtime hashes, ten ordered static inputs and the concrete post-full-check packaged artifact hash. Package verification passed 7/7 and enforces required Windows files plus absence of another installed platform runtime.
 - Static privacy and protocol assertions retain `static_manifest` provenance; the verdict record only reconciles source-bearing evidence inputs and does not upgrade them.
 - SDK 0.144.6 still has no stable structured Git/auth failure discriminant. V1 depends on an existing ChatGPT-managed session and maps unknown failures only to generic, sanitized recovery guidance.
 - This is not full Go, cross-platform compatibility, macOS verification or release readiness. macOS packaged runtime remains `deferred-by-user` and must be supplied before any complete-Go claim.

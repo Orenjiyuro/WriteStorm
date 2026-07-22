@@ -4,6 +4,7 @@ import { existsSync, readdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  assertBlock6aWindowsArtifactRootPathBudget,
   createBlock6aCertificationStaging,
   finalizeBlock6aCertificationBundle,
 } from './block6a-certification-bundle.mjs';
@@ -11,16 +12,17 @@ import { verifyBlock6aCertificationFilesAtRepository } from './block6a-certifica
 import { resolveBlock6aNpmInvocation } from './block6a-npm-invocation.mjs';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const publishRoot = path.join(repositoryRoot, 'out', 'block6a-certifications');
+const publishRoot = path.join(repositoryRoot, 'out', '6a');
 const head = requireCleanPushedHead();
 
-const certificationId = `block6a-win-${head.slice(0, 12)}-${Date.now()}-${randomUUID().slice(0, 8)}`;
+const certificationId = `b6a-${head.slice(0, 8)}-${randomUUID().slice(0, 8)}`;
 const staging = createBlock6aCertificationStaging(publishRoot, certificationId);
 const packageOutRoot = path.join(staging.stagingRoot, 'artifact');
 const artifactRoot = path.join(packageOutRoot, 'writestorm-win32-x64');
 const evidenceRoot = path.join(staging.stagingRoot, 'evidence');
 
 try {
+  assertBlock6aWindowsArtifactRootPathBudget(artifactRoot);
   const npmInvocation = resolveBlock6aNpmInvocation({
     nodeExecutable: process.execPath,
     npmExecPath: process.env.npm_execpath,
@@ -112,7 +114,7 @@ function requireCleanPushedHead() {
 function cleanupOwnedStaging() {
   const resolved = path.resolve(staging.stagingRoot);
   if (path.dirname(resolved) === path.resolve(publishRoot)
-    && path.basename(resolved) === `.staging-${certificationId}`
+    && path.basename(resolved) === `.s-${certificationId}`
     && existsSync(resolved)) {
     rmSync(resolved, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
   }

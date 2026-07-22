@@ -3,6 +3,8 @@ export type Block6aCertificationStaging = {
   readonly finalRoot: string;
 };
 
+export function assertBlock6aWindowsArtifactRootPathBudget(artifactRoot: string): string;
+
 export function createBlock6aCertificationStaging(
   publishRoot: string,
   certificationId: string,

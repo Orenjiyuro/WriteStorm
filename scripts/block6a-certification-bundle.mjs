@@ -11,14 +11,15 @@ import {
 import path from 'node:path';
 
 const failureMessage = 'Block 6A certification bundle operation failed.';
-const certificationIdPattern = /^block6a-win-[a-z0-9-]{4,80}$/;
+const certificationIdPattern = /^b6a-[0-9a-f]{8}-[0-9a-f]{8}$/;
+const windowsArtifactRootMaximumLength = 110;
 
 export function createBlock6aCertificationStaging(publishRoot, certificationId) {
   try {
     if (typeof publishRoot !== 'string'
       || !certificationIdPattern.test(certificationId)) fail();
     const resolvedPublishRoot = path.resolve(publishRoot);
-    const stagingRoot = path.join(resolvedPublishRoot, `.staging-${certificationId}`);
+    const stagingRoot = path.join(resolvedPublishRoot, `.s-${certificationId}`);
     const finalRoot = path.join(resolvedPublishRoot, certificationId);
     assertDirectChild(stagingRoot, resolvedPublishRoot);
     assertDirectChild(finalRoot, resolvedPublishRoot);
@@ -46,7 +47,7 @@ export function finalizeBlock6aCertificationBundle(options) {
     const stagingRoot = path.resolve(options.stagingRoot);
     const finalRoot = path.resolve(options.finalRoot);
     const publishRoot = path.dirname(stagingRoot);
-    if (path.basename(stagingRoot) !== `.staging-${options.certificationId}`
+    if (path.basename(stagingRoot) !== `.s-${options.certificationId}`
       || finalRoot !== path.join(publishRoot, options.certificationId)
       || !existsSync(stagingRoot)
       || existsSync(finalRoot)) fail();
@@ -112,6 +113,13 @@ export function finalizeBlock6aCertificationBundle(options) {
   } catch {
     fail();
   }
+}
+
+export function assertBlock6aWindowsArtifactRootPathBudget(artifactRoot) {
+  if (typeof artifactRoot !== 'string'
+    || !path.isAbsolute(artifactRoot)
+    || artifactRoot.length > windowsArtifactRootMaximumLength) fail();
+  return artifactRoot;
 }
 
 function collectFiles(directory) {

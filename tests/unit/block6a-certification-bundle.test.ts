@@ -10,6 +10,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
+  assertBlock6aWindowsArtifactRootPathBudget,
   createBlock6aCertificationStaging,
   finalizeBlock6aCertificationBundle,
 } from '../../scripts/block6a-certification-bundle.mjs';
@@ -26,7 +27,7 @@ describe('Block 6A immutable certification bundle', () => {
   it('atomically publishes artifact, evidence, verdict and normalized hashes once', () => {
     const root = temporaryRoot();
     const publishRoot = path.join(root, 'published');
-    const certificationId = 'block6a-win-test-0001';
+    const certificationId = 'b6a-deadbeef-00000001';
     const staging = createBlock6aCertificationStaging(publishRoot, certificationId);
     const artifactRoot = path.join(staging.stagingRoot, 'artifact', 'writestorm-win32-x64');
     const evidenceRoot = path.join(staging.stagingRoot, 'evidence');
@@ -55,6 +56,7 @@ describe('Block 6A immutable certification bundle', () => {
 
     expect(existsSync(staging.stagingRoot)).toBe(false);
     expect(published.finalRoot).toBe(staging.finalRoot);
+    expect(path.basename(staging.stagingRoot)).toBe(`.s-${certificationId}`);
     expect(existsSync(path.join(published.finalRoot, 'artifact', 'writestorm-win32-x64'))).toBe(true);
     const manifest = JSON.parse(readFileSync(
       path.join(published.finalRoot, 'bundle-manifest.json'),
@@ -79,7 +81,7 @@ describe('Block 6A immutable certification bundle', () => {
   it('does not publish an unverified verdict or reuse an existing destination', () => {
     const root = temporaryRoot();
     const publishRoot = path.join(root, 'published');
-    const certificationId = 'block6a-win-test-0002';
+    const certificationId = 'b6a-deadbeef-00000002';
     const staging = createBlock6aCertificationStaging(publishRoot, certificationId);
     const artifactRoot = path.join(staging.stagingRoot, 'artifact', 'writestorm-win32-x64');
     mkdirSync(artifactRoot, { recursive: true });
@@ -95,6 +97,17 @@ describe('Block 6A immutable certification bundle', () => {
     })).toThrow('Block 6A certification bundle operation failed.');
     expect(existsSync(staging.finalRoot)).toBe(false);
     expect(existsSync(staging.stagingRoot)).toBe(true);
+  });
+
+  it('fails closed before packaging when the Windows artifact root exceeds its path budget', () => {
+    const withinBudget = `C:\\${'a'.repeat(107)}`;
+    const overBudget = `${withinBudget}b`;
+
+    expect(withinBudget).toHaveLength(110);
+    expect(assertBlock6aWindowsArtifactRootPathBudget(withinBudget)).toBe(withinBudget);
+    expect(() => assertBlock6aWindowsArtifactRootPathBudget(overBudget)).toThrow(
+      'Block 6A certification bundle operation failed.',
+    );
   });
 
   it('runs one clean-head certification command in fail-closed stage order', () => {
@@ -134,7 +147,9 @@ describe('Block 6A immutable certification bundle', () => {
     expect(source).not.toContain('shell: true');
     expect(source).toContain("git(['status', '--porcelain', '--untracked-files=all'])");
     expect(source).toContain("git(['rev-parse', '@{u}'])");
-    expect(source).toContain("path.basename(resolved) === `.staging-${certificationId}`");
+    expect(source).toContain("path.basename(resolved) === `.s-${certificationId}`");
+    expect(source).toContain("path.join(repositoryRoot, 'out', '6a')");
+    expect(source).toContain('assertBlock6aWindowsArtifactRootPathBudget(artifactRoot)');
     expect(source).not.toContain("path.join(repositoryRoot, 'out', 'writestorm-win32-x64')");
     const authority = readFileSync(
       path.join(rootDir, 'docs/engineering/V1-BLOCK-6A-CODEX-SDK-FEASIBILITY.md'),

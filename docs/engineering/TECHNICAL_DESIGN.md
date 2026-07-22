@@ -69,6 +69,14 @@ Codex is the first V1 adapter, but Codex SDK types, CLI/JSONL events, Git/cwd re
 
 The Task 6A runtime is governed by `docs/engineering/block6a-feasibility-harness-exit-plan.json`. No current feasibility file becomes the production port or adapter in place. Five low-level environment, process-identity and supervision files are `extract-then-delete`: Task 13 may independently extract their reviewed semantics behind new production contracts, then must delete the original feasibility files. Every probe protocol, runner, synthetic validator, evidence producer and probe utility entry is `delete-without-promotion`. Before Task 13.2 authorization, production code must have a mechanical no-import boundary against `src/main/codex-feasibility`. Before the first product AI execution, that entire source tree must be removed and any still-required certification harness must live outside the product source/build graph. Task 17 release readiness additionally requires the replacement certification path to pass on its final artifact.
 
+### Task 13.3 production AI execution boundary
+
+The reviewed `@openai/codex-sdk@0.144.6` runtime is a server-side ESM API. Its installed implementation resolves and starts the SDK-owned pinned project-local CLI and JSONL mechanism. That mechanism is private to the independently gated provider adapter: it is not a WriteStorm direct `codex exec` fallback. Product main-process services and utilities must never spawn `codex exec` directly, parse its JSONL protocol, search `PATH` for a global executable, call app-server or switch to another provider after a failure.
+
+The production seam begins at `src/main/ai/ai-execution-port.ts` as `AiExecutionPort<Request, Execution>`. The two generic parameters deliberately leave concrete provider-neutral request, projected-event, attempt/generation and lifecycle contracts to their owning Task 13 increments. The port exposes only a versioned capability contract and an injected `execute` seam; it contains no SDK type, provider identifier, CLI/JSONL event, cwd/Git rule, auth value, process primitive, Job type, SQLite model or renderer DTO.
+
+Task 13.3 does not register an adapter, implement a provider registry, add another provider, create a fallback, connect a Job, persist progress or expose IPC. Task 13.3 does not execute an SDK turn. It does not reuse the Block 6A probe runner, command, result or orchestration as a product service. The reviewed SDK mechanism and the Windows evidence remain input evidence, not production runtime code. Current admission wording remains `Conditional Go — Windows feasibility verified; macOS packaged runtime deferred-by-user.`
+
 ### Main process
 
 Owns:

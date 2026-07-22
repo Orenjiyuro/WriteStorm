@@ -14,6 +14,10 @@ import { findRestrictedModuleLoads } from '../../scripts/block6a-source-security
 
 const rootDir = path.resolve(__dirname, '../..');
 const utilityEntry = path.join(rootDir, 'src/main/codex-feasibility/utility-entry.ts');
+const productionUtilityEntry = path.join(
+  rootDir,
+  'src/main/ai/providers/codex/codex-utility-entry.ts',
+);
 
 describe('Block 6A.4 Codex utility boundary', () => {
   it('accepts only the exact adjacent ASAR-unpacked mirror of the project platform package', () => {
@@ -106,7 +110,7 @@ describe('Block 6A.4 Codex utility boundary', () => {
     })).toBe(false);
   });
 
-  it('allows the SDK import only in the dedicated utility entry', () => {
+  it('allows the SDK import only in the dedicated feasibility and production utility entries', () => {
     const sdkImporters = sourceFiles(path.join(rootDir, 'src')).filter((filePath) => {
       return importSpecifiers(readFileSync(filePath, 'utf8')).some((specifier) => (
         specifier === '@openai/codex-sdk' || specifier.startsWith('@openai/codex-sdk/')
@@ -118,7 +122,7 @@ describe('Block 6A.4 Codex utility boundary', () => {
       ));
     });
 
-    expect(sdkImporters).toEqual([utilityEntry]);
+    expect(sdkImporters.sort()).toEqual([utilityEntry, productionUtilityEntry].sort());
     expect(directCliImporters).toEqual([]);
   });
 

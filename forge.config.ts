@@ -64,6 +64,11 @@ const config: ForgeConfig = {
           config: 'vite.structure-worker.config.ts',
           target: 'main',
         },
+        {
+          entry: 'src/main/ai/providers/codex/codex-utility-entry.ts',
+          config: 'vite.codex-utility.config.ts',
+          target: 'main',
+        },
       ],
       renderer: [
         {

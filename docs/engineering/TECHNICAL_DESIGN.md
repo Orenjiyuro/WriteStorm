@@ -77,6 +77,12 @@ The production seam begins at `src/main/ai/ai-execution-port.ts` as `AiExecution
 
 Task 13.3 does not register an adapter, implement a provider registry, add another provider, create a fallback, connect a Job, persist progress or expose IPC. Task 13.3 does not execute an SDK turn. It does not reuse the Block 6A probe runner, command, result or orchestration as a product service. The reviewed SDK mechanism and the Windows evidence remain input evidence, not production runtime code. Current admission wording remains `Conditional Go — Windows feasibility verified; macOS packaged runtime deferred-by-user.`
 
+### Task 13.4 Codex adapter and utility boundary
+
+`CodexProviderAdapter` implements the generic application port by delegating exactly once to an injected provider-private transport. `CodexUtilityLauncher` accepts one absolute main-bundle directory, resolves only the fixed `codex-utility-entry.js`, and always launches it with an empty argument list, piped stdio and a fixed service name; callers cannot add environment fields, command-line arguments or another executable. The dedicated production utility entry is the only production AI source allowed to import `@openai/codex-sdk`, while direct `@openai/codex` imports remain forbidden.
+
+The production utility rejects every message fail-closed until later Task 13 increments define and locally validate their owned protocol. It exposes no IPC or renderer surface and does not import a Block 6A probe command, result or runner. No SDK turn, auth check or network request is started by this increment. The Forge entry is build-boundary evidence only; packaged runtime admission remains Task 13.11. Cwd/Git, environment/auth, structured output, event projection and lifecycle cleanup remain with Tasks 13.5–13.9 rather than being guessed here.
+
 ### Main process
 
 Owns:

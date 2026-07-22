@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from '../../src/main/codex-feasibility/manifest';
 
 const rootDir = path.resolve(__dirname, '../..');
 
@@ -14,7 +15,7 @@ describe('Block 6A remediation R5b pinned SDK error-signal audit', () => {
     const declarations = readFileSync(path.join(packageRoot, 'dist/index.d.ts'), 'utf8');
     const implementation = readFileSync(path.join(packageRoot, 'dist/index.js'), 'utf8');
 
-    expect(packageManifest.version).toBe('0.144.6');
+    expect(packageManifest.version).toBe(BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk);
     expect(declarations).toMatch(/type ThreadError = \{\s*message: string;\s*\};/);
     expect(declarations).toMatch(
       /type ThreadErrorEvent = \{\s*type: "error";\s*message: string;\s*\};/,
@@ -46,7 +47,7 @@ describe('Block 6A remediation R5b pinned SDK error-signal audit', () => {
 
     expect(evidence.source).toBe('static_manifest');
     expect(evidence.sdkErrorSignalAudit).toMatchObject({
-      sdkVersion: '0.144.6',
+      sdkVersion: BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk,
       exportedFailureShape: 'message_only',
       runFailureShape: 'plain_error_message_only',
       processFailureShape: 'plain_error_exit_and_stderr_text_only',

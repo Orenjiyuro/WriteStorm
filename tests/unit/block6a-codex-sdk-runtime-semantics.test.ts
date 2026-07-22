@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { isAbsolute, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from '../../src/main/codex-feasibility/manifest';
 
 const sdkManifestPath = 'node_modules/@openai/codex-sdk/package.json';
 const sdkTypesPath = 'node_modules/@openai/codex-sdk/dist/index.d.ts';
@@ -39,7 +40,7 @@ describe('Block 6A.3 installed Codex SDK runtime semantics', () => {
     });
 
     expect(manifest).toMatchObject({
-      version: '0.144.6',
+      version: BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk,
       type: 'module',
       exports: { '.': { import: './dist/index.js', types: './dist/index.d.ts' } },
     });
@@ -89,7 +90,7 @@ describe('Block 6A.3 installed Codex SDK runtime semantics', () => {
     for (const record of records) {
       expect(record.schemaVersion).toBe(1);
       expect(record.task).toBe('6A.3');
-      expect(record.versions.codexSdk).toBe('0.144.6');
+      expect(record.versions.codexSdk).toBe(BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk);
       expect(record.recordedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     }
     expect(records[1]?.classification).toBe('esm_import_only_no_turn');

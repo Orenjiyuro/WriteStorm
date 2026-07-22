@@ -7,6 +7,7 @@ import {
   CodexFeasibilitySessionSupervisor,
 } from '../../src/main/codex-feasibility/session-supervisor';
 import type { CodexFeasibilityResponse } from '../../src/main/codex-feasibility/protocol';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from '../../src/main/codex-feasibility/manifest';
 
 const rootDir = path.resolve(__dirname, '../..');
 
@@ -17,9 +18,9 @@ const inspectionResponse: CodexFeasibilityResponse = {
   ok: true,
   utilityPid: 71,
   result: {
-    sdkVersion: '0.144.6',
-    cliVersion: '0.144.6',
-    platformPackageVersion: '0.144.6-win32-x64',
+    sdkVersion: BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk,
+    cliVersion: BLOCK6A_FEASIBILITY_MANIFEST.versions.codexCli,
+    platformPackageVersion: BLOCK6A_FEASIBILITY_MANIFEST.versions.platformPackage,
     nodeRuntime: '24.17.0',
     platform: 'win32',
     architecture: 'x64',

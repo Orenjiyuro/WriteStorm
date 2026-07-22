@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   BLOCK6A_EVIDENCE_SOURCES,
   BLOCK6A_R6_PROVENANCE_EVIDENCE_ID,
+  areBlock6aAssertionGroupsTrue,
   createBlock6aAssertion,
 } from '../../src/main/codex-feasibility/assertion-provenance';
 
@@ -30,6 +31,24 @@ describe('Block 6A R6 per-assertion provenance', () => {
     ]);
   });
 
+  it('classifies assertion groups by leaf values rather than object truthiness', () => {
+    const passed = createBlock6aAssertion(
+      true,
+      'real_sdk',
+      'lifecycle-evidence',
+      'lifecycle_probe_passed',
+    );
+    const failed = createBlock6aAssertion(
+      false,
+      'real_sdk',
+      'lifecycle-evidence',
+      'lifecycle_probe_passed',
+    );
+
+    expect(areBlock6aAssertionGroupsTrue({ passed }, { alsoPassed: passed })).toBe(true);
+    expect(areBlock6aAssertionGroupsTrue({ passed }, { failed })).toBe(false);
+  });
+
   it('uses the shared constructor in every fresh runtime producer', () => {
     for (const file of [
       'probe-main.ts',
@@ -43,6 +62,18 @@ describe('Block 6A R6 per-assertion provenance', () => {
       );
       expect(source).toContain('createBlock6aAssertion');
     }
+  });
+
+  it('keeps lifecycle classification on assertion leaf values', () => {
+    const source = readFileSync(
+      path.join(rootDir, 'src/main/codex-feasibility/lifecycle-probe-main.ts'),
+      'utf8',
+    );
+
+    expect(source).toContain(
+      'areBlock6aAssertionGroupsTrue(lifecycleAssertions, processAssertions)',
+    );
+    expect(source).not.toMatch(/Object\.values\([^\n]+\)\.every\(Boolean\)/);
   });
 
   it('records the R6 contract as self-provenanced static evidence', () => {

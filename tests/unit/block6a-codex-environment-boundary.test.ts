@@ -8,6 +8,7 @@ import {
   CODEX_UTILITY_ENVIRONMENT_KEYS,
   createCodexUtilityEnvironment,
 } from '../../src/main/codex-feasibility/environment';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from '../../src/main/codex-feasibility/manifest';
 
 const rootDir = path.resolve(__dirname, '../..');
 
@@ -102,7 +103,7 @@ describe('Block 6A remediation R2 environment boundary', () => {
     const conditionalDirectKeys = [...source.matchAll(/env\.([A-Z][A-Z0-9_]+)\s*=/g)]
       .map((match) => match[1]);
 
-    expect(manifest.version).toBe('0.144.6');
+    expect(manifest.version).toBe(BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk);
     expect([originatorKey]).toEqual(
       CODEX_SDK_0_144_6_ENVIRONMENT_OVERLAY.alwaysInjectedKeys,
     );

@@ -26,6 +26,8 @@ import {
   resolveCodexFeasibilityTurnDeadlineMs,
   settleCodexTurnWithinDeadline,
 } from './turn-deadline';
+import { CodexUtilityProtocolTerminationSupervisor } from './utility-protocol-termination';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from './manifest';
 
 export { buildCodexCliEnvironment } from './environment';
 
@@ -68,7 +70,8 @@ const windowsPackagedCodexRelativePath = path.join(
   'bin',
   'codex.exe',
 );
-const PINNED_CODEX_SDK_FEASIBILITY_VERSION = '0.144.6';
+const PINNED_CODEX_SDK_FEASIBILITY_VERSION =
+  BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk;
 const utilityModuleAnchor = resolveUtilityModuleAnchor();
 const utilityModuleRequire = createRequire(utilityModuleAnchor);
 
@@ -587,10 +590,17 @@ function isFile(filePath: string): boolean {
 
 const parentPort = process.parentPort;
 if (parentPort) {
+  const protocolTermination = new CodexUtilityProtocolTerminationSupervisor({
+    cancelActiveSdkProbe,
+    scheduleExit: (code) => setImmediate(() => process.exit(code)),
+  });
+
   parentPort.on('message', (event: ElectronMessageEvent) => {
+    if (protocolTermination.isTerminating()) return;
+
     const request = event.data;
     if (!isCodexFeasibilityRequest(request)) {
-      process.exit(28);
+      protocolTermination.beginMalformedRequestTermination();
       return;
     }
 

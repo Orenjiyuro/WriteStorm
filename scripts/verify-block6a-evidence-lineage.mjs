@@ -1,31 +1,22 @@
-import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { verifyBlock6aEvidenceLineageAtRepository } from './block6a-evidence-lineage.mjs';
+import { verifyBlock6aCertificationFilesAtRepository } from './block6a-certification-verifier.mjs';
 
 const repositoryRoot = process.cwd();
-const evidencePaths = process.argv.slice(2);
-if (evidencePaths.length === 0) {
-  throw new Error('Expected one or more sanitized Block 6A evidence JSON paths.');
+const [artifactFlag, artifactPath, ...evidencePaths] = process.argv.slice(2);
+if (artifactFlag !== '--artifact-root' || !artifactPath || evidencePaths.length !== 7) {
+  throw new Error(
+    'Expected --artifact-root <immutable-artifact-root> and exactly seven sanitized evidence paths.',
+  );
 }
 
-const results = evidencePaths.map((evidencePath) => {
-  const absolutePath = path.resolve(repositoryRoot, evidencePath);
-  const evidence = JSON.parse(readFileSync(absolutePath, 'utf8'));
-  if (!evidence || typeof evidence !== 'object' || !evidence.lineage) {
-    throw new Error('Block 6A evidence lineage verification failed.');
-  }
-  const packagedArtifactRoot = evidence.lineage.packagedArtifactSha256 === null
-    ? undefined
-    : path.join(repositoryRoot, 'out', 'writestorm-win32-x64');
-  const verified = verifyBlock6aEvidenceLineageAtRepository(
-    evidence.lineage,
+try {
+  const result = verifyBlock6aCertificationFilesAtRepository(
+    evidencePaths,
     repositoryRoot,
-    packagedArtifactRoot,
+    path.resolve(repositoryRoot, artifactPath),
   );
-  return {
-    evidenceId: evidence.evidenceId,
-    classification: verified.classification,
-  };
-});
-
-process.stdout.write(`${JSON.stringify({ verified: true, results })}\n`);
+  process.stdout.write(`${JSON.stringify(result)}\n`);
+} catch {
+  process.stderr.write('Block 6A certification verification failed.\n');
+  process.exitCode = 1;
+}

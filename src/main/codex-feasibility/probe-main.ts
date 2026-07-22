@@ -19,6 +19,7 @@ import {
   BLOCK6A_R6_PROVENANCE_EVIDENCE_ID,
   createBlock6aAssertion,
 } from './assertion-provenance';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from './manifest';
 import { CODEX_FEASIBILITY_SESSION_TIMEOUT_MS } from './turn-deadline';
 
 type ScenarioPlan = {
@@ -157,7 +158,7 @@ void app.whenReady().then(async () => {
 
     writeSanitizedResult({
       schemaVersion: 1,
-      evidenceId: 'block6a-6a5-real-sdk-cwd-git-env-auth-001',
+      evidenceId: BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.capability,
       task: '6A.5',
       source: 'real_sdk',
       recordedAt: new Date().toISOString(),
@@ -166,7 +167,7 @@ void app.whenReady().then(async () => {
       versions: {
         electron: process.versions.electron ?? 'unavailable',
         nodeRuntime: process.versions.node,
-        codexSdk: '0.144.6',
+        codexSdk: BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk,
       },
       assertions: {
         probeRootOutsideSourceRepository: createBlock6aAssertion(
@@ -191,7 +192,7 @@ void app.whenReady().then(async () => {
         ),
         scenarioCount: createBlock6aAssertion(
           scenarios.length === 7, 'real_sdk',
-          'block6a-6a5-real-sdk-cwd-git-env-auth-001',
+          BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.capability,
           'cwd_git_env_auth_probe_completed',
         ),
       },
@@ -200,7 +201,7 @@ void app.whenReady().then(async () => {
         'No prompt, path, environment value, credential, PID or raw SDK error is retained.',
         'The current-auth scenario classifies the existing state but does not create or modify login state.',
         'WriteStorm has no product login UI in Task 6A.5.',
-        'SDK 0.144.6 exposes no stable structured Git or auth error discriminant.',
+        `SDK ${BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk} exposes no stable structured Git or auth error discriminant.`,
         'Unknown SDK or CLI failures are retained only as runtime_failed / unverified with SDK_RUNTIME_UNAVAILABLE.',
         'Isolated-empty-auth failures are diagnostic limitations when the positive core and current-auth Git bypass differential pass.',
       ],
@@ -208,7 +209,7 @@ void app.whenReady().then(async () => {
   } catch (error) {
     writeSanitizedResult({
       schemaVersion: 1,
-      evidenceId: 'block6a-6a5-real-sdk-cwd-git-env-auth-001',
+      evidenceId: BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.capability,
       task: '6A.5',
       source: 'real_sdk',
       recordedAt: new Date().toISOString(),
@@ -217,7 +218,7 @@ void app.whenReady().then(async () => {
       versions: {
         electron: process.versions.electron ?? 'unavailable',
         nodeRuntime: process.versions.node,
-        codexSdk: '0.144.6',
+        codexSdk: BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk,
       },
       assertions: {
         sanitizedFailureRecorded: createBlock6aAssertion(

@@ -10,6 +10,7 @@ import {
   type ForkCodexFeasibilityUtility,
 } from '../../src/main/codex-feasibility/runner';
 import type { CodexFeasibilityRequest } from '../../src/main/codex-feasibility/protocol';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from '../../src/main/codex-feasibility/manifest';
 
 class FakeCodexUtility extends EventEmitter implements CodexFeasibilityUtilityHandle {
   private currentPid: number | undefined = 64004;
@@ -327,9 +328,9 @@ describe('Block 6A.4 Codex feasibility utility runner', () => {
           ok: true,
           utilityPid: process.pid,
           result: {
-            sdkVersion: '0.144.6',
-            cliVersion: '0.144.6',
-            platformPackageVersion: '0.144.6-win32-x64',
+            sdkVersion: BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk,
+            cliVersion: BLOCK6A_FEASIBILITY_MANIFEST.versions.codexCli,
+            platformPackageVersion: BLOCK6A_FEASIBILITY_MANIFEST.versions.platformPackage,
             nodeRuntime: '24.17.0',
             platform: 'win32',
             architecture: 'x64',
@@ -366,7 +367,7 @@ describe('Block 6A.4 Codex feasibility utility runner', () => {
       utilityPid: 64004,
       cleanupAcknowledged: true,
       result: {
-        sdkVersion: '0.144.6',
+        sdkVersion: BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk,
         projectLocalCliResolved: true,
       },
     });

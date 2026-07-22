@@ -1259,3 +1259,37 @@ Rules:
 - The full 6A delivery includes package/lockfile, Forge and feasibility-runtime changes across its history; only the final evidence-only closure commits omit those files.
 - The result remains `conditional Go — Windows-only feasibility verified; macOS deferred-by-user`. It is not full Go, cross-platform compatibility or release readiness.
 - Task 13.1 remains subject to total-thread review and Task 13.2 remains unauthorized until that separate decision.
+
+## D095: Feasibility Harness Must Exit Before Product AI Execution
+
+Decision: `docs/engineering/block6a-feasibility-harness-exit-plan.json` is the machine-readable disposition authority for the Task 6A harness. No current feasibility source file may become the production `AiExecutionPort` or `CodexProviderAdapter` in place.
+
+Rules:
+
+- Five low-level environment, owned-process and supervision files are `extract-then-delete`. Task 13 may independently extract only their reviewed semantics behind new production types and tests, after which the original feasibility files must be deleted.
+- Every probe protocol, runner, probe main, synthetic validator, evidence producer, fixed probe deadline, certification main and probe utility entry is `delete-without-promotion`; none may enter Job, renderer, shared DTO or production provider contracts.
+- Before Task 13.2 authorization, a mechanical guard must prove production code imports no `src/main/codex-feasibility` file. Before production adapter composition, new `AiExecutionPort`, `CodexProviderAdapter` and Codex utility contracts must exist independently.
+- Before the first product AI execution, the entire feasibility source tree must be removed from `src/main`; retained fixtures, evidence, admission, lineage and certification assets may remain only outside the product source and default package graph.
+- Task 17 release readiness requires the replacement certification path to pass against the final artifact. This exit plan does not itself implement or authorize Task 13.2, and macOS packaged runtime remains `deferred-by-user`.
+
+## D096: Block 6A Operational Constants Have One Versioned Manifest
+
+Decision: `config/block6a-feasibility-manifest-v1.json` is the single operational authority for pinned Codex versions, synthetic fixture hashes, static/runtime evidence identities, the Windows runtime-file allowlist and the fixed conditional verdict.
+
+Rules:
+
+- TypeScript feasibility runtime and Node certification tooling must read the same manifest; operational source and executable test fixtures may not maintain independent copies of its fixed values.
+- The public fixture and historical/current evidence remain self-describing records, but automated consistency checks must bind their IDs and hashes to the manifest rather than treating them as competing authorities.
+- The manifest, its TS/MJS loaders and the public fixture are included in evidence runtime lineage. Any change expires prior certification for the changed boundary and requires a new manifest ID, review and fresh Windows certification.
+- This maintainability change does not authorize Task 13.2, full Go, cross-platform compatibility or release readiness. macOS packaged runtime remains `deferred-by-user`.
+
+## D097: Post-Certification Remediation Requires Fresh Windows Recertification
+
+Decision: D092/D093 remain valid historical decisions for clean integration HEAD `2389170`, but their evidence cannot certify the post-`2389170` remediation boundary. Current Task 6A status returns to `pending recertification — post-2389170 remediation changed the certified boundary; macOS deferred-by-user`.
+
+Rules:
+
+- The historical seven runtime records, bound artifact and conditional verdict are preserved unchanged for `2389170`; they are not rewritten, deleted or represented as current evidence.
+- Removing the probe from product startup/default packaging, introducing an isolated certification build and atomic bundle, changing admission/lineage/package guards, adding active-turn malformed-protocol cleanup, and centralizing the operational manifest are expiry-condition changes.
+- A future clean committed and pushed HEAD must run the single `npm run certify:codex:windows` pipeline and pass full check, development, lifecycle, package boundary, packaged-only SDK execution, unified verification and immutable bundle publication.
+- Until that fresh evidence exists, Task 13.1 remains blocked and Task 13.2 is not authorized. The target verdict after successful review remains only `conditional Go — Windows-only feasibility verified; macOS deferred-by-user`, not full Go, cross-platform compatibility or release readiness.

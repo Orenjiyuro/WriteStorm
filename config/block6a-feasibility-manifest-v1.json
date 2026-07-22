@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "manifestId": "block6a-feasibility-manifest-v1",
+  "versions": {
+    "codexSdk": "0.144.6",
+    "codexCli": "0.144.6",
+    "platformPackage": "0.144.6-win32-x64"
+  },
+  "syntheticFixture": {
+    "path": "fixtures/block6a/codex-sdk-feasibility-v1.json",
+    "fixtureId": "block6a-codex-sdk-feasibility-v1",
+    "inputSha256": "59a9268039bb5bad326151cbe27320c64c89cbf5b054035978c432a4ce5c4a26",
+    "expectedSha256": "6fe7aac1e4d9ae4aec0a14e6bfd46af4ee18892c247a2d0aecfa5091f017afab",
+    "inputMaximumLength": 160,
+    "expectedMaximumLength": 64
+  },
+  "staticEvidenceInputs": [
+    {
+      "key": "r2Environment",
+      "evidenceId": "block6a-remediation-r2-environment-boundary-001",
+      "path": "docs/engineering/evidence/block6a-remediation-r2-environment-boundary.json"
+    },
+    {
+      "key": "r4aProcessOwnership",
+      "evidenceId": "block6a-remediation-r4a-process-ownership-001",
+      "path": "docs/engineering/evidence/block6a-remediation-r4a-process-ownership.json"
+    },
+    {
+      "key": "r4bSafeTermination",
+      "evidenceId": "block6a-remediation-r4b-safe-termination-001",
+      "path": "docs/engineering/evidence/block6a-remediation-r4b-safe-termination.json"
+    },
+    {
+      "key": "r5ErrorClassification",
+      "evidenceId": "block6a-remediation-r5-error-classification-001",
+      "path": "docs/engineering/evidence/block6a-remediation-r5-error-classification.json"
+    },
+    {
+      "key": "r6AssertionProvenance",
+      "evidenceId": "block6a-remediation-r6-assertion-provenance-001",
+      "path": "docs/engineering/evidence/block6a-remediation-r6-assertion-provenance.json"
+    },
+    {
+      "key": "r7EvidenceLineage",
+      "evidenceId": "block6a-remediation-r7-evidence-lineage-001",
+      "path": "docs/engineering/evidence/block6a-remediation-r7-evidence-lineage.json"
+    },
+    {
+      "key": "r8aTurnDeadline",
+      "evidenceId": "block6a-remediation-r8a-turn-deadline-001",
+      "path": "docs/engineering/evidence/block6a-remediation-r8a-turn-deadline.json"
+    },
+    {
+      "key": "r8a3RuntimeFailureOrigin",
+      "evidenceId": "block6a-remediation-r8a3-runtime-failure-origin-001",
+      "path": "docs/engineering/evidence/block6a-remediation-r8a3-runtime-failure-origin.json"
+    },
+    {
+      "key": "r8a4CjsModuleAnchor",
+      "evidenceId": "block6a-remediation-r8a4-cjs-module-anchor-001",
+      "path": "docs/engineering/evidence/block6a-remediation-r8a4-cjs-module-anchor.json"
+    },
+    {
+      "key": "r8a5ConditionalDevelopmentGate",
+      "evidenceId": "block6a-remediation-r8a5-conditional-development-gate-001",
+      "path": "docs/engineering/evidence/block6a-remediation-r8a5-conditional-development-gate.json"
+    }
+  ],
+  "runtimeEvidence": {
+    "capability": "block6a-6a5-real-sdk-cwd-git-env-auth-001",
+    "outputSchema": "block6a-6a6-real-sdk-output-schema-001",
+    "lifecycle": {
+      "app-timeout": "block6a-6a7-real-sdk-app-timeout-001",
+      "explicit-cancel": "block6a-6a7-real-sdk-explicit-cancel-001",
+      "window-close": "block6a-6a7-real-sdk-window-close-001",
+      "app-quit": "block6a-6a7-real-sdk-app-quit-001"
+    },
+    "packaged": "block6a-6a8a-packaged-sdk-windows-001"
+  },
+  "windowsPlatformRuntimeFiles": [
+    "bin/codex-code-mode-host.exe",
+    "bin/codex.exe",
+    "codex-package.json",
+    "codex-path/rg.exe",
+    "codex-resources/codex-command-runner.exe",
+    "codex-resources/codex-windows-sandbox-setup.exe"
+  ],
+  "verdict": {
+    "classification": "conditional_go_windows_only_macos_deferred_by_user",
+    "text": "conditional Go — Windows-only feasibility verified; macOS deferred-by-user"
+  }
+}

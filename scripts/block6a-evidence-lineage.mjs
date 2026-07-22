@@ -2,34 +2,44 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
+import {
+  BLOCK6A_FEASIBILITY_MANIFEST,
+  BLOCK6A_FEASIBILITY_MANIFEST_RELATIVE_PATH,
+} from './block6a-feasibility-manifest.mjs';
 
 const lineageFailureMessage = 'Block 6A evidence lineage verification failed.';
-const evidenceInputPaths = [
-  'docs/engineering/evidence/block6a-remediation-r2-environment-boundary.json',
-  'docs/engineering/evidence/block6a-remediation-r4a-process-ownership.json',
-  'docs/engineering/evidence/block6a-remediation-r4b-safe-termination.json',
-  'docs/engineering/evidence/block6a-remediation-r5-error-classification.json',
-  'docs/engineering/evidence/block6a-remediation-r6-assertion-provenance.json',
-  'docs/engineering/evidence/block6a-remediation-r7-evidence-lineage.json',
-  'docs/engineering/evidence/block6a-remediation-r8a-turn-deadline.json',
-  'docs/engineering/evidence/block6a-remediation-r8a3-runtime-failure-origin.json',
-  'docs/engineering/evidence/block6a-remediation-r8a4-cjs-module-anchor.json',
-  'docs/engineering/evidence/block6a-remediation-r8a5-conditional-development-gate.json',
-];
+const evidenceInputPaths = BLOCK6A_FEASIBILITY_MANIFEST.staticEvidenceInputs
+  .map(({ path: evidencePath }) => evidencePath);
 const fixedRuntimeBoundaryPaths = [
   'package.json',
   'package-lock.json',
   'forge.config.ts',
+  'forge.block6a-certification.config.ts',
   'vite.main.config.ts',
   'vite.preload.config.ts',
   'vite.renderer.config.ts',
   'src/main/main.ts',
+  BLOCK6A_FEASIBILITY_MANIFEST_RELATIVE_PATH,
+  'scripts/block6a-feasibility-manifest.mjs',
+  'scripts/block6a-feasibility-manifest.d.mts',
   'scripts/block6a-probe-admission.mjs',
   'scripts/block6a-probe-admission.d.mts',
   'scripts/block6a-evidence-lineage.mjs',
   'scripts/block6a-evidence-lineage.d.mts',
+  'scripts/block6a-certification-verifier.mjs',
+  'scripts/block6a-certification-verifier.d.mts',
+  'scripts/block6a-certification-bundle.mjs',
+  'scripts/block6a-certification-bundle.d.mts',
   'scripts/verify-block6a-evidence-lineage.mjs',
   'scripts/run-block6a-probes.mjs',
+  'scripts/block6a-public-synthetic-fixture.mjs',
+  'scripts/block6a-public-synthetic-fixture.d.mts',
+  'fixtures/block6a/codex-sdk-feasibility-v1.json',
+  'scripts/package-block6a-certification.mjs',
+  'scripts/verify-block6a-certification-package.mjs',
+  'scripts/certify-block6a-windows.mjs',
+  'tests/certification/block6a-codex-certification-package-boundary.test.ts',
+  'tests/verification/block6a-codex-build-boundary.test.ts',
   'tests/verification/block6a-codex-package-boundary.test.ts',
 ];
 

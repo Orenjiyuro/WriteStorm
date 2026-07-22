@@ -5,14 +5,21 @@ import {
   evaluateBlock6aEvidenceLineage,
   isAllowedBlock6aEvidenceOnlyPath,
 } from '../../scripts/block6a-evidence-lineage.mjs';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from '../../src/main/codex-feasibility/manifest';
 
 const hashA = 'a'.repeat(64);
 const hashB = 'b'.repeat(64);
 const runHead = '1'.repeat(40);
 const finalHead = '2'.repeat(40);
 const evidenceInputs = [
-  { evidenceId: 'block6a-remediation-r2-environment-boundary-001', sha256: hashA },
-  { evidenceId: 'block6a-remediation-r6-assertion-provenance-001', sha256: hashB },
+  {
+    evidenceId: BLOCK6A_FEASIBILITY_MANIFEST.staticEvidenceInputs[0].evidenceId,
+    sha256: hashA,
+  },
+  {
+    evidenceId: BLOCK6A_FEASIBILITY_MANIFEST.staticEvidenceInputs[4].evidenceId,
+    sha256: hashB,
+  },
 ];
 const lineage = {
   gitHeadAtRun: runHead,
@@ -84,18 +91,17 @@ describe('Block 6A R7 evidence lineage binding', () => {
       __dirname,
       '../../scripts/block6a-evidence-lineage.mjs',
     ), 'utf8');
-    expect(source).toContain(
-      'docs/engineering/evidence/block6a-remediation-r8a-turn-deadline.json',
-    );
-    expect(source).toContain(
-      'docs/engineering/evidence/block6a-remediation-r8a3-runtime-failure-origin.json',
-    );
-    expect(source).toContain(
-      'docs/engineering/evidence/block6a-remediation-r8a4-cjs-module-anchor.json',
-    );
-    expect(source).toContain(
-      'docs/engineering/evidence/block6a-remediation-r8a5-conditional-development-gate.json',
-    );
+    expect(source).toContain('BLOCK6A_FEASIBILITY_MANIFEST.staticEvidenceInputs');
+    for (const key of [
+      'r8aTurnDeadline',
+      'r8a3RuntimeFailureOrigin',
+      'r8a4CjsModuleAnchor',
+      'r8a5ConditionalDevelopmentGate',
+    ]) {
+      expect(BLOCK6A_FEASIBILITY_MANIFEST.staticEvidenceInputs).toContainEqual(
+        expect.objectContaining({ key }),
+      );
+    }
   });
 
   it('keeps the repository verifier bound to Git ancestry and changed paths', () => {

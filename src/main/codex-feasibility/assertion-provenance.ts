@@ -15,9 +15,9 @@ export type Block6aAssertionEvidence = {
 };
 
 export const BLOCK6A_R2_ENVIRONMENT_EVIDENCE_ID =
-  'block6a-remediation-r2-environment-boundary-001';
+  block6aStaticEvidence('r2Environment').evidenceId;
 export const BLOCK6A_R6_PROVENANCE_EVIDENCE_ID =
-  'block6a-remediation-r6-assertion-provenance-001';
+  block6aStaticEvidence('r6AssertionProvenance').evidenceId;
 
 export function createBlock6aAssertion(
   value: boolean,
@@ -27,3 +27,12 @@ export function createBlock6aAssertion(
 ): Block6aAssertionEvidence {
   return { value, source, evidenceId, classification };
 }
+
+export function areBlock6aAssertionGroupsTrue(
+  ...groups: ReadonlyArray<Readonly<Record<string, Block6aAssertionEvidence>>>
+): boolean {
+  return groups.every((group) => (
+    Object.values(group).every((assertion) => assertion.value === true)
+  ));
+}
+import { block6aStaticEvidence } from './manifest';

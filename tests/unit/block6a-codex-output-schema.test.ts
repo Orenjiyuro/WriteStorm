@@ -14,6 +14,7 @@ import {
   resolvePackageManifestPath,
   resolveUtilityModuleAnchor,
 } from '../../src/main/codex-feasibility/utility-entry';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from '../../src/main/codex-feasibility/manifest';
 
 const rootDir = path.resolve(__dirname, '../..');
 
@@ -66,9 +67,10 @@ describe('Block 6A.6 minimal outputSchema boundary', () => {
   });
 
   it('recognizes the pinned local SDK schema-guard probe without inspecting error text', () => {
-    expect(isPinnedSdkLocalOutputSchemaGuardProbe('invalid-schema', [], '0.144.6')).toBe(true);
-    expect(isPinnedSdkLocalOutputSchemaGuardProbe('valid-minimal', [], '0.144.6')).toBe(false);
-    expect(isPinnedSdkLocalOutputSchemaGuardProbe('invalid-schema', {}, '0.144.6')).toBe(false);
+    const sdkVersion = BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk;
+    expect(isPinnedSdkLocalOutputSchemaGuardProbe('invalid-schema', [], sdkVersion)).toBe(true);
+    expect(isPinnedSdkLocalOutputSchemaGuardProbe('valid-minimal', [], sdkVersion)).toBe(false);
+    expect(isPinnedSdkLocalOutputSchemaGuardProbe('invalid-schema', {}, sdkVersion)).toBe(false);
     expect(isPinnedSdkLocalOutputSchemaGuardProbe('invalid-schema', [], 'future-version')).toBe(false);
 
     const utilitySource = readFileSync(
@@ -122,7 +124,9 @@ describe('Block 6A.6 minimal outputSchema boundary', () => {
       path.join(rootDir, 'node_modules', '@openai', 'codex-sdk', 'package.json'),
     );
     expect(resolvePackageManifestPath('../outside', cjsFilename)).toBeUndefined();
-    expect(resolveInstalledCodexSdkVersion()).toBe('0.144.6');
+    expect(resolveInstalledCodexSdkVersion()).toBe(
+      BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk,
+    );
   });
 
   it('admits only closed output-schema scenarios without prompt or schema injection', () => {

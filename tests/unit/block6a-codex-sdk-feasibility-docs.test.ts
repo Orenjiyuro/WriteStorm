@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from '../../src/main/codex-feasibility/manifest';
 
 const productDesignPath = 'docs/product/write-storm-product-design.md';
 const technicalDesignPath = 'docs/engineering/TECHNICAL_DESIGN.md';
@@ -62,16 +63,20 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     expect(decisions).toContain('Decision: V1 AI integration supports Codex SDK only.');
   });
 
-  it('records the current Windows-only conditional verdict without erasing historical states', () => {
+  it('records current pending recertification without erasing the historical conditional verdict', () => {
     expect(existsSync(feasibilityPath)).toBe(true);
     const feasibility = readFileSync(feasibilityPath, 'utf8');
     const verdictLine = feasibility.split(/\r?\n/).find((line) => line.startsWith('Verdict:'));
 
     expect(verdictLine).toBe(
-      'Verdict: `conditional Go — Windows-only feasibility verified; macOS deferred-by-user`',
+      'Verdict: `pending recertification — post-2389170 remediation changed the certified boundary; macOS deferred-by-user`',
     );
     expect(feasibility).toContain('Historical Task 6A.8b decision');
-    expect(feasibility).toContain('Windows implementation feasibility is now verified under the recorded conditions');
+    expect(feasibility).toContain(
+      'At clean integration HEAD `2389170`, Windows implementation feasibility was verified under the recorded conditions',
+    );
+    expect(feasibility).toContain('Historical certified checkpoint: Windows-only conditional Go');
+    expect(feasibility).toContain('Current status: pending Windows recertification');
     expect(feasibility).toContain('### R8a5 fresh Windows packaged result');
     expect(feasibility).toContain('every other unstructured SDK/CLI failure becomes `runtime_failed / unverified`');
     expect(feasibility).toContain('This feasibility classifier is not the Task 13 Job error contract');
@@ -266,14 +271,15 @@ describe('Block 6A Codex SDK feasibility authority', () => {
         supports: string[];
       }>;
     };
+    const runtimeEvidence = BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence;
     const inputPaths = new Map([
-      ['block6a-6a5-real-sdk-cwd-git-env-auth-001', r8a5CapabilityAdmittedPath],
-      ['block6a-6a6-real-sdk-output-schema-001', r8a5OutputSchemaAdmittedPath],
-      ['block6a-6a7-real-sdk-app-timeout-001', r8a5LifecyclePaths[0]],
-      ['block6a-6a7-real-sdk-explicit-cancel-001', r8a5LifecyclePaths[1]],
-      ['block6a-6a7-real-sdk-window-close-001', r8a5LifecyclePaths[2]],
-      ['block6a-6a7-real-sdk-app-quit-001', r8a5LifecyclePaths[3]],
-      ['block6a-6a8a-packaged-sdk-windows-001', r8a5PackagedPath],
+      [runtimeEvidence.capability, r8a5CapabilityAdmittedPath],
+      [runtimeEvidence.outputSchema, r8a5OutputSchemaAdmittedPath],
+      [runtimeEvidence.lifecycle['app-timeout'], r8a5LifecyclePaths[0]],
+      [runtimeEvidence.lifecycle['explicit-cancel'], r8a5LifecyclePaths[1]],
+      [runtimeEvidence.lifecycle['window-close'], r8a5LifecyclePaths[2]],
+      [runtimeEvidence.lifecycle['app-quit'], r8a5LifecyclePaths[3]],
+      [runtimeEvidence.packaged, r8a5PackagedPath],
     ]);
 
     expect(packaged.source).toBe('packaged_sdk');
@@ -359,7 +365,7 @@ describe('Block 6A Codex SDK feasibility authority', () => {
       'block6a-task6a8b-verdict.json remains an expired historical decision record',
     );
     expect(readFileSync(feasibilityPath, 'utf8')).toContain(
-      'remains the historical R1–R7 pending-status checkpoint and is no longer the current decision',
+      'remains the earlier historical R1–R7 pending-status checkpoint',
     );
   });
 
@@ -633,20 +639,37 @@ describe('Block 6A Codex SDK feasibility authority', () => {
 
     expect(context).toContain('V1-BLOCK-6A-CODEX-SDK-FEASIBILITY.md');
     expect(context).toContain(
-      'current verdict is `conditional Go — Windows-only feasibility verified; macOS deferred-by-user`',
+      'current status is `pending recertification — post-2389170 remediation changed the certified boundary; macOS deferred-by-user`',
     );
     expect(context).not.toContain('Task 6A.1 establishes `docs/engineering/V1-BLOCK-6A-CODEX-SDK-FEASIBILITY.md` as the current Codex feasibility authority with verdict `pending`');
     expect(activeContext).not.toMatch(/no SDK dependency is installed|no probe has run|no Go\/No-Go decision/i);
     expect(feasibility.match(/^Verdict:/gm)).toHaveLength(1);
     expect(feasibility).toContain(
-      'Windows implementation feasibility is now verified under the recorded conditions',
+      'At clean integration HEAD `2389170`, Windows implementation feasibility was verified under the recorded conditions',
     );
-    expect(feasibility).toContain('the fresh R8a5 Windows-only conditional reissue');
+    expect(feasibility).toContain('the historical fresh R8a5 Windows-only conditional reissue');
     expect(decisions).toContain('## D080: Codex SDK Feasibility Is Conditional Go For Windows Only');
     expect(decisions).toContain('## D081: Current Codex Feasibility Verdict Is Pending Recertification');
     expect(decisions).toContain('D080 remains a historical decision and is expired for the current working tree');
+    expect(decisions).toContain('## D097: Post-Certification Remediation Requires Fresh Windows Recertification');
     expect(context).toContain('At the Block 8A checkpoint, 6A feasibility remained unexecuted and unrecorded.');
     expect(block8aStatus).toContain('6A/Codex SDK feasibility remains unexecuted and unrecorded');
     expect(decisions).toContain('The early Codex feasibility gate remains unexecuted and has no Go decision.');
+  });
+
+  it('keeps the current admission authority aligned with the seven-scenario conditional gate', () => {
+    const feasibility = readFileSync(feasibilityPath, 'utf8');
+    const currentAdmission = feasibility.slice(
+      feasibility.indexOf('The runner evaluates results through an exact fail-closed contract'),
+      feasibility.indexOf('This R1 admission-contract revision intentionally'),
+    );
+
+    expect(currentAdmission).toContain('exactly seven cwd/Git/auth scenarios');
+    expect(currentAdmission).toContain('four isolated-auth diagnostic scenarios');
+    expect(currentAdmission).toContain('conditional limitations rather than hard blockers');
+    expect(currentAdmission).toContain('current-auth Git success');
+    expect(currentAdmission).toContain('current-auth non-Git check/skip differential');
+    expect(currentAdmission).not.toContain('exactly all five cwd/Git/auth scenarios');
+    expect(currentAdmission).not.toContain('they always block recertification');
   });
 });

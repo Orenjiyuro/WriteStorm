@@ -1,33 +1,33 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { build } from 'vite';
 import { evaluateBlock6aProbeResults } from './block6a-probe-admission.mjs';
+import { loadBlock6aPublicSyntheticFixture } from './block6a-public-synthetic-fixture.mjs';
 import {
   createBlock6aLineageSnapshot,
   verifyBlock6aEvidenceLineageAtRepository,
 } from './block6a-evidence-lineage.mjs';
 
-const approvedInputHash = '59a9268039bb5bad326151cbe27320c64c89cbf5b054035978c432a4ce5c4a26';
-const approvedExpectedHash = '6fe7aac1e4d9ae4aec0a14e6bfd46af4ee18892c247a2d0aecfa5091f017afab';
 const root = process.cwd();
 const mode = process.argv[2];
-const syntheticInput = process.env.WRITESTORM_CODEX_SYNTHETIC_INPUT;
-const syntheticExpected = process.env.WRITESTORM_CODEX_SYNTHETIC_EXPECTED;
+const probeOptions = parseProbeOptions(process.argv.slice(3));
+const syntheticFixture = loadBlock6aPublicSyntheticFixture(root);
 
 if (!['dev', 'lifecycle', 'packaged'].includes(mode)) {
   throw new Error('Expected probe mode: dev | lifecycle | packaged.');
 }
-assertApprovedSyntheticValue(syntheticInput, approvedInputHash, 160, 'input');
-assertApprovedSyntheticValue(syntheticExpected, approvedExpectedHash, 64, 'expected value');
 
 const runId = randomUUID();
 const resultRoot = path.join(os.tmpdir(), 'writestorm-block6a-reproduction', runId);
 const packagedArtifactRoot = mode === 'packaged'
-  ? path.join(root, 'out', 'writestorm-win32-x64')
+  ? probeOptions.artifactRoot
   : undefined;
+if (mode === 'packaged' && !packagedArtifactRoot) {
+  throw new Error('Packaged mode requires --artifact-root.');
+}
 const lineage = createBlock6aLineageSnapshot(root, mode, packagedArtifactRoot);
 mkdirSync(resultRoot, { recursive: true });
 
@@ -37,6 +37,9 @@ try {
     : await runDevelopmentProbes(mode);
   verifyBlock6aEvidenceLineageAtRepository(lineage, root, packagedArtifactRoot);
   const evaluation = evaluateBlock6aProbeResults(mode, results);
+  if (probeOptions.evidenceOutputRoot) {
+    persistSanitizedEvidence(results, probeOptions.evidenceOutputRoot);
+  }
   process.stdout.write(`${JSON.stringify({ mode, evaluation })}\n`);
   if (!evaluation.recertificationAdmitted) process.exitCode = 1;
 } finally {
@@ -95,7 +98,7 @@ async function runDevelopmentProbes(selectedMode) {
 }
 
 async function runPackagedProbe(packagedRunId) {
-  const executable = path.join(root, 'out', 'writestorm-win32-x64', 'writestorm.exe');
+  const executable = path.join(packagedArtifactRoot, 'writestorm.exe');
   if (!existsSync(executable)) throw new Error('Windows x64 package is missing; run npm run package first.');
   const packagedResultRoot = path.join(
     os.tmpdir(),
@@ -114,6 +117,38 @@ async function runPackagedProbe(packagedRunId) {
     if (process.env.WRITESTORM_CODEX_KEEP_SANITIZED_RESULTS !== '1') {
       rmSync(packagedResultRoot, { recursive: true, force: true });
     }
+  }
+}
+
+function parseProbeOptions(args) {
+  const options = { artifactRoot: undefined, evidenceOutputRoot: undefined };
+  for (let index = 0; index < args.length; index += 2) {
+    const flag = args[index];
+    const value = args[index + 1];
+    if (!value) throw new Error('Incomplete Block 6A probe option.');
+    if (flag === '--artifact-root' && !options.artifactRoot) {
+      options.artifactRoot = path.resolve(root, value);
+    } else if (flag === '--evidence-output-root' && !options.evidenceOutputRoot) {
+      options.evidenceOutputRoot = path.resolve(root, value);
+    } else {
+      throw new Error('Unknown or duplicate Block 6A probe option.');
+    }
+  }
+  return options;
+}
+
+function persistSanitizedEvidence(results, evidenceOutputRoot) {
+  mkdirSync(evidenceOutputRoot, { recursive: true });
+  for (const result of results) {
+    if (!result
+      || typeof result !== 'object'
+      || typeof result.evidenceId !== 'string'
+      || !/^[a-z0-9-]+$/.test(result.evidenceId)) {
+      throw new Error('Cannot persist unidentified Block 6A evidence.');
+    }
+    writeFileSync(path.join(evidenceOutputRoot, `${result.evidenceId}.json`), (
+      `${JSON.stringify(result, null, 2)}\n`
+    ), { encoding: 'utf8', flag: 'wx' });
   }
 }
 
@@ -152,8 +187,8 @@ function createSafeEnvironment(additions) {
   for (const key of Object.keys(environment)) {
     if (/^(?:OPENAI_API_KEY|CODEX_API_KEY|CODEX_ACCESS_TOKEN)$/i.test(key)) delete environment[key];
   }
-  environment.WRITESTORM_CODEX_SYNTHETIC_INPUT = syntheticInput;
-  environment.WRITESTORM_CODEX_SYNTHETIC_EXPECTED = syntheticExpected;
+  environment.WRITESTORM_CODEX_SYNTHETIC_INPUT = syntheticFixture.input;
+  environment.WRITESTORM_CODEX_SYNTHETIC_EXPECTED = syntheticFixture.expected;
   return environment;
 }
 
@@ -184,13 +219,4 @@ function readSanitizedResult(filePath) {
     flag: 'w',
   });
   return boundResult;
-}
-
-function assertApprovedSyntheticValue(value, expectedHash, maximumLength, label) {
-  const valid = typeof value === 'string'
-    && value.length > 0
-    && value.length <= maximumLength
-    && !/[\r\n\0]/.test(value)
-    && createHash('sha256').update(value, 'utf8').digest('hex') === expectedHash;
-  if (!valid) throw new Error(`Approved Block 6A synthetic ${label} was not supplied.`);
 }

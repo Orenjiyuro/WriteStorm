@@ -15,9 +15,12 @@ import {
   BLOCK6A_R6_PROVENANCE_EVIDENCE_ID,
   createBlock6aAssertion,
 } from './assertion-provenance';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from './manifest';
 
-const approvedSyntheticInputSha256 = '59a9268039bb5bad326151cbe27320c64c89cbf5b054035978c432a4ce5c4a26';
-const approvedSyntheticExpectedSha256 = '6fe7aac1e4d9ae4aec0a14e6bfd46af4ee18892c247a2d0aecfa5091f017afab';
+const approvedSyntheticInputSha256 =
+  BLOCK6A_FEASIBILITY_MANIFEST.syntheticFixture.inputSha256;
+const approvedSyntheticExpectedSha256 =
+  BLOCK6A_FEASIBILITY_MANIFEST.syntheticFixture.expectedSha256;
 const runIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export type PackagedProbeGate = {
@@ -77,7 +80,7 @@ export async function runOptionalPackagedCodexProbe(options: {
     if (gate.resultPath) {
       writeSanitizedResult(gate.resultPath, {
         schemaVersion: 1,
-        evidenceId: 'block6a-6a8a-packaged-sdk-windows-001',
+        evidenceId: BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.packaged,
         task: '6A.8a',
         source: 'packaged_sdk',
         recordedAt: new Date().toISOString(),
@@ -85,7 +88,7 @@ export async function runOptionalPackagedCodexProbe(options: {
         classification: 'packaged_probe_gate_rejected',
         assertions: {
           realSdkTurnStarted: createBlock6aAssertion(
-            false, 'packaged_sdk', 'block6a-6a8a-packaged-sdk-windows-001',
+            false, 'packaged_sdk', BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.packaged,
             'packaged_probe_gate_rejected',
           ),
         },
@@ -143,7 +146,7 @@ export async function runOptionalPackagedCodexProbe(options: {
       && structuredResult.finalJsonParsed === true
       && structuredResult.strictValidatorAccepted === true
       && structuredResult.expectedValueMatched === true;
-    const evidenceId = 'block6a-6a8a-packaged-sdk-windows-001';
+    const evidenceId = BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.packaged;
     const classification = packagedTurnSucceeded
       ? 'packaged_sdk_probe_completed'
       : 'packaged_sdk_probe_failed';
@@ -161,9 +164,9 @@ export async function runOptionalPackagedCodexProbe(options: {
       versions: {
         electron: process.versions.electron ?? 'unavailable',
         nodeRuntime: process.versions.node,
-        codexSdk: '0.144.6',
-        codexCli: '0.144.6',
-        platformPackage: '0.144.6-win32-x64',
+        codexSdk: BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk,
+        codexCli: BLOCK6A_FEASIBILITY_MANIFEST.versions.codexCli,
+        platformPackage: BLOCK6A_FEASIBILITY_MANIFEST.versions.platformPackage,
       },
       assertions: {
         packagedProbeGateAccepted: packagedAssertion(gate.accepted),
@@ -217,7 +220,7 @@ export async function runOptionalPackagedCodexProbe(options: {
   } catch (error) {
     writeSanitizedResult(resultPath, {
       schemaVersion: 1,
-      evidenceId: 'block6a-6a8a-packaged-sdk-windows-001',
+      evidenceId: BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.packaged,
       task: '6A.8a',
       source: 'packaged_sdk',
       recordedAt: new Date().toISOString(),
@@ -226,7 +229,7 @@ export async function runOptionalPackagedCodexProbe(options: {
       versions: {
         electron: process.versions.electron ?? 'unavailable',
         nodeRuntime: process.versions.node,
-        codexSdk: '0.144.6',
+        codexSdk: BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk,
       },
       assertions: {
         sanitizedFailureRecorded: createBlock6aAssertion(

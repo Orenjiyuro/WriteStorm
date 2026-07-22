@@ -67,6 +67,8 @@ The long-term direction is `Job/Pipeline -> AiExecutionPort -> ProviderAdapter`.
 
 Codex is the first V1 adapter, but Codex SDK types, CLI/JSONL events, Git/cwd requirements and child-process semantics must not spread into `JobService`, SQLite public models, renderer, shared DTOs or analysis-module domain objects. Task 6A does not implement the production `AiExecutionPort`, and Task 6A does not implement formal provider registry, non-Codex adapters, dynamic provider loading or a real AI workflow. It creates a Codex-specific feasibility probe only.
 
+The Task 6A runtime is governed by `docs/engineering/block6a-feasibility-harness-exit-plan.json`. No current feasibility file becomes the production port or adapter in place. Five low-level environment, process-identity and supervision files are `extract-then-delete`: Task 13 may independently extract their reviewed semantics behind new production contracts, then must delete the original feasibility files. Every probe protocol, runner, synthetic validator, evidence producer and probe utility entry is `delete-without-promotion`. Before Task 13.2 authorization, production code must have a mechanical no-import boundary against `src/main/codex-feasibility`. Before the first product AI execution, that entire source tree must be removed and any still-required certification harness must live outside the product source/build graph. Task 17 release readiness additionally requires the replacement certification path to pass on its final artifact.
+
 ### Main process
 
 Owns:
@@ -256,7 +258,8 @@ Migration rules:
 | `TypeLibraryService` | List active release options, read Book binding detail with pinned display metadata, and apply Book CAS updates |
 | `JobService` | Create jobs, update state, checkpoints, cancellation and recovery |
 | `ExportService` | Report export availability and build export packages later |
-| `CodexService` | Codex SDK spike and future real AI calls; disabled until spike passes |
+| `AiExecutionPort` | Future provider-neutral production execution contract; not implemented by Task 6A |
+| `CodexProviderAdapter` | Future V1 Codex implementation behind `AiExecutionPort`; must be designed independently of the Task 6A harness |
 | `TypedIpcBridge` | Shared renderer-to-main contract and runtime validation |
 
 Service rules:

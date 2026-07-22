@@ -10,6 +10,7 @@ import {
   isInsideProjectPlatformPackage,
   resolvePackagedCodexPath,
 } from '../../src/main/codex-feasibility/utility-entry';
+import { findRestrictedModuleLoads } from '../../scripts/block6a-source-security-guard.mjs';
 
 const rootDir = path.resolve(__dirname, '../..');
 const utilityEntry = path.join(rootDir, 'src/main/codex-feasibility/utility-entry.ts');
@@ -153,9 +154,16 @@ describe('Block 6A.4 Codex utility boundary', () => {
   });
 
   it('externalizes the SDK and CLI and packages only the approved Windows runtime paths', () => {
-    const forgeConfig = readFileSync(path.join(rootDir, 'forge.config.ts'), 'utf8');
+    const productForgeConfig = readFileSync(path.join(rootDir, 'forge.config.ts'), 'utf8');
+    const forgeConfig = readFileSync(
+      path.join(rootDir, 'forge.block6a-certification.config.ts'),
+      'utf8',
+    );
     const packageVerifier = readFileSync(
-      path.join(rootDir, 'tests/verification/block6a-codex-package-boundary.test.ts'),
+      path.join(
+        rootDir,
+        'tests/certification/block6a-codex-certification-package-boundary.test.ts',
+      ),
       'utf8',
     );
     const utilityViteConfig = readFileSync(
@@ -165,6 +173,8 @@ describe('Block 6A.4 Codex utility boundary', () => {
 
     expect(utilityViteConfig).toContain("'@openai/codex-sdk'");
     expect(utilityViteConfig).toContain("'@openai/codex'");
+    expect(productForgeConfig).not.toContain('codex-feasibility');
+    expect(productForgeConfig).not.toContain('@openai/codex');
     expect(forgeConfig).toContain("entry: 'src/main/codex-feasibility/utility-entry.ts'");
     expect(forgeConfig).toContain("config: 'vite.codex-feasibility.config.ts'");
     expect(forgeConfig).toContain("'/node_modules/@openai/codex-sdk'");
@@ -225,17 +235,14 @@ function sourceFiles(dir: string): string[] {
 }
 
 function importSpecifiers(source: string): string[] {
-  const specifiers: string[] = [];
-  const pattern = /\b(?:import|export)\s+(?:type\s+)?(?:[^'\"]*?\s+from\s+)?['\"]([^'\"]+)['\"]|\bimport\(\s*['\"]([^'\"]+)['\"]\s*\)/g;
-  for (const match of source.matchAll(pattern)) specifiers.push(match[1] ?? match[2]);
-  return specifiers;
+  return findRestrictedModuleLoads(source, []).flatMap(({ specifier }) => (
+    specifier === null ? [] : [specifier]
+  ));
 }
 
 function findForbiddenImportSpecifiers(source: string, forbiddenPackages: string[]): string[] {
-  return importSpecifiers(source).filter((specifier) => (
-    specifier.startsWith('@openai/') || forbiddenPackages.some((packageName) => (
-      specifier === packageName || specifier.startsWith(`${packageName}/`)
-    ))
+  return findRestrictedModuleLoads(source, forbiddenPackages).map(({ specifier }) => (
+    specifier ?? '<unresolved-dynamic-module-load>'
   ));
 }
 

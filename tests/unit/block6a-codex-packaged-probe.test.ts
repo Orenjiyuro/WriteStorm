@@ -27,14 +27,31 @@ describe('Block 6A.8a packaged Codex SDK probe boundary', () => {
     expect(JSON.stringify(base)).not.toContain('resultPath');
   });
 
-  it('uses an explicit no-window packaged-only startup gate', () => {
+  it('keeps the no-window packaged-only startup gate outside the product build graph', () => {
     const mainSource = readFileSync(path.join(rootDir, 'src/main/main.ts'), 'utf8');
+    const certificationMainSource = readFileSync(
+      path.join(rootDir, 'src/main/codex-feasibility/certification-main.ts'),
+      'utf8',
+    );
     const probeSource = readFileSync(
       path.join(rootDir, 'src/main/codex-feasibility/packaged-probe.ts'),
       'utf8',
     );
+    const productForgeConfig = readFileSync(path.join(rootDir, 'forge.config.ts'), 'utf8');
+    const certificationForgeConfig = readFileSync(
+      path.join(rootDir, 'forge.block6a-certification.config.ts'),
+      'utf8',
+    );
 
-    expect(mainSource).toContain('runOptionalPackagedCodexProbe');
+    expect(mainSource).not.toContain('runOptionalPackagedCodexProbe');
+    expect(mainSource).not.toContain('codex-feasibility');
+    expect(productForgeConfig).not.toContain('codex-feasibility');
+    expect(productForgeConfig).not.toContain('@openai/codex');
+    expect(certificationMainSource).toContain('runOptionalPackagedCodexProbe');
+    expect(certificationMainSource).toContain('process.exit(33)');
+    expect(certificationForgeConfig).toContain("entry: 'src/main/codex-feasibility/certification-main.ts'");
+    expect(certificationForgeConfig).toContain("entry: 'src/main/codex-feasibility/utility-entry.ts'");
+    expect(certificationForgeConfig).toContain("'/node_modules/@openai/codex-sdk'");
     expect(probeSource).toContain('evaluatePackagedProbeGate');
     expect(probeSource).toContain('runOutputSchemaProbe');
     expect(probeSource).not.toContain('BrowserWindow');
@@ -53,6 +70,15 @@ describe('Block 6A.8a packaged Codex SDK probe boundary', () => {
     expect(packageManifest.scripts['probe:codex:dev']).toBeTruthy();
     expect(packageManifest.scripts['probe:codex:lifecycle']).toBeTruthy();
     expect(packageManifest.scripts['probe:codex:packaged']).toBeTruthy();
+    expect(packageManifest.scripts['package:codex-certification']).toBe(
+      'node scripts/package-block6a-certification.mjs',
+    );
+    const certificationPackager = readFileSync(
+      path.join(rootDir, 'scripts/package-block6a-certification.mjs'),
+      'utf8',
+    );
+    expect(certificationPackager).toContain('forge.block6a-certification.config.ts');
+    expect(certificationPackager).toContain('registerForgeConfigForDirectory');
     expect(packageManifest.scripts['test:verification']).toContain('tests/verification');
     expect(packageManifest.scripts.check).toContain('test:verification');
     for (const command of Object.values(packageManifest.scripts).filter((value) => value.includes('codex'))) {

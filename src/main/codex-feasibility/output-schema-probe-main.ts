@@ -15,6 +15,7 @@ import {
   BLOCK6A_R6_PROVENANCE_EVIDENCE_ID,
   createBlock6aAssertion,
 } from './assertion-provenance';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from './manifest';
 import { CODEX_FEASIBILITY_SESSION_TIMEOUT_MS } from './turn-deadline';
 
 const resultPath = process.env.WRITESTORM_CODEX_OUTPUT_SCHEMA_RESULT;
@@ -63,7 +64,7 @@ void app.whenReady().then(async () => {
 
     writeSanitizedResult({
       schemaVersion: 1,
-      evidenceId: 'block6a-6a6-real-sdk-output-schema-001',
+      evidenceId: BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.outputSchema,
       task: '6A.6',
       source: 'real_sdk',
       recordedAt: new Date().toISOString(),
@@ -72,7 +73,7 @@ void app.whenReady().then(async () => {
       versions: {
         electron: process.versions.electron ?? 'unavailable',
         nodeRuntime: process.versions.node,
-        codexSdk: '0.144.6',
+        codexSdk: BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk,
       },
       assertions: {
         probeRootOutsideSourceRepository: createBlock6aAssertion(
@@ -93,7 +94,7 @@ void app.whenReady().then(async () => {
         ),
         scenarioCount: createBlock6aAssertion(
           scenarios.length === 2, 'real_sdk',
-          'block6a-6a6-real-sdk-output-schema-001',
+          BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.outputSchema,
           'output_schema_probe_completed',
         ),
       },
@@ -107,7 +108,7 @@ void app.whenReady().then(async () => {
   } catch (error) {
     writeSanitizedResult({
       schemaVersion: 1,
-      evidenceId: 'block6a-6a6-real-sdk-output-schema-001',
+      evidenceId: BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.outputSchema,
       task: '6A.6',
       source: 'real_sdk',
       recordedAt: new Date().toISOString(),
@@ -116,7 +117,7 @@ void app.whenReady().then(async () => {
       versions: {
         electron: process.versions.electron ?? 'unavailable',
         nodeRuntime: process.versions.node,
-        codexSdk: '0.144.6',
+        codexSdk: BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk,
       },
       assertions: {
         sanitizedFailureRecorded: createBlock6aAssertion(

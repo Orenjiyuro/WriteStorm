@@ -6,14 +6,20 @@ import {
   admitBlock6aProbeResults,
   evaluateBlock6aProbeResults,
 } from '../../scripts/block6a-probe-admission.mjs';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from '../../src/main/codex-feasibility/manifest';
 
 const versions = {
   electron: '43.0.0',
   nodeRuntime: '24.17.0',
-  codexSdk: '0.144.6',
+  codexSdk: BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk,
 };
-const r2EvidenceId = 'block6a-remediation-r2-environment-boundary-001';
-const r6EvidenceId = 'block6a-remediation-r6-assertion-provenance-001';
+const r2EvidenceId = BLOCK6A_FEASIBILITY_MANIFEST.staticEvidenceInputs
+  .find(({ key }) => key === 'r2Environment')!.evidenceId;
+const r6EvidenceId = BLOCK6A_FEASIBILITY_MANIFEST.staticEvidenceInputs
+  .find(({ key }) => key === 'r6AssertionProvenance')!.evidenceId;
+const capabilityEvidenceId = BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.capability;
+const outputSchemaEvidenceId = BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.outputSchema;
+const packagedEvidenceId = BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.packaged;
 
 function assertion(source: string, evidenceId: string, classification: string) {
   return { value: true, source, evidenceId, classification };
@@ -26,21 +32,11 @@ function lineage(packaged: boolean) {
     packageLockSha256: 'a'.repeat(64),
     runtimeBoundarySha256: 'b'.repeat(64),
     packagedArtifactSha256: packaged ? 'c'.repeat(64) : null,
-    evidenceInputs: [
-      'block6a-remediation-r2-environment-boundary-001',
-      'block6a-remediation-r4a-process-ownership-001',
-      'block6a-remediation-r4b-safe-termination-001',
-      'block6a-remediation-r5-error-classification-001',
-      'block6a-remediation-r6-assertion-provenance-001',
-      'block6a-remediation-r7-evidence-lineage-001',
-      'block6a-remediation-r8a-turn-deadline-001',
-      'block6a-remediation-r8a3-runtime-failure-origin-001',
-      'block6a-remediation-r8a4-cjs-module-anchor-001',
-      'block6a-remediation-r8a5-conditional-development-gate-001',
-    ].map((evidenceId, index) => ({
+    evidenceInputs: BLOCK6A_FEASIBILITY_MANIFEST.staticEvidenceInputs
+      .map(({ evidenceId }, index) => ({
       evidenceId,
       sha256: String((index + 1) % 10).repeat(64),
-    })),
+      })),
   };
 }
 
@@ -48,7 +44,7 @@ const capabilityLimitations = [
   'No prompt, path, environment value, credential, PID or raw SDK error is retained.',
   'The current-auth scenario classifies the existing state but does not create or modify login state.',
   'WriteStorm has no product login UI in Task 6A.5.',
-  'SDK 0.144.6 exposes no stable structured Git or auth error discriminant.',
+  `SDK ${BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk} exposes no stable structured Git or auth error discriminant.`,
   'Unknown SDK or CLI failures are retained only as runtime_failed / unverified with SDK_RUNTIME_UNAVAILABLE.',
   'Isolated-empty-auth failures are diagnostic limitations when the positive core and current-auth Git bypass differential pass.',
 ];
@@ -71,7 +67,7 @@ const packagedLimitations = [
 
 const packagedSuccess = {
   schemaVersion: 1,
-  evidenceId: 'block6a-6a8a-packaged-sdk-windows-001',
+  evidenceId: BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.packaged,
   task: '6A.8a',
   source: 'packaged_sdk',
   recordedAt: '2026-07-19T08:17:33.626Z',
@@ -79,30 +75,30 @@ const packagedSuccess = {
   classification: 'packaged_sdk_probe_completed',
   versions: {
     ...versions,
-    codexCli: '0.144.6',
-    platformPackage: '0.144.6-win32-x64',
+    codexCli: BLOCK6A_FEASIBILITY_MANIFEST.versions.codexCli,
+    platformPackage: BLOCK6A_FEASIBILITY_MANIFEST.versions.platformPackage,
   },
   assertions: {
-    packagedProbeGateAccepted: assertion('packaged_sdk', 'block6a-6a8a-packaged-sdk-windows-001', 'packaged_sdk_probe_completed'),
-    appIsPackaged: assertion('packaged_sdk', 'block6a-6a8a-packaged-sdk-windows-001', 'packaged_sdk_probe_completed'),
-    windowsX64Runtime: assertion('packaged_sdk', 'block6a-6a8a-packaged-sdk-windows-001', 'packaged_sdk_probe_completed'),
-    approvedSyntheticInputHashMatched: assertion('packaged_sdk', 'block6a-6a8a-packaged-sdk-windows-001', 'packaged_sdk_probe_completed'),
-    approvedSyntheticExpectedHashMatched: assertion('packaged_sdk', 'block6a-6a8a-packaged-sdk-windows-001', 'packaged_sdk_probe_completed'),
-    resultPathDerivedFromValidatedRunIdUnderOsTemp: assertion('packaged_sdk', 'block6a-6a8a-packaged-sdk-windows-001', 'packaged_sdk_probe_completed'),
-    packagedSdkImportConstructAndCliExecutionProvedByTurn: assertion('packaged_sdk', 'block6a-6a8a-packaged-sdk-windows-001', 'packaged_sdk_probe_completed'),
-    structuredTurnSucceeded: assertion('packaged_sdk', 'block6a-6a8a-packaged-sdk-windows-001', 'packaged_sdk_probe_completed'),
-    structuredAuthAuthenticated: assertion('packaged_sdk', 'block6a-6a8a-packaged-sdk-windows-001', 'packaged_sdk_probe_completed'),
-    structuredFinalJsonParsed: assertion('packaged_sdk', 'block6a-6a8a-packaged-sdk-windows-001', 'packaged_sdk_probe_completed'),
-    structuredValidatorAccepted: assertion('packaged_sdk', 'block6a-6a8a-packaged-sdk-windows-001', 'packaged_sdk_probe_completed'),
-    structuredExpectedValueMatched: assertion('packaged_sdk', 'block6a-6a8a-packaged-sdk-windows-001', 'packaged_sdk_probe_completed'),
-    structuredCleanupAcknowledged: assertion('packaged_sdk', 'block6a-6a8a-packaged-sdk-windows-001', 'packaged_sdk_probe_completed'),
-    workspaceOutsidePackagedResources: assertion('packaged_sdk', 'block6a-6a8a-packaged-sdk-windows-001', 'packaged_sdk_probe_completed'),
+    packagedProbeGateAccepted: assertion('packaged_sdk', packagedEvidenceId, 'packaged_sdk_probe_completed'),
+    appIsPackaged: assertion('packaged_sdk', packagedEvidenceId, 'packaged_sdk_probe_completed'),
+    windowsX64Runtime: assertion('packaged_sdk', packagedEvidenceId, 'packaged_sdk_probe_completed'),
+    approvedSyntheticInputHashMatched: assertion('packaged_sdk', packagedEvidenceId, 'packaged_sdk_probe_completed'),
+    approvedSyntheticExpectedHashMatched: assertion('packaged_sdk', packagedEvidenceId, 'packaged_sdk_probe_completed'),
+    resultPathDerivedFromValidatedRunIdUnderOsTemp: assertion('packaged_sdk', packagedEvidenceId, 'packaged_sdk_probe_completed'),
+    packagedSdkImportConstructAndCliExecutionProvedByTurn: assertion('packaged_sdk', packagedEvidenceId, 'packaged_sdk_probe_completed'),
+    structuredTurnSucceeded: assertion('packaged_sdk', packagedEvidenceId, 'packaged_sdk_probe_completed'),
+    structuredAuthAuthenticated: assertion('packaged_sdk', packagedEvidenceId, 'packaged_sdk_probe_completed'),
+    structuredFinalJsonParsed: assertion('packaged_sdk', packagedEvidenceId, 'packaged_sdk_probe_completed'),
+    structuredValidatorAccepted: assertion('packaged_sdk', packagedEvidenceId, 'packaged_sdk_probe_completed'),
+    structuredExpectedValueMatched: assertion('packaged_sdk', packagedEvidenceId, 'packaged_sdk_probe_completed'),
+    structuredCleanupAcknowledged: assertion('packaged_sdk', packagedEvidenceId, 'packaged_sdk_probe_completed'),
+    workspaceOutsidePackagedResources: assertion('packaged_sdk', packagedEvidenceId, 'packaged_sdk_probe_completed'),
     apiCredentialEnvironmentExcludedFromUtility: assertion('static_manifest', r2EvidenceId, 'utility_environment_boundary_frozen'),
     promptAndSchemaNotPassedInProtocol: assertion('static_manifest', r6EvidenceId, 'typed_protocol_boundary_frozen'),
   },
   syntheticBoundary: {
-    inputSha256: '59a9268039bb5bad326151cbe27320c64c89cbf5b054035978c432a4ce5c4a26',
-    expectedSha256: '6fe7aac1e4d9ae4aec0a14e6bfd46af4ee18892c247a2d0aecfa5091f017afab',
+    inputSha256: BLOCK6A_FEASIBILITY_MANIFEST.syntheticFixture.inputSha256,
+    expectedSha256: BLOCK6A_FEASIBILITY_MANIFEST.syntheticFixture.expectedSha256,
     resultPathPolicy: 'os_temp_validated_uuid_v4',
   },
   runtime: { platform: 'win32', architecture: 'x64' },
@@ -211,7 +207,7 @@ const capabilityScenarios = [
 const devSuccess = [
   {
     schemaVersion: 1,
-    evidenceId: 'block6a-6a5-real-sdk-cwd-git-env-auth-001',
+    evidenceId: capabilityEvidenceId,
     task: '6A.5',
     source: 'real_sdk',
     recordedAt: '2026-07-19T08:12:30.877Z',
@@ -224,7 +220,7 @@ const devSuccess = [
       workspacesOutsidePackagedResources: assertion('static_manifest', r6EvidenceId, 'local_probe_boundary_observed'),
       apiCredentialEnvironmentExcludedFromUtility: assertion('static_manifest', r2EvidenceId, 'utility_environment_boundary_frozen'),
       syntheticInputNotPassedInProtocol: assertion('static_manifest', r6EvidenceId, 'typed_protocol_boundary_frozen'),
-      scenarioCount: assertion('real_sdk', 'block6a-6a5-real-sdk-cwd-git-env-auth-001', 'cwd_git_env_auth_probe_completed'),
+      scenarioCount: assertion('real_sdk', capabilityEvidenceId, 'cwd_git_env_auth_probe_completed'),
     },
     scenarios: capabilityScenarios,
     limitations: capabilityLimitations,
@@ -232,7 +228,7 @@ const devSuccess = [
   },
   {
     schemaVersion: 1,
-    evidenceId: 'block6a-6a6-real-sdk-output-schema-001',
+    evidenceId: outputSchemaEvidenceId,
     task: '6A.6',
     source: 'real_sdk',
     recordedAt: '2026-07-19T08:12:39.621Z',
@@ -244,7 +240,7 @@ const devSuccess = [
       workspaceIsTemporaryGitRepository: assertion('static_manifest', r6EvidenceId, 'local_probe_boundary_observed'),
       apiCredentialEnvironmentExcludedFromUtility: assertion('static_manifest', r2EvidenceId, 'utility_environment_boundary_frozen'),
       promptAndSchemaNotPassedInProtocol: assertion('static_manifest', r6EvidenceId, 'typed_protocol_boundary_frozen'),
-      scenarioCount: assertion('real_sdk', 'block6a-6a6-real-sdk-output-schema-001', 'output_schema_probe_completed'),
+      scenarioCount: assertion('real_sdk', outputSchemaEvidenceId, 'output_schema_probe_completed'),
     },
     scenarios: [
       {
@@ -280,9 +276,13 @@ const lifecycleSuccess = [
   'explicit-cancel',
   'window-close',
   'app-quit',
-].map((scenario) => ({
+].map((scenario) => {
+  const evidenceId = BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.lifecycle[
+    scenario as keyof typeof BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.lifecycle
+  ];
+  return {
   schemaVersion: 1,
-  evidenceId: `block6a-6a7-real-sdk-${scenario}-001`,
+  evidenceId,
   task: '6A.7',
   source: 'real_sdk',
   recordedAt: '2026-07-19T07:36:15.640Z',
@@ -290,26 +290,26 @@ const lifecycleSuccess = [
   classification: 'lifecycle_probe_passed',
   versions,
   assertions: {
-    triggerMatchedScenario: assertion('real_sdk', `block6a-6a7-real-sdk-${scenario}-001`, 'lifecycle_probe_passed'),
-    abortRequested: assertion('real_sdk', `block6a-6a7-real-sdk-${scenario}-001`, 'lifecycle_probe_passed'),
-    abortObserved: assertion('real_sdk', `block6a-6a7-real-sdk-${scenario}-001`, 'lifecycle_probe_passed'),
-    sdkPromiseSettled: assertion('real_sdk', `block6a-6a7-real-sdk-${scenario}-001`, 'lifecycle_probe_passed'),
-    cleanupAcknowledged: assertion('real_sdk', `block6a-6a7-real-sdk-${scenario}-001`, 'lifecycle_probe_passed'),
-    timeoutSupervisorObserved: assertion('real_sdk', `block6a-6a7-real-sdk-${scenario}-001`, 'lifecycle_probe_passed'),
-    timeoutUtilityExitObserved: assertion('real_sdk', `block6a-6a7-real-sdk-${scenario}-001`, 'lifecycle_probe_passed'),
-    timeoutCleanupClassified: assertion('real_sdk', `block6a-6a7-real-sdk-${scenario}-001`, 'lifecycle_probe_passed'),
-    cleanupExecutedOnce: assertion('real_sdk', `block6a-6a7-real-sdk-${scenario}-001`, 'lifecycle_probe_passed'),
+    triggerMatchedScenario: assertion('real_sdk', evidenceId, 'lifecycle_probe_passed'),
+    abortRequested: assertion('real_sdk', evidenceId, 'lifecycle_probe_passed'),
+    abortObserved: assertion('real_sdk', evidenceId, 'lifecycle_probe_passed'),
+    sdkPromiseSettled: assertion('real_sdk', evidenceId, 'lifecycle_probe_passed'),
+    cleanupAcknowledged: assertion('real_sdk', evidenceId, 'lifecycle_probe_passed'),
+    timeoutSupervisorObserved: assertion('real_sdk', evidenceId, 'lifecycle_probe_passed'),
+    timeoutUtilityExitObserved: assertion('real_sdk', evidenceId, 'lifecycle_probe_passed'),
+    timeoutCleanupClassified: assertion('real_sdk', evidenceId, 'lifecycle_probe_passed'),
+    cleanupExecutedOnce: assertion('real_sdk', evidenceId, 'lifecycle_probe_passed'),
   },
   processAssertions: {
-    utilityProcessAttributed: assertion('real_sdk', `block6a-6a7-real-sdk-${scenario}-001`, 'owned_process_observation_completed'),
-    cliObservedBeforeTrigger: assertion('real_sdk', `block6a-6a7-real-sdk-${scenario}-001`, 'owned_process_observation_completed'),
-    cliOwnedByUtilityParentChain: assertion('real_sdk', `block6a-6a7-real-sdk-${scenario}-001`, 'owned_process_observation_completed'),
-    pidCreationTimeExecutablePathBound: assertion('real_sdk', `block6a-6a7-real-sdk-${scenario}-001`, 'owned_process_observation_completed'),
-    observedParentRelationshipBound: assertion('real_sdk', `block6a-6a7-real-sdk-${scenario}-001`, 'owned_process_observation_completed'),
-    ownershipFrozenForSession: assertion('real_sdk', `block6a-6a7-real-sdk-${scenario}-001`, 'owned_process_observation_completed'),
-    residualScanCompleted: assertion('real_sdk', `block6a-6a7-real-sdk-${scenario}-001`, 'owned_process_observation_completed'),
-    utilityResidualAbsent: assertion('real_sdk', `block6a-6a7-real-sdk-${scenario}-001`, 'owned_process_observation_completed'),
-    cliResidualAbsent: assertion('real_sdk', `block6a-6a7-real-sdk-${scenario}-001`, 'owned_process_observation_completed'),
+    utilityProcessAttributed: assertion('real_sdk', evidenceId, 'owned_process_observation_completed'),
+    cliObservedBeforeTrigger: assertion('real_sdk', evidenceId, 'owned_process_observation_completed'),
+    cliOwnedByUtilityParentChain: assertion('real_sdk', evidenceId, 'owned_process_observation_completed'),
+    pidCreationTimeExecutablePathBound: assertion('real_sdk', evidenceId, 'owned_process_observation_completed'),
+    observedParentRelationshipBound: assertion('real_sdk', evidenceId, 'owned_process_observation_completed'),
+    ownershipFrozenForSession: assertion('real_sdk', evidenceId, 'owned_process_observation_completed'),
+    residualScanCompleted: assertion('real_sdk', evidenceId, 'owned_process_observation_completed'),
+    utilityResidualAbsent: assertion('real_sdk', evidenceId, 'owned_process_observation_completed'),
+    cliResidualAbsent: assertion('real_sdk', evidenceId, 'owned_process_observation_completed'),
   },
   result: {
     scenario,
@@ -344,7 +344,8 @@ const lifecycleSuccess = [
   },
   limitations: lifecycleLimitations,
   lineage: lineage(false),
-}));
+  };
+});
 
 describe('Block 6A recertification result admission', () => {
   it('admits the positive core plus current-auth Git-bypass differential with conditions', () => {

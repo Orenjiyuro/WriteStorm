@@ -18,8 +18,10 @@ import {
 import type { CodexLifecycleScenario, CodexLifecycleTrigger } from './protocol';
 import {
   BLOCK6A_R6_PROVENANCE_EVIDENCE_ID,
+  areBlock6aAssertionGroupsTrue,
   createBlock6aAssertion,
 } from './assertion-provenance';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from './manifest';
 
 const resultPath = process.env.WRITESTORM_CODEX_LIFECYCLE_RESULT;
 const utilityModulePath = process.env.WRITESTORM_CODEX_UTILITY_PATH;
@@ -125,7 +127,7 @@ void app.whenReady().then(async () => {
       abortObserved: timeoutCleanup?.abortObserved === true,
       sdkPromiseSettled: timeoutCleanup?.sdkPromiseSettled === true,
     };
-    const evidenceId = `block6a-6a7-real-sdk-${scenario}-001`;
+    const evidenceId = BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.lifecycle[scenario];
     const lifecycleAssertion = (value: boolean) => createBlock6aAssertion(
       value, 'real_sdk', evidenceId, 'lifecycle_probe_passed',
     );
@@ -181,15 +183,14 @@ void app.whenReady().then(async () => {
       source: 'real_sdk',
       recordedAt: new Date().toISOString(),
       commandName: `block6a-electron-lifecycle-${scenario}-probe`,
-      classification: Object.values(lifecycleAssertions).every(Boolean)
-        && Object.values(processAssertions).every(Boolean)
+      classification: areBlock6aAssertionGroupsTrue(lifecycleAssertions, processAssertions)
         && result.outcome === 'aborted'
         ? 'lifecycle_probe_passed'
         : 'lifecycle_probe_failed',
       versions: {
         electron: process.versions.electron ?? 'unavailable',
         nodeRuntime: process.versions.node,
-        codexSdk: '0.144.6',
+        codexSdk: BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk,
       },
       assertions: lifecycleAssertions,
       processAssertions,
@@ -211,7 +212,7 @@ void app.whenReady().then(async () => {
   } catch (error) {
     writeSanitizedResult({
       schemaVersion: 1,
-      evidenceId: `block6a-6a7-real-sdk-${scenario}-001`,
+      evidenceId: BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.lifecycle[scenario],
       task: '6A.7',
       source: 'real_sdk',
       recordedAt: new Date().toISOString(),
@@ -220,7 +221,7 @@ void app.whenReady().then(async () => {
       versions: {
         electron: process.versions.electron ?? 'unavailable',
         nodeRuntime: process.versions.node,
-        codexSdk: '0.144.6',
+        codexSdk: BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk,
       },
       assertions: {
         sanitizedFailureRecorded: createBlock6aAssertion(

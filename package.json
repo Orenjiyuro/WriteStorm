@@ -18,7 +18,10 @@
     "test:verification": "vitest run tests/verification",
     "probe:codex:dev": "node scripts/run-block6a-probes.mjs dev",
     "probe:codex:lifecycle": "node scripts/run-block6a-probes.mjs lifecycle",
-    "probe:codex:packaged": "npm run package && npm run test:verification && node scripts/run-block6a-probes.mjs packaged"
+    "package:codex-certification": "node scripts/package-block6a-certification.mjs",
+    "test:verification:block6a-certification": "node scripts/verify-block6a-certification-package.mjs",
+    "probe:codex:packaged": "npm run certify:codex:windows",
+    "certify:codex:windows": "node scripts/certify-block6a-windows.mjs"
   },
   "engines": {
     "node": ">=22.12.0"

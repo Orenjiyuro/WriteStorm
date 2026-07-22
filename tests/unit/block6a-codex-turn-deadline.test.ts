@@ -8,6 +8,7 @@ import {
   resolveCodexFeasibilityTurnDeadlineMs,
   settleCodexTurnWithinDeadline,
 } from '../../src/main/codex-feasibility/turn-deadline';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from '../../src/main/codex-feasibility/manifest';
 
 describe('Block 6A R8a SDK turn deadline boundary', () => {
   afterEach(() => vi.useRealTimers());
@@ -114,7 +115,8 @@ describe('Block 6A R8a SDK turn deadline boundary', () => {
     for (const assertion of Object.values(evidence.assertions)) {
       expect(assertion.value).toBe(true);
       expect(assertion.source).toBe('static_manifest');
-      expect(assertion.evidenceId).toBe('block6a-remediation-r8a-turn-deadline-001');
+      expect(assertion.evidenceId).toBe(BLOCK6A_FEASIBILITY_MANIFEST.staticEvidenceInputs
+        .find(({ key }) => key === 'r8aTurnDeadline')!.evidenceId);
       expect(assertion.classification).toMatch(
         /^(?:turn_deadline_boundary_frozen|recertification_required)$/,
       );
@@ -150,7 +152,8 @@ describe('Block 6A R8a SDK turn deadline boundary', () => {
       expect(assertion.value).toBe(true);
       expect(assertion.source).toBe('static_manifest');
       expect(assertion.evidenceId).toBe(
-        'block6a-remediation-r8a3-runtime-failure-origin-001',
+        BLOCK6A_FEASIBILITY_MANIFEST.staticEvidenceInputs
+          .find(({ key }) => key === 'r8a3RuntimeFailureOrigin')!.evidenceId,
       );
     }
     expect(evidence.limitations).toContain(

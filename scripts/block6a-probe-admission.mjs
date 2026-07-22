@@ -1,9 +1,11 @@
+import { BLOCK6A_FEASIBILITY_MANIFEST } from './block6a-feasibility-manifest.mjs';
+
 const deniedMessage = 'Block 6A recertification result was not admitted.';
 
 const approvedSyntheticInputSha256 =
-  '59a9268039bb5bad326151cbe27320c64c89cbf5b054035978c432a4ce5c4a26';
+  BLOCK6A_FEASIBILITY_MANIFEST.syntheticFixture.inputSha256;
 const approvedSyntheticExpectedSha256 =
-  '6fe7aac1e4d9ae4aec0a14e6bfd46af4ee18892c247a2d0aecfa5091f017afab';
+  BLOCK6A_FEASIBILITY_MANIFEST.syntheticFixture.expectedSha256;
 
 const commonEvidenceKeys = [
   'schemaVersion',
@@ -36,7 +38,7 @@ const capabilityLimitations = [
   'No prompt, path, environment value, credential, PID or raw SDK error is retained.',
   'The current-auth scenario classifies the existing state but does not create or modify login state.',
   'WriteStorm has no product login UI in Task 6A.5.',
-  'SDK 0.144.6 exposes no stable structured Git or auth error discriminant.',
+  `SDK ${BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk} exposes no stable structured Git or auth error discriminant.`,
   'Unknown SDK or CLI failures are retained only as runtime_failed / unverified with SDK_RUNTIME_UNAVAILABLE.',
   'Isolated-empty-auth failures are diagnostic limitations when the positive core and current-auth Git bypass differential pass.',
 ];
@@ -97,20 +99,13 @@ const packagedAssertionKeys = [
   'apiCredentialEnvironmentExcludedFromUtility',
   'promptAndSchemaNotPassedInProtocol',
 ];
-const r2EnvironmentEvidenceId = 'block6a-remediation-r2-environment-boundary-001';
-const r6ProvenanceEvidenceId = 'block6a-remediation-r6-assertion-provenance-001';
-const requiredLineageEvidenceIds = [
-  'block6a-remediation-r2-environment-boundary-001',
-  'block6a-remediation-r4a-process-ownership-001',
-  'block6a-remediation-r4b-safe-termination-001',
-  'block6a-remediation-r5-error-classification-001',
-  'block6a-remediation-r6-assertion-provenance-001',
-  'block6a-remediation-r7-evidence-lineage-001',
-  'block6a-remediation-r8a-turn-deadline-001',
-  'block6a-remediation-r8a3-runtime-failure-origin-001',
-  'block6a-remediation-r8a4-cjs-module-anchor-001',
-  'block6a-remediation-r8a5-conditional-development-gate-001',
-];
+const staticEvidenceByKey = Object.fromEntries(
+  BLOCK6A_FEASIBILITY_MANIFEST.staticEvidenceInputs.map((record) => [record.key, record]),
+);
+const r2EnvironmentEvidenceId = staticEvidenceByKey.r2Environment.evidenceId;
+const r6ProvenanceEvidenceId = staticEvidenceByKey.r6AssertionProvenance.evidenceId;
+const requiredLineageEvidenceIds = BLOCK6A_FEASIBILITY_MANIFEST.staticEvidenceInputs
+  .map(({ evidenceId }) => evidenceId);
 const staticAssertion = (evidenceId, classification) => ({
   source: 'static_manifest', evidenceId, classification,
 });
@@ -123,14 +118,14 @@ const capabilityAssertionProvenance = {
   workspacesOutsidePackagedResources: staticAssertion(r6ProvenanceEvidenceId, 'local_probe_boundary_observed'),
   apiCredentialEnvironmentExcludedFromUtility: staticAssertion(r2EnvironmentEvidenceId, 'utility_environment_boundary_frozen'),
   syntheticInputNotPassedInProtocol: staticAssertion(r6ProvenanceEvidenceId, 'typed_protocol_boundary_frozen'),
-  scenarioCount: runtimeAssertion('real_sdk', 'block6a-6a5-real-sdk-cwd-git-env-auth-001', 'cwd_git_env_auth_probe_completed'),
+  scenarioCount: runtimeAssertion('real_sdk', BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.capability, 'cwd_git_env_auth_probe_completed'),
 };
 const outputSchemaAssertionProvenance = {
   probeRootOutsideSourceRepository: staticAssertion(r6ProvenanceEvidenceId, 'local_probe_boundary_observed'),
   workspaceIsTemporaryGitRepository: staticAssertion(r6ProvenanceEvidenceId, 'local_probe_boundary_observed'),
   apiCredentialEnvironmentExcludedFromUtility: staticAssertion(r2EnvironmentEvidenceId, 'utility_environment_boundary_frozen'),
   promptAndSchemaNotPassedInProtocol: staticAssertion(r6ProvenanceEvidenceId, 'typed_protocol_boundary_frozen'),
-  scenarioCount: runtimeAssertion('real_sdk', 'block6a-6a6-real-sdk-output-schema-001', 'output_schema_probe_completed'),
+  scenarioCount: runtimeAssertion('real_sdk', BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.outputSchema, 'output_schema_probe_completed'),
 };
 
 export function admitBlock6aProbeResults(mode, results) {
@@ -178,7 +173,7 @@ function validateDevelopmentResults(results) {
     'cwd_git_env_auth_probe_completed',
   );
   requireEvidenceEnvelope(capability, {
-    evidenceId: 'block6a-6a5-real-sdk-cwd-git-env-auth-001',
+    evidenceId: BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.capability,
     commandName: 'block6a-electron-utility-cwd-git-env-auth-probe',
     versionKeys: ['electron', 'nodeRuntime', 'codexSdk'],
     topLevelKeys: developmentEvidenceKeys,
@@ -288,7 +283,7 @@ function validateDevelopmentResults(results) {
     'output_schema_probe_completed',
   );
   requireEvidenceEnvelope(outputSchema, {
-    evidenceId: 'block6a-6a6-real-sdk-output-schema-001',
+    evidenceId: BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.outputSchema,
     commandName: 'block6a-electron-utility-output-schema-probe',
     versionKeys: ['electron', 'nodeRuntime', 'codexSdk'],
     topLevelKeys: developmentEvidenceKeys,
@@ -370,7 +365,7 @@ function admitLifecycleResults(results) {
     const result = results.find((entry) => entry?.result?.scenario === scenario);
     requireExactIdentity(result, '6A.7', 'real_sdk', 'lifecycle_probe_passed');
     requireEvidenceEnvelope(result, {
-      evidenceId: `block6a-6a7-real-sdk-${scenario}-001`,
+      evidenceId: BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.lifecycle[scenario],
       commandName: `block6a-electron-lifecycle-${scenario}-probe`,
       versionKeys: ['electron', 'nodeRuntime', 'codexSdk'],
       topLevelKeys: lifecycleEvidenceKeys,
@@ -417,7 +412,7 @@ function admitPackagedResults(results) {
     'packaged_sdk_probe_completed',
   );
   requireEvidenceEnvelope(result, {
-    evidenceId: 'block6a-6a8a-packaged-sdk-windows-001',
+    evidenceId: BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.packaged,
     commandName: 'writestorm-packaged-codex-sdk-probe',
     versionKeys: ['electron', 'nodeRuntime', 'codexSdk', 'codexCli', 'platformPackage'],
     topLevelKeys: packagedEvidenceKeys,
@@ -432,7 +427,7 @@ function admitPackagedResults(results) {
         ? staticAssertion(r6ProvenanceEvidenceId, 'typed_protocol_boundary_frozen')
         : runtimeAssertion(
             'packaged_sdk',
-            'block6a-6a8a-packaged-sdk-windows-001',
+            BLOCK6A_FEASIBILITY_MANIFEST.runtimeEvidence.packaged,
             'packaged_sdk_probe_completed',
           ),
   ]));
@@ -454,8 +449,9 @@ function admitPackagedResults(results) {
     expectedValueMatched: true,
     invalidSchemaRejectedBySdk: false,
   });
-  if (result.versions.codexCli !== '0.144.6'
-    || result.versions.platformPackage !== '0.144.6-win32-x64') deny();
+  if (result.versions.codexCli !== BLOCK6A_FEASIBILITY_MANIFEST.versions.codexCli
+    || result.versions.platformPackage
+      !== BLOCK6A_FEASIBILITY_MANIFEST.versions.platformPackage) deny();
 }
 
 function requireEvidenceEnvelope(result, expected) {
@@ -470,7 +466,7 @@ function requireEvidenceEnvelope(result, expected) {
   requireExactStringArray(result.limitations, expected.limitations);
   requireEvidenceLineage(result.lineage, expected.packagedArtifactRequired);
   if (Object.values(result.versions).some((value) => typeof value !== 'string' || value.length === 0)
-    || result.versions.codexSdk !== '0.144.6') deny();
+    || result.versions.codexSdk !== BLOCK6A_FEASIBILITY_MANIFEST.versions.codexSdk) deny();
 }
 
 function requireEvidenceLineage(lineage, packagedArtifactRequired) {

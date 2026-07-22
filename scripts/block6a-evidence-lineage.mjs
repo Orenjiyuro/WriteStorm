@@ -30,6 +30,8 @@ const fixedRuntimeBoundaryPaths = [
   'scripts/block6a-certification-verifier.d.mts',
   'scripts/block6a-certification-bundle.mjs',
   'scripts/block6a-certification-bundle.d.mts',
+  'scripts/block6a-npm-invocation.mjs',
+  'scripts/block6a-npm-invocation.d.mts',
   'scripts/verify-block6a-evidence-lineage.mjs',
   'scripts/run-block6a-probes.mjs',
   'scripts/block6a-public-synthetic-fixture.mjs',

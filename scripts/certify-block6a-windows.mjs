@@ -8,6 +8,7 @@ import {
   finalizeBlock6aCertificationBundle,
 } from './block6a-certification-bundle.mjs';
 import { verifyBlock6aCertificationFilesAtRepository } from './block6a-certification-verifier.mjs';
+import { resolveBlock6aNpmInvocation } from './block6a-npm-invocation.mjs';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const publishRoot = path.join(repositoryRoot, 'out', 'block6a-certifications');
@@ -20,7 +21,11 @@ const artifactRoot = path.join(packageOutRoot, 'writestorm-win32-x64');
 const evidenceRoot = path.join(staging.stagingRoot, 'evidence');
 
 try {
-  run(npmExecutable(), ['run', 'check']);
+  const npmInvocation = resolveBlock6aNpmInvocation({
+    nodeExecutable: process.execPath,
+    npmExecPath: process.env.npm_execpath,
+  });
+  run(npmInvocation.executable, [...npmInvocation.argsPrefix, 'run', 'check']);
   run(process.execPath, [
     'scripts/package-block6a-certification.mjs',
     '--out-dir',
@@ -102,10 +107,6 @@ function requireCleanPushedHead() {
     process.stderr.write('Block 6A certification requires a clean pushed HEAD.\n');
     process.exit(1);
   }
-}
-
-function npmExecutable() {
-  return process.platform === 'win32' ? 'npm.cmd' : 'npm';
 }
 
 function cleanupOwnedStaging() {

@@ -108,7 +108,7 @@ describe('Block 6A immutable certification bundle', () => {
       'utf8',
     )) as { scripts: Record<string, string> };
     const expectedOrder = [
-      "run(npmExecutable(), ['run', 'check'])",
+      "run(npmInvocation.executable, [...npmInvocation.argsPrefix, 'run', 'check'])",
       "'scripts/package-block6a-certification.mjs'",
       "'scripts/verify-block6a-certification-package.mjs'",
       "runProbe('dev')",
@@ -130,6 +130,8 @@ describe('Block 6A immutable certification bundle', () => {
     expect(packageManifest.scripts['probe:codex:packaged']).toBe(
       'npm run certify:codex:windows',
     );
+    expect(source).not.toContain("spawnSync('npm.cmd'");
+    expect(source).not.toContain('shell: true');
     expect(source).toContain("git(['status', '--porcelain', '--untracked-files=all'])");
     expect(source).toContain("git(['rev-parse', '@{u}'])");
     expect(source).toContain("path.basename(resolved) === `.staging-${certificationId}`");

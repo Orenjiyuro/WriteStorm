@@ -1293,3 +1293,16 @@ Rules:
 - Removing the probe from product startup/default packaging, introducing an isolated certification build and atomic bundle, changing admission/lineage/package guards, adding active-turn malformed-protocol cleanup, and centralizing the operational manifest are expiry-condition changes.
 - A future clean committed and pushed HEAD must run the single `npm run certify:codex:windows` pipeline and pass full check, development, lifecycle, package boundary, packaged-only SDK execution, unified verification and immutable bundle publication.
 - Until that fresh evidence exists, Task 13.1 remains blocked and Task 13.2 is not authorized. The target verdict after successful review remains only `conditional Go — Windows-only feasibility verified; macOS deferred-by-user`, not full Go, cross-platform compatibility or release readiness.
+
+## D098: Atomic Windows Certification Reissues Conditional Go At 834ba0b
+
+Decision: Fresh atomic certification from clean committed and pushed HEAD `834ba0b6dfef20c223181af1bf33cfd6ebf703f2` closes the D097 expiry and reissues `conditional Go — Windows-only feasibility verified; macOS deferred-by-user`.
+
+Rules:
+
+- `npm run certify:codex:windows` passed full check, the isolated package boundary, conditional development admission, all four lifecycle scenarios, the Windows x64 packaged-only SDK turn, unified evidence verification and immutable bundle publication.
+- Certification `b6a-834ba0b6-57d262ae` is retained at `out/6a/b6a-834ba0b6-57d262ae`. Its artifact SHA-256 is `4b06acd811473831369cc60d4b012bd2eca2c2805c005fa49ca11c50dc631966`, artifact-manifest SHA-256 is `2a3172e10939aed6f6c79899aaea9c0a7ff5b47e7028f657849a03bd9ea29cd7`, and bundle-manifest SHA-256 is `e1ed7e0d9fced75cee7032b1c9c814ee68fe189b8b46cbf2f529c144f7c49e1d`.
+- The seven current sanitized records and exact artifact/bundle/verdict manifests are committed under the `block6a-r8b-windows-*` evidence names. Historical records remain unchanged and are not represented as current evidence.
+- SDK 0.144.6 still exposes no stable structured Git/auth error discriminant. Existing ChatGPT-managed auth is required; isolated-auth and unknown failures remain generic `SDK_RUNTIME_UNAVAILABLE` limitations and are never upgraded from English text.
+- This is not full Go, cross-platform compatibility or release readiness. macOS packaged runtime remains `deferred-by-user`; a complete Go claim still requires macOS packaged evidence.
+- Task 13.1 remains blocked pending total-thread review. This decision does not authorize Task 13.2, product AI execution, a production Prompt, renderer AI controls or any fallback provider.

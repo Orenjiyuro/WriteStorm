@@ -1,0 +1,425 @@
+{
+  "schemaVersion": 1,
+  "files": [
+    {
+      "relativePath": "chrome_100_percent.pak",
+      "size": 119905,
+      "sha256": "d76fe8fa3a14cd73e4c858746e2ab2d2fa6f2df38a906fa5814b50a8a895fc96"
+    },
+    {
+      "relativePath": "chrome_200_percent.pak",
+      "size": 197089,
+      "sha256": "b74ad439f3d3762657f3ba533a6af3ac63315c838ed46519891366f43d834a0e"
+    },
+    {
+      "relativePath": "d3dcompiler_47.dll",
+      "size": 4741488,
+      "sha256": "a05f99734f7c4822fefc12b367af21fd0976ed6608752fb1e1e80b6ece7ecbbb"
+    },
+    {
+      "relativePath": "dxcompiler.dll",
+      "size": 25609728,
+      "sha256": "942bd7686fe9a32b55a08acf91a1e4c58a75ce03608125ae8b88b0e0a9322d6a"
+    },
+    {
+      "relativePath": "dxil.dll",
+      "size": 1509760,
+      "sha256": "77e039c905030a641e53658a008b74e90635a5ea9b6b79eabd0f2003bdfca59a"
+    },
+    {
+      "relativePath": "ffmpeg.dll",
+      "size": 3061248,
+      "sha256": "3c3db6a368f7d30357f7a821382c8d44b9663671c0763267e6120754fc16e13d"
+    },
+    {
+      "relativePath": "icudtl.dat",
+      "size": 10876560,
+      "sha256": "bd8c145abdf3f8383276ce01dfa4ae48709bef9fef1c0711eb7c3fab4f6eb7c2"
+    },
+    {
+      "relativePath": "libEGL.dll",
+      "size": 467968,
+      "sha256": "d158fd5973c9827ebbccb28cc15056503490ed2f9c6ce9ff426586eee4cc21d8"
+    },
+    {
+      "relativePath": "libGLESv2.dll",
+      "size": 8021504,
+      "sha256": "81377041d32990dbc7a6224606675c98d814d84ca38bb6534a1c878da80393b0"
+    },
+    {
+      "relativePath": "LICENSE",
+      "size": 1096,
+      "sha256": "5154e165bd6c2cc0cfbcd8916498c7abab0497923bafcd5cb07673fe8480087d"
+    },
+    {
+      "relativePath": "LICENSES.chromium.html",
+      "size": 20313277,
+      "sha256": "2a01c08497036d18d7e21e6735f3bf019b63fcc47e09208cee43b41df65f5868"
+    },
+    {
+      "relativePath": "locales/af.pak",
+      "size": 613722,
+      "sha256": "e16a85aae42dd387971140f0bcea4ad9c25c5f1d06407e7e46cc549241db0d58"
+    },
+    {
+      "relativePath": "locales/am.pak",
+      "size": 994404,
+      "sha256": "03fa71456bbb5e88694a519adc8f8ec9ebfdaaf4ecd8f381343f15a1805e3afb"
+    },
+    {
+      "relativePath": "locales/ar.pak",
+      "size": 1095898,
+      "sha256": "e952c3a544f0b91cf26e91c8c7a763755cca9591aa915a9d3e63a6cf6daacf6a"
+    },
+    {
+      "relativePath": "locales/bg.pak",
+      "size": 1137844,
+      "sha256": "889c68ea8206027dcebd1835884eff52f53c59dfb00fa112c43a2fbb87083ce7"
+    },
+    {
+      "relativePath": "locales/bn.pak",
+      "size": 1460793,
+      "sha256": "1b3cb0d1ac1627b51b3a208f3f29864bf415bff3d1d0d5a8b84e7ae4ab2455b4"
+    },
+    {
+      "relativePath": "locales/ca.pak",
+      "size": 691926,
+      "sha256": "5da35ba1fb3132d4725bb32d1b1c2a5703ac86effb7ef294470b73887e27b663"
+    },
+    {
+      "relativePath": "locales/cs.pak",
+      "size": 718396,
+      "sha256": "0d6a7d8bb08c1c6b8a4735fb364bf7b81b66797e48ea34ef06f78c9d87d15f26"
+    },
+    {
+      "relativePath": "locales/da.pak",
+      "size": 644425,
+      "sha256": "73e7ff20f472675b6fe5be87535563ea19fda72dddc64d5e0f068211dfee3703"
+    },
+    {
+      "relativePath": "locales/de.pak",
+      "size": 693010,
+      "sha256": "99c50acbe4dca9edde03189ed793f8d6f000793f0938320a39370a11855544f4"
+    },
+    {
+      "relativePath": "locales/el.pak",
+      "size": 1250786,
+      "sha256": "e580ee2585ae5f5e9d3cc874c2f1b3773861db3493ae7c08d5c1a3bd4bacbc66"
+    },
+    {
+      "relativePath": "locales/en-GB.pak",
+      "size": 559609,
+      "sha256": "bc3c6c433ad7fa76df796fd37d413889be6d2e2759d54680dc3549a0b1bd99f9"
+    },
+    {
+      "relativePath": "locales/en-US.pak",
+      "size": 565800,
+      "sha256": "39d605d22eb267d68ea4268d5e2a38a88ec0e2ed6dec23395a7da47f99c58184"
+    },
+    {
+      "relativePath": "locales/es-419.pak",
+      "size": 682813,
+      "sha256": "7a30d5e3ae178d15384cd7fff6aea467fa938c6261cab11fa870a3dff84e4df8"
+    },
+    {
+      "relativePath": "locales/es.pak",
+      "size": 679423,
+      "sha256": "7d92ead9e4168f52274e3729457adf50d896d0fde01aecd873d6e0122744f954"
+    },
+    {
+      "relativePath": "locales/et.pak",
+      "size": 620125,
+      "sha256": "dad68aad8c36da532a58f018124d4182173b2589f6f8c44cdd3f7dbb5304ee68"
+    },
+    {
+      "relativePath": "locales/fa.pak",
+      "size": 1026720,
+      "sha256": "b88eb1d00a6bd70c969a44c57f2fce5760001d16713a43288595c2efd43c3247"
+    },
+    {
+      "relativePath": "locales/fi.pak",
+      "size": 632141,
+      "sha256": "cd1a5e8b30a1a0e8a35830174e66c89d21dde97614a93749eedabd3731516f0d"
+    },
+    {
+      "relativePath": "locales/fil.pak",
+      "size": 715474,
+      "sha256": "6c86424d7415a92456ebf6d7a17b1e4cfcfb25da833a4c5377c502c24e335ff8"
+    },
+    {
+      "relativePath": "locales/fr.pak",
+      "size": 738084,
+      "sha256": "92fdf24ee5cd7977dae8940c092f743683278432a7dd68a52a5c069f32f60d7a"
+    },
+    {
+      "relativePath": "locales/gu.pak",
+      "size": 1443467,
+      "sha256": "dae744e959d1a536cd51e925f2aa80b7ba23f981a989368b9b6f87df03194627"
+    },
+    {
+      "relativePath": "locales/he.pak",
+      "size": 898516,
+      "sha256": "fc4011bf24266691363cfecd0a0c233f3197c9706bb0c5ede73cbc25a8f71e97"
+    },
+    {
+      "relativePath": "locales/hi.pak",
+      "size": 1529365,
+      "sha256": "0f78af66fa88302da0e1241175abe0291512c32521792adab5efd67c6196fca5"
+    },
+    {
+      "relativePath": "locales/hr.pak",
+      "size": 690892,
+      "sha256": "24c82c47f0bd227e91a83a5d3f929ba5f557a0a262b3b7293f7941faa3b45941"
+    },
+    {
+      "relativePath": "locales/hu.pak",
+      "size": 738244,
+      "sha256": "0bed3bc4d3258dbbcdfd4a2479c666d35aa2eb2794127c7135067f650bb50455"
+    },
+    {
+      "relativePath": "locales/id.pak",
+      "size": 612159,
+      "sha256": "bb63434850472affa79247d4b79465b89fc4ebd290478015e88d04be55d4c276"
+    },
+    {
+      "relativePath": "locales/it.pak",
+      "size": 668936,
+      "sha256": "a4990034b1e74404b83e9578016ff7fd81468f62ecfde48bec4e3a05df782b40"
+    },
+    {
+      "relativePath": "locales/ja.pak",
+      "size": 815268,
+      "sha256": "61000f96276079f74db0fde6b8294324811f271fee2835917c42312ac9b7b0b5"
+    },
+    {
+      "relativePath": "locales/kn.pak",
+      "size": 1661406,
+      "sha256": "41a2028199741a4827bc470772aead42276cf630aad61e344191d4708cff6bb0"
+    },
+    {
+      "relativePath": "locales/ko.pak",
+      "size": 693731,
+      "sha256": "2d77980cb8d944305ed6b2dd4413862e205bce2de4b3a1eedacfc91e1836999f"
+    },
+    {
+      "relativePath": "locales/lt.pak",
+      "size": 751706,
+      "sha256": "541b0f03ed863ac8bfdb2fba2c0ae03bc27802ba99b9863eb0a950b705bc4f61"
+    },
+    {
+      "relativePath": "locales/lv.pak",
+      "size": 748765,
+      "sha256": "2743e698bd3c862750967709049af14152babd32052fb0ee7e9901fa5acc6d48"
+    },
+    {
+      "relativePath": "locales/ml.pak",
+      "size": 1705247,
+      "sha256": "364e991b719876b6491bd678fa2b1303e69fca5014ea83e885ca6a5775cf1c42"
+    },
+    {
+      "relativePath": "locales/mr.pak",
+      "size": 1414904,
+      "sha256": "a68fb1c2ee67eaf807186571278da7c78bc782ed06607e0c6822ac3c71cef9cd"
+    },
+    {
+      "relativePath": "locales/ms.pak",
+      "size": 644374,
+      "sha256": "0e73c1e883e1ed27b0f110d087480880f4f4369c01736ec616174dde24553b1b"
+    },
+    {
+      "relativePath": "locales/nb.pak",
+      "size": 616030,
+      "sha256": "b0597a6739575752dd29727c94c22449551f50f5bcaf7f83b49a536ebf1a28ad"
+    },
+    {
+      "relativePath": "locales/nl.pak",
+      "size": 641855,
+      "sha256": "6c05ab0a374d00b5c66788458ff7def7871fbf66cc1f629868529bfebb2911c1"
+    },
+    {
+      "relativePath": "locales/pl.pak",
+      "size": 717434,
+      "sha256": "b593df8af8325210acab036337f261e59c43140a8bb982587e7a73d65ac59c81"
+    },
+    {
+      "relativePath": "locales/pt-BR.pak",
+      "size": 672814,
+      "sha256": "a7401824b914d20565e6698d98851405820dcf2d639aec762b65bdae383cd94e"
+    },
+    {
+      "relativePath": "locales/pt-PT.pak",
+      "size": 676692,
+      "sha256": "3ed3bfbb85bd4aab260dd18e63b591dc777a5768110d96662e60559eac77bb4b"
+    },
+    {
+      "relativePath": "locales/ro.pak",
+      "size": 702275,
+      "sha256": "e835583f8d95853fabebfea1c9ddd6a5569826d99ae2234a4e1dabc1fe483057"
+    },
+    {
+      "relativePath": "locales/ru.pak",
+      "size": 1163087,
+      "sha256": "6a098a4df1813c73c9f72da68bb7a956e889132d2ebdb536c2555dfa62d2c21d"
+    },
+    {
+      "relativePath": "locales/sk.pak",
+      "size": 729969,
+      "sha256": "86b15f91b88269066a8b9974472cd0e10bbba6985a37230ef98f2a4ca75111f3"
+    },
+    {
+      "relativePath": "locales/sl.pak",
+      "size": 698884,
+      "sha256": "6ad9e4479833aae833be42fd27c355d5f5106e35ec46d7358c8913ec86265ab0"
+    },
+    {
+      "relativePath": "locales/sr.pak",
+      "size": 1075610,
+      "sha256": "e8e42e99d233acf6906b52f5d1241ab13775d81b715fd2359558efb1fe3cbb5f"
+    },
+    {
+      "relativePath": "locales/sv.pak",
+      "size": 623816,
+      "sha256": "6370cc715d38e8cb519ae7891b779aca1470d9e3f893893f9badcf8052ea6def"
+    },
+    {
+      "relativePath": "locales/sw.pak",
+      "size": 660329,
+      "sha256": "4364411b30c18975b70182a61b6d4f2866913633acaabc849b67807553cab0ca"
+    },
+    {
+      "relativePath": "locales/ta.pak",
+      "size": 1696416,
+      "sha256": "3e32e86952c9bbf35625f8842970cab653613894b8f6ae7a9130eb34334bdf32"
+    },
+    {
+      "relativePath": "locales/te.pak",
+      "size": 1571646,
+      "sha256": "cc83c58f09a7830829a8c4ad3deee97f87003ebe553844945b7800c9ea6f6666"
+    },
+    {
+      "relativePath": "locales/th.pak",
+      "size": 1320614,
+      "sha256": "a413ab6322a4d65e013c167426ed26ab0eeffce5dbcc349e3338bff061f369dc"
+    },
+    {
+      "relativePath": "locales/tr.pak",
+      "size": 672382,
+      "sha256": "530a771c8d66c89aea81f094fc4cecf16ddc5e9eb617afa2edbc5250210ad20d"
+    },
+    {
+      "relativePath": "locales/uk.pak",
+      "size": 1172427,
+      "sha256": "fcf34b72b374f8f41cf630ee6e9a690d15673b0867e90f93268eede8364d4a88"
+    },
+    {
+      "relativePath": "locales/ur.pak",
+      "size": 1009975,
+      "sha256": "043af5d35bbfc218c295d97367e2d433faf2a141a98792e2cafaba16b4bc171c"
+    },
+    {
+      "relativePath": "locales/vi.pak",
+      "size": 799477,
+      "sha256": "e00e36e809b15f7251895efc63f05da6246326984d261963eea87e5dbce15239"
+    },
+    {
+      "relativePath": "locales/zh-CN.pak",
+      "size": 571468,
+      "sha256": "27d412caf44e0d206eb8afa5e3f846988fab8f8358f0f84f5260e2c671c3b619"
+    },
+    {
+      "relativePath": "locales/zh-TW.pak",
+      "size": 564070,
+      "sha256": "852c7930e92eeb8bcec75a92ebae9253eeed0662e7e7508aaf4b7315a268cc17"
+    },
+    {
+      "relativePath": "resources.pak",
+      "size": 7147269,
+      "sha256": "8db6411a17abcc9a56d8226f894da80b906d18125f83bddd79f682880d5822fb"
+    },
+    {
+      "relativePath": "resources/app.asar",
+      "size": 71006102,
+      "sha256": "2ae77815fca70cc1552b6ded06a35fe6f83d466a763d4f2230706a1fa985c799"
+    },
+    {
+      "relativePath": "resources/app.asar.unpacked/node_modules/@openai/codex-win32-x64/vendor/x86_64-pc-windows-msvc/bin/codex-code-mode-host.exe",
+      "size": 53594928,
+      "sha256": "8e6dfce22a24dfe09f2e53e02ede1fe12b3efba8b0255fff1357adde98da808a"
+    },
+    {
+      "relativePath": "resources/app.asar.unpacked/node_modules/@openai/codex-win32-x64/vendor/x86_64-pc-windows-msvc/bin/codex.exe",
+      "size": 341225264,
+      "sha256": "4b76ded066d0239115ca97473d010c92072bc5c5550a45dd7cbebe1e9eb956a7"
+    },
+    {
+      "relativePath": "resources/app.asar.unpacked/node_modules/@openai/codex-win32-x64/vendor/x86_64-pc-windows-msvc/codex-package.json",
+      "size": 215,
+      "sha256": "67145d1f55da780801444db14878d6567adfd2e29b52d1a9dbe7969d7465df13"
+    },
+    {
+      "relativePath": "resources/app.asar.unpacked/node_modules/@openai/codex-win32-x64/vendor/x86_64-pc-windows-msvc/codex-path/rg.exe",
+      "size": 4266496,
+      "sha256": "decdd4992f3f1b9a5ef9898f1b40ab16886d579d6516b4efd3d5eaa19364e408"
+    },
+    {
+      "relativePath": "resources/app.asar.unpacked/node_modules/@openai/codex-win32-x64/vendor/x86_64-pc-windows-msvc/codex-resources/codex-command-runner.exe",
+      "size": 1271088,
+      "sha256": "ac075278a65a0b80ae433eb389a45cbf1431c6c95368efdb326f15f881c0ed2e"
+    },
+    {
+      "relativePath": "resources/app.asar.unpacked/node_modules/@openai/codex-win32-x64/vendor/x86_64-pc-windows-msvc/codex-resources/codex-windows-sandbox-setup.exe",
+      "size": 8816944,
+      "sha256": "7191d24f6fb4a26cbbce0d2aecd6deb71fa074a8cb5f24a45d2fa2164473885f"
+    },
+    {
+      "relativePath": "resources/app.asar.unpacked/node_modules/better-sqlite3/bin/win32-x64-148/better-sqlite3.node",
+      "size": 1920512,
+      "sha256": "d4f0834b6f4c2346183d5efa6598e7920e7af98b7acec5e7671127ce042951a0"
+    },
+    {
+      "relativePath": "resources/app.asar.unpacked/node_modules/better-sqlite3/build/Release/better_sqlite3.node",
+      "size": 1920512,
+      "sha256": "d4f0834b6f4c2346183d5efa6598e7920e7af98b7acec5e7671127ce042951a0"
+    },
+    {
+      "relativePath": "resources/app.asar.unpacked/node_modules/better-sqlite3/build/Release/test_extension.node",
+      "size": 103936,
+      "sha256": "8619ff6a0d2463232781346522b87f78e5d54fddd08c90573a2edcab8377bd6d"
+    },
+    {
+      "relativePath": "snapshot_blob.bin",
+      "size": 365488,
+      "sha256": "6521a65eec30abadcbf322f47cfc82faab9a6db0b73cb9d5f80487f124af4886"
+    },
+    {
+      "relativePath": "v8_context_snapshot.bin",
+      "size": 740048,
+      "sha256": "63e242fb0c8acfe52e07fd903a4288be12576928890bbf8fe9f15a6de76987d9"
+    },
+    {
+      "relativePath": "version",
+      "size": 6,
+      "sha256": "06cc98ea009a2118c0cb65422aa2735816b56b43eb40f2cdc2d94ef1df0cfac5"
+    },
+    {
+      "relativePath": "vk_swiftshader_icd.json",
+      "size": 106,
+      "sha256": "32d83ff113fef532a9f97e0d2831f8656628ab1c99e9060f0332b1532839afd9"
+    },
+    {
+      "relativePath": "vk_swiftshader.dll",
+      "size": 5494784,
+      "sha256": "02fcfa0184e4840c0ec9fe54e1b7dfe32af54284c803fddfdecb6fa2acf80fdc"
+    },
+    {
+      "relativePath": "vulkan-1.dll",
+      "size": 924160,
+      "sha256": "be85a18f6638454a7a9cf14fb7e0be3bc4acfe1c7281699093c35eff62a710f3"
+    },
+    {
+      "relativePath": "writestorm.exe",
+      "size": 235706368,
+      "sha256": "fa65cca533ba9e3e577bfc8f96949791332dc2f1341adaaae9fa3b5b05525f97"
+    }
+  ]
+}

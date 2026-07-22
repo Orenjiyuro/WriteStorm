@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "b6a-834ba0b6-57d262ae",
+  "classification": "immutable_windows_certification_bundle",
+  "recordedAt": "2026-07-22T06:47:31.571Z",
+  "gitHeadAtRun": "834ba0b6dfef20c223181af1bf33cfd6ebf703f2",
+  "artifactRelativePath": "artifact/writestorm-win32-x64",
+  "artifactSha256": "4b06acd811473831369cc60d4b012bd2eca2c2805c005fa49ca11c50dc631966",
+  "artifactManifestSha256": "2a3172e10939aed6f6c79899aaea9c0a7ff5b47e7028f657849a03bd9ea29cd7",
+  "verdictSha256": "a117db4c887185d8fdba51312a1852aaafc096c5b5c0ef8c45d6c7c0ee9ba13c",
+  "bundlePayloadSha256": "613b42ea526fc86ec23cf594fa3b849a9c6c098a11cdf44f32c6f55ef6853be4",
+  "evidenceInputs": [
+    {
+      "evidenceId": "block6a-6a5-real-sdk-cwd-git-env-auth-001",
+      "relativePath": "evidence/block6a-6a5-real-sdk-cwd-git-env-auth-001.json",
+      "sha256": "3eac249b1195d5c7bf6249240134b4ad1eedabfca99270a4c2089248d253ac43"
+    },
+    {
+      "evidenceId": "block6a-6a6-real-sdk-output-schema-001",
+      "relativePath": "evidence/block6a-6a6-real-sdk-output-schema-001.json",
+      "sha256": "3425180ea442197c5fabd92758a6cbd171c1373b0f95939dc3a9fb1f75de65f0"
+    },
+    {
+      "evidenceId": "block6a-6a7-real-sdk-app-quit-001",
+      "relativePath": "evidence/block6a-6a7-real-sdk-app-quit-001.json",
+      "sha256": "8736f0168461f0a54581b64c8b7b328cfebe67539eb9086fa2be307649d0473f"
+    },
+    {
+      "evidenceId": "block6a-6a7-real-sdk-app-timeout-001",
+      "relativePath": "evidence/block6a-6a7-real-sdk-app-timeout-001.json",
+      "sha256": "582e123c7647162e908ff4dc377f6c2d95472112be25ccd99df4c91677b9c1bf"
+    },
+    {
+      "evidenceId": "block6a-6a7-real-sdk-explicit-cancel-001",
+      "relativePath": "evidence/block6a-6a7-real-sdk-explicit-cancel-001.json",
+      "sha256": "d7e8fac3264bd15a464aad0223b32a642b31d27dc158ed3b2ee62a2b2c37f12e"
+    },
+    {
+      "evidenceId": "block6a-6a7-real-sdk-window-close-001",
+      "relativePath": "evidence/block6a-6a7-real-sdk-window-close-001.json",
+      "sha256": "ebfd134ffd60679df5d8f3637332fa4d14727bddbec4e2cd21b9fbe73fcbc4f6"
+    },
+    {
+      "evidenceId": "block6a-6a8a-packaged-sdk-windows-001",
+      "relativePath": "evidence/block6a-6a8a-packaged-sdk-windows-001.json",
+      "sha256": "dac029e907c82f52b85b55ab37cce3f3caf76b727231cccd3253d933ba868204"
+    }
+  ],
+  "overwritePolicy": "fail_if_destination_exists",
+  "macosStatus": "deferred-by-user"
+}

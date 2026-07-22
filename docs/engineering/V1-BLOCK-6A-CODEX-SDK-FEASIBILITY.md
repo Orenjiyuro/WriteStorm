@@ -2,17 +2,17 @@
 
 Date: 2026-07-19
 
-Verdict: `pending recertification — post-2389170 remediation changed the certified boundary; macOS deferred-by-user`
+Verdict: `conditional Go — Windows-only feasibility verified; macOS deferred-by-user`
 
 ## Authority and scope
 
-This document is the current authority for Task 6A.1 through Task 6A.8b and the subsequent remediation. Tasks 6A.1–6A.8b record the original spike and its historical Windows-only conditional verdict. R1–R7 subsequently changed admission, environment, protocol, supervision, process ownership, cleanup, error classification, assertion provenance and evidence lineage behavior. Those changes triggered the recorded expiry conditions. The R8a–R8a4 development attempts remain valid historical evidence for their exact boundaries. The authorized Library-session cache fix `602500f` was integrated in clean and pushed HEAD `2389170`; from that same integration HEAD the full repository check, fresh development gate, four-scenario lifecycle gate, Windows x64 package boundary and packaged-only SDK turn all passed. That evidence remains a valid historical certified checkpoint for `2389170`, but later remediation changed runtime, certification configuration, admission, lineage and package guards. It cannot certify the current candidate until a fresh clean pushed HEAD completes the atomic Windows certification pipeline.
+This document is the current authority for Task 6A.1 through Task 6A.8b and the subsequent remediation. Tasks 6A.1–6A.8b record the original spike and its historical Windows-only conditional verdict. R1–R7 and the post-`2389170` remediation changed admission, environment, protocol, supervision, process ownership, cleanup, error classification, assertion provenance, certification packaging and evidence lineage behavior. Those changes triggered the recorded expiry conditions. The R8a–R8a5 records remain valid historical evidence for their exact boundaries. Fresh atomic certification R8b ran from clean committed and pushed HEAD `834ba0b6dfef20c223181af1bf33cfd6ebf703f2`, admitted development with the recorded conditions, admitted all four lifecycle scenarios, admitted the Windows x64 packaged-only SDK turn, mechanically verified all seven records and published an immutable artifact bundle. That run reissues only the Windows feasibility conditional verdict recorded above.
 
 V1 admits Codex SDK only. WriteStorm has a long-term multi-provider direction, but this task does not install, implement or call Claude, DeepSeek or another provider, and it never uses another provider as fallback. It does not implement a production `AiExecutionPort`, provider registry, Job integration, Settings connection flow, renderer AI action, Prompt runtime, module body generation or real breakdown pipeline.
 
 The probe uses only fixed, short, non-sensitive synthetic input. Repository source, Library contents, user manuscripts, prompts from production, secrets and credential material are outside the probe input boundary.
 
-macOS packaged runtime evidence is `deferred-by-user`. The historical Windows-only conditional verdict was not a full Go and did not claim cross-platform compatibility, macOS verification or release readiness. The current status is pending Windows recertification, not a new No-Go or verified verdict.
+macOS packaged runtime evidence is `deferred-by-user`. The current Windows-only conditional verdict is not a full Go and does not claim cross-platform compatibility, macOS verification or release readiness.
 
 ## Evidence record format
 
@@ -289,11 +289,15 @@ The historical static decision record is `docs/engineering/evidence/block6a-r8a5
 
 At that historical pending checkpoint, the statement “The current implementation is not Windows-feasibility verified” was correct. It is retained for historical consistency and does not replace the distinct post-`2389170` pending override below.
 
-### Current status: pending Windows recertification
+### Current status: Windows-only conditional Go reissued at `834ba0b`
 
-Post-`2389170` remediation removed the probe from product startup and the default Forge package, added an isolated certification build, atomic immutable bundle publication, unified content-admission/lineage/artifact verification, a public versioned fixture, fail-closed source/package guards, active-turn malformed-protocol cleanup, a versioned operational manifest and an explicit harness exit plan. These are runtime, package/configuration, admission, lineage and certification changes under the recorded expiry rules. The seven `2389170` records and their artifact remain honest historical evidence, but they cannot be applied to this changed boundary.
+Post-`2389170` remediation removed the probe from product startup and the default Forge package, added an isolated certification build, atomic immutable bundle publication, unified content-admission/lineage/artifact verification, a public versioned fixture, fail-closed source/package guards, active-turn malformed-protocol cleanup, a versioned operational manifest and an explicit harness exit plan. The first R8b attempt exposed a Windows `npm.cmd` spawn failure before testing; the second proved that the original long atomic staging path pushed the pinned SDK vendor tree beyond the legacy Windows process-path boundary. Both failures published no bundle. The launcher now executes npm's absolute `npm-cli.js` through the current Node process without a shell, and the bundle path uses `out/6a`, a short ID and a 110-character artifact-root budget that fails before packaging when exceeded.
 
-The current decision is `pending recertification — post-2389170 remediation changed the certified boundary; macOS deferred-by-user`. A future clean committed and pushed HEAD must run `npm run certify:codex:windows`, pass full check, development admission, all four lifecycle scenarios, the isolated Windows package guard, the packaged-only SDK turn, unified verification and immutable bundle publication. Only that fresh evidence may restore the candidate verdict `conditional Go — Windows-only feasibility verified; macOS deferred-by-user`. Until then Task 13.1 remains blocked and Task 13.2 is not authorized.
+The successful R8b command `npm run certify:codex:windows` ran once from clean pushed HEAD `834ba0b6dfef20c223181af1bf33cfd6ebf703f2`. Full check passed 869 unit tests, 290 integration tests, packaged E2E 15/15 and package verification 7/7. Development was `admitted_with_conditions` with the same four conservative Git/auth diagnostic limitations, all four lifecycle scenarios were `admitted`, and the Windows x64 packaged-only SDK turn was `admitted`. Unified verification emitted `conditional_go_windows_only_macos_deferred_by_user` and published certification `b6a-834ba0b6-57d262ae` at `out/6a/b6a-834ba0b6-57d262ae`.
+
+The artifact SHA-256 is `4b06acd811473831369cc60d4b012bd2eca2c2805c005fa49ca11c50dc631966`, artifact-manifest SHA-256 is `2a3172e10939aed6f6c79899aaea9c0a7ff5b47e7028f657849a03bd9ea29cd7`, and bundle-manifest SHA-256 is `e1ed7e0d9fced75cee7032b1c9c814ee68fe189b8b46cbf2f529c144f7c49e1d`. The seven exact sanitized records are committed as the `block6a-r8b-windows-*` evidence set together with the exact verdict, artifact manifest and bundle manifest. The bundle retains the reviewed artifact locally; its committed manifests bind every file and evidence input without retaining prompt, response body, environment value, credential, auth file, PID, executable path or raw SDK error.
+
+This reissues Windows feasibility only. Task 13.1 remains blocked pending total-thread review and Task 13.2 is not authorized. Only the total thread may decide whether this result permits Windows-only Task 13 implementation.
 
 ### R8a 2026-07-20 Windows development recertification attempt
 
@@ -405,13 +409,13 @@ After explicit authorization, commit `602500f` was cherry-picked as integration 
 
 This is not a full Go. macOS packaged runtime is `deferred-by-user`, so this decision does not establish cross-platform compatibility, macOS support or release readiness. A complete Go claim still requires a macOS packaged package-boundary scan and real SDK runtime probe under the same privacy, auth, schema, cleanup and no-fallback rules. Unsafe-to-manufacture expired-session behavior and a natural WriteStorm login experience also remain unverified; the official SDK/CLI login mechanism is not a WriteStorm product login entry.
 
-The historical conditional verdict did not authorize Task 13.2, and the current status is pending recertification. Only the total thread may review a fresh certified record and explicitly decide whether Windows-only Task 13 work may begin. Until that review, existing renderer actions remain disabled and this feasibility harness remains outside production Job, Prompt, module-body and workflow integration.
+Neither the historical nor current conditional verdict authorizes Task 13.2. Only the total thread may review the fresh R8b certified record and explicitly decide whether Windows-only Task 13 work may begin. Until that review, existing renderer actions remain disabled and this feasibility harness remains outside production Job, Prompt, module-body and workflow integration.
 
 Direct `codex exec`, app-server, GUI automation, API Key, local model, Claude, DeepSeek and other-provider fallback remain forbidden. The SDK-owned pinned CLI and JSONL mechanism, including the packaged `codexPathOverride`, remain an internal implementation detail behind the SDK API rather than a WriteStorm fallback surface.
 
 ### Expiry conditions
 
-The conditional verdict expires and requires focused plus packaged recertification when any of these conditions occurs. Condition 4 caused the R1–R7 expiry and was recertified at historical checkpoint `2389170` by R8a5; the post-`2389170` changes described above now require another run:
+The conditional verdict expires and requires focused plus packaged recertification when any of these conditions occurs. Condition 4 caused the R1–R7 expiry and was recertified at historical checkpoint `2389170` by R8a5; the later remediation was freshly recertified at `834ba0b` by R8b:
 
 1. The exact SDK, CLI or Windows platform-package version or integrity changes.
 2. The resolved dependency tree, install-script inventory or official registry provenance changes.
@@ -468,6 +472,6 @@ Before Task 13.2 authorization, a mechanical guard must prove production code im
 
 ## Historical and current truth
 
-Block 7 and Block 8 documents correctly record that 6A had not executed at their historical checkpoints. Those sentences remain unchanged and must not be globally deleted. This document remains the current authority: it preserves the later historical Task 6A.8b decision, the subsequent pending-recertification states and the historical fresh R8a5 Windows-only conditional reissue, while D097 records the new post-certification expiry. It does not rewrite any historical fact.
+Block 7 and Block 8 documents correctly record that 6A had not executed at their historical checkpoints. Those sentences remain unchanged and must not be globally deleted. This document remains the current authority: it preserves the later historical Task 6A.8b decision, the subsequent pending-recertification states, the historical R8a5 Windows-only conditional reissue and the current R8b reissue, while D097 records the post-`2389170` expiry and D098 records its fresh closure. It does not rewrite any historical fact.
 
 Task 6A.8b does not authorize Task 13.2. Only the total thread may review this verdict and authorize subsequent work.

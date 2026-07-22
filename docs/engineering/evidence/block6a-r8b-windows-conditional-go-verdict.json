@@ -1,0 +1,66 @@
+{
+  "verified": true,
+  "classification": "conditional_go_windows_only_macos_deferred_by_user",
+  "verdict": "conditional Go — Windows-only feasibility verified; macOS deferred-by-user",
+  "admissions": {
+    "development": "admitted_with_conditions",
+    "lifecycle": "admitted",
+    "packaged": "admitted"
+  },
+  "conditionalLimitations": [
+    "git_auth_structured_classification_unavailable",
+    "isolated_auth_local_turn_deadline_observed",
+    "isolated_auth_sdk_runtime_unavailable_observed",
+    "current_auth_non_git_check_failure_generic_only",
+    "macos_packaged_runtime_deferred_by_user"
+  ],
+  "evidenceInputs": [
+    {
+      "evidenceId": "block6a-6a5-real-sdk-cwd-git-env-auth-001",
+      "source": "real_sdk",
+      "classification": "cwd_git_env_auth_probe_completed",
+      "sha256": "3eac249b1195d5c7bf6249240134b4ad1eedabfca99270a4c2089248d253ac43"
+    },
+    {
+      "evidenceId": "block6a-6a6-real-sdk-output-schema-001",
+      "source": "real_sdk",
+      "classification": "output_schema_probe_completed",
+      "sha256": "3425180ea442197c5fabd92758a6cbd171c1373b0f95939dc3a9fb1f75de65f0"
+    },
+    {
+      "evidenceId": "block6a-6a7-real-sdk-app-quit-001",
+      "source": "real_sdk",
+      "classification": "lifecycle_probe_passed",
+      "sha256": "8736f0168461f0a54581b64c8b7b328cfebe67539eb9086fa2be307649d0473f"
+    },
+    {
+      "evidenceId": "block6a-6a7-real-sdk-app-timeout-001",
+      "source": "real_sdk",
+      "classification": "lifecycle_probe_passed",
+      "sha256": "582e123c7647162e908ff4dc377f6c2d95472112be25ccd99df4c91677b9c1bf"
+    },
+    {
+      "evidenceId": "block6a-6a7-real-sdk-explicit-cancel-001",
+      "source": "real_sdk",
+      "classification": "lifecycle_probe_passed",
+      "sha256": "d7e8fac3264bd15a464aad0223b32a642b31d27dc158ed3b2ee62a2b2c37f12e"
+    },
+    {
+      "evidenceId": "block6a-6a7-real-sdk-window-close-001",
+      "source": "real_sdk",
+      "classification": "lifecycle_probe_passed",
+      "sha256": "ebfd134ffd60679df5d8f3637332fa4d14727bddbec4e2cd21b9fbe73fcbc4f6"
+    },
+    {
+      "evidenceId": "block6a-6a8a-packaged-sdk-windows-001",
+      "source": "packaged_sdk",
+      "classification": "packaged_sdk_probe_completed",
+      "sha256": "dac029e907c82f52b85b55ab37cce3f3caf76b727231cccd3253d933ba868204"
+    }
+  ],
+  "task13Point1Unblocked": false,
+  "task13Point2Authorized": false,
+  "fullGoClaimed": false,
+  "crossPlatformCompatibilityClaimed": false,
+  "releaseReadinessClaimed": false
+}

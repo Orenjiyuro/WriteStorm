@@ -49,6 +49,8 @@ describe('Block 13.5 packaged no-global-Git probe', () => {
     expect(probe).toContain('whereGitUnavailable');
     expect(probe).toContain('getCommandGitUnavailable');
     expect(probe).toContain('cliResidualAbsent');
+    expect(probe).toContain('process.exitCode = 0');
+    expect(probe).not.toContain('process.exit(0)');
     expect(runner).toContain('PATH: createNoGitPath(systemRoot)');
     expect(runner).toContain('readSanitizedResultSummary(resultPath)');
     expect(runner).toContain('failedAssertions=${resultSummary.failedAssertions');

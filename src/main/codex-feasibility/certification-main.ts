@@ -9,7 +9,10 @@ app.whenReady().then(async () => {
     env: process.env,
     mainBundleDirectory: __dirname,
   });
-  if (task13Handled) return;
+  if (task13Handled) {
+    process.exit(process.exitCode ?? 0);
+    return;
+  }
   const certificationHandled = await runOptionalPackagedCodexProbe({
     env: process.env,
     mainBundleDirectory: __dirname,

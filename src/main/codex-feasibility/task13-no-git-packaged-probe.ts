@@ -75,11 +75,15 @@ export async function runOptionalTask13NoGitPackagedProbe(options: {
     temporaryDirectory: os.tmpdir(),
   });
   if (gate.reason === 'disabled') return false;
-  if (!gate.resultPath) process.exit(42);
+  if (!gate.resultPath) {
+    process.exitCode = 42;
+    return true;
+  }
   const resultPath = gate.resultPath!;
   if (!gate.accepted) {
     writeResult(resultPath, failureEvidence(options.env, gate.reason));
-    process.exit(43);
+    process.exitCode = 43;
+    return true;
   }
 
   const probeRoot = mkdtempSync(path.join(os.tmpdir(), 'writestorm-task13-5-'));
@@ -175,7 +179,8 @@ export async function runOptionalTask13NoGitPackagedProbe(options: {
     ownership.dispose();
     rmSync(probeRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
   }
-  process.exit(0);
+  process.exitCode = 0;
+  return true;
 }
 
 function observeGitUnavailable(environment: NodeJS.ProcessEnv): {

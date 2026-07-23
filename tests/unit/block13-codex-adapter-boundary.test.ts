@@ -106,11 +106,23 @@ describe('Block 13.4 Codex adapter and utility boundary', () => {
   it('builds the production utility as an isolated externalized Forge entry', () => {
     const forge = readFileSync(path.join(rootDir, 'forge.config.ts'), 'utf8');
     const vite = readFileSync(path.join(rootDir, 'vite.codex-utility.config.ts'), 'utf8');
+    const sharedVite = readFileSync(
+      path.join(rootDir, 'config/codex-utility-vite-config.ts'),
+      'utf8',
+    );
+    const smoke = readFileSync(
+      path.join(rootDir, 'scripts/smoke-block13-production-utility.mjs'),
+      'utf8',
+    );
 
     expect(forge).toContain("entry: 'src/main/ai/providers/codex/codex-utility-entry.ts'");
     expect(forge).toContain("config: 'vite.codex-utility.config.ts'");
-    expect(vite).toContain("external: ['@openai/codex-sdk', '@openai/codex']");
-    expect(vite).toContain("target: 'node22'");
+    expect(vite).toContain("from './config/codex-utility-vite-config'");
+    expect(sharedVite).toContain("external: ['@openai/codex-sdk', '@openai/codex']");
+    expect(sharedVite).toContain("target: 'node22'");
+    expect(smoke).toContain('codex-utility-vite-config.ts');
+    expect(smoke).not.toContain("external: ['@openai/codex-sdk', '@openai/codex']");
+    expect(smoke).not.toContain("networkRequestStarted: false");
   });
 });
 

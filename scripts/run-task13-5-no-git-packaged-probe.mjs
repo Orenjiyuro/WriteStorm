@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { loadBlock6aPublicSyntheticFixture } from './block6a-public-synthetic-fixture.mjs';
 import {
   createTask135ArtifactRecord,
-  createTask135SourceFingerprint,
+  createTask135CompatibilityFingerprint,
   loadTask135CompatibilityBoundary,
 } from './task13-5-compatibility-boundary.mjs';
 
@@ -64,7 +64,7 @@ try {
   const evidence = {
     ...result,
     artifact: createTask135ArtifactRecord(artifactRoot, compatibilityBoundary),
-    compatibilityFingerprint: createTask135SourceFingerprint(
+    compatibilityFingerprint: createTask135CompatibilityFingerprint(
       root,
       compatibilityBoundary,
       gitHead,

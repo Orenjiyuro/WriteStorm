@@ -5,7 +5,8 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import electronPath from 'electron';
-import { build } from 'vite';
+import { createJiti } from 'jiti';
+import { build, mergeConfig } from 'vite';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const runId = randomUUID();
@@ -23,8 +24,18 @@ const smokeMainEntry = path.join(
 );
 const utilityBundle = path.join(utilityBuildRoot, 'codex-utility-entry.js');
 const smokeMainBundle = path.join(smokeAppRoot, 'smoke-main.cjs');
+const sharedViteConfigPath = path.join(
+  repositoryRoot,
+  'config/codex-utility-vite-config.ts',
+);
+const networkBlockerPath = path.join(
+  repositoryRoot,
+  'tests/smoke/block13-network-blocker.cjs',
+);
+const networkObservationPath = path.join(smokeRoot, 'network-observation.json');
 const utilitySource = readFileSync(utilityEntry, 'utf8');
 let processResult;
+let networkObservation;
 
 if (/^const\s+\w+\s*=\s*new\s+Codex/m.test(utilitySource)
   || /startThread|resumeThread|runStreamed|process\.env/.test(utilitySource)) {
@@ -32,7 +43,9 @@ if (/^const\s+\w+\s*=\s*new\s+Codex/m.test(utilitySource)
 }
 
 try {
-  await build({
+  const jiti = createJiti(import.meta.url);
+  const { CODEX_UTILITY_VITE_CONFIG } = await jiti.import(sharedViteConfigPath);
+  await build(mergeConfig(CODEX_UTILITY_VITE_CONFIG, {
     configFile: false,
     logLevel: 'silent',
     build: {
@@ -44,11 +57,12 @@ try {
       },
       outDir: utilityBuildRoot,
       rollupOptions: {
-        external: ['@openai/codex-sdk', '@openai/codex'],
+        output: {
+          banner: `require(${JSON.stringify(networkBlockerPath)});`,
+        },
       },
-      target: 'node22',
     },
-  });
+  }));
   await build({
     configFile: false,
     logLevel: 'silent',
@@ -94,9 +108,13 @@ try {
     );
   }
   const processEvidence = JSON.parse(processResult.stdout.trim());
+  networkObservation = readNetworkObservation(networkObservationPath);
   if (processEvidence.exactBundleResolved !== true
     || processEvidence.sdkExportImported !== true
-    || processEvidence.unsupportedMessageExitCode !== 28) {
+    || processEvidence.unsupportedMessageExitCode !== 28
+    || networkObservation.installed !== true
+    || networkObservation.attemptCount !== 0
+    || networkObservation.attemptedKinds.length !== 0) {
     throw new Error('Production utility smoke assertions failed.');
   }
 } finally {
@@ -112,7 +130,9 @@ process.stdout.write(`${JSON.stringify({
   unsupportedMessageExitCode: 28,
   credentialEnvironmentExcluded: true,
   proxyEnvironmentExcluded: true,
-  networkRequestStarted: false,
+  networkGuardInstalled: networkObservation.installed,
+  networkAttemptCount: networkObservation.attemptCount,
+  networkAccessObserved: networkObservation.attemptCount !== 0,
   cleanupCompleted: !existsSync(buildRoot) && !existsSync(smokeRoot),
 })}\n`);
 
@@ -122,12 +142,13 @@ function createOfflineEnvironment(smokeRootPath, utilityBundlePath) {
     if (!value || isRejectedEnvironmentKey(key)) continue;
     environment[key] = value;
   }
-  environment.WRITESTORM_BLOCK13_UTILITY_SMOKE = '1';
-  environment.WRITESTORM_BLOCK13_UTILITY_SMOKE_ROOT = smokeRootPath;
-  environment.WRITESTORM_BLOCK13_UTILITY_BUNDLE = utilityBundlePath;
   if (Object.keys(environment).some(isRejectedEnvironmentKey)) {
     throw new Error('Offline smoke environment retained a rejected key.');
   }
+  environment.WRITESTORM_BLOCK13_UTILITY_SMOKE = '1';
+  environment.WRITESTORM_BLOCK13_UTILITY_SMOKE_ROOT = smokeRootPath;
+  environment.WRITESTORM_BLOCK13_UTILITY_BUNDLE = utilityBundlePath;
+  environment.WRITESTORM_BLOCK13_NETWORK_OBSERVATION = networkObservationPath;
   return environment;
 }
 
@@ -150,6 +171,26 @@ function readSmokeObservation(smokeRootPath) {
   } catch {
     return { stage: 'stage_missing', diagnostic: 'none' };
   }
+}
+
+function readNetworkObservation(observationPath) {
+  let value;
+  try {
+    value = JSON.parse(readFileSync(observationPath, 'utf8'));
+  } catch {
+    throw new Error('Production utility network guard observation is missing.');
+  }
+  if (value?.schemaVersion !== 1
+    || value?.installed !== true
+    || !Number.isSafeInteger(value?.attemptCount)
+    || value.attemptCount < 0
+    || !Array.isArray(value?.attemptedKinds)
+    || value.attemptedKinds.some((kind) => (
+      typeof kind !== 'string' || !/^[a-z0-9.]+$/.test(kind)
+    ))) {
+    throw new Error('Production utility network guard observation is invalid.');
+  }
+  return value;
 }
 
 function sanitizeStartupDiagnostic(stderr) {

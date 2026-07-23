@@ -4,6 +4,11 @@ import path from 'node:path';
 import { extractFile } from '@electron/asar';
 
 const boundaryRelativePath = 'config/block13-task13-5-compatibility-boundary-v1.json';
+const compatibilityLayerNames = [
+  'supplyChain',
+  'productionProtocol',
+  'probeArtifact',
+];
 const sha256Pattern = /^[0-9a-f]{64}$/;
 const gitHeadPattern = /^[0-9a-f]{40}$/;
 const identifierPattern = /^[a-z][a-z0-9_]{0,79}$/;
@@ -11,53 +16,87 @@ const identifierPattern = /^[a-z][a-z0-9_]{0,79}$/;
 export function loadTask135CompatibilityBoundary(repositoryRoot) {
   const boundaryPath = path.join(repositoryRoot, boundaryRelativePath);
   const value = JSON.parse(readFileSync(boundaryPath, 'utf8'));
-  if (value?.schemaVersion !== 1
+  if (value?.schemaVersion !== 2
     || value?.boundaryId !== 'block13-task13-5-compatibility-v1'
-    || !Array.isArray(value.sourceDirectories)
-    || !Array.isArray(value.sourceFiles)
+    || !isExactLayerRecord(value.layers)
     || !Array.isArray(value.artifactFiles)
     || !Array.isArray(value.asarEntries)) {
     throw new Error('Task 13.5 compatibility boundary is invalid.');
   }
-  assertUniqueRelativePaths(value.sourceDirectories, 'source directory');
-  assertUniqueRelativePaths(value.sourceFiles, 'source file');
+  for (const layerName of compatibilityLayerNames) {
+    const layer = value.layers[layerName];
+    assertUniqueRelativePaths(layer.sourceDirectories, `${layerName} source directory`);
+    assertUniqueRelativePaths(layer.sourceFiles, `${layerName} source file`);
+  }
   assertArtifactDescriptors(value.artifactFiles, false);
   assertArtifactDescriptors(value.asarEntries, true);
-  if (!value.sourceFiles.includes(boundaryRelativePath)) {
+  if (!value.layers.probeArtifact.sourceFiles.includes(boundaryRelativePath)) {
     throw new Error('Task 13.5 compatibility boundary must hash itself.');
   }
   return value;
 }
 
-export function createTask135SourceFingerprint(repositoryRoot, boundary, gitHead) {
+export function createTask135CompatibilityFingerprint(
+  repositoryRoot,
+  boundary,
+  gitHead,
+) {
   if (gitHead !== undefined && !gitHeadPattern.test(gitHead)) {
-    throw new Error('Task 13.5 source fingerprint Git HEAD is invalid.');
+    throw new Error('Task 13.5 compatibility fingerprint Git HEAD is invalid.');
   }
-  const relativePaths = [
-    ...boundary.sourceFiles,
-    ...boundary.sourceDirectories.flatMap((relativeDirectory) => (
-      listFilesRecursively(path.join(repositoryRoot, relativeDirectory))
-        .map((filePath) => toPosixRelative(repositoryRoot, filePath))
-    )),
-  ].sort();
-  if (new Set(relativePaths).size !== relativePaths.length) {
-    throw new Error('Task 13.5 compatibility boundary contains duplicate source files.');
-  }
-  const files = relativePaths.map((relativePath) => ({
-    relativePath,
-    sha256: hashBytes(normalizeSourceBytes(
-      readFileSync(resolveInside(repositoryRoot, relativePath)),
-    )),
+  const layers = Object.fromEntries(compatibilityLayerNames.map((layerName) => {
+    const definition = boundary.layers[layerName];
+    const relativePaths = [
+      ...definition.sourceFiles,
+      ...definition.sourceDirectories.flatMap((relativeDirectory) => (
+        listFilesRecursively(path.join(repositoryRoot, relativeDirectory))
+          .map((filePath) => toPosixRelative(repositoryRoot, filePath))
+      )),
+    ].sort();
+    if (new Set(relativePaths).size !== relativePaths.length) {
+      throw new Error(`Task 13.5 ${layerName} boundary contains duplicate source files.`);
+    }
+    const files = relativePaths.map((relativePath) => ({
+      relativePath,
+      sha256: hashBytes(normalizeSourceBytes(
+        readFileSync(resolveInside(repositoryRoot, relativePath)),
+      )),
+    }));
+    return [layerName, {
+      files,
+      sha256: hashBytes(Buffer.from(JSON.stringify({ layerName, files }))),
+    }];
   }));
   const sha256 = hashBytes(Buffer.from(JSON.stringify({
     boundaryId: boundary.boundaryId,
-    files,
+    layers,
   })));
   return {
     boundaryId: boundary.boundaryId,
     ...(gitHead === undefined ? {} : { gitHead }),
-    files,
+    layers,
     sha256,
+  };
+}
+
+export function evaluateTask135CompatibilityFreshness(current, recorded) {
+  const layerStates = Object.fromEntries(compatibilityLayerNames.map((layerName) => [
+    layerName,
+    recordsEqual(current?.layers?.[layerName], recorded?.layers?.[layerName])
+      ? 'fresh'
+      : 'stale',
+  ]));
+  const staleLayers = compatibilityLayerNames.filter(
+    (layerName) => layerStates[layerName] === 'stale',
+  );
+  return {
+    status: staleLayers.length === 0
+      && current?.boundaryId === recorded?.boundaryId
+      && current?.sha256 === recorded?.sha256
+      ? 'fresh'
+      : 'stale',
+    staleLayers,
+    layers: layerStates,
   };
 }
 
@@ -96,14 +135,20 @@ export function assertTask135EvidenceMatches(input) {
     artifactRoot,
     boundary = loadTask135CompatibilityBoundary(repositoryRoot),
   } = input;
-  const sourceFingerprint = createTask135SourceFingerprint(
+  const compatibilityFingerprint = createTask135CompatibilityFingerprint(
     repositoryRoot,
     boundary,
     evidence?.gitHeadAtRun,
   );
+  const compatibility = evaluateTask135CompatibilityFreshness(
+    compatibilityFingerprint,
+    evidence?.compatibilityFingerprint,
+  );
   const artifact = createTask135ArtifactRecord(artifactRoot, boundary);
-  if (!recordsEqual(evidence?.compatibilityFingerprint, sourceFingerprint)) {
-    throw new Error('Task 13.5 source compatibility fingerprint is stale.');
+  if (compatibility.status !== 'fresh') {
+    throw new Error(
+      `Task 13.5 compatibility fingerprint is stale (${compatibility.staleLayers.join(',')}).`,
+    );
   }
   if (!recordsEqual(evidence?.artifact, artifact)) {
     throw new Error('Task 13.5 packaged artifact content record is stale.');
@@ -112,7 +157,18 @@ export function assertTask135EvidenceMatches(input) {
     || !sha256Pattern.test(evidence.artifact.sha256)) {
     throw new Error('Task 13.5 evidence hash is invalid.');
   }
-  return { sourceFingerprint, artifact };
+  return { compatibilityFingerprint, compatibility, artifact };
+}
+
+function isExactLayerRecord(value) {
+  if (!value || typeof value !== 'object'
+    || Object.keys(value).sort().join(',') !== compatibilityLayerNames.slice().sort().join(',')) {
+    return false;
+  }
+  return compatibilityLayerNames.every((layerName) => (
+    Array.isArray(value[layerName]?.sourceDirectories)
+    && Array.isArray(value[layerName]?.sourceFiles)
+  ));
 }
 
 function assertUniqueRelativePaths(values, label) {

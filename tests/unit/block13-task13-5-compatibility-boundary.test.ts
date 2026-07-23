@@ -5,46 +5,106 @@ import { createPackage } from '@electron/asar';
 import { describe, expect, it } from 'vitest';
 import {
   createTask135ArtifactRecord,
-  createTask135SourceFingerprint,
+  createTask135CompatibilityFingerprint,
+  evaluateTask135CompatibilityFreshness,
   loadTask135CompatibilityBoundary,
 } from '../../scripts/task13-5-compatibility-boundary.mjs';
 
 const rootDir = path.resolve(__dirname, '../..');
 
 describe('Block 13.5 canonical compatibility boundary', () => {
-  it('covers the complete feasibility runtime and every external probe authority', () => {
+  it('separates supply-chain, production-protocol and probe-artifact authorities', () => {
     const boundary = loadTask135CompatibilityBoundary(rootDir);
 
     expect(boundary).toMatchObject({
-      schemaVersion: 1,
+      schemaVersion: 2,
       boundaryId: 'block13-task13-5-compatibility-v1',
-      sourceDirectories: ['src/main/codex-feasibility'],
+      layers: {
+        supplyChain: {
+          sourceDirectories: [],
+        },
+        productionProtocol: {
+          sourceDirectories: ['src/main/ai'],
+        },
+        probeArtifact: {
+          sourceDirectories: ['src/main/codex-feasibility'],
+        },
+      },
     });
-    expect(boundary.sourceFiles).toEqual(expect.arrayContaining([
-      'config/block13-task13-5-compatibility-boundary-v1.json',
+    expect(boundary.layers.supplyChain.sourceFiles).toEqual(expect.arrayContaining([
       'config/block6a-feasibility-manifest-v1.json',
-      'forge.block6a-certification.config.ts',
+      'package-lock.json',
+      'package.json',
+    ]));
+    expect(boundary.layers.productionProtocol.sourceFiles).toEqual(expect.arrayContaining([
+      'config/codex-utility-vite-config.ts',
       'forge.config.ts',
+      'vite.codex-utility.config.ts',
+    ]));
+    expect(boundary.layers.probeArtifact.sourceFiles).toEqual(expect.arrayContaining([
+      'config/block13-task13-5-compatibility-boundary-v1.json',
+      'forge.block6a-certification.config.ts',
       'vite.block6a-certification-main.config.ts',
       'vite.codex-feasibility.config.ts',
       'scripts/run-task13-5-no-git-packaged-probe.mjs',
       'scripts/task13-5-compatibility-boundary.mjs',
       'scripts/verify-task13-5-packaged-evidence.mjs',
-      'src/main/ai/providers/codex/codex-scratch-workspace.ts',
-      'src/main/ai/providers/codex/codex-utility-entry.ts',
-      'vite.codex-utility.config.ts',
     ]));
 
-    const fingerprint = createTask135SourceFingerprint(rootDir, boundary);
-    const paths = fingerprint.files.map((entry) => entry.relativePath);
-    expect(paths).toEqual(expect.arrayContaining([
+    const fingerprint = createTask135CompatibilityFingerprint(rootDir, boundary);
+    const productionPaths = fingerprint.layers.productionProtocol.files
+      .map((entry) => entry.relativePath);
+    expect(productionPaths).toEqual(expect.arrayContaining([
+      'src/main/ai/ai-execution-port.ts',
+      'src/main/ai/providers/codex/codex-provider-adapter.ts',
+      'src/main/ai/providers/codex/codex-utility-transport.ts',
+      'src/main/ai/providers/codex/codex-utility-entry.ts',
+    ]));
+    const probePaths = fingerprint.layers.probeArtifact.files
+      .map((entry) => entry.relativePath);
+    expect(probePaths).toEqual(expect.arrayContaining([
       'src/main/codex-feasibility/certification-main.ts',
       'src/main/codex-feasibility/environment.ts',
       'src/main/codex-feasibility/lifecycle.ts',
       'src/main/codex-feasibility/manifest.ts',
     ]));
-    expect(new Set(paths).size).toBe(paths.length);
+    expect(new Set(productionPaths).size).toBe(productionPaths.length);
+    expect(new Set(probePaths).size).toBe(probePaths.length);
     expect(fingerprint.sha256).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it('fails closed by the exact compatibility layer that drifted', () => {
+    const boundary = loadTask135CompatibilityBoundary(rootDir);
+    const current = createTask135CompatibilityFingerprint(rootDir, boundary);
+    const recorded = {
+      ...current,
+      layers: {
+        ...current.layers,
+        productionProtocol: {
+          ...current.layers.productionProtocol,
+          sha256: '0'.repeat(64),
+        },
+      },
+    };
+
+    expect(evaluateTask135CompatibilityFreshness(current, recorded)).toEqual({
+      status: 'stale',
+      staleLayers: ['productionProtocol'],
+      layers: {
+        supplyChain: 'fresh',
+        productionProtocol: 'stale',
+        probeArtifact: 'fresh',
+      },
+    });
+    expect(evaluateTask135CompatibilityFreshness(current, current)).toEqual({
+      status: 'fresh',
+      staleLayers: [],
+      layers: {
+        supplyChain: 'fresh',
+        productionProtocol: 'fresh',
+        probeArtifact: 'fresh',
+      },
+    });
   });
 
   it('hashes actual packaged files and required ASAR entry bytes', async () => {
@@ -98,7 +158,7 @@ describe('Block 13.5 canonical compatibility boundary', () => {
       'utf8',
     ));
     expect(evidence.compatibilityFingerprint).toEqual(
-      createTask135SourceFingerprint(rootDir, boundary, evidence.gitHeadAtRun),
+      createTask135CompatibilityFingerprint(rootDir, boundary, evidence.gitHeadAtRun),
     );
     expect(evidence.artifact.sha256).toMatch(/^[0-9a-f]{64}$/);
   });

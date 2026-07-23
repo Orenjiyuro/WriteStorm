@@ -1306,3 +1306,16 @@ Rules:
 - SDK 0.144.6 still exposes no stable structured Git/auth error discriminant. Existing ChatGPT-managed auth is required; isolated-auth and unknown failures remain generic `SDK_RUNTIME_UNAVAILABLE` limitations and are never upgraded from English text.
 - This is not full Go, cross-platform compatibility or release readiness. macOS packaged runtime remains `deferred-by-user`; a complete Go claim still requires macOS packaged evidence.
 - Task 13.1 remains blocked pending total-thread review. This decision does not authorize Task 13.2, product AI execution, a production Prompt, renderer AI controls or any fallback provider.
+
+## D099: Windows Packaged Codex Attempts Do Not Require Global Git
+
+Decision: Task 13.5 uses an application-owned non-Git scratch workspace with `skipGitRepoCheck=true`; the current Windows x64 packaged Codex SDK boundary succeeds when neither the application nor its SDK child environment can resolve a global `git.exe`.
+
+Rules:
+
+- Every attempt receives a new absolute directory below the operating-system temporary root. Cleanup is idempotent and owns only that attempt directory.
+- Product scratch-workspace code must not invoke a shell, run `git init`, inspect `PATH` or fall back to a user-installed Git executable.
+- The explicit packaged probe uses only the three required Windows system directories in `PATH`. Both outer and utility-environment `where git` and `Get-Command git` checks must fail before the result is admitted.
+- Evidence `block13-task13-5-windows-no-global-git-packaged-001` binds clean run HEAD `9c69af57eb5d83d6bedb264a03c2fdbfada89c65`, SDK/CLI `0.144.6`, Electron `43.0.0`, artifact hashes and compatibility fingerprint `50cdfc5c7af88943daea284a818f86809f24bd0321dade93cebdd2a94d51176c`.
+- The fixed public synthetic turn passed strict structured validation, cleanup acknowledgement and attributed zero-residual checks without reading Library, SQLite, source text or a user manuscript.
+- This clears only the Task 13.5 Windows no-global-Git requirement. It is not a production AI Job, persistence/resume proof, macOS packaged verification, cross-platform Go or release readiness. macOS remains deferred-by-user.

@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "block13-task13-5-windows-no-global-git-packaged-001",
+  "task": "13.5",
+  "source": "packaged_sdk",
+  "recordedAt": "2026-07-23T07:23:23.175Z",
+  "commandName": "writestorm-task13-5-no-global-git-packaged-probe",
+  "classification": "windows_packaged_no_global_git_verified",
+  "gitHeadAtRun": "9c69af57eb5d83d6bedb264a03c2fdbfada89c65",
+  "versions": {
+    "electron": "43.0.0",
+    "nodeRuntime": "24.17.0",
+    "codexSdk": "0.144.6",
+    "codexCli": "0.144.6",
+    "platformPackage": "0.144.6-win32-x64"
+  },
+  "assertions": {
+    "packagedWindowsX64": true,
+    "nonGitScratchWorkspace": true,
+    "skipGitRepoCheckEnabled": true,
+    "whereGitUnavailable": true,
+    "getCommandGitUnavailable": true,
+    "utilityPathExcludesGitLocations": true,
+    "structuredTurnSucceeded": true,
+    "structuredAuthAuthenticated": true,
+    "structuredFinalJsonParsed": true,
+    "structuredValidatorAccepted": true,
+    "structuredExpectedValueMatched": true,
+    "timeoutGuardApplied": true,
+    "cleanupAcknowledged": true,
+    "ownershipObserved": true,
+    "residualScanCompleted": true,
+    "utilityResidualAbsent": true,
+    "cliResidualAbsent": true
+  },
+  "environmentSummary": {
+    "pathEntryCount": 3,
+    "valuesRecorded": false,
+    "credentialsRecorded": false
+  },
+  "limitations": [
+    "Fixed public synthetic input only; no Library, SQLite, source text or user manuscript was read.",
+    "Environment values, credentials, prompt text, response body, paths and PIDs are not retained.",
+    "Windows x64 packaged evidence only; macOS remains deferred-by-user."
+  ],
+  "artifact": {
+    "writestormExeSha256": "8cac8f0abcd27050b344e78fd1d41df92e4fb961df20fe369b1564a428f012cb",
+    "appAsarSha256": "732c9d4d705af1991ddf67be0f57921d5254bd2a48cddb785d6ff95f05d64153",
+    "codexExeSha256": "4b76ded066d0239115ca97473d010c92072bc5c5550a45dd7cbebe1e9eb956a7"
+  },
+  "compatibilityFingerprint": {
+    "gitHead": "9c69af57eb5d83d6bedb264a03c2fdbfada89c65",
+    "files": [
+      {
+        "relativePath": "package.json",
+        "sha256": "61845fd8b4ab0add3fdb878e970ecaa3b83f1b14eb46ec656477ea45d58579b7"
+      },
+      {
+        "relativePath": "package-lock.json",
+        "sha256": "bda4d5d4eb77566c9ee228ee77fde5e54e05ab93299a876549a17592b3a8dade"
+      },
+      {
+        "relativePath": "forge.block6a-certification.config.ts",
+        "sha256": "2fab41e6b42ee9d430fff521adae4d3a7e471c89d49f5fbcbcc5aeeff29083f5"
+      },
+      {
+        "relativePath": "vite.codex-feasibility.config.ts",
+        "sha256": "a2ff2cb5af59abbadfda5cd06b577290520e444321e1ca0a8c6caa8f18afee0b"
+      },
+      {
+        "relativePath": "src/main/codex-feasibility/protocol.ts",
+        "sha256": "5b0d270f41e791a97140292cb3d73815607a02ca00f087fc515ff16bbfeee212"
+      },
+      {
+        "relativePath": "src/main/codex-feasibility/runner.ts",
+        "sha256": "71428a7716b81c81858ded4d2d8270a6fd666657a52d21e33ca9c24131f3687b"
+      },
+      {
+        "relativePath": "src/main/codex-feasibility/utility-entry.ts",
+        "sha256": "d53ffbe8e971bac98a23ea3896fed7c5d0bed61f2df5668f138e63340817345c"
+      },
+      {
+        "relativePath": "src/main/codex-feasibility/task13-no-git-packaged-probe.ts",
+        "sha256": "fee447f404d321b66e31d8e8549370fd385794062b6a4052450cb569201e303b"
+      },
+      {
+        "relativePath": "src/main/ai/providers/codex/codex-scratch-workspace.ts",
+        "sha256": "5a612ca8a51f53fce8348a00df5df897f762ccc76732c7cb6644b91c9d14de49"
+      }
+    ],
+    "sha256": "50cdfc5c7af88943daea284a818f86809f24bd0321dade93cebdd2a94d51176c"
+  },
+  "invocation": {
+    "command": "node scripts/run-task13-5-no-git-packaged-probe.mjs --artifact-root <artifact> --evidence-output <evidence>",
+    "outerWhereGitUnavailable": true,
+    "outerGetCommandGitUnavailable": true,
+    "pathPolicy": "windows-system-only-no-git-directories"
+  }
+}

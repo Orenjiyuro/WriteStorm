@@ -83,6 +83,12 @@ Task 13.3 does not register an adapter, implement a provider registry, add anoth
 
 The production utility rejects every message fail-closed until later Task 13 increments define and locally validate their owned protocol. It exposes no IPC or renderer surface and does not import a Block 6A probe command, result or runner. No SDK turn, auth check or network request is started by this increment. The Forge entry is build-boundary evidence only; packaged runtime admission remains Task 13.11. Cwd/Git, environment/auth, structured output, event projection and lifecycle cleanup remain with Tasks 13.5–13.9 rather than being guessed here.
 
+### Task 13.5 Codex scratch workspace and Git independence
+
+Each Codex attempt receives a newly created application-owned directory below the operating-system temporary root. The provider-private thread options bind that absolute directory as `workingDirectory` and set `skipGitRepoCheck=true`. Cleanup is idempotent and removes only the owned attempt directory. The manager does not invoke a shell, initialize a repository, resolve `git.exe`, inspect `PATH` or depend on a user manuscript or Library path.
+
+The explicit Windows packaged certification command removes every Git directory from both the application and SDK utility `PATH`, proves `where git` and `Get-Command git` fail in that same environment, and then runs one fixed public synthetic structured-output turn from a non-Git scratch directory. Evidence `block13-task13-5-windows-no-global-git-packaged-001` binds the clean run HEAD, compatibility files and artifact hashes; it records successful strict structured validation, cleanup acknowledgement and absence of owned utility/CLI residuals. This proves that the current Windows x64 packaged boundary does not require a user-preinstalled global Git executable. It does not create a Job, checkpoint or resumable state, and it does not establish macOS packaged behavior.
+
 ### Main process
 
 Owns:

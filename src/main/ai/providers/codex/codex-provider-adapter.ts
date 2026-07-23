@@ -1,27 +1,30 @@
 import {
-  AI_EXECUTION_PORT_CONTRACT_VERSION,
   type AiExecutionCapabilities,
+  type AiExecutionHandle,
   type AiExecutionPort,
+  type AiExecutionRequest,
 } from '../../ai-execution-port';
 import type { CodexUtilityTransport } from './codex-utility-transport';
 
-export type CodexProviderAdapterOptions<Request, Execution> = {
-  readonly capabilities: AiExecutionCapabilities;
-  readonly transport: CodexUtilityTransport<Request, Execution>;
+export const CODEX_PROVIDER_CAPABILITIES: AiExecutionCapabilities = Object.freeze({
+  structuredOutput: false,
+  streamedEvents: false,
+  cancellation: false,
+});
+
+export type CodexProviderAdapterOptions = {
+  readonly transport: CodexUtilityTransport;
 };
 
-export class CodexProviderAdapter<Request, Execution>
-implements AiExecutionPort<Request, Execution> {
-  readonly contractVersion = AI_EXECUTION_PORT_CONTRACT_VERSION;
-  readonly capabilities: AiExecutionCapabilities;
-  private readonly transport: CodexUtilityTransport<Request, Execution>;
+export class CodexProviderAdapter implements AiExecutionPort {
+  readonly capabilities = CODEX_PROVIDER_CAPABILITIES;
+  private readonly transport: CodexUtilityTransport;
 
-  constructor(options: CodexProviderAdapterOptions<Request, Execution>) {
-    this.capabilities = Object.freeze({ ...options.capabilities });
+  constructor(options: CodexProviderAdapterOptions) {
     this.transport = options.transport;
   }
 
-  execute(request: Request): Execution {
+  execute(request: AiExecutionRequest): AiExecutionHandle {
     return this.transport.execute(request);
   }
 }

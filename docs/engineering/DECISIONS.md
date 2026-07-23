@@ -1331,3 +1331,17 @@ Rules:
 - Evidence fingerprint `92c0edd6ae9aae8d97ac59cb558d49ff17a233e173d0f8b2329debd6c19620e6` covers 37 current source inputs with CRLF/LF-normalized text hashing. Artifact-content record `2a5cff883792d3bc8b8e76b7afc38e575ff6cabd2df837cbf04f26412b6ca6bd` covers three packaged files and three required ASAR entries, and is independently recomputed against the retained artifact.
 - The real production utility offline smoke preserves the SDK's import-only ESM boundary through dynamic `import()`, starts the fixed bundle through Electron `utilityProcess.fork`, constructs no client, uses no auth/proxy configuration and exits fail-closed with code 28 on an unsupported message.
 - The refreshed Windows packaged no-Git turn passed all 17 assertions. macOS remains deferred-by-user; this is not full Go, cross-platform compatibility, a production AI Job or release readiness.
+
+## D101: The V1 AI Execution Port Is One Sealed Application Protocol
+
+Decision: WriteStorm V1 uses a non-generic `AiExecutionPort`. Type-only, unexported `unique symbol` brands seal `AiExecutionRequest`, `AiExecutionEvent` and `AiExecutionHandle`, so a provider SDK cannot become an application protocol type parameter or satisfy the boundary structurally.
+
+Rules:
+
+- The brands never enter IPC, SQLite, JSON, renderer DTOs or persisted state. Later application validators/factories may mint branded values only after their owned schemas pass.
+- Tasks 13.7–13.9 own request, event and handle business fields. This decision deliberately invents none.
+- `CodexProviderAdapter` and `CodexUtilityTransport` are non-generic. They translate the single application protocol behind the provider-private boundary; Codex SDK, CLI, JSONL and cwd/Git types never become domain types.
+- The adapter owns one fixed frozen capability object. Callers cannot inject capabilities, and compatibility/auth/runtime observations are separate state that cannot promote capability claims.
+- Until their implementation tasks pass, structured output, streamed events and cancellation remain false.
+- Compile-negative witnesses reject provider-parameterized ports and SDK objects at the branded request/event/handle boundary. Import scans reject SDK and provider-private utility types in Job, SQLite, analysis-module, renderer and shared layers.
+- This adds no provider registry, alternate adapter, fallback, Job, persistence, runtime probe or AI business workflow.

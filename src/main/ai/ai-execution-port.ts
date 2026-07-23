@@ -1,4 +1,6 @@
-export const AI_EXECUTION_PORT_CONTRACT_VERSION = 1 as const;
+declare const requestBrand: unique symbol;
+declare const eventBrand: unique symbol;
+declare const handleBrand: unique symbol;
 
 export type AiExecutionCapabilities = {
   readonly structuredOutput: boolean;
@@ -6,13 +8,19 @@ export type AiExecutionCapabilities = {
   readonly cancellation: boolean;
 };
 
-/**
- * Thin application-owned seam implemented by one independently gated adapter.
- * Later tasks bind concrete request, event and lifecycle types without widening
- * this contract into a registry or a persistence boundary.
- */
-export type AiExecutionPort<Request, Execution> = {
-  readonly contractVersion: typeof AI_EXECUTION_PORT_CONTRACT_VERSION;
+export interface AiExecutionRequest {
+  readonly [requestBrand]: never;
+}
+
+export interface AiExecutionEvent {
+  readonly [eventBrand]: never;
+}
+
+export interface AiExecutionHandle {
+  readonly [handleBrand]: never;
+}
+
+export interface AiExecutionPort {
   readonly capabilities: AiExecutionCapabilities;
-  execute(request: Request): Execution;
-};
+  execute(request: AiExecutionRequest): AiExecutionHandle;
+}

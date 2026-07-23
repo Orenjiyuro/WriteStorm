@@ -1,6 +1,10 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
+import type {
+  AiExecutionHandle,
+  AiExecutionRequest,
+} from '../../src/main/ai/ai-execution-port';
 import { CodexProviderAdapter } from '../../src/main/ai/providers/codex/codex-provider-adapter';
 import {
   CodexUtilityLauncher,
@@ -16,27 +20,31 @@ const utilityEntry = path.join(
 );
 
 describe('Block 13.4 Codex adapter and utility boundary', () => {
-  it('delegates once through an injected transport without fallback behavior', async () => {
-    const execute = vi.fn(async (request: { readonly value: string }) => ({
-      accepted: request.value,
-    }));
+  it('delegates the sealed application protocol with fixed truthful capabilities', () => {
+    const request = Object.freeze({}) as AiExecutionRequest;
+    const handle = Object.freeze({}) as AiExecutionHandle;
+    const execute = vi.fn((received: AiExecutionRequest) => {
+      expect(received).toBe(request);
+      return handle;
+    });
     const adapter = new CodexProviderAdapter({
-      capabilities: {
-        structuredOutput: false,
-        streamedEvents: false,
-        cancellation: false,
-      },
       transport: { execute },
     });
 
-    await expect(adapter.execute({ value: 'synthetic' })).resolves.toEqual({
-      accepted: 'synthetic',
+    expect(adapter.execute(request)).toBe(handle);
+    expect(adapter.capabilities).toEqual({
+      structuredOutput: false,
+      streamedEvents: false,
+      cancellation: false,
     });
+    expect(Object.isFrozen(adapter.capabilities)).toBe(true);
     expect(execute).toHaveBeenCalledTimes(1);
 
     const failure = new Error('transport failure');
-    execute.mockRejectedValueOnce(failure);
-    await expect(adapter.execute({ value: 'failure' })).rejects.toBe(failure);
+    execute.mockImplementationOnce(() => {
+      throw failure;
+    });
+    expect(() => adapter.execute(request)).toThrow(failure);
     expect(execute).toHaveBeenCalledTimes(2);
   });
 

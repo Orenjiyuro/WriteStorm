@@ -2,44 +2,33 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
-  AI_EXECUTION_PORT_CONTRACT_VERSION,
+  type AiExecutionEvent,
+  type AiExecutionHandle,
   type AiExecutionPort,
+  type AiExecutionRequest,
 } from '../../src/main/ai/ai-execution-port';
 
 const rootDir = path.resolve(__dirname, '../..');
 const portPath = path.join(rootDir, 'src/main/ai/ai-execution-port.ts');
 
 describe('Block 13.3 provider-neutral AI execution port', () => {
-  it('provides a thin injected execution seam without fixing later lifecycle details', async () => {
-    type Request = {
-      readonly executionId: string;
-      readonly instruction: string;
-    };
-    type AcceptedExecution = {
-      readonly status: 'accepted';
-      readonly executionId: string;
-    };
-
-    const port: AiExecutionPort<Request, Promise<AcceptedExecution>> = {
-      contractVersion: AI_EXECUTION_PORT_CONTRACT_VERSION,
+  it('provides one sealed application protocol without fixing later business fields', () => {
+    const request = Object.freeze({}) as AiExecutionRequest;
+    const handle = Object.freeze({}) as AiExecutionHandle;
+    const port: AiExecutionPort = {
       capabilities: {
-        structuredOutput: true,
-        streamedEvents: true,
-        cancellation: true,
+        structuredOutput: false,
+        streamedEvents: false,
+        cancellation: false,
       },
-      execute: async (request) => ({
-        status: 'accepted',
-        executionId: request.executionId,
-      }),
+      execute: (received) => {
+        expect(received).toBe(request);
+        return handle;
+      },
     };
 
-    await expect(port.execute({
-      executionId: 'attempt-1',
-      instruction: 'fixed synthetic input',
-    })).resolves.toEqual({
-      status: 'accepted',
-      executionId: 'attempt-1',
-    });
+    expect(port.execute(request)).toBe(handle);
+    expectTypeOnly<AiExecutionEvent>();
   });
 
   it('keeps the production contract independent from provider and feasibility details', () => {
@@ -51,5 +40,13 @@ describe('Block 13.3 provider-neutral AI execution port', () => {
     expect(source).not.toMatch(/child_process/i);
     expect(source).not.toMatch(/codex-feasibility/i);
     expect(source).not.toMatch(/from\s+['"][^'"]*(jobs|db|renderer|shared)[^'"]*['"]/i);
+    expect(source).toContain('declare const requestBrand: unique symbol');
+    expect(source).toContain('declare const eventBrand: unique symbol');
+    expect(source).toContain('declare const handleBrand: unique symbol');
+    expect(source).not.toMatch(/AiExecutionPort\s*</);
   });
 });
+
+function expectTypeOnly<_Type>(): void {
+  // Compile-time witness only.
+}

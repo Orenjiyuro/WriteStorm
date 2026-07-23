@@ -23,6 +23,7 @@ describe('Block 13 active status authority', () => {
   it('preserves historical decisions and appends the remediation decision', () => {
     expect(decisions).toContain('## D099: Windows Packaged Codex Attempts Do Not Require Global Git');
     expect(decisions).toContain('## D100: Task 13.4–13.5 Review Remediation Is Freshness-Bound');
+    expect(decisions).toContain('## D101: The V1 AI Execution Port Is One Sealed Application Protocol');
     expect(decisions).toContain('26d548e03dfbe71e1f62081998e9942a2dfaa94c');
   });
 

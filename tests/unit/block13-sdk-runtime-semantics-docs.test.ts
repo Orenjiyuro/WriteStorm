@@ -16,7 +16,8 @@ describe('Block 13.3 SDK runtime semantics authority', () => {
     expect(design).toContain('SDK-owned pinned project-local CLI and JSONL mechanism');
     expect(design).toContain('is not a WriteStorm direct `codex exec` fallback');
     expect(design).toContain('must never spawn `codex exec` directly');
-    expect(design).toContain('AiExecutionPort<Request, Execution>');
+    expect(design).toContain('one non-generic `AiExecutionPort`');
+    expect(design).toContain('unexported `unique symbol` brands');
     expect(design).toContain('does not register an adapter');
     expect(design).toContain('does not execute an SDK turn');
   });

@@ -1,6 +1,6 @@
 # V1 Block 13 Status
 
-Date: 2026-07-23  
+Date: 2026-07-23
 Status: In progress through Task 13.5
 
 Current verdict: `Conditional Go — Windows feasibility verified; macOS packaged runtime deferred-by-user.`

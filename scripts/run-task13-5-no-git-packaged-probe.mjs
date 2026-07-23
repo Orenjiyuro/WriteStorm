@@ -1,10 +1,15 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { loadBlock6aPublicSyntheticFixture } from './block6a-public-synthetic-fixture.mjs';
+import {
+  createTask135ArtifactRecord,
+  createTask135SourceFingerprint,
+  loadTask135CompatibilityBoundary,
+} from './task13-5-compatibility-boundary.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = parseArgs(process.argv.slice(2));
@@ -18,6 +23,7 @@ if (git(['status', '--porcelain', '--untracked-files=no']).trim()) {
 }
 
 const fixture = loadBlock6aPublicSyntheticFixture(root);
+const compatibilityBoundary = loadTask135CompatibilityBoundary(root);
 const runId = randomUUID();
 const resultRoot = path.join(os.tmpdir(), 'writestorm-task13-5-no-git', runId);
 const resultPath = path.join(resultRoot, 'result.json');
@@ -57,23 +63,12 @@ try {
   }
   const evidence = {
     ...result,
-    artifact: {
-      writestormExeSha256: hashFile(executable),
-      appAsarSha256: hashFile(path.join(artifactRoot, 'resources', 'app.asar')),
-      codexExeSha256: hashFile(path.join(
-        artifactRoot,
-        'resources',
-        'app.asar.unpacked',
-        'node_modules',
-        '@openai',
-        'codex-win32-x64',
-        'vendor',
-        'x86_64-pc-windows-msvc',
-        'bin',
-        'codex.exe',
-      )),
-    },
-    compatibilityFingerprint: createFingerprint(gitHead),
+    artifact: createTask135ArtifactRecord(artifactRoot, compatibilityBoundary),
+    compatibilityFingerprint: createTask135SourceFingerprint(
+      root,
+      compatibilityBoundary,
+      gitHead,
+    ),
     invocation: {
       command: 'node scripts/run-task13-5-no-git-packaged-probe.mjs --artifact-root <artifact> --evidence-output <evidence>',
       outerWhereGitUnavailable: true,
@@ -126,31 +121,6 @@ function assertGitUnavailable(environment, systemRoot) {
   if (where.error || where.status !== 1 || getCommand.error || getCommand.status !== 1) {
     throw new Error('Git remained resolvable in the packaged probe environment.');
   }
-}
-
-function createFingerprint(gitHead) {
-  const files = [
-    'package.json', 'package-lock.json', 'forge.block6a-certification.config.ts',
-    'vite.codex-feasibility.config.ts',
-    'src/main/codex-feasibility/protocol.ts',
-    'src/main/codex-feasibility/runner.ts',
-    'src/main/codex-feasibility/utility-entry.ts',
-    'src/main/codex-feasibility/task13-no-git-packaged-probe.ts',
-    'src/main/ai/providers/codex/codex-scratch-workspace.ts',
-  ];
-  const entries = files.map((relativePath) => ({
-    relativePath,
-    sha256: hashFile(path.join(root, relativePath)),
-  }));
-  return {
-    gitHead,
-    files: entries,
-    sha256: createHash('sha256').update(JSON.stringify(entries)).digest('hex'),
-  };
-}
-
-function hashFile(filePath) {
-  return createHash('sha256').update(readFileSync(filePath)).digest('hex');
 }
 
 function readSanitizedResultSummary(resultPath) {

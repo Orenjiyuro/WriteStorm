@@ -21,8 +21,25 @@ type Task135Evidence = {
     readonly valuesRecorded: boolean;
     readonly credentialsRecorded: boolean;
   };
-  readonly artifact: Record<string, string>;
+  readonly artifact: {
+    readonly boundaryId: string;
+    readonly files: readonly {
+      readonly id: string;
+      readonly relativePath: string;
+      readonly size: number;
+      readonly sha256: string;
+    }[];
+    readonly asarEntries: readonly {
+      readonly id: string;
+      readonly archiveRelativePath: string;
+      readonly entryPath: string;
+      readonly size: number;
+      readonly sha256: string;
+    }[];
+    readonly sha256: string;
+  };
   readonly compatibilityFingerprint: {
+    readonly boundaryId: string;
     readonly gitHead: string;
     readonly files: readonly { readonly relativePath: string; readonly sha256: string }[];
     readonly sha256: string;
@@ -73,12 +90,31 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
       expect(currentHash, entry.relativePath).toBe(entry.sha256);
     }
     const fingerprintHash = createHash('sha256')
-      .update(JSON.stringify(evidence.compatibilityFingerprint.files))
+      .update(JSON.stringify({
+        boundaryId: evidence.compatibilityFingerprint.boundaryId,
+        files: evidence.compatibilityFingerprint.files,
+      }))
       .digest('hex');
     expect(fingerprintHash).toBe(evidence.compatibilityFingerprint.sha256);
-    for (const artifactHash of Object.values(evidence.artifact)) {
-      expect(artifactHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(evidence.artifact.boundaryId).toBe(evidence.compatibilityFingerprint.boundaryId);
+    expect(evidence.artifact.files.map((entry) => entry.id)).toEqual([
+      'writestorm_executable',
+      'app_asar',
+      'codex_executable',
+    ]);
+    expect(evidence.artifact.asarEntries.map((entry) => entry.id)).toEqual([
+      'certification_main_bundle',
+      'codex_utility_bundle',
+      'packaged_package_manifest',
+    ]);
+    for (const artifactEntry of [
+      ...evidence.artifact.files,
+      ...evidence.artifact.asarEntries,
+    ]) {
+      expect(artifactEntry.size).toBeGreaterThan(0);
+      expect(artifactEntry.sha256).toMatch(/^[0-9a-f]{64}$/);
     }
+    expect(evidence.artifact.sha256).toMatch(/^[0-9a-f]{64}$/);
   });
 
   it('contains no credential fields, prompt text, response body, path values or process IDs', () => {

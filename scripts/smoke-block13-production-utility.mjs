@@ -1,0 +1,163 @@
+import { randomUUID } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import electronPath from 'electron';
+import { build } from 'vite';
+
+const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const runId = randomUUID();
+const buildRoot = path.join(repositoryRoot, '.vite', `task13-utility-smoke-${runId}`);
+const smokeAppRoot = path.join(buildRoot, 'smoke-app');
+const utilityBuildRoot = path.join(buildRoot, 'utility');
+const smokeRoot = path.join(os.tmpdir(), `writestorm-task13-utility-smoke-${runId}`);
+const utilityEntry = path.join(
+  repositoryRoot,
+  'src/main/ai/providers/codex/codex-utility-entry.ts',
+);
+const smokeMainEntry = path.join(
+  repositoryRoot,
+  'tests/smoke/block13-production-utility-smoke-main.ts',
+);
+const utilityBundle = path.join(utilityBuildRoot, 'codex-utility-entry.js');
+const smokeMainBundle = path.join(smokeAppRoot, 'smoke-main.cjs');
+const utilitySource = readFileSync(utilityEntry, 'utf8');
+let processResult;
+
+if (/^const\s+\w+\s*=\s*new\s+Codex/m.test(utilitySource)
+  || /startThread|resumeThread|runStreamed|process\.env/.test(utilitySource)) {
+  throw new Error('Production Codex utility is no longer an offline import-only boundary.');
+}
+
+try {
+  await build({
+    configFile: false,
+    logLevel: 'silent',
+    build: {
+      emptyOutDir: true,
+      lib: {
+        entry: utilityEntry,
+        formats: ['cjs'],
+        fileName: () => 'codex-utility-entry.js',
+      },
+      outDir: utilityBuildRoot,
+      rollupOptions: {
+        external: ['@openai/codex-sdk', '@openai/codex'],
+      },
+      target: 'node22',
+    },
+  });
+  await build({
+    configFile: false,
+    logLevel: 'silent',
+    build: {
+      emptyOutDir: false,
+      lib: {
+        entry: smokeMainEntry,
+        formats: ['cjs'],
+        fileName: () => 'smoke-main.cjs',
+      },
+      outDir: smokeAppRoot,
+      rollupOptions: {
+        external: ['electron', 'node:fs', 'node:path'],
+      },
+      target: 'node22',
+    },
+  });
+  if (!existsSync(utilityBundle) || !existsSync(smokeMainBundle)) {
+    throw new Error('Production utility smoke bundle is missing.');
+  }
+  mkdirSync(smokeAppRoot, { recursive: true });
+  writeFileSync(path.join(smokeAppRoot, 'package.json'), JSON.stringify({
+    name: 'writestorm-block13-utility-smoke',
+    private: true,
+    main: 'smoke-main.cjs',
+  }));
+
+  processResult = spawnSync(electronPath, ['--enable-logging=stderr', smokeAppRoot], {
+    cwd: repositoryRoot,
+    env: createOfflineEnvironment(smokeRoot, utilityBundle),
+    encoding: 'utf8',
+    timeout: 30_000,
+    windowsHide: true,
+  });
+  if (processResult.error || processResult.status !== 0) {
+    const smokeObservation = readSmokeObservation(smokeRoot);
+    const startupDiagnostic = sanitizeStartupDiagnostic(processResult.stderr);
+    throw new Error(
+      `Production utility smoke process failed (status=${String(processResult.status)}, `
+      + `signal=${String(processResult.signal)}, code=${processResult.error?.code ?? 'none'}, `
+      + `stage=${smokeObservation.stage}, utility=${smokeObservation.diagnostic}, `
+      + `startup=${startupDiagnostic}).`,
+    );
+  }
+  const processEvidence = JSON.parse(processResult.stdout.trim());
+  if (processEvidence.exactBundleResolved !== true
+    || processEvidence.sdkExportImported !== true
+    || processEvidence.unsupportedMessageExitCode !== 28) {
+    throw new Error('Production utility smoke assertions failed.');
+  }
+} finally {
+  rmSync(buildRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+  rmSync(smokeRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+}
+
+process.stdout.write(`${JSON.stringify({
+  schemaVersion: 1,
+  classification: 'production_utility_offline_smoke_passed',
+  exactBundleResolved: true,
+  sdkExportImported: true,
+  unsupportedMessageExitCode: 28,
+  credentialEnvironmentExcluded: true,
+  proxyEnvironmentExcluded: true,
+  networkRequestStarted: false,
+  cleanupCompleted: !existsSync(buildRoot) && !existsSync(smokeRoot),
+})}\n`);
+
+function createOfflineEnvironment(smokeRootPath, utilityBundlePath) {
+  const environment = {};
+  for (const [key, value] of Object.entries(process.env)) {
+    if (!value || isRejectedEnvironmentKey(key)) continue;
+    environment[key] = value;
+  }
+  environment.WRITESTORM_BLOCK13_UTILITY_SMOKE = '1';
+  environment.WRITESTORM_BLOCK13_UTILITY_SMOKE_ROOT = smokeRootPath;
+  environment.WRITESTORM_BLOCK13_UTILITY_BUNDLE = utilityBundlePath;
+  if (Object.keys(environment).some(isRejectedEnvironmentKey)) {
+    throw new Error('Offline smoke environment retained a rejected key.');
+  }
+  return environment;
+}
+
+function isRejectedEnvironmentKey(key) {
+  return /OPENAI|CODEX|PROXY|(^|_)(AUTH|TOKEN|KEY|SECRET|PASSWORD)(_|$)/i.test(key)
+    || /^(NODE_OPTIONS|NODE_EXTRA_CA_CERTS|SSL_CERT_FILE|SSL_CERT_DIR|ELECTRON_RUN_AS_NODE)$/i
+      .test(key);
+}
+
+function readSmokeObservation(smokeRootPath) {
+  try {
+    const value = JSON.parse(readFileSync(path.join(smokeRootPath, 'stage.json'), 'utf8'));
+    const stage = typeof value?.stage === 'string' && /^[a-z0-9_]+$/.test(value.stage)
+      ? value.stage
+      : 'invalid_stage';
+    const diagnostic = typeof value?.diagnostic === 'string'
+      ? value.diagnostic.replace(/[\r\n]+/g, ' ').slice(0, 500)
+      : 'none';
+    return { stage, diagnostic };
+  } catch {
+    return { stage: 'stage_missing', diagnostic: 'none' };
+  }
+}
+
+function sanitizeStartupDiagnostic(stderr) {
+  if (!stderr) return 'none';
+  return stderr
+    .replaceAll(repositoryRoot, '<repository>')
+    .replaceAll(smokeRoot, '<temporary>')
+    .replace(/[A-Za-z]:\\Users\\[^\\\r\n]+/gi, '<user>')
+    .replace(/[\r\n]+/g, ' ')
+    .slice(0, 500);
+}

@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "boundaryId": "block13-task13-5-compatibility-v1",
+  "sourceDirectories": [
+    "src/main/codex-feasibility"
+  ],
+  "sourceFiles": [
+    "config/block13-task13-5-compatibility-boundary-v1.json",
+    "config/block6a-feasibility-manifest-v1.json",
+    "fixtures/block6a/codex-sdk-feasibility-v1.json",
+    "forge.block6a-certification.config.ts",
+    "forge.config.ts",
+    "package-lock.json",
+    "package.json",
+    "scripts/block6a-feasibility-manifest.mjs",
+    "scripts/block6a-public-synthetic-fixture.mjs",
+    "scripts/run-task13-5-no-git-packaged-probe.mjs",
+    "scripts/task13-5-compatibility-boundary.mjs",
+    "scripts/verify-task13-5-packaged-evidence.mjs",
+    "src/main/ai/providers/codex/codex-scratch-workspace.ts",
+    "src/main/ai/providers/codex/codex-utility-entry.ts",
+    "src/main/ai/providers/codex/codex-utility-launcher.ts",
+    "vite.block6a-certification-main.config.ts",
+    "vite.codex-feasibility.config.ts",
+    "vite.codex-utility.config.ts"
+  ],
+  "artifactFiles": [
+    {
+      "id": "writestorm_executable",
+      "relativePath": "writestorm.exe"
+    },
+    {
+      "id": "app_asar",
+      "relativePath": "resources/app.asar"
+    },
+    {
+      "id": "codex_executable",
+      "relativePath": "resources/app.asar.unpacked/node_modules/@openai/codex-win32-x64/vendor/x86_64-pc-windows-msvc/bin/codex.exe"
+    }
+  ],
+  "asarEntries": [
+    {
+      "id": "certification_main_bundle",
+      "archiveRelativePath": "resources/app.asar",
+      "entryPath": ".vite/build/main.js"
+    },
+    {
+      "id": "codex_utility_bundle",
+      "archiveRelativePath": "resources/app.asar",
+      "entryPath": ".vite/build/utility-entry.js"
+    },
+    {
+      "id": "packaged_package_manifest",
+      "archiveRelativePath": "resources/app.asar",
+      "entryPath": "package.json"
+    }
+  ]
+}

@@ -86,8 +86,9 @@ describe('Block 13.4 Codex adapter and utility boundary', () => {
   it('keeps the not-yet-defined utility protocol fail-closed and offline', () => {
     const source = readFileSync(utilityEntry, 'utf8');
 
-    expect(source).toContain("import { Codex } from '@openai/codex-sdk'");
-    expect(source).toContain("if (typeof Codex !== 'function')");
+    expect(source).toContain("import type { Codex } from '@openai/codex-sdk'");
+    expect(source).toContain("await import('@openai/codex-sdk')");
+    expect(source).toContain("if (typeof sdk.Codex !== 'function')");
     expect(source).toContain('process.exit(CODEX_UTILITY_UNSUPPORTED_MESSAGE_EXIT_CODE)');
     expect(source).not.toMatch(/^const\s+\w+\s*=\s*new\s+Codex/m);
     expect(source).not.toMatch(/startThread|resumeThread|\.run\(|runStreamed|process\.env/);

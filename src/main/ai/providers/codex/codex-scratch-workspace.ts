@@ -1,4 +1,5 @@
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, realpathSync, rmSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 export type CodexScratchWorkspace = {
@@ -12,12 +13,28 @@ export type CodexScratchWorkspace = {
 
 export class CodexScratchWorkspaceManager {
   private readonly scratchRoot: string;
+  private readonly removeOwnedDirectory: (directory: string) => void;
 
-  constructor(temporaryRoot: string) {
+  constructor(
+    temporaryRoot: string = os.tmpdir(),
+    options: {
+      readonly removeOwnedDirectory?: (directory: string) => void;
+    } = {},
+  ) {
     if (!path.isAbsolute(temporaryRoot)) {
       throw new Error('AI scratch root must be absolute.');
     }
-    this.scratchRoot = path.join(path.normalize(temporaryRoot), 'writestorm-ai-scratch');
+    const trustedTemporaryRoot = realpathSync(os.tmpdir());
+    const requestedTemporaryRoot = realpathSync(temporaryRoot);
+    if (!isPathInsideOrEqual(trustedTemporaryRoot, requestedTemporaryRoot)) {
+      throw new Error(
+        'AI scratch root must be inside the operating-system temporary directory.',
+      );
+    }
+    this.scratchRoot = path.join(requestedTemporaryRoot, 'writestorm-ai-scratch');
+    this.removeOwnedDirectory = options.removeOwnedDirectory ?? ((directory) => {
+      rmSync(directory, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+    });
   }
 
   create(): CodexScratchWorkspace {
@@ -32,9 +49,14 @@ export class CodexScratchWorkspaceManager {
       },
       cleanup: () => {
         if (cleaned) return;
+        this.removeOwnedDirectory(directory);
         cleaned = true;
-        rmSync(directory, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
       },
     };
   }
+}
+
+function isPathInsideOrEqual(parent: string, candidate: string): boolean {
+  const relative = path.relative(parent, candidate);
+  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
 }

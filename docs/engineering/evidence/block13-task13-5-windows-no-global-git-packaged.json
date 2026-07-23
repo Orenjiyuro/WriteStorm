@@ -3,10 +3,10 @@
   "evidenceId": "block13-task13-5-windows-no-global-git-packaged-001",
   "task": "13.5",
   "source": "packaged_sdk",
-  "recordedAt": "2026-07-23T11:36:39.048Z",
+  "recordedAt": "2026-07-23T11:45:07.522Z",
   "commandName": "writestorm-task13-5-no-global-git-packaged-probe",
   "classification": "windows_packaged_no_global_git_verified",
-  "gitHeadAtRun": "bb22df394636a82bd1eb8bb53be799da1b540626",
+  "gitHeadAtRun": "26d548e03dfbe71e1f62081998e9942a2dfaa94c",
   "versions": {
     "electron": "43.0.0",
     "nodeRuntime": "24.17.0",
@@ -50,13 +50,13 @@
         "id": "writestorm_executable",
         "relativePath": "writestorm.exe",
         "size": 235706368,
-        "sha256": "d05210b9298b140e8b2ae2d2f64ffee8600482948b7e7509b9299a60b90a0c8b"
+        "sha256": "60530ab1994fada6c03f3e4f7d766a942c8cff63be790a35a6be6a74549363cf"
       },
       {
         "id": "app_asar",
         "relativePath": "resources/app.asar",
-        "size": 71019271,
-        "sha256": "803d5e87ed95e7d3386b3a39f6059a914670b2b26a5240761159734769d14f6c"
+        "size": 71010984,
+        "sha256": "86ab58e34625ea05e75802ac9419a4f6d3df2f2133dad99912c12eeed7e8f9db"
       },
       {
         "id": "codex_executable",
@@ -84,15 +84,15 @@
         "id": "packaged_package_manifest",
         "archiveRelativePath": "resources/app.asar",
         "entryPath": "package.json",
-        "size": 1974,
-        "sha256": "50e8c90b0dda49ba0b06053cc1206efdc77cb1d019ef19734c554b3fc293a343"
+        "size": 1883,
+        "sha256": "dbdd5bc7f4f5fb6f8db199fd845a34219e3a14229654f868af4d04b944eeb09b"
       }
     ],
-    "sha256": "c1e8774390c40db41bc4df598a7853fe430f2098a4a1f45d323c502e529af110"
+    "sha256": "2a5cff883792d3bc8b8e76b7afc38e575ff6cabd2df837cbf04f26412b6ca6bd"
   },
   "compatibilityFingerprint": {
     "boundaryId": "block13-task13-5-compatibility-v1",
-    "gitHead": "bb22df394636a82bd1eb8bb53be799da1b540626",
+    "gitHead": "26d548e03dfbe71e1f62081998e9942a2dfaa94c",
     "files": [
       {
         "relativePath": "config/block13-task13-5-compatibility-boundary-v1.json",
@@ -100,35 +100,35 @@
       },
       {
         "relativePath": "config/block6a-feasibility-manifest-v1.json",
-        "sha256": "a23e319a1c89a8ad9b8311fbd6dfd6fd35baaf968b93b03298fd55cac2ae4fb5"
+        "sha256": "3267704b37edd7cec3c36ec7b51418d12ebcd1c8d2b5bedd220ab15813e11342"
       },
       {
         "relativePath": "fixtures/block6a/codex-sdk-feasibility-v1.json",
-        "sha256": "1e8171c5c0ed18d5646cf1208765df1eb333415c4e6824cf0d327013681466cc"
+        "sha256": "ff083c8d506b0aa96a2821d0189eecb98797444e4100c675f0c3ddc2713011bc"
       },
       {
         "relativePath": "forge.block6a-certification.config.ts",
-        "sha256": "2fab41e6b42ee9d430fff521adae4d3a7e471c89d49f5fbcbcc5aeeff29083f5"
+        "sha256": "ab2e748f206b46504d34ee11c6fe8f2b73bd53615093887f5573ef36ecfbab02"
       },
       {
         "relativePath": "forge.config.ts",
-        "sha256": "91aadec21ad44aabed921e00b3ac2bb4fd5c1072520c9b9c037f8761482bc947"
+        "sha256": "f2c07742d76648f3526b8d823491d75abaf58677b9f074d11f34f0318f64c1aa"
       },
       {
         "relativePath": "package-lock.json",
-        "sha256": "bda4d5d4eb77566c9ee228ee77fde5e54e05ab93299a876549a17592b3a8dade"
+        "sha256": "3fa7c96c2d323d1f0800052480b50ce875476d69f257293af498e76121bbeedf"
       },
       {
         "relativePath": "package.json",
-        "sha256": "5fab3ff13935195b88604839791143f8955631128fa41de01d6bd61084fbbe83"
+        "sha256": "dbdd5bc7f4f5fb6f8db199fd845a34219e3a14229654f868af4d04b944eeb09b"
       },
       {
         "relativePath": "scripts/block6a-feasibility-manifest.mjs",
-        "sha256": "c1ab5dbca2eb0fa7485744c0ca00b134728a761b418bf3cf91a459e4749a0c9a"
+        "sha256": "8b9ab0d19c341369cdb31e1dc4497917f8ee6888c5ea00efcdbcb22727f670bc"
       },
       {
         "relativePath": "scripts/block6a-public-synthetic-fixture.mjs",
-        "sha256": "16f244c416b79330b65dea82b05dbe360c19fc2cd02c5b500c6bb91faecf5361"
+        "sha256": "ef064914e185025a14a8b0b2d815e46cf2d92280a9688fc3302ac5e5d45e3f8c"
       },
       {
         "relativePath": "scripts/run-task13-5-no-git-packaged-probe.mjs",
@@ -136,7 +136,7 @@
       },
       {
         "relativePath": "scripts/task13-5-compatibility-boundary.mjs",
-        "sha256": "2aea6e920dd4cb797d73e459ea3915bf8d6a4198fb484f219ad8a498676d4dbc"
+        "sha256": "9f9bc971ee5e7d4bb7561aef8461394b94a4c54894ccc2b1dbfb34081b4d9369"
       },
       {
         "relativePath": "scripts/verify-task13-5-packaged-evidence.mjs",
@@ -152,63 +152,63 @@
       },
       {
         "relativePath": "src/main/ai/providers/codex/codex-utility-launcher.ts",
-        "sha256": "c7535bb9e3b01f0ce2b6180aee8c553cc9eafff295223917db14fa95504ac537"
+        "sha256": "49b68fd3a58a4ab8ae3021e5fd21bc6488fc5900caabdd037dafe809367a2441"
       },
       {
         "relativePath": "src/main/codex-feasibility/assertion-provenance.ts",
-        "sha256": "fb93aed71c60192ca21b22848bba2ffba40ef094d196931f952ce5afe0379c08"
+        "sha256": "c3bf87513083c9c51bea2ca4444d52c4f0e8ed3d61293ca06709b4541f740b75"
       },
       {
         "relativePath": "src/main/codex-feasibility/certification-main.ts",
-        "sha256": "273b7c52cd6a1cd758789c5687d8e00a01c3f126015bd0d7fd8bef6cbfd759de"
+        "sha256": "0a153840ea23c24d9384b48c7fc6fbe2ee8ea657f49ea86d1e1159c93e450bf1"
       },
       {
         "relativePath": "src/main/codex-feasibility/environment.ts",
-        "sha256": "fb750fd06c3e0642c34d7e23c9c0489fd551d0cb0199725d33f3230d0cd3ae38"
+        "sha256": "5be947e6511a46f28cc11463995b1c3811b900b84af12b5c80c21618de19568c"
       },
       {
         "relativePath": "src/main/codex-feasibility/lifecycle-probe-main.ts",
-        "sha256": "4ac0d53e7105ec394a08186f1ef67a401f441bf8928cd1d2c10e6f910c42c040"
+        "sha256": "1706398789f9d4dacb1785192c8a5d70453141014dc1a05267a87064c6a15a9e"
       },
       {
         "relativePath": "src/main/codex-feasibility/lifecycle.ts",
-        "sha256": "f75a64e04c81fcb35d579dceb8968aa03a2e02e8579b7b39858b94b014c8698f"
+        "sha256": "af2f7a45b71ef416acab25717c00675e24f0e3e28147b3eeabcbe1301aeafcb7"
       },
       {
         "relativePath": "src/main/codex-feasibility/manifest.ts",
-        "sha256": "d31d7eaab0383626df3d9b115e859c426d26aec397ae7cc584f965e2f8ec1154"
+        "sha256": "2681c7dc9fd5d207a8ed1559906d81ea76d08123893dfa1ff5827502ccff9907"
       },
       {
         "relativePath": "src/main/codex-feasibility/operations.ts",
-        "sha256": "f2270919d6ad01b063526fe8b6d52992f63ed90b4ace66908dca9570c160c60b"
+        "sha256": "0648dcd770da3da2e5c8df8eb031b1d2c6edceb465d4c1c765d8547866337a5a"
       },
       {
         "relativePath": "src/main/codex-feasibility/output-schema-probe-main.ts",
-        "sha256": "e6020e107bd063571287cf0acd9e9a7f61923cbef11bef46f37cf189eb4c5e19"
+        "sha256": "2bc1618205a34135c2e6b0bc3bf31a3f8ee118a0ed10a6dd454de80f0097d990"
       },
       {
         "relativePath": "src/main/codex-feasibility/packaged-probe.ts",
-        "sha256": "c7907c93e63937e051d3e35ef273fa9937ff5f3a7a8388d648a2b630f3f48c58"
+        "sha256": "bf0513ab3f37d26bd80cc2c86ee7c6c3a22ef7a6e1a3917073863848da8ff123"
       },
       {
         "relativePath": "src/main/codex-feasibility/probe-main.ts",
-        "sha256": "dfd46de8091557a36076c3069889886739272e66944bcc113c5a234b9ed7b64b"
+        "sha256": "50e80a18276dd2262057d0abe07fc15fee1c7969336a2a41ff61de5539f5e137"
       },
       {
         "relativePath": "src/main/codex-feasibility/protocol.ts",
-        "sha256": "5b0d270f41e791a97140292cb3d73815607a02ca00f087fc515ff16bbfeee212"
+        "sha256": "53b2652ac47f8c59f804299e8754d769395f9b3496f690b56b29febe0aeb3144"
       },
       {
         "relativePath": "src/main/codex-feasibility/runner.ts",
-        "sha256": "71428a7716b81c81858ded4d2d8270a6fd666657a52d21e33ca9c24131f3687b"
+        "sha256": "0578679e4619e1ff23afecdcdb9deb751dc829ebe315e12fea87847a50ed0225"
       },
       {
         "relativePath": "src/main/codex-feasibility/session-supervisor.ts",
-        "sha256": "2459fe083e6abc03782f1cb5b4c07e38df6dd697087acfd4704255df197c9569"
+        "sha256": "96ed108110093f6fd71201161091f487ffcdadb5500249455a055540121e10f5"
       },
       {
         "relativePath": "src/main/codex-feasibility/structured-output.ts",
-        "sha256": "ad1c2e0611795a226b902d4badbedd526e04dd963c7203def22b0df4460f6199"
+        "sha256": "3fad2b516442707f55fdfd537a8f79610aeb85ac4054dbd4e65ae66ec687fc05"
       },
       {
         "relativePath": "src/main/codex-feasibility/task13-no-git-packaged-probe.ts",
@@ -216,34 +216,34 @@
       },
       {
         "relativePath": "src/main/codex-feasibility/termination-supervisor.ts",
-        "sha256": "cee95977a046706aa27b504b21dda4b68765e260002032cf1be83104f576e580"
+        "sha256": "2d7c648ed0f2500490b469f625b1816e87aebf4d98e12a26619b5efdf9fa849f"
       },
       {
         "relativePath": "src/main/codex-feasibility/turn-deadline.ts",
-        "sha256": "a9a70982088931670d02242cd7d7f7f939f2abd4b88575f687c6697371c96e9c"
+        "sha256": "4d35c0fb723a78130a30564bc9aee2037dd8df3338b0b22eae275edf1f6a4437"
       },
       {
         "relativePath": "src/main/codex-feasibility/utility-entry.ts",
-        "sha256": "d53ffbe8e971bac98a23ea3896fed7c5d0bed61f2df5668f138e63340817345c"
+        "sha256": "ecaaa21891c24e931f84e89ef9296c209ff8ff2ff2fe9b5a1a869bd58389d2c7"
       },
       {
         "relativePath": "src/main/codex-feasibility/utility-protocol-termination.ts",
-        "sha256": "d3c0ad946bce2360a8da2c2897f295835db3e06d1a80f43b64b6ec336e54216b"
+        "sha256": "d98e1842e361bd0afcfd54f6e487ef5da7b84a49e45bb034f45822a315a7c709"
       },
       {
         "relativePath": "vite.block6a-certification-main.config.ts",
-        "sha256": "e0075051b2eea91d2081ec8897a3c3eac5512b8a7e3d8bd35aa948e10fecb14b"
+        "sha256": "580b6b95193262377d23af2b2a8049ef09b64f19d2c0c8fe121f09894767f2fd"
       },
       {
         "relativePath": "vite.codex-feasibility.config.ts",
-        "sha256": "a2ff2cb5af59abbadfda5cd06b577290520e444321e1ca0a8c6caa8f18afee0b"
+        "sha256": "0551a1906e5c9fec68311088153304411881d6781c395e42e9ddae55293e1f83"
       },
       {
         "relativePath": "vite.codex-utility.config.ts",
-        "sha256": "a2ff2cb5af59abbadfda5cd06b577290520e444321e1ca0a8c6caa8f18afee0b"
+        "sha256": "0551a1906e5c9fec68311088153304411881d6781c395e42e9ddae55293e1f83"
       }
     ],
-    "sha256": "ae2ed88832f2aabe20b3544522bd353382fef9d777ac9e842695d98e2e24a80b"
+    "sha256": "92c0edd6ae9aae8d97ac59cb558d49ff17a233e173d0f8b2329debd6c19620e6"
   },
   "invocation": {
     "command": "node scripts/run-task13-5-no-git-packaged-probe.mjs --artifact-root <artifact> --evidence-output <evidence>",

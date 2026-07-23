@@ -23,7 +23,7 @@ describe('Block 13 active status authority', () => {
   it('preserves historical decisions and appends the remediation decision', () => {
     expect(decisions).toContain('## D099: Windows Packaged Codex Attempts Do Not Require Global Git');
     expect(decisions).toContain('## D100: Task 13.4–13.5 Review Remediation Is Freshness-Bound');
-    expect(decisions).toContain('bb22df394636a82bd1eb8bb53be799da1b540626');
+    expect(decisions).toContain('26d548e03dfbe71e1f62081998e9942a2dfaa94c');
   });
 
   it('does not promote the current state to broader readiness', () => {

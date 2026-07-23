@@ -50,8 +50,8 @@ describe('Block 13.5 packaged no-global-Git probe', () => {
     expect(probe).toContain('getCommandGitUnavailable');
     expect(probe).toContain('cliResidualAbsent');
     expect(runner).toContain('PATH: createNoGitPath(systemRoot)');
-    expect(runner).toContain('readSanitizedFailureCode(resultPath)');
-    expect(runner).toContain("failureCode=${failureCode}");
+    expect(runner).toContain('readSanitizedResultSummary(resultPath)');
+    expect(runner).toContain('failedAssertions=${resultSummary.failedAssertions');
     expect(runner).not.toMatch(/OPENAI_API_KEY|CODEX_API_KEY|CODEX_ACCESS_TOKEN/);
   });
 });

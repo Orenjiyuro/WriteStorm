@@ -41,11 +41,13 @@ try {
     timeout: 180_000,
   });
   if (launched.error || launched.status !== 0) {
-    const failureCode = readSanitizedFailureCode(resultPath);
+    const resultSummary = readSanitizedResultSummary(resultPath);
     throw new Error(
       `Packaged probe process failed (status=${String(launched.status)}, `
       + `signal=${String(launched.signal)}, spawnCode=${launched.error?.code ?? 'none'}, `
-      + `failureCode=${failureCode}).`,
+      + `classification=${resultSummary.classification}, `
+      + `failureCode=${resultSummary.failureCode}, `
+      + `failedAssertions=${resultSummary.failedAssertions.join(',') || 'none'}).`,
     );
   }
   const result = JSON.parse(readFileSync(resultPath, 'utf8'));
@@ -151,16 +153,35 @@ function hashFile(filePath) {
   return createHash('sha256').update(readFileSync(filePath)).digest('hex');
 }
 
-function readSanitizedFailureCode(resultPath) {
-  if (!existsSync(resultPath)) return 'result_missing';
+function readSanitizedResultSummary(resultPath) {
+  if (!existsSync(resultPath)) {
+    return {
+      classification: 'result_missing',
+      failureCode: 'result_missing',
+      failedAssertions: [],
+    };
+  }
   try {
     const result = JSON.parse(readFileSync(resultPath, 'utf8'));
-    return typeof result?.failure?.code === 'string'
+    const classification = typeof result?.classification === 'string'
+      && /^[A-Za-z0-9_-]{1,100}$/.test(result.classification)
+      ? result.classification
+      : 'classification_unavailable';
+    const failureCode = typeof result?.failure?.code === 'string'
       && /^[A-Za-z0-9:_-]{1,160}$/.test(result.failure.code)
       ? result.failure.code
       : 'failure_code_unavailable';
+    const failedAssertions = Object.entries(result?.assertions ?? {})
+      .filter(([name, value]) => /^[A-Za-z0-9_-]{1,100}$/.test(name) && value === false)
+      .map(([name]) => name)
+      .sort();
+    return { classification, failureCode, failedAssertions };
   } catch {
-    return 'result_unreadable';
+    return {
+      classification: 'result_unreadable',
+      failureCode: 'result_unreadable',
+      failedAssertions: [],
+    };
   }
 }
 

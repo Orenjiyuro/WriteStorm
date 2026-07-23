@@ -1,9 +1,15 @@
 import { app } from 'electron';
 import { runOptionalPackagedCodexProbe } from './packaged-probe';
+import { runOptionalTask13NoGitPackagedProbe } from './task13-no-git-packaged-probe';
 
 process.title = 'WriteStorm Block 6A Certification';
 
 app.whenReady().then(async () => {
+  const task13Handled = await runOptionalTask13NoGitPackagedProbe({
+    env: process.env,
+    mainBundleDirectory: __dirname,
+  });
+  if (task13Handled) return;
   const certificationHandled = await runOptionalPackagedCodexProbe({
     env: process.env,
     mainBundleDirectory: __dirname,

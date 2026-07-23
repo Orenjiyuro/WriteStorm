@@ -64,6 +64,7 @@ export type CodexLifecycleProbeResult = {
 export type CodexOutputSchemaProbeInput = {
   readonly scenario: 'valid-minimal' | 'invalid-schema';
   readonly workingDirectory: string;
+  readonly skipGitRepoCheck?: boolean;
 };
 
 export type CodexOutputSchemaProbeResult = {
@@ -304,6 +305,7 @@ const requestSchema = z.discriminatedUnion('command', [
     input: z.object({
       scenario: z.enum(['valid-minimal', 'invalid-schema']),
       workingDirectory: z.string().min(1).refine((value) => path.isAbsolute(value)),
+      skipGitRepoCheck: z.boolean().optional(),
     }).strict(),
   }).strict(),
   z.object({

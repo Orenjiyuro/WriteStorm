@@ -271,7 +271,7 @@ async function runOutputSchemaProbe(input: CodexOutputSchemaProbeInput): Promise
   const installedSdkVersion = resolveInstalledCodexSdkVersion();
   const thread = client.startThread({
     workingDirectory: input.workingDirectory,
-    skipGitRepoCheck: false,
+    skipGitRepoCheck: input.skipGitRepoCheck ?? false,
     sandboxMode: 'read-only',
     approvalPolicy: 'never',
     networkAccessEnabled: false,

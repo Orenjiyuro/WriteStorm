@@ -25,6 +25,7 @@
     "src/main/codex-feasibility/protocol.ts",
     "src/main/codex-feasibility/runner.ts",
     "src/main/codex-feasibility/structured-output.ts",
+    "src/main/codex-feasibility/task13-no-git-packaged-probe.ts",
     "src/main/codex-feasibility/turn-deadline.ts",
     "src/main/codex-feasibility/utility-entry.ts"
   ],

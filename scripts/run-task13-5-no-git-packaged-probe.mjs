@@ -40,7 +40,14 @@ try {
     stdio: 'ignore',
     timeout: 180_000,
   });
-  if (launched.error || launched.status !== 0) throw new Error('Packaged probe process failed.');
+  if (launched.error || launched.status !== 0) {
+    const failureCode = readSanitizedFailureCode(resultPath);
+    throw new Error(
+      `Packaged probe process failed (status=${String(launched.status)}, `
+      + `signal=${String(launched.signal)}, spawnCode=${launched.error?.code ?? 'none'}, `
+      + `failureCode=${failureCode}).`,
+    );
+  }
   const result = JSON.parse(readFileSync(resultPath, 'utf8'));
   if (result.classification !== 'windows_packaged_no_global_git_verified'
     || Object.values(result.assertions ?? {}).some((value) => value !== true)) {
@@ -142,6 +149,19 @@ function createFingerprint(gitHead) {
 
 function hashFile(filePath) {
   return createHash('sha256').update(readFileSync(filePath)).digest('hex');
+}
+
+function readSanitizedFailureCode(resultPath) {
+  if (!existsSync(resultPath)) return 'result_missing';
+  try {
+    const result = JSON.parse(readFileSync(resultPath, 'utf8'));
+    return typeof result?.failure?.code === 'string'
+      && /^[A-Za-z0-9:_-]{1,160}$/.test(result.failure.code)
+      ? result.failure.code
+      : 'failure_code_unavailable';
+  } catch {
+    return 'result_unreadable';
+  }
 }
 
 function git(arguments_) {

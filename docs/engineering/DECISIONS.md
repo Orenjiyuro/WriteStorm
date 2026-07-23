@@ -1345,3 +1345,16 @@ Rules:
 - Until their implementation tasks pass, structured output, streamed events and cancellation remain false.
 - Compile-negative witnesses reject provider-parameterized ports and SDK objects at the branded request/event/handle boundary. Import scans reject SDK and provider-private utility types in Job, SQLite, analysis-module, renderer and shared layers.
 - This adds no provider registry, alternate adapter, fallback, Job, persistence, runtime probe or AI business workflow.
+
+## D102: Task 13.4–13.5 Review Gates Are Layered and Measured
+
+Decision: Task 13.4 offline evidence must measure an installed network guard against the shared production utility build configuration, and Task 13.5 compatibility freshness is evaluated independently across supply-chain, production-protocol and probe-artifact layers.
+
+Rules:
+
+- `config/codex-utility-vite-config.ts` is the shared production utility build authority. The Forge wrapper and offline smoke import it; the smoke may add only isolated output/entry settings and test-only network instrumentation.
+- The offline utility guard installs before the SDK import, blocks `fetch`, DNS and Node HTTP/HTTPS/TLS/socket entry points, and persists only installed state, an attempt count and closed operation kinds. Missing observation or any attempt fails the smoke. A deterministic negative witness proves a real socket call is blocked.
+- `config/block13-task13-5-compatibility-boundary-v1.json` schema 2 separates supply-chain, production-protocol and probe-artifact fingerprints. The evaluator reports the exact stale layer and fails closed; it never treats one fresh layer as authority for another.
+- The production-protocol layer expands all production AI sources and includes the shared/Forge utility build authorities plus offline-smoke instrumentation. Port, adapter, transport, launcher, utility, scratch or build-boundary drift invalidates prior Task 13.5 evidence.
+- Fresh evidence `block13-task13-5-windows-no-global-git-packaged-001` binds clean runtime HEAD `028c0994692b1843eea57d18b2d5fe769e918289`, compatibility fingerprint `29d6131b2c83cda03984f68851b74f7e97ed814253226e3a1768acd5c7412e40`, and artifact-content record `2c43bf56940728ddd9db95d8e349aadceafce53fd7b871e9bfbf3c1973b88f70`.
+- The explicit Windows probe again passed all 17 no-global-Git assertions with SDK/CLI `0.144.6`; macOS remains deferred-by-user. This is not full Go, cross-platform compatibility, a production AI Job or release readiness.

@@ -41,7 +41,16 @@ type Task135Evidence = {
   readonly compatibilityFingerprint: {
     readonly boundaryId: string;
     readonly gitHead: string;
-    readonly files: readonly { readonly relativePath: string; readonly sha256: string }[];
+    readonly layers: Readonly<Record<
+      'supplyChain' | 'productionProtocol' | 'probeArtifact',
+      {
+        readonly files: readonly {
+          readonly relativePath: string;
+          readonly sha256: string;
+        }[];
+        readonly sha256: string;
+      }
+    >>;
     readonly sha256: string;
   };
   readonly invocation: {
@@ -60,7 +69,7 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
       evidenceId: 'block13-task13-5-windows-no-global-git-packaged-001',
       task: '13.5',
       classification: 'windows_packaged_no_global_git_verified',
-      gitHeadAtRun: '26d548e03dfbe71e1f62081998e9942a2dfaa94c',
+      gitHeadAtRun: '028c0994692b1843eea57d18b2d5fe769e918289',
       versions: {
         electron: '43.0.0',
         codexSdk: '0.144.6',
@@ -83,16 +92,24 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
 
   it('binds the recorded compatibility files to their current bytes', () => {
     expect(evidence.compatibilityFingerprint.gitHead).toBe(evidence.gitHeadAtRun);
-    for (const entry of evidence.compatibilityFingerprint.files) {
-      const currentHash = createHash('sha256')
-        .update(normalizeSourceBytes(readFileSync(path.join(rootDir, entry.relativePath))))
+    for (const [layerName, layer] of Object.entries(
+      evidence.compatibilityFingerprint.layers,
+    )) {
+      for (const entry of layer.files) {
+        const currentHash = createHash('sha256')
+          .update(normalizeSourceBytes(readFileSync(path.join(rootDir, entry.relativePath))))
+          .digest('hex');
+        expect(currentHash, entry.relativePath).toBe(entry.sha256);
+      }
+      const layerHash = createHash('sha256')
+        .update(JSON.stringify({ layerName, files: layer.files }))
         .digest('hex');
-      expect(currentHash, entry.relativePath).toBe(entry.sha256);
+      expect(layerHash, layerName).toBe(layer.sha256);
     }
     const fingerprintHash = createHash('sha256')
       .update(JSON.stringify({
         boundaryId: evidence.compatibilityFingerprint.boundaryId,
-        files: evidence.compatibilityFingerprint.files,
+        layers: evidence.compatibilityFingerprint.layers,
       }))
       .digest('hex');
     expect(fingerprintHash).toBe(evidence.compatibilityFingerprint.sha256);
@@ -144,6 +161,7 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
       expect(document).toContain('skipGitRepoCheck=true');
     }
     expect(decisions).toContain('## D099: Windows Packaged Codex Attempts Do Not Require Global Git');
+    expect(decisions).toContain('## D102: Task 13.4–13.5 Review Gates Are Layered and Measured');
   });
 });
 

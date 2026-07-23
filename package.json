@@ -20,7 +20,6 @@
     "probe:codex:lifecycle": "node scripts/run-block6a-probes.mjs lifecycle",
     "package:codex-certification": "node scripts/package-block6a-certification.mjs",
     "test:verification:block6a-certification": "node scripts/verify-block6a-certification-package.mjs",
-    "smoke:codex:production-utility": "node scripts/smoke-block13-production-utility.mjs",
     "probe:codex:packaged": "npm run certify:codex:windows",
     "certify:codex:windows": "node scripts/certify-block6a-windows.mjs"
   },

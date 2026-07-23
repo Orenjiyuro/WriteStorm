@@ -45,7 +45,9 @@ export function createTask135SourceFingerprint(repositoryRoot, boundary, gitHead
   }
   const files = relativePaths.map((relativePath) => ({
     relativePath,
-    sha256: hashBytes(readFileSync(resolveInside(repositoryRoot, relativePath))),
+    sha256: hashBytes(normalizeSourceBytes(
+      readFileSync(resolveInside(repositoryRoot, relativePath)),
+    )),
   }));
   const sha256 = hashBytes(Buffer.from(JSON.stringify({
     boundaryId: boundary.boundaryId,
@@ -168,6 +170,11 @@ function toPosixRelative(root, value) {
 
 function hashBytes(bytes) {
   return createHash('sha256').update(bytes).digest('hex');
+}
+
+function normalizeSourceBytes(bytes) {
+  if (bytes.includes(0)) return bytes;
+  return Buffer.from(bytes.toString('utf8').replace(/\r\n/g, '\n'), 'utf8');
 }
 
 function recordsEqual(left, right) {

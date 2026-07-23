@@ -85,7 +85,7 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
     expect(evidence.compatibilityFingerprint.gitHead).toBe(evidence.gitHeadAtRun);
     for (const entry of evidence.compatibilityFingerprint.files) {
       const currentHash = createHash('sha256')
-        .update(readFileSync(path.join(rootDir, entry.relativePath)))
+        .update(normalizeSourceBytes(readFileSync(path.join(rootDir, entry.relativePath))))
         .digest('hex');
       expect(currentHash, entry.relativePath).toBe(entry.sha256);
     }
@@ -151,4 +151,9 @@ function collectKeys(value: unknown): string[] {
   if (Array.isArray(value)) return value.flatMap(collectKeys);
   if (!value || typeof value !== 'object') return [];
   return Object.entries(value).flatMap(([key, child]) => [key, ...collectKeys(child)]);
+}
+
+function normalizeSourceBytes(bytes: Buffer): Buffer {
+  if (bytes.includes(0)) return bytes;
+  return Buffer.from(bytes.toString('utf8').replace(/\r\n/g, '\n'), 'utf8');
 }

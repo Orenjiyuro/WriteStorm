@@ -1319,3 +1319,15 @@ Rules:
 - Evidence `block13-task13-5-windows-no-global-git-packaged-001` binds clean run HEAD `9c69af57eb5d83d6bedb264a03c2fdbfada89c65`, SDK/CLI `0.144.6`, Electron `43.0.0`, artifact hashes and compatibility fingerprint `50cdfc5c7af88943daea284a818f86809f24bd0321dade93cebdd2a94d51176c`.
 - The fixed public synthetic turn passed strict structured validation, cleanup acknowledgement and attributed zero-residual checks without reading Library, SQLite, source text or a user manuscript.
 - This clears only the Task 13.5 Windows no-global-Git requirement. It is not a production AI Job, persistence/resume proof, macOS packaged verification, cross-platform Go or release readiness. macOS remains deferred-by-user.
+
+## D100: Task 13.4–13.5 Review Remediation Is Freshness-Bound
+
+Decision: Review remediation supersedes D099's original runtime record with a new Task 13.5 record bound to clean implementation HEAD `bb22df394636a82bd1eb8bb53be799da1b540626`; D099 remains historical and its behavioral decision is unchanged.
+
+Rules:
+
+- Scratch roots must resolve inside the operating-system temporary root. Cleanup failure remains retryable, and only successful removal makes subsequent cleanup a no-op.
+- `config/block13-task13-5-compatibility-boundary-v1.json` is the single source/artifact boundary. It expands every feasibility runtime source and includes manifest, fixture, Forge/Vite, runner, verifier and production utility inputs.
+- Evidence fingerprint `ae2ed88832f2aabe20b3544522bd353382fef9d777ac9e842695d98e2e24a80b` covers 37 current source inputs. Artifact-content record `c1e8774390c40db41bc4df598a7853fe430f2098a4a1f45d323c502e529af110` covers three packaged files and three required ASAR entries, and is independently recomputed against the retained artifact.
+- The real production utility offline smoke preserves the SDK's import-only ESM boundary through dynamic `import()`, starts the fixed bundle through Electron `utilityProcess.fork`, constructs no client, uses no auth/proxy configuration and exits fail-closed with code 28 on an unsupported message.
+- The refreshed Windows packaged no-Git turn passed all 17 assertions. macOS remains deferred-by-user; this is not full Go, cross-platform compatibility, a production AI Job or release readiness.

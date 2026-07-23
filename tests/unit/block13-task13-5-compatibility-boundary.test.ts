@@ -98,7 +98,7 @@ describe('Block 13.5 canonical compatibility boundary', () => {
       'utf8',
     ));
     expect(evidence.compatibilityFingerprint).toEqual(
-      createTask135SourceFingerprint(rootDir, boundary),
+      createTask135SourceFingerprint(rootDir, boundary, evidence.gitHeadAtRun),
     );
     expect(evidence.artifact.sha256).toMatch(/^[0-9a-f]{64}$/);
   });

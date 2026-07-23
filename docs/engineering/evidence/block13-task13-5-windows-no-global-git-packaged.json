@@ -3,10 +3,10 @@
   "evidenceId": "block13-task13-5-windows-no-global-git-packaged-001",
   "task": "13.5",
   "source": "packaged_sdk",
-  "recordedAt": "2026-07-23T07:23:23.175Z",
+  "recordedAt": "2026-07-23T11:36:39.048Z",
   "commandName": "writestorm-task13-5-no-global-git-packaged-probe",
   "classification": "windows_packaged_no_global_git_verified",
-  "gitHeadAtRun": "9c69af57eb5d83d6bedb264a03c2fdbfada89c65",
+  "gitHeadAtRun": "bb22df394636a82bd1eb8bb53be799da1b540626",
   "versions": {
     "electron": "43.0.0",
     "nodeRuntime": "24.17.0",
@@ -44,28 +44,155 @@
     "Windows x64 packaged evidence only; macOS remains deferred-by-user."
   ],
   "artifact": {
-    "writestormExeSha256": "8cac8f0abcd27050b344e78fd1d41df92e4fb961df20fe369b1564a428f012cb",
-    "appAsarSha256": "732c9d4d705af1991ddf67be0f57921d5254bd2a48cddb785d6ff95f05d64153",
-    "codexExeSha256": "4b76ded066d0239115ca97473d010c92072bc5c5550a45dd7cbebe1e9eb956a7"
-  },
-  "compatibilityFingerprint": {
-    "gitHead": "9c69af57eb5d83d6bedb264a03c2fdbfada89c65",
+    "boundaryId": "block13-task13-5-compatibility-v1",
     "files": [
       {
-        "relativePath": "package.json",
-        "sha256": "61845fd8b4ab0add3fdb878e970ecaa3b83f1b14eb46ec656477ea45d58579b7"
+        "id": "writestorm_executable",
+        "relativePath": "writestorm.exe",
+        "size": 235706368,
+        "sha256": "d05210b9298b140e8b2ae2d2f64ffee8600482948b7e7509b9299a60b90a0c8b"
       },
       {
-        "relativePath": "package-lock.json",
-        "sha256": "bda4d5d4eb77566c9ee228ee77fde5e54e05ab93299a876549a17592b3a8dade"
+        "id": "app_asar",
+        "relativePath": "resources/app.asar",
+        "size": 71019271,
+        "sha256": "803d5e87ed95e7d3386b3a39f6059a914670b2b26a5240761159734769d14f6c"
+      },
+      {
+        "id": "codex_executable",
+        "relativePath": "resources/app.asar.unpacked/node_modules/@openai/codex-win32-x64/vendor/x86_64-pc-windows-msvc/bin/codex.exe",
+        "size": 341225264,
+        "sha256": "4b76ded066d0239115ca97473d010c92072bc5c5550a45dd7cbebe1e9eb956a7"
+      }
+    ],
+    "asarEntries": [
+      {
+        "id": "certification_main_bundle",
+        "archiveRelativePath": "resources/app.asar",
+        "entryPath": ".vite/build/main.js",
+        "size": 107384,
+        "sha256": "9323c70f925583a52ae548d433ee9de4db04d7548236da0fe0ee8e0a178b3e26"
+      },
+      {
+        "id": "codex_utility_bundle",
+        "archiveRelativePath": "resources/app.asar",
+        "entryPath": ".vite/build/utility-entry.js",
+        "size": 89904,
+        "sha256": "ece06c75686bdcc8ee429cb815624ced131130481a01c72966d8e475f76192c1"
+      },
+      {
+        "id": "packaged_package_manifest",
+        "archiveRelativePath": "resources/app.asar",
+        "entryPath": "package.json",
+        "size": 1974,
+        "sha256": "50e8c90b0dda49ba0b06053cc1206efdc77cb1d019ef19734c554b3fc293a343"
+      }
+    ],
+    "sha256": "c1e8774390c40db41bc4df598a7853fe430f2098a4a1f45d323c502e529af110"
+  },
+  "compatibilityFingerprint": {
+    "boundaryId": "block13-task13-5-compatibility-v1",
+    "gitHead": "bb22df394636a82bd1eb8bb53be799da1b540626",
+    "files": [
+      {
+        "relativePath": "config/block13-task13-5-compatibility-boundary-v1.json",
+        "sha256": "030aeb13eccbcd9f1b8c817d48600918041adf886f51340055c25c9b7e27618d"
+      },
+      {
+        "relativePath": "config/block6a-feasibility-manifest-v1.json",
+        "sha256": "a23e319a1c89a8ad9b8311fbd6dfd6fd35baaf968b93b03298fd55cac2ae4fb5"
+      },
+      {
+        "relativePath": "fixtures/block6a/codex-sdk-feasibility-v1.json",
+        "sha256": "1e8171c5c0ed18d5646cf1208765df1eb333415c4e6824cf0d327013681466cc"
       },
       {
         "relativePath": "forge.block6a-certification.config.ts",
         "sha256": "2fab41e6b42ee9d430fff521adae4d3a7e471c89d49f5fbcbcc5aeeff29083f5"
       },
       {
-        "relativePath": "vite.codex-feasibility.config.ts",
-        "sha256": "a2ff2cb5af59abbadfda5cd06b577290520e444321e1ca0a8c6caa8f18afee0b"
+        "relativePath": "forge.config.ts",
+        "sha256": "91aadec21ad44aabed921e00b3ac2bb4fd5c1072520c9b9c037f8761482bc947"
+      },
+      {
+        "relativePath": "package-lock.json",
+        "sha256": "bda4d5d4eb77566c9ee228ee77fde5e54e05ab93299a876549a17592b3a8dade"
+      },
+      {
+        "relativePath": "package.json",
+        "sha256": "5fab3ff13935195b88604839791143f8955631128fa41de01d6bd61084fbbe83"
+      },
+      {
+        "relativePath": "scripts/block6a-feasibility-manifest.mjs",
+        "sha256": "c1ab5dbca2eb0fa7485744c0ca00b134728a761b418bf3cf91a459e4749a0c9a"
+      },
+      {
+        "relativePath": "scripts/block6a-public-synthetic-fixture.mjs",
+        "sha256": "16f244c416b79330b65dea82b05dbe360c19fc2cd02c5b500c6bb91faecf5361"
+      },
+      {
+        "relativePath": "scripts/run-task13-5-no-git-packaged-probe.mjs",
+        "sha256": "18e609def76e834e279d1e026d513e889455afd1452e47187c85485d19f10459"
+      },
+      {
+        "relativePath": "scripts/task13-5-compatibility-boundary.mjs",
+        "sha256": "2aea6e920dd4cb797d73e459ea3915bf8d6a4198fb484f219ad8a498676d4dbc"
+      },
+      {
+        "relativePath": "scripts/verify-task13-5-packaged-evidence.mjs",
+        "sha256": "e26f9b4290b325243085f97519393386c2cba442ef51de6c0e0e60e0732e4317"
+      },
+      {
+        "relativePath": "src/main/ai/providers/codex/codex-scratch-workspace.ts",
+        "sha256": "9e1fd1f6299569adeaf290f8cd706b56d34b89976d3db57fe2cf757f84841527"
+      },
+      {
+        "relativePath": "src/main/ai/providers/codex/codex-utility-entry.ts",
+        "sha256": "f8d66fb5ace226f68df2870ebebe5fb79c38c36259407bb1b0c185ec3e7a0256"
+      },
+      {
+        "relativePath": "src/main/ai/providers/codex/codex-utility-launcher.ts",
+        "sha256": "c7535bb9e3b01f0ce2b6180aee8c553cc9eafff295223917db14fa95504ac537"
+      },
+      {
+        "relativePath": "src/main/codex-feasibility/assertion-provenance.ts",
+        "sha256": "fb93aed71c60192ca21b22848bba2ffba40ef094d196931f952ce5afe0379c08"
+      },
+      {
+        "relativePath": "src/main/codex-feasibility/certification-main.ts",
+        "sha256": "273b7c52cd6a1cd758789c5687d8e00a01c3f126015bd0d7fd8bef6cbfd759de"
+      },
+      {
+        "relativePath": "src/main/codex-feasibility/environment.ts",
+        "sha256": "fb750fd06c3e0642c34d7e23c9c0489fd551d0cb0199725d33f3230d0cd3ae38"
+      },
+      {
+        "relativePath": "src/main/codex-feasibility/lifecycle-probe-main.ts",
+        "sha256": "4ac0d53e7105ec394a08186f1ef67a401f441bf8928cd1d2c10e6f910c42c040"
+      },
+      {
+        "relativePath": "src/main/codex-feasibility/lifecycle.ts",
+        "sha256": "f75a64e04c81fcb35d579dceb8968aa03a2e02e8579b7b39858b94b014c8698f"
+      },
+      {
+        "relativePath": "src/main/codex-feasibility/manifest.ts",
+        "sha256": "d31d7eaab0383626df3d9b115e859c426d26aec397ae7cc584f965e2f8ec1154"
+      },
+      {
+        "relativePath": "src/main/codex-feasibility/operations.ts",
+        "sha256": "f2270919d6ad01b063526fe8b6d52992f63ed90b4ace66908dca9570c160c60b"
+      },
+      {
+        "relativePath": "src/main/codex-feasibility/output-schema-probe-main.ts",
+        "sha256": "e6020e107bd063571287cf0acd9e9a7f61923cbef11bef46f37cf189eb4c5e19"
+      },
+      {
+        "relativePath": "src/main/codex-feasibility/packaged-probe.ts",
+        "sha256": "c7907c93e63937e051d3e35ef273fa9937ff5f3a7a8388d648a2b630f3f48c58"
+      },
+      {
+        "relativePath": "src/main/codex-feasibility/probe-main.ts",
+        "sha256": "dfd46de8091557a36076c3069889886739272e66944bcc113c5a234b9ed7b64b"
       },
       {
         "relativePath": "src/main/codex-feasibility/protocol.ts",
@@ -76,19 +203,47 @@
         "sha256": "71428a7716b81c81858ded4d2d8270a6fd666657a52d21e33ca9c24131f3687b"
       },
       {
-        "relativePath": "src/main/codex-feasibility/utility-entry.ts",
-        "sha256": "d53ffbe8e971bac98a23ea3896fed7c5d0bed61f2df5668f138e63340817345c"
+        "relativePath": "src/main/codex-feasibility/session-supervisor.ts",
+        "sha256": "2459fe083e6abc03782f1cb5b4c07e38df6dd697087acfd4704255df197c9569"
+      },
+      {
+        "relativePath": "src/main/codex-feasibility/structured-output.ts",
+        "sha256": "ad1c2e0611795a226b902d4badbedd526e04dd963c7203def22b0df4460f6199"
       },
       {
         "relativePath": "src/main/codex-feasibility/task13-no-git-packaged-probe.ts",
         "sha256": "fee447f404d321b66e31d8e8549370fd385794062b6a4052450cb569201e303b"
       },
       {
-        "relativePath": "src/main/ai/providers/codex/codex-scratch-workspace.ts",
-        "sha256": "5a612ca8a51f53fce8348a00df5df897f762ccc76732c7cb6644b91c9d14de49"
+        "relativePath": "src/main/codex-feasibility/termination-supervisor.ts",
+        "sha256": "cee95977a046706aa27b504b21dda4b68765e260002032cf1be83104f576e580"
+      },
+      {
+        "relativePath": "src/main/codex-feasibility/turn-deadline.ts",
+        "sha256": "a9a70982088931670d02242cd7d7f7f939f2abd4b88575f687c6697371c96e9c"
+      },
+      {
+        "relativePath": "src/main/codex-feasibility/utility-entry.ts",
+        "sha256": "d53ffbe8e971bac98a23ea3896fed7c5d0bed61f2df5668f138e63340817345c"
+      },
+      {
+        "relativePath": "src/main/codex-feasibility/utility-protocol-termination.ts",
+        "sha256": "d3c0ad946bce2360a8da2c2897f295835db3e06d1a80f43b64b6ec336e54216b"
+      },
+      {
+        "relativePath": "vite.block6a-certification-main.config.ts",
+        "sha256": "e0075051b2eea91d2081ec8897a3c3eac5512b8a7e3d8bd35aa948e10fecb14b"
+      },
+      {
+        "relativePath": "vite.codex-feasibility.config.ts",
+        "sha256": "a2ff2cb5af59abbadfda5cd06b577290520e444321e1ca0a8c6caa8f18afee0b"
+      },
+      {
+        "relativePath": "vite.codex-utility.config.ts",
+        "sha256": "a2ff2cb5af59abbadfda5cd06b577290520e444321e1ca0a8c6caa8f18afee0b"
       }
     ],
-    "sha256": "50cdfc5c7af88943daea284a818f86809f24bd0321dade93cebdd2a94d51176c"
+    "sha256": "ae2ed88832f2aabe20b3544522bd353382fef9d777ac9e842695d98e2e24a80b"
   },
   "invocation": {
     "command": "node scripts/run-task13-5-no-git-packaged-probe.mjs --artifact-root <artifact> --evidence-output <evidence>",

@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "authority": "block13-ai-gate-v1",
+  "status": "passed",
+  "feasibility": "windows_passed",
+  "platform": "macos_deferred",
+  "overallVerdict": "conditional_go",
+  "verdictText": "Conditional Go — Windows feasibility verified; macOS packaged runtime deferred-by-user."
+}

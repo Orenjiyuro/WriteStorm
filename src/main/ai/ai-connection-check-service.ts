@@ -3,6 +3,7 @@ import type {
   AiConnectionCheckData,
   AiGateStateDto,
 } from '../../shared/contracts';
+import { AI_GATE_STATE } from '../../shared/contracts';
 export type AiCompatibilityAssessment =
   | Readonly<{ state: 'fresh'; fingerprint: string }>
   | Readonly<{ state: 'stale' | 'blocked' | 'unknown' }>;
@@ -19,12 +20,7 @@ type AiRuntimeObservation = Readonly<{
   compatibilityFingerprint: string | null;
 }>;
 
-export const AI_CONNECTION_GATE: AiGateStateDto = deepFreeze({
-  status: 'passed',
-  feasibility: 'windows_passed',
-  platform: 'macos_deferred',
-  overallVerdict: 'conditional_go',
-});
+export const AI_CONNECTION_GATE: AiGateStateDto = AI_GATE_STATE;
 
 export type AiConnectionCheckAttemptAdmission =
   | Readonly<{
@@ -70,10 +66,10 @@ export class AiConnectionCheckService {
       return Promise.resolve(this.read());
     }
 
-    this.dependencies.auth.clear();
     const admission = this.dependencies.attempts.beginExplicit();
     if (!admission.accepted) return Promise.resolve(this.read());
 
+    this.dependencies.auth.clear();
     const epoch = ++this.observationEpoch;
     return this.completeAttempt(admission.result, epoch, compatibility.fingerprint);
   }

@@ -398,13 +398,15 @@ export class AiAttemptLifecycleService implements AiLifecycleParticipant {
 
 export class AiRuntimeLifecycleRegistry {
   private readonly participants = new Set<AiLifecycleParticipant>();
+  private readonly admissionPauseReasons = new Set<
+    'library_replacement' | 'window_closed' | 'shutdown'
+  >();
   private closed = false;
-  private admissionPaused = false;
 
   track(participant: AiLifecycleParticipant): () => void {
     if (this.closed) throw new Error('AI runtime lifecycle registry is closed.');
     this.participants.add(participant);
-    if (this.admissionPaused) participant.pauseAdmission();
+    if (this.admissionPauseReasons.size > 0) participant.pauseAdmission();
     return () => {
       if (participant.isActive()) {
         throw new Error('Cannot unregister an active AI lifecycle participant.');
@@ -414,28 +416,41 @@ export class AiRuntimeLifecycleRegistry {
   }
 
   prepareForLibraryReplacement(): Promise<void> {
-    this.admissionPaused = true;
-    for (const participant of this.participants) participant.pauseAdmission();
+    this.pauseAdmission('library_replacement');
     return this.terminateActive('library_replacement');
   }
 
   resumeAfterLibraryReplacement(): void {
-    if (this.closed) return;
-    this.admissionPaused = false;
-    for (const participant of this.participants) participant.resumeAdmission();
+    this.resumeAdmission('library_replacement');
   }
 
   windowClosed(): Promise<void> {
-    this.admissionPaused = true;
-    for (const participant of this.participants) participant.pauseAdmission();
+    this.pauseAdmission('window_closed');
     return this.terminateActive('window_close');
+  }
+
+  resumeAfterWindowReopened(): void {
+    this.resumeAdmission('window_closed');
   }
 
   shutdown(): Promise<void> {
     this.closed = true;
-    this.admissionPaused = true;
-    for (const participant of this.participants) participant.pauseAdmission();
+    this.pauseAdmission('shutdown');
     return this.terminateActive('app_quit');
+  }
+
+  private pauseAdmission(
+    reason: 'library_replacement' | 'window_closed' | 'shutdown',
+  ): void {
+    if (this.admissionPauseReasons.has(reason)) return;
+    this.admissionPauseReasons.add(reason);
+    for (const participant of this.participants) participant.pauseAdmission();
+  }
+
+  private resumeAdmission(reason: 'library_replacement' | 'window_closed'): void {
+    if (this.closed || !this.admissionPauseReasons.delete(reason)) return;
+    if (this.admissionPauseReasons.size > 0) return;
+    for (const participant of this.participants) participant.resumeAdmission();
   }
 
   private async terminateActive(trigger: AiTerminationTrigger): Promise<void> {

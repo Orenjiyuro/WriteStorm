@@ -37,6 +37,7 @@ describe('Block 13.5 canonical compatibility boundary', () => {
       'package.json',
     ]));
     expect(boundary.layers.productionProtocol.sourceFiles).toEqual(expect.arrayContaining([
+      'config/block13-ai-gate-v1.json',
       'config/block13-product-packaged-probe-v1.json',
       'config/codex-product-runtime-package.ts',
       'config/codex-utility-vite-config.ts',
@@ -48,6 +49,7 @@ describe('Block 13.5 canonical compatibility boundary', () => {
       'src/preload/writestorm-api.ts',
       'src/renderer/features/settings/SettingsUnavailableShell.tsx',
       'src/renderer/features/settings/ai-connection-check-view-state.ts',
+      'src/shared/contracts/ai-gate.ts',
       'src/shared/contracts/ai.ts',
       'src/shared/contracts/channels.ts',
       'src/shared/contracts/preload-api.ts',

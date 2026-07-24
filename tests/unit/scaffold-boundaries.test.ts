@@ -29,7 +29,8 @@ describe('Forge Vite scaffold', () => {
     expect(mainSource).toContain('getCurrentSession: () => libraryService.getCurrent()');
     expect(mainSource).toContain('showOpenDialog: (options) => dialog.showOpenDialog(options)');
     expect(mainSource).toContain('sourceImportService.clearPendingImports();');
-    expect(mainSource).toContain('onClosed: cleanupSourceImportsForWindowClose');
+    expect(mainSource).toContain('onClosed: startWindowCloseCleanup');
+    expect(mainSource).toContain('windowCloseCleanupBarrier = cleanup');
     expect(mainSource).toContain('books.invalidateWindowSelections();');
   });
 

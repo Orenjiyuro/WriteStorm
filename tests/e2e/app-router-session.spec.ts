@@ -67,10 +67,11 @@ test('does not display Library A module instances after an in-place switch to Li
     await harness.getByRole('link', { name: 'Settings' }).click();
     await expect(harness.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
     await expect(harness.getByRole('heading', { name: 'AI & connectors' })).toBeVisible();
-    await expect(harness.getByText('Codex SDK gate', { exact: true })).toBeVisible();
-    await expect(harness.getByText('Required', { exact: true })).toBeVisible();
-    await expect(harness.getByText('Connector', { exact: true })).toBeVisible();
-    await expect(harness.getByText('Unavailable', { exact: true }).first()).toBeVisible();
+    await expect(harness.getByText('Integration gate', { exact: true })).toBeVisible();
+    await expect(harness.getByText('Passed', { exact: true })).toBeVisible();
+    await expect(harness.getByText('SDK compatibility', { exact: true })).toBeVisible();
+    await expect(harness.getByText('Unknown', { exact: true }).first()).toBeVisible();
+    await expect(harness.getByRole('button', { name: 'Check connection' })).toBeEnabled();
     for (const action of [
       'Manage templates',
       'Inspect schemas',

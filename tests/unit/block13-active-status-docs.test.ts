@@ -54,6 +54,9 @@ describe('Block 13 active status authority', () => {
     expect(decisions).toContain(
       '## D113: Settings Connection Check Is Explicit, Three-Layered and Ephemeral',
     );
+    expect(decisions).toContain(
+      '## D114: Gate Projection and Runtime Cleanup Boundaries Fail Closed from One Authority',
+    );
     expect(decisions).toContain('26d548e03dfbe71e1f62081998e9942a2dfaa94c');
   });
 
@@ -121,8 +124,9 @@ describe('Block 13 active status authority', () => {
   it('records the explicit Task 13.12 channel without promoting stale runtime evidence', () => {
     expect(status).toContain('`ai:check-connection` accepts only `{}`');
     expect(status).toContain('never invokes it on startup, route render, Library open or navigation');
-    expect(status).toContain('concurrent admission is rejected by the lifecycle controller');
+    expect(status).toContain('rejected concurrent, paused or quarantined admission preserves it');
     expect(status).toContain('No new SDK/auth/network probe ran in Task 13.12');
     expect(status).toContain('Task 13.12 makes both packaged records stale again');
+    expect(status).toContain('config/block13-ai-gate-v1.json');
   });
 });

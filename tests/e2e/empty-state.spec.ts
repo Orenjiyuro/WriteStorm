@@ -46,8 +46,10 @@ test('shows the no-library empty state in a real Electron window', async () => {
     await expect(page.getByText('Create or open a local library')).toBeVisible();
     await page.getByRole('link', { name: 'Settings' }).click();
     await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
-    await expect(page.getByText('Codex SDK gate', { exact: true })).toBeVisible();
-    await expect(page.getByText('Connector', { exact: true })).toBeVisible();
+    await expect(page.getByText('Integration gate', { exact: true })).toBeVisible();
+    await expect(page.getByText('SDK compatibility', { exact: true })).toBeVisible();
+    await expect(page.getByText('Runtime authentication', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Check connection' })).toBeEnabled();
     await expect(page.getByRole('heading', { name: 'Local observability' })).toBeVisible();
     await page.getByRole('link', { name: 'Breakdown shelf' }).click();
     await expect(page.getByRole('heading', { name: 'No library open' })).toBeVisible();
@@ -137,11 +139,14 @@ test('shows the no-library empty state in a real Electron window', async () => {
       modules: Object.keys(window.writestorm.modules),
       jobs: Object.keys(window.writestorm.jobs),
       exports: Object.keys(window.writestorm.exports),
+      ai: Object.keys(window.writestorm.ai),
       hasRawInvoke: 'invoke' in window.writestorm,
       hasRawIpcRenderer: 'ipcRenderer' in window.writestorm,
     }));
     expect(writestormApiShape).toEqual({
-      root: ['internal', 'library', 'books', 'typeLibrary', 'structure', 'modules', 'jobs', 'exports'],
+      root: [
+        'internal', 'library', 'books', 'typeLibrary', 'structure', 'modules', 'jobs', 'exports', 'ai',
+      ],
       library: ['create', 'open', 'getCurrent'],
       books: ['list', 'importSource'],
       typeLibrary: ['listOptions', 'getBookBinding', 'updateBookBinding'],
@@ -152,6 +157,7 @@ test('shows the no-library empty state in a real Electron window', async () => {
       modules: ['listInstances', 'updateBody'],
       jobs: ['list', 'get', 'cancel'],
       exports: ['getStatus'],
+      ai: ['checkConnection'],
       hasRawInvoke: false,
       hasRawIpcRenderer: false,
     });

@@ -171,6 +171,7 @@ let activeTestPlacement: SecondaryDisplayPlacement | null = null;
 let testDisplayFailureStarted = false;
 let lastObservedPrimaryDisplay: DisplaySnapshot | null = null;
 let lastObservedDisplays: readonly DisplaySnapshot[] = [];
+let windowCloseCleanupBarrier: Promise<void> = Promise.resolve();
 
 async function shutdownAndExit(): Promise<void> {
   if (quitCleanupStarted) return;
@@ -209,6 +210,12 @@ async function cleanupSourceImportsForWindowClose(): Promise<void> {
   }
 }
 
+function startWindowCloseCleanup(): Promise<void> {
+  const cleanup = cleanupSourceImportsForWindowClose();
+  windowCloseCleanupBarrier = cleanup;
+  return cleanup;
+}
+
 protocol.registerSchemesAsPrivileged([
   {
     scheme: appProtocol,
@@ -232,6 +239,7 @@ type HealthResponse = {
 };
 
 const createWindow = async (): Promise<void> => {
+  const previousWindowCleanup = windowCloseCleanupBarrier;
   let placement: SecondaryDisplayPlacement | null = null;
   if (testDisplayTarget) {
     lastObservedDisplays = screen.getAllDisplays().map(summarizeDisplay);
@@ -248,7 +256,7 @@ const createWindow = async (): Promise<void> => {
     openExternal: (url) => shell.openExternal(url),
     bindSenderPolicy: productSenderPolicy.bindWebContents,
     unbindSenderPolicy: productSenderPolicy.unbindWebContents,
-    onClosed: cleanupSourceImportsForWindowClose,
+    onClosed: startWindowCloseCleanup,
     onClosedCleanupFailure: (failure) => {
       console.error('WRITESTORM_WINDOW_CLEANUP', failure.code);
     },
@@ -258,6 +266,13 @@ const createWindow = async (): Promise<void> => {
     verifyAndReportTestWindowPlacement(window, placement, 'window-placement');
     window.show();
   }
+
+  try {
+    await previousWindowCleanup;
+  } catch {
+    return;
+  }
+  aiRuntimeLifecycle.resumeAfterWindowReopened();
 };
 
 function verifyAndReportTestWindowPlacement(

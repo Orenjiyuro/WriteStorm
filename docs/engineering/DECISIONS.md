@@ -1528,3 +1528,18 @@ Rules:
 - Default tests use injected runtime/recorded protocol data and remain offline. A real SDK/auth/network check is never part of `npm run check`.
 - Task 13.12 changes production-protocol and probe-artifact inputs, so the D111 and D112 packaged records become historical and compatibility fails closed until separately authorized Windows recertification. No real runtime probe ran in this task.
 - No Task 13.12 path creates an AI Job, checkpoint, AnalysisModuleInstance, SQLite/Library write, generation action, automatic retry, fallback, alternate provider or resumable state. macOS remains deferred-by-user; this is not full Go, cross-platform compatibility or release readiness.
+
+## D114: Gate Projection and Runtime Cleanup Boundaries Fail Closed from One Authority
+
+Decision: Task 13 remediation uses one versioned application Gate authority and closes filesystem, observation and lifecycle escape paths before any Windows runtime recertification.
+
+Rules:
+
+- `config/block13-ai-gate-v1.json` is the single application Gate authority. `src/shared/contracts/ai-gate.ts` strictly validates it and publishes one frozen projection consumed by Main and renderer. The release-limitation matrix references this authority instead of copying the verdict; historical 6A records are not rewritten.
+- The Gate manifest is part of the production-protocol compatibility fingerprint. Any Gate or projection change invalidates the previous runtime observation and packaged evidence.
+- A scratch attempt uses a newly created random directory directly beneath the realpath-validated OS temporary root. Creation and cleanup both reject symlink/junction substitution before any recursive removal.
+- `AiConnectionCheckService` clears the prior observation only after attempt admission succeeds. Rejected concurrent, paused, quarantined or session-start admission leaves the still-valid observation unchanged; compatibility drift and explicit lifecycle invalidation still clear it.
+- Library replacement, window close and shutdown own independent admission-pause reasons. A macOS replacement window can remove only the window-close reason and only after the previous close-cleanup barrier has settled.
+- `kill() === false` is an immediate unverified force-cleanup result. An accepted kill has its own bounded exit wait; a missing exit releases listeners and pending lifecycle operations before residual scanning continues.
+- Default regression tests use LF-normalized historical evidence hashes and current Settings/API expectations. They remain offline and do not substitute for the separately authorized Windows product/no-global-Git probes.
+- The current Windows packaged records remain stale after these production-boundary changes. No SDK/auth/network probe is authorized or executed by this remediation; macOS remains deferred-by-user.

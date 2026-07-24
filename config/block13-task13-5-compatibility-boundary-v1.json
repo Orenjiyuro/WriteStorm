@@ -15,6 +15,7 @@
         "src/main/ai"
       ],
       "sourceFiles": [
+        "config/block13-ai-gate-v1.json",
         "config/block13-product-packaged-probe-v1.json",
         "config/codex-utility-vite-config.ts",
         "config/codex-product-runtime-package.ts",
@@ -30,8 +31,10 @@
         "src/renderer/features/settings/ai-connection-check-view-state.ts",
         "src/renderer/i18n.ts",
         "src/renderer/routes/SettingsRoute.tsx",
+        "src/shared/contracts/ai-gate.ts",
         "src/shared/contracts/ai.ts",
         "src/shared/contracts/channels.ts",
+        "src/shared/contracts/index.ts",
         "src/shared/contracts/preload-api.ts",
         "src/shared/contracts/registry.ts",
         "tests/smoke/block13-network-blocker.cjs",

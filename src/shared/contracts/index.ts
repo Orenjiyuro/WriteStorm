@@ -140,6 +140,11 @@ export {
   updateStructureNodeRequestSchema,
 } from './structure';
 export {
+  AI_GATE_MANIFEST,
+  AI_GATE_STATE,
+  AI_GATE_VERDICT,
+} from './ai-gate';
+export {
   aiCheckConnectionRequestSchema,
   aiCheckConnectionResponseSchema,
   aiCompatibilityStateSchema,

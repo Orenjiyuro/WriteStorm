@@ -1,12 +1,8 @@
 import { z } from 'zod';
 import { contractResponseSchema, emptyRequestSchema, isoDateTimeStringSchema } from './common';
+import { AI_GATE_STATE, aiGateStateSchema } from './ai-gate';
 
-export const aiGateStateSchema = z.object({
-  status: z.enum(['passed', 'failed', 'blocked']),
-  feasibility: z.enum(['windows_passed', 'failed', 'unknown']),
-  platform: z.enum(['macos_deferred', 'cross_platform_verified', 'unknown']),
-  overallVerdict: z.enum(['conditional_go', 'go', 'no_go', 'unknown']),
-}).strict();
+export { aiGateStateSchema } from './ai-gate';
 
 export const aiCompatibilityStateSchema = z.discriminatedUnion('state', [
   z.object({
@@ -49,12 +45,7 @@ export type AiRuntimeObservationDto = z.infer<typeof aiRuntimeObservationDtoSche
 export type AiConnectionCheckData = z.infer<typeof aiConnectionCheckDataSchema>;
 
 export const UNKNOWN_AI_CONNECTION_CHECK_DATA: AiConnectionCheckData = deepFreeze({
-  gate: {
-    status: 'passed',
-    feasibility: 'windows_passed',
-    platform: 'macos_deferred',
-    overallVerdict: 'conditional_go',
-  },
+  gate: AI_GATE_STATE,
   compatibility: {
     state: 'unknown',
     fingerprint: null,

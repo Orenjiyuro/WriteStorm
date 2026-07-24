@@ -143,6 +143,7 @@ describe('Block 13.9 Codex utility lifecycle protocol', () => {
       utilityExitObserved: false,
     });
     expect(unowned.kill).not.toHaveBeenCalled();
+    expect(unowned.listenerCounts()).toEqual({ message: 0, exit: 0 });
 
     const owned = fakeProcess();
     const ownedDriver = new CodexUtilityProcessCleanupDriver({
@@ -159,6 +160,47 @@ describe('Block 13.9 Codex utility lifecycle protocol', () => {
       utilityKillAttempted: true,
       utilityExitObserved: true,
     });
+  });
+
+  it('returns fail-closed and releases listeners when the owned-process kill is rejected', async () => {
+    const process = fakeProcess();
+    process.kill.mockReturnValue(false);
+    const driver = new CodexUtilityProcessCleanupDriver({
+      process,
+      token,
+      isOwnedAndRunning: () => true,
+      scanResiduals: async () => cleanResiduals(),
+    });
+
+    const outcome = await Promise.race([
+      driver.forceOwnedUtility(),
+      new Promise<'hung'>((resolve) => setTimeout(() => resolve('hung'), 25)),
+    ]);
+
+    expect(outcome).toEqual({
+      utilityKillOwnershipProven: true,
+      utilityKillAttempted: true,
+      utilityExitObserved: false,
+    });
+    expect(process.listenerCounts()).toEqual({ message: 0, exit: 0 });
+  });
+
+  it('bounds the exit wait after an accepted kill that emits no exit event', async () => {
+    const process = fakeProcess();
+    const driver = new CodexUtilityProcessCleanupDriver({
+      process,
+      token,
+      isOwnedAndRunning: () => true,
+      scanResiduals: async () => cleanResiduals(),
+      forceExitWaitMs: 5,
+    });
+
+    await expect(driver.forceOwnedUtility()).resolves.toEqual({
+      utilityKillOwnershipProven: true,
+      utilityKillAttempted: true,
+      utilityExitObserved: false,
+    });
+    expect(process.listenerCounts()).toEqual({ message: 0, exit: 0 });
   });
 
   it('utility host aborts the active execution, awaits settlement, then acknowledges shutdown', async () => {
@@ -234,6 +276,7 @@ function fakeProcess(): CodexUtilityLifecycleProcess & {
   kill: ReturnType<typeof vi.fn>;
   emitMessage(message: unknown): void;
   emitExit(code: number): void;
+  listenerCounts(): { message: number; exit: number };
 } {
   const messageListeners = new Set<(message: unknown) => void>();
   const exitListeners = new Set<(code: number) => void>();
@@ -254,6 +297,9 @@ function fakeProcess(): CodexUtilityLifecycleProcess & {
     },
     emitExit(code) {
       for (const listener of exitListeners) listener(code);
+    },
+    listenerCounts() {
+      return { message: messageListeners.size, exit: exitListeners.size };
     },
   };
 }

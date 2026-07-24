@@ -318,6 +318,38 @@ describe('Block 13.9 application attempt lifecycle', () => {
     });
   });
 
+  it('resumes window-scoped admission only when a replacement window is ready', async () => {
+    const registry = new AiRuntimeLifecycleRegistry();
+    const service = createService(() => fakeSession(async () => gracefulCleanup));
+    registry.track(service);
+
+    await registry.windowClosed();
+    expect(service.startExplicit()).toEqual({
+      accepted: false,
+      reason: 'admission_paused',
+    });
+
+    registry.resumeAfterWindowReopened();
+    expect(service.startExplicit()).toMatchObject({ accepted: true });
+  });
+
+  it('does not let a window reopen clear an overlapping Library replacement pause', async () => {
+    const registry = new AiRuntimeLifecycleRegistry();
+    const service = createService(() => fakeSession(async () => gracefulCleanup));
+    registry.track(service);
+
+    await registry.prepareForLibraryReplacement();
+    await registry.windowClosed();
+    registry.resumeAfterWindowReopened();
+    expect(service.startExplicit()).toEqual({
+      accepted: false,
+      reason: 'admission_paused',
+    });
+
+    registry.resumeAfterLibraryReplacement();
+    expect(service.startExplicit()).toMatchObject({ accepted: true });
+  });
+
   it('refuses to unregister an active or quarantined participant', async () => {
     const registry = new AiRuntimeLifecycleRegistry();
     const service = createService(() => fakeSession(async () => unverifiedCleanup));
@@ -363,6 +395,17 @@ describe('Block 13.9 application attempt lifecycle', () => {
     expect(source).not.toMatch(/better-sqlite3|sqlite|Job(?:Service|Repository)|renderer/i);
     expect(source).not.toMatch(/codex|openai|jsonl|child_process/i);
     expect(source).not.toMatch(/setInterval|retry\(\)|auto.?retry/i);
+  });
+
+  it('wires macOS replacement windows through the completed close-cleanup barrier', () => {
+    const mainSource = readFileSync(
+      path.resolve(__dirname, '../../src/main/main.ts'),
+      'utf8',
+    );
+    expect(mainSource).toContain('windowCloseCleanupBarrier');
+    expect(mainSource).toContain('onClosed: startWindowCloseCleanup');
+    expect(mainSource).toContain('await previousWindowCleanup');
+    expect(mainSource).toContain('aiRuntimeLifecycle.resumeAfterWindowReopened()');
   });
 });
 

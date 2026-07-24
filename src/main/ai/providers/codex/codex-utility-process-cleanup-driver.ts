@@ -33,13 +33,19 @@ export class CodexUtilityProcessCleanupDriver implements CodexUtilityCleanupDriv
   private exited = false;
   private exitClean = false;
   private exitDeferred = deferred<void>();
+  private readonly forceExitWaitMs: number;
 
   constructor(private readonly input: {
     readonly process: CodexUtilityLifecycleProcess;
     readonly token: AiAttemptToken;
     readonly isOwnedAndRunning: () => boolean;
     readonly scanResiduals: CodexUtilityCleanupDriver['scanResiduals'];
+    readonly forceExitWaitMs?: number;
   }) {
+    this.forceExitWaitMs = input.forceExitWaitMs ?? 1_000;
+    if (!Number.isSafeInteger(this.forceExitWaitMs) || this.forceExitWaitMs < 1) {
+      throw new Error('Codex utility force-exit wait is invalid.');
+    }
     input.process.on('message', this.onMessage);
     input.process.on('exit', this.onExit);
   }
@@ -98,26 +104,41 @@ export class CodexUtilityProcessCleanupDriver implements CodexUtilityCleanupDriv
       ownershipProven = false;
     }
     if (!ownershipProven) {
+      this.releaseWithoutExit();
       return {
         utilityKillOwnershipProven: false,
         utilityKillAttempted: false,
         utilityExitObserved: false,
       };
     }
+    let killAccepted = false;
     try {
-      this.input.process.kill();
+      killAccepted = this.input.process.kill();
     } catch {
+      this.releaseWithoutExit();
       return {
         utilityKillOwnershipProven: true,
         utilityKillAttempted: true,
         utilityExitObserved: false,
       };
     }
-    await this.exitDeferred.promise;
+    if (!killAccepted) {
+      this.releaseWithoutExit();
+      return {
+        utilityKillOwnershipProven: true,
+        utilityKillAttempted: true,
+        utilityExitObserved: false,
+      };
+    }
+    const exitObserved = await waitForResolution(
+      this.exitDeferred.promise,
+      this.forceExitWaitMs,
+    );
+    if (!exitObserved) this.releaseWithoutExit();
     return {
       utilityKillOwnershipProven: true,
       utilityKillAttempted: true,
-      utilityExitObserved: true,
+      utilityExitObserved: exitObserved,
     };
   }
 
@@ -187,6 +208,22 @@ export class CodexUtilityProcessCleanupDriver implements CodexUtilityCleanupDriv
     this.shutdownDeferred = null;
   }
 
+  private releaseWithoutExit(): void {
+    this.abortDeferred?.resolve({
+      abortRequested: false,
+      abortObserved: false,
+      executionSettled: false,
+    });
+    this.shutdownDeferred?.resolve({
+      cleanupAcknowledged: false,
+      utilityExitObserved: false,
+      utilityExitClean: false,
+    });
+    this.abortDeferred = null;
+    this.shutdownDeferred = null;
+    this.disposeListeners();
+  }
+
   private disposeListeners(): void {
     this.input.process.removeListener('message', this.onMessage);
     this.input.process.removeListener('exit', this.onExit);
@@ -207,4 +244,21 @@ function deferred<T>(): Deferred<T> {
     reject = rejecter;
   });
   return { promise, resolve, reject };
+}
+
+async function waitForResolution(
+  promise: Promise<void>,
+  milliseconds: number,
+): Promise<boolean> {
+  let handle: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([
+      promise.then(() => true),
+      new Promise<false>((resolve) => {
+        handle = setTimeout(() => resolve(false), milliseconds);
+      }),
+    ]);
+  } finally {
+    if (handle) clearTimeout(handle);
+  }
 }

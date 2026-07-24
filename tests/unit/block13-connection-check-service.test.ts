@@ -81,7 +81,13 @@ describe('Block 13.12 connection-check application service', () => {
     await first;
   });
 
-  it('does not retain an old authenticated observation when session admission fails', async () => {
+  it.each([
+    'session_start_failed',
+    'admission_paused',
+    'cleanup_unverified',
+  ] as const)('retains the current observation when a new attempt is not admitted: %s', async (
+    reason,
+  ) => {
     const authority = new CodexAuthObservationAuthority();
     const service = new AiConnectionCheckService({
       assessCompatibility: () => ({ state: 'fresh', fingerprint }),
@@ -89,7 +95,7 @@ describe('Block 13.12 connection-check application service', () => {
       attempts: {
         beginExplicit: () => ({
           accepted: false,
-          reason: 'session_start_failed',
+          reason,
         }),
       },
     });
@@ -103,7 +109,7 @@ describe('Block 13.12 connection-check application service', () => {
     expect(service.read().runtime.authState).toBe('authenticated');
 
     await expect(service.checkConnection()).resolves.toMatchObject({
-      runtime: { authState: 'unknown', observedAt: null },
+      runtime: { authState: 'authenticated', observedAt },
     });
   });
 

@@ -403,9 +403,7 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     for (const input of verdict.evidenceInputs) {
       const inputPath = inputPaths.get(input.evidenceId);
       expect(inputPath).toBeTruthy();
-      expect(input.sha256).toBe(
-        createHash('sha256').update(readFileSync(inputPath as string)).digest('hex'),
-      );
+      expect(input.sha256).toBe(hashLfNormalized(inputPath as string));
       expect(['real_sdk', 'packaged_sdk']).toContain(input.source);
       expect(input.classification).toBeTruthy();
       expect(input.supports.length).toBeGreaterThan(0);
@@ -573,7 +571,7 @@ describe('Block 6A Codex SDK feasibility authority', () => {
       '### R8a fresh development recertification result after deadline remediation',
     );
     expect(feasibility).toContain('Admission rejected the complete evidence');
-    expect(context).toContain('blocked at the development gate');
+    expect(feasibility).toContain('The development gate remains blocked');
     expect(decisions).toContain('## D084: Fresh R8a Development Evidence Is Valid but Not Admitted');
     expect(feasibility).toContain('### R8a3 safe runtime-failure attribution');
     expect(feasibility).toContain('`local_turn_deadline`');
@@ -715,7 +713,7 @@ describe('Block 6A Codex SDK feasibility authority', () => {
 
     expect(context).toContain('V1-BLOCK-6A-CODEX-SDK-FEASIBILITY.md');
     expect(context).toContain(
-      'current status is `conditional Go — Windows-only feasibility verified; macOS deferred-by-user`',
+      'The admitted wording is `Conditional Go — Windows feasibility verified; macOS packaged runtime deferred-by-user.`',
     );
     expect(context).not.toContain('Task 6A.1 establishes `docs/engineering/V1-BLOCK-6A-CODEX-SDK-FEASIBILITY.md` as the current Codex feasibility authority with verdict `pending`');
     expect(activeContext).not.toMatch(/no SDK dependency is installed|no probe has run|no Go\/No-Go decision/i);

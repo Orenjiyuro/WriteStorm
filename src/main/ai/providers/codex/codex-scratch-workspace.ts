@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, realpathSync, rmSync } from 'node:fs';
+import { lstatSync, mkdtempSync, realpathSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -12,7 +12,8 @@ export type CodexScratchWorkspace = {
 };
 
 export class CodexScratchWorkspaceManager {
-  private readonly scratchRoot: string;
+  private readonly temporaryRoot: string;
+  private readonly trustedTemporaryRoot: string;
   private readonly removeOwnedDirectory: (directory: string) => void;
 
   constructor(
@@ -31,15 +32,19 @@ export class CodexScratchWorkspaceManager {
         'AI scratch root must be inside the operating-system temporary directory.',
       );
     }
-    this.scratchRoot = path.join(requestedTemporaryRoot, 'writestorm-ai-scratch');
+    this.temporaryRoot = requestedTemporaryRoot;
+    this.trustedTemporaryRoot = trustedTemporaryRoot;
     this.removeOwnedDirectory = options.removeOwnedDirectory ?? ((directory) => {
       rmSync(directory, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
     });
   }
 
   create(): CodexScratchWorkspace {
-    mkdirSync(this.scratchRoot, { recursive: true });
-    const directory = mkdtempSync(path.join(this.scratchRoot, 'attempt-'));
+    const lexicalDirectory = mkdtempSync(path.join(
+      this.temporaryRoot,
+      'writestorm-ai-scratch-',
+    ));
+    const directory = this.assertOwnedDirectory(lexicalDirectory);
     let cleaned = false;
     return {
       directory,
@@ -49,10 +54,24 @@ export class CodexScratchWorkspaceManager {
       },
       cleanup: () => {
         if (cleaned) return;
+        this.assertOwnedDirectory(directory);
         this.removeOwnedDirectory(directory);
         cleaned = true;
       },
     };
+  }
+
+  private assertOwnedDirectory(directory: string): string {
+    const metadata = lstatSync(directory);
+    const resolved = realpathSync(directory);
+    if (metadata.isSymbolicLink()
+      || !metadata.isDirectory()
+      || !isPathInsideOrEqual(this.trustedTemporaryRoot, resolved)
+      || !isPathInsideOrEqual(this.temporaryRoot, resolved)
+      || path.resolve(resolved) !== path.resolve(directory)) {
+      throw new Error('AI scratch directory failed its temporary boundary check.');
+    }
+    return resolved;
   }
 }
 

@@ -1,4 +1,11 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
@@ -12,7 +19,8 @@ describe('Block 13.5 Codex scratch workspace', () => {
     const manager = new CodexScratchWorkspaceManager(temporaryRoot);
     const workspace = manager.create();
 
-    expect(path.dirname(workspace.directory)).toBe(path.join(temporaryRoot, 'writestorm-ai-scratch'));
+    expect(path.dirname(workspace.directory)).toBe(temporaryRoot);
+    expect(path.basename(workspace.directory)).toMatch(/^writestorm-ai-scratch-/);
     expect(existsSync(path.join(workspace.directory, '.git'))).toBe(false);
     expect(workspace.threadOptions).toEqual({
       workingDirectory: workspace.directory,
@@ -56,6 +64,47 @@ describe('Block 13.5 Codex scratch workspace', () => {
 
     expect(removeOwnedDirectory).toHaveBeenCalledTimes(2);
     expect(existsSync(workspace.directory)).toBe(false);
+  });
+
+  it('rejects a pre-existing junction instead of escaping the injected temporary root', () => {
+    const temporaryRoot = mkdtempSync(path.join(os.tmpdir(), 'writestorm-task13-5-link-'));
+    const escapedTarget = mkdtempSync(path.join(os.tmpdir(), 'writestorm-task13-5-target-'));
+    const sentinel = path.join(escapedTarget, 'library.db');
+    writeFileSync(sentinel, 'must-survive', 'utf8');
+    symlinkSync(
+      escapedTarget,
+      path.join(temporaryRoot, 'writestorm-ai-scratch'),
+      process.platform === 'win32' ? 'junction' : 'dir',
+    );
+
+    const manager = new CodexScratchWorkspaceManager(temporaryRoot);
+    const workspace = manager.create();
+    expect(path.relative(escapedTarget, workspace.directory)).toMatch(/^\.\.(?:[\\/]|$)/);
+    workspace.cleanup();
+    expect(readFileSync(sentinel, 'utf8')).toBe('must-survive');
+
+    rmSync(temporaryRoot, { recursive: true, force: true });
+    rmSync(escapedTarget, { recursive: true, force: true });
+  });
+
+  it('refuses cleanup after an owned directory is replaced by a junction', () => {
+    const temporaryRoot = mkdtempSync(path.join(os.tmpdir(), 'writestorm-task13-5-swap-'));
+    const escapedTarget = mkdtempSync(path.join(os.tmpdir(), 'writestorm-task13-5-swap-target-'));
+    const sentinel = path.join(escapedTarget, 'library.db');
+    writeFileSync(sentinel, 'must-survive', 'utf8');
+    const workspace = new CodexScratchWorkspaceManager(temporaryRoot).create();
+
+    rmSync(workspace.directory, { recursive: true, force: true });
+    symlinkSync(
+      escapedTarget,
+      workspace.directory,
+      process.platform === 'win32' ? 'junction' : 'dir',
+    );
+
+    expect(() => workspace.cleanup()).toThrow(/scratch.*boundary/i);
+    expect(readFileSync(sentinel, 'utf8')).toBe('must-survive');
+    rmSync(temporaryRoot, { recursive: true, force: true });
+    rmSync(escapedTarget, { recursive: true, force: true });
   });
 
   it('contains no Git executable, shell, PATH or repository initialization dependency', () => {

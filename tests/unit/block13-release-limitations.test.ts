@@ -12,8 +12,7 @@ describe('Block 13.10 release limitation matrix', () => {
     expect(matrix).toEqual({
       schemaVersion: 1,
       authority: 'block13-task13-10-release-limitations-v1',
-      verdict:
-        'Conditional Go — Windows feasibility verified; macOS packaged runtime deferred-by-user.',
+      gateAuthority: 'config/block13-ai-gate-v1.json',
       platforms: {
         windows: {
           feasibility: 'verified',

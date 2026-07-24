@@ -1470,3 +1470,20 @@ Rules:
 - This remediation creates no automatic retry, auth fixture claim, AI IPC, production AI request, Job, checkpoint, AnalysisModuleInstance, SQLite/Library write, durable recovery, fallback or resumable state.
 - Refreshed Windows evidence `block13-task13-5-windows-no-global-git-packaged-001` binds clean runtime HEAD `45efbc78e40c40ab24b7804b4d2266e6d70c6735`, compatibility fingerprint `bd0f0746049ee91ba77d45611a0115189d6e468f294561bca5350748b0392414`, and artifact-content record `9a40e317e78d3d6b8ea384e5364e643de92a25067be72a00270097c90b347dd9`. All 17 Windows no-global-Git assertions passed.
 - macOS remains deferred-by-user. This is not full Go, cross-platform compatibility, a production AI Job or release readiness.
+
+## D110: AI Diagnostics Are Authoritative, Bounded and Cost-Neutral
+
+Decision: Task 13.10 admits a provider-neutral error/usage/diagnostic contract only when classifications are evidence-bound, usage is exact-or-unknown, logs are closed in-memory records, and release limitations remain versioned blockers.
+
+Rules:
+
+- Stable AI `DomainError` codes are exactly `AI_AUTH_ERROR`, `AI_RATE_LIMITED`, `AI_SCHEMA_INVALID`, `AI_NETWORK_UNAVAILABLE` and `AI_RUNTIME_UNAVAILABLE`.
+- Failure observations are branded and registered by a composition-owned authority. Auth, rate and network require `structured_runtime`; schema requires `local_validation`; runtime unavailable requires `runtime_unknown`. A forged structural object is rejected.
+- The Codex authority currently exposes only local schema rejection and unknown runtime failure. It has no auth, rate or network producer and never parses a raw error or English message. Those classifications remain contract-only until a reliable structured discriminant is proven.
+- Usage is exactly `reported` or `unknown`. Reported values require exact non-negative safe-integer input, cached-input and output token fields. Missing, extra or invalid fields become unknown; no zero, total, price, cost estimate or budget is fabricated.
+- The application may retain usage only in its current Main-memory terminal candidate. Task 13.10 persists no usage, checkpoint, Job, AnalysisModuleInstance, SQLite row or export field.
+- `AiDiagnosticLog` is a bounded 256-entry Main-memory ring. Its closed records contain only canonical time, attempt/generation, stable error code or reported usage counters. Free-form prompt, response, raw error, stack, path, environment value, credential and provider identifier fields are rejected. It has no disk, console, network or remote-upload implementation.
+- `config/block13-release-limitations-v1.json` is the versioned exact limitation matrix. Windows product packaged runtime, clean-machine, signing and Defender remain unverified; macOS packaged runtime is deferred-by-user and signing/notarization remain unverified; proxy, enterprise certificate, firewall, offline, SDK telemetry and SDK/CLI licenses/notices remain unverified. Application remote upload is disabled by default.
+- Task 13.10 adds no AI IPC, renderer action, production execution request, automatic retry, cost estimation or budget confirmation. Task 13.11 remains the product packaged-runtime gate.
+- Refreshed Windows evidence `block13-task13-5-windows-no-global-git-packaged-001` binds clean runtime HEAD `c6ee1086cc30691df03c2a95b37d414b0eba5940`, compatibility fingerprint `54e0050b06a2387dfb87b4f2cc42df9dd0892c8962dbdf880b91ecdc7233b00f`, and artifact-content record `b5003adaac16ffa8e831aec7ca3345acdcc8c1e99c31e7a83810ca51fd9fc754`. All 17 Windows no-global-Git assertions passed.
+- macOS remains deferred-by-user. This is not full Go, cross-platform compatibility, a production AI Job or release readiness.

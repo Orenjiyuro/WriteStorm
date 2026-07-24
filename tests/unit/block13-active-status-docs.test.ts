@@ -21,7 +21,8 @@ describe('Block 13 active status authority', () => {
     expect(status).toContain('| 13.7 | PASS for contract |');
     expect(status).toContain('| 13.8 | PASS for pure in-memory boundary |');
     expect(status).toContain('| 13.9 | PASS for lifecycle/cleanup boundary |');
-    expect(status).toContain('| 13.10 | NOT STARTED |');
+    expect(status).toContain('| 13.10 | PASS for diagnostic contract boundary |');
+    expect(status).toContain('| 13.11 | NOT STARTED |');
   });
 
   it('preserves historical decisions and appends the remediation decision', () => {
@@ -37,6 +38,9 @@ describe('Block 13 active status authority', () => {
     );
     expect(decisions).toContain(
       '## D109: Auth Authority and Window Lifecycle Admission Are Composition-Owned',
+    );
+    expect(decisions).toContain(
+      '## D110: AI Diagnostics Are Authoritative, Bounded and Cost-Neutral',
     );
     expect(decisions).toContain('26d548e03dfbe71e1f62081998e9942a2dfaa94c');
   });
@@ -89,5 +93,16 @@ describe('Block 13 active status authority', () => {
   it('does not promote the current state to broader readiness', () => {
     expect(status).not.toMatch(/\bFull Go\b|\bCross-platform Go\b|\bAI ready\b|\brelease ready\b/);
     expect(status).toContain('macOS remains deferred');
+  });
+
+  it('records Task 13.10 without inventing evidence, usage or release readiness', () => {
+    expect(status).toContain('`AI_AUTH_ERROR`, `AI_RATE_LIMITED`, `AI_SCHEMA_INVALID`');
+    expect(status).toContain('unknown runtime accepts only `runtime_unknown`');
+    expect(status).toContain('exposes no auth, rate or network producer');
+    expect(status).toContain('No total, cost estimate, budget or preflight confirmation is derived');
+    expect(status).toContain('capped at 256 frozen records');
+    expect(status).toContain('does not write a file, log to console, upload telemetry or expose IPC');
+    expect(status).toContain('clean-machine');
+    expect(status).toContain('SDK/CLI licenses/notices');
   });
 });

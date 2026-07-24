@@ -39,8 +39,9 @@ function installNetworkBlockers() {
   }
 
   const dns = require('node:dns');
-  for (const methodName of [
+  const dnsMethods = [
     'lookup',
+    'lookupService',
     'resolve',
     'resolve4',
     'resolve6',
@@ -55,8 +56,27 @@ function installNetworkBlockers() {
     'resolveSrv',
     'resolveTxt',
     'reverse',
-  ]) {
-    dns[methodName] = block(`dns.${methodName}`);
+  ];
+  const resolverMethods = dnsMethods.filter((methodName) => methodName.startsWith('resolve')
+    || methodName === 'reverse');
+  blockMethods(dns, 'dns', dnsMethods, block);
+  blockMethods(dns.Resolver.prototype, 'dns.resolver', resolverMethods, block);
+
+  const dnsPromises = require('node:dns/promises');
+  blockMethods(dnsPromises, 'dns.promises', dnsMethods, block);
+  blockMethods(
+    dnsPromises.Resolver.prototype,
+    'dns.promises.resolver',
+    resolverMethods,
+    block,
+  );
+}
+
+function blockMethods(target, prefix, methodNames, block) {
+  for (const methodName of methodNames) {
+    if (typeof target[methodName] === 'function') {
+      target[methodName] = block(`${prefix}.${methodName}`);
+    }
   }
 }
 

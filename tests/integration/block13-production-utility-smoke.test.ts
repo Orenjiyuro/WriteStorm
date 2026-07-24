@@ -63,4 +63,46 @@ describe('Block 13.4 production Codex utility smoke', () => {
       rmSync(temporaryRoot, { recursive: true, force: true });
     }
   });
+
+  it.each([
+    {
+      label: 'dns.promises getter',
+      expression: "require('node:dns').promises.lookup('localhost')",
+      kind: 'dns.promises.lookup',
+    },
+    {
+      label: 'node:dns/promises module',
+      expression: "require('node:dns/promises').lookup('localhost')",
+      kind: 'dns.promises.lookup',
+    },
+  ])('blocks $label before resolution and records the attempt', ({ expression, kind }) => {
+    const temporaryRoot = mkdtempSync(path.join(os.tmpdir(), 'writestorm-dns-blocker-'));
+    const observationPath = path.join(temporaryRoot, 'observation.json');
+    const blockerPath = path.join(rootDir, 'tests/smoke/block13-network-blocker.cjs');
+    try {
+      const result = spawnSync(
+        process.execPath,
+        ['--require', blockerPath, '-e', expression],
+        {
+          cwd: rootDir,
+          env: {
+            ...process.env,
+            WRITESTORM_BLOCK13_NETWORK_OBSERVATION: observationPath,
+          },
+          encoding: 'utf8',
+          timeout: 10_000,
+          windowsHide: true,
+        },
+      );
+      expect(result.status).not.toBe(0);
+      expect(JSON.parse(readFileSync(observationPath, 'utf8'))).toEqual({
+        schemaVersion: 1,
+        installed: true,
+        attemptCount: 1,
+        attemptedKinds: [kind],
+      });
+    } finally {
+      rmSync(temporaryRoot, { recursive: true, force: true });
+    }
+  });
 });

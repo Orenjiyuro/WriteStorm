@@ -5,8 +5,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import electronPath from 'electron';
-import { createJiti } from 'jiti';
-import { build, mergeConfig } from 'vite';
+import { build, loadConfigFromFile, mergeConfig } from 'vite';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const runId = randomUUID();
@@ -43,9 +42,22 @@ if (/^const\s+\w+\s*=\s*new\s+Codex/m.test(utilitySource)
 }
 
 try {
-  const jiti = createJiti(import.meta.url);
-  const { CODEX_UTILITY_VITE_CONFIG } = await jiti.import(sharedViteConfigPath);
-  await build(mergeConfig(CODEX_UTILITY_VITE_CONFIG, {
+  const loadedViteConfig = await loadConfigFromFile(
+    {
+      command: 'build',
+      mode: 'production',
+      isSsrBuild: true,
+      isPreview: false,
+    },
+    sharedViteConfigPath,
+    repositoryRoot,
+    'silent',
+  );
+  if (!loadedViteConfig
+    || path.resolve(loadedViteConfig.path) !== path.resolve(sharedViteConfigPath)) {
+    throw new Error('Production utility Vite configuration was not loaded exactly.');
+  }
+  await build(mergeConfig(loadedViteConfig.config, {
     configFile: false,
     logLevel: 'silent',
     build: {

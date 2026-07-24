@@ -121,6 +121,8 @@ describe('Block 13.4 Codex adapter and utility boundary', () => {
     expect(sharedVite).toContain("external: ['@openai/codex-sdk', '@openai/codex']");
     expect(sharedVite).toContain("target: 'node22'");
     expect(smoke).toContain('codex-utility-vite-config.ts');
+    expect(smoke).toContain('loadConfigFromFile');
+    expect(smoke).not.toContain("from 'jiti'");
     expect(smoke).not.toContain("external: ['@openai/codex-sdk', '@openai/codex']");
     expect(smoke).not.toContain("networkRequestStarted: false");
   });

@@ -35,6 +35,9 @@ describe('Block 13 active status authority', () => {
     expect(decisions).toContain(
       '## D108: Task 13.9 Review Remediation Seals Raw, Auth and Cleanup Bypasses',
     );
+    expect(decisions).toContain(
+      '## D109: Auth Authority and Window Lifecycle Admission Are Composition-Owned',
+    );
     expect(decisions).toContain('26d548e03dfbe71e1f62081998e9942a2dfaa94c');
   });
 
@@ -72,11 +75,15 @@ describe('Block 13 active status authority', () => {
   it('records the seven review remediations as active fail-closed boundaries', () => {
     expect(status).toContain('counts raw bytes and frames before parsing');
     expect(status).toContain('reject coercion, defaults, catches, transforms and overwrite checks');
-    expect(status).toContain('runtime-minted opaque receipts');
+    expect(status).toContain('composition-owned Codex authority');
+    expect(status).toContain('TypeScript AST gate scans all production Main imports');
     expect(status).toContain('privately constructs its controller');
     expect(status).toContain('`waitForIdle` waits for actual safe settlement');
     expect(status).toContain('`unverified` cleanup remains quarantined');
     expect(status).toContain('non-zero/signal exits remain unverified');
+    expect(status).toContain('Window close pauses AI admission');
+    expect(status).toContain('Active or quarantined participants cannot unregister');
+    expect(status).toContain('timeout scheduler throws');
   });
 
   it('does not promote the current state to broader readiness', () => {

@@ -1454,3 +1454,19 @@ Rules:
 - The remediation adds no automatic retry, AI IPC, production AI request, Job, checkpoint, AnalysisModuleInstance, SQLite/Library write, durable recovery, fallback or resumable state.
 - Refreshed Windows evidence `block13-task13-5-windows-no-global-git-packaged-001` binds clean runtime HEAD `346505dea6960d288011be2f5881db1c8fd97f4c`, compatibility fingerprint `4de49846f2213d7711234fe512fe6e52b29afb94768f538d4d8de6a97d068f46`, and artifact-content record `ec2ebea82033d30423a33c1939892f62f3186a9b9775e1cf24155aed37f62b98`. All 17 Windows no-global-Git assertions passed.
 - macOS remains deferred-by-user. This is not full Go, cross-platform compatibility, a production AI Job or release readiness.
+
+## D109: Auth Authority and Window Lifecycle Admission Are Composition-Owned
+
+Decision: Task 13.6 and Task 13.9 remain admitted only after removing forgeable auth receipts and closing window-close, participant-ownership and timeout-scheduler races.
+
+Rules:
+
+- Application code receives a read-only `AiRuntimeObservationMemory`. Only `CodexAuthObservationAuthority` owns the write capability, accepts the exact actual-runtime input union and applies the fixed D104 mapping. It cannot accept an arbitrary application auth state.
+- A TypeScript AST/import gate scans all production files under `src/main`, including static imports, dynamic imports and `require()`. Only the reviewed Codex composition authority may import the observation-memory authority factory. Comments and naming conventions are not enforcement.
+- Window close pauses AI admission before taking its participant snapshot. Attempts arriving while close cleanup is in flight or after it completes are rejected, so no session can escape that termination cycle.
+- Window cleanup failures are surfaced only through the static `MAIN_WINDOW_CLEANUP_FAILED` code. Raw errors, messages, stacks and causes do not cross the reporting boundary.
+- An active, terminating or quarantined participant cannot unregister from the lifecycle registry. Only an inactive participant may relinquish ownership synchronously.
+- Timeout scheduling is part of attempt admission. If the injected scheduler throws or returns no cancellation function, admission returns `session_start_failed`, termination begins immediately, and cleanup that cannot be positively verified remains quarantined.
+- This remediation creates no automatic retry, auth fixture claim, AI IPC, production AI request, Job, checkpoint, AnalysisModuleInstance, SQLite/Library write, durable recovery, fallback or resumable state.
+- Refreshed Windows evidence `block13-task13-5-windows-no-global-git-packaged-001` binds clean runtime HEAD `45efbc78e40c40ab24b7804b4d2266e6d70c6735`, compatibility fingerprint `bd0f0746049ee91ba77d45611a0115189d6e468f294561bca5350748b0392414`, and artifact-content record `9a40e317e78d3d6b8ea384e5364e643de92a25067be72a00270097c90b347dd9`. All 17 Windows no-global-Git assertions passed.
+- macOS remains deferred-by-user. This is not full Go, cross-platform compatibility, a production AI Job or release readiness.

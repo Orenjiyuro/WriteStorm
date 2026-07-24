@@ -19,7 +19,7 @@ describe('Block 13 sealed provider type isolation', () => {
       for (const filePath of sourceFiles(absoluteRoot)) {
         const source = readFileSync(filePath, 'utf8');
         expect(source, filePath).not.toMatch(
-          /@openai\/codex(?:-sdk)?|CodexUtility(?:Transport|Launcher)|codex-feasibility/i,
+          /@openai\/codex(?:-sdk)?|CodexUtility(?:Transport|Launcher)|CodexStructuredOutput|codex-feasibility/i,
         );
       }
     }
@@ -30,7 +30,7 @@ describe('Block 13 sealed provider type isolation', () => {
       for (const filePath of sourceFiles(path.join(rootDir, relativeRoot))) {
         const source = readFileSync(filePath, 'utf8');
         expect(source, filePath).not.toMatch(
-          /AiExecution(?:Request|Event|Handle)|from\s+['"][^'"]*main\/ai/i,
+          /AiExecution(?:Request|Event|Handle)|AiStructuredOutput|from\s+['"][^'"]*main\/ai/i,
         );
       }
     }

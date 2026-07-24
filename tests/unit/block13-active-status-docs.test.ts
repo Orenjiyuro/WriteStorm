@@ -16,13 +16,13 @@ describe('Block 13 active status authority', () => {
   it('records the exact platform-limited verdict and current task boundary', () => {
     expect(context).toContain(verdict);
     expect(status).toContain(verdict);
-    expect(status).toContain('| 13.5 | PASS for Windows |');
+    expect(status).toContain('| 13.5 | REVALIDATION REQUIRED |');
     expect(status).toContain('| 13.6 | PASS for boundary |');
     expect(status).toContain('| 13.7 | PASS for contract |');
     expect(status).toContain('| 13.8 | PASS for pure in-memory boundary |');
     expect(status).toContain('| 13.9 | PASS for lifecycle/cleanup boundary |');
     expect(status).toContain('| 13.10 | PASS for diagnostic contract boundary |');
-    expect(status).toContain('| 13.11 | NOT STARTED |');
+    expect(status).toContain('| 13.11 | PASS for Windows development machine |');
   });
 
   it('preserves historical decisions and appends the remediation decision', () => {
@@ -41,6 +41,9 @@ describe('Block 13 active status authority', () => {
     );
     expect(decisions).toContain(
       '## D110: AI Diagnostics Are Authoritative, Bounded and Cost-Neutral',
+    );
+    expect(decisions).toContain(
+      '## D111: Product Packaged Runtime Certification Is Explicit, Fixed and Platform-Limited',
     );
     expect(decisions).toContain('26d548e03dfbe71e1f62081998e9942a2dfaa94c');
   });
@@ -73,7 +76,7 @@ describe('Block 13 active status authority', () => {
     expect(status).toContain('every retry is an explicit call');
     expect(status).toContain('forced or unverified overrides');
     expect(status).toContain('no SDK client or turn');
-    expect(status).toContain('real production packaged runtime admission remains Task 13.11');
+    expect(status).toContain('Task 13.11 admits only its separate fixed certification path');
   });
 
   it('records the seven review remediations as active fail-closed boundaries', () => {

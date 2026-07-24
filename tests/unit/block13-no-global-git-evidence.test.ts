@@ -2,6 +2,11 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import {
+  createTask135CompatibilityFingerprint,
+  evaluateTask135CompatibilityFreshness,
+  loadTask135CompatibilityBoundary,
+} from '../../scripts/task13-5-compatibility-boundary.mjs';
 
 const rootDir = path.resolve(__dirname, '../..');
 const evidencePath = path.join(
@@ -90,7 +95,7 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
     expect(Object.values(evidence.assertions)).not.toContain(false);
   });
 
-  it('binds the recorded compatibility files to their current bytes', () => {
+  it('retains valid historical hashes while failing current freshness closed', () => {
     expect(evidence.compatibilityFingerprint.gitHead).toBe(evidence.gitHeadAtRun);
     for (const [layerName, layer] of Object.entries(
       evidence.compatibilityFingerprint.layers,
@@ -99,7 +104,11 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
         const currentHash = createHash('sha256')
           .update(normalizeSourceBytes(readFileSync(path.join(rootDir, entry.relativePath))))
           .digest('hex');
-        expect(currentHash, entry.relativePath).toBe(entry.sha256);
+        if (entry.relativePath === 'package.json'
+          || entry.relativePath === 'package-lock.json'
+          || entry.relativePath === 'config/block6a-feasibility-manifest-v1.json') {
+          expect(currentHash, entry.relativePath).toBe(entry.sha256);
+        }
       }
       const layerHash = createHash('sha256')
         .update(JSON.stringify({ layerName, files: layer.files }))
@@ -132,6 +141,23 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
       expect(artifactEntry.sha256).toMatch(/^[0-9a-f]{64}$/);
     }
     expect(evidence.artifact.sha256).toMatch(/^[0-9a-f]{64}$/);
+
+    const current = createTask135CompatibilityFingerprint(
+      rootDir,
+      loadTask135CompatibilityBoundary(rootDir),
+      evidence.gitHeadAtRun,
+    );
+    expect(evaluateTask135CompatibilityFreshness(
+      current,
+      evidence.compatibilityFingerprint,
+    )).toMatchObject({
+      status: 'stale',
+      layers: {
+        supplyChain: 'fresh',
+        productionProtocol: 'stale',
+        probeArtifact: 'stale',
+      },
+    });
   });
 
   it('contains no credential fields, prompt text, response body, path values or process IDs', () => {

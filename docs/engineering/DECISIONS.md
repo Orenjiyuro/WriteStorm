@@ -1487,3 +1487,14 @@ Rules:
 - Task 13.10 adds no AI IPC, renderer action, production execution request, automatic retry, cost estimation or budget confirmation. Task 13.11 remains the product packaged-runtime gate.
 - Refreshed Windows evidence `block13-task13-5-windows-no-global-git-packaged-001` binds clean runtime HEAD `c6ee1086cc30691df03c2a95b37d414b0eba5940`, compatibility fingerprint `54e0050b06a2387dfb87b4f2cc42df9dd0892c8962dbdf880b91ecdc7233b00f`, and artifact-content record `b5003adaac16ffa8e831aec7ca3345acdcc8c1e99c31e7a83810ca51fd9fc754`. All 17 Windows no-global-Git assertions passed.
 - macOS remains deferred-by-user. This is not full Go, cross-platform compatibility, a production AI Job or release readiness.
+
+## D111: Product Packaged Runtime Certification Is Explicit, Fixed and Platform-Limited
+
+- Task 13.11 certifies the real product Forge configuration, product Main, production launcher/utility and final product artifact. It does not substitute the Block 6A certification Main.
+- Normal startup, Library navigation and page changes do not start an SDK turn. The one-time certification branch requires `app.isPackaged`, Windows x64 and the exact explicit environment switch before IPC or window creation.
+- Main sends only a closed scenario/token/fixture identifier protocol. The utility owns the fixed public synthetic input and strict schema; no Library, SQLite, manuscript, user input, prompt, schema or arbitrary output path crosses the boundary.
+- Success, explicit cancellation and timeout each use an isolated utility process. Every scenario must prove SDK/client construction, OS-temp non-Git scratch, `skipGitRepoCheck=true`, allowlisted environment, acknowledged cleanup, clean utility exit, ownership observation, residual scan and absent utility/CLI residuals. Only reliable `AbortError` plus an aborted signal counts as observed cancellation.
+- The committed Windows development-machine evidence binds runtime HEAD `83e6e03a24fa382e8ec395f2024c2b70a255c0bd`, compatibility fingerprint `7aa35887e5d547cbc3d21023d601b25daf08be7dc7dfebb6698827daac210d9f` and product artifact record `6d257da254a05e4bfe9170c152d0c6a2cbfe5494e35c8458b06b2f86a7d3a51b`.
+- This result does not verify clean-machine execution, signing, notarization, Defender, proxy, enterprise certificates, firewall, offline behavior, SDK telemetry or macOS. macOS remains deferred-by-user.
+- A non-Git scratch workspace is not proof that global Git is unavailable. Because Task 13.11 changes the production-protocol fingerprint, the older Task 13.5 no-global-Git evidence remains stale until a separately authorized current no-Git probe succeeds.
+- Task 13.11 adds no IPC, renderer action, Job, SQLite write, checkpoint, retry loop, fallback provider, direct CLI/app-server path or real business AI workflow.

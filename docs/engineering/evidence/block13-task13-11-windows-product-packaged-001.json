@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "task": "13.11",
+  "verdict": "windows_product_packaged_runtime_verified_macos_deferred",
+  "fixtureHashes": {
+    "inputSha256": "59aa434b8ea52837a69ea3108fed8b68ba88d1619a52a2238beba6131f4c652d",
+    "expectedSha256": "a7f22d406f5cfb05b2d81c85aa8a8672196fb79e98ab44da89c45450bf9f344a",
+    "schemaSha256": "519d24096fd78b806b351fd28ef4c0167acf3c035e91fc9abacadadcd76f0ed8"
+  },
+  "versions": {
+    "electron": "43.0.0",
+    "nodeRuntime": "24.17.0",
+    "codexSdk": "0.144.6",
+    "codexCli": "0.144.6",
+    "platformPackage": "0.144.6-win32-x64"
+  },
+  "assertions": [
+    {
+      "scenario": "success",
+      "sessionOrdinal": 1,
+      "outcome": "success",
+      "assertions": {
+        "sdkImported": true,
+        "clientConstructed": true,
+        "scratchInsideOsTemp": true,
+        "nonGitWorkspace": true,
+        "skipGitRepoCheck": true,
+        "environmentAllowlisted": true,
+        "finalJsonParsed": true,
+        "strictValidatorAccepted": true,
+        "expectedValueMatched": true,
+        "abortObserved": false,
+        "scratchCleanupCompleted": true,
+        "abortRequested": false,
+        "timeoutTriggered": false,
+        "cleanupAcknowledged": true,
+        "utilityExitClean": true,
+        "ownershipObserved": true,
+        "residualScanCompleted": true,
+        "utilityResidualAbsent": true,
+        "cliResidualAbsent": true
+      }
+    },
+    {
+      "scenario": "cancel",
+      "sessionOrdinal": 2,
+      "outcome": "aborted",
+      "assertions": {
+        "sdkImported": true,
+        "clientConstructed": true,
+        "scratchInsideOsTemp": true,
+        "nonGitWorkspace": true,
+        "skipGitRepoCheck": true,
+        "environmentAllowlisted": true,
+        "finalJsonParsed": false,
+        "strictValidatorAccepted": false,
+        "expectedValueMatched": false,
+        "abortObserved": true,
+        "scratchCleanupCompleted": true,
+        "abortRequested": true,
+        "timeoutTriggered": false,
+        "cleanupAcknowledged": true,
+        "utilityExitClean": true,
+        "ownershipObserved": true,
+        "residualScanCompleted": true,
+        "utilityResidualAbsent": true,
+        "cliResidualAbsent": true
+      }
+    },
+    {
+      "scenario": "timeout",
+      "sessionOrdinal": 3,
+      "outcome": "aborted",
+      "assertions": {
+        "sdkImported": true,
+        "clientConstructed": true,
+        "scratchInsideOsTemp": true,
+        "nonGitWorkspace": true,
+        "skipGitRepoCheck": true,
+        "environmentAllowlisted": true,
+        "finalJsonParsed": false,
+        "strictValidatorAccepted": false,
+        "expectedValueMatched": false,
+        "abortObserved": true,
+        "scratchCleanupCompleted": true,
+        "abortRequested": true,
+        "timeoutTriggered": true,
+        "cleanupAcknowledged": true,
+        "utilityExitClean": true,
+        "ownershipObserved": true,
+        "residualScanCompleted": true,
+        "utilityResidualAbsent": true,
+        "cliResidualAbsent": true
+      }
+    }
+  ],
+  "compatibilityFingerprint": {
+    "boundaryId": "block13-task13-5-compatibility-v1",
+    "gitHead": "83e6e03a24fa382e8ec395f2024c2b70a255c0bd",
+    "layers": {
+      "supplyChain": "712591a66eee703ec7097fbfdefe8122ff607267fcd3c221a1dbb93be6e6c458",
+      "productionProtocol": "f205c48eace20efd74496ba2efe14be848ff2d8f92109184d628fc2ac6d7df54",
+      "probeArtifact": "0ec43f1a36de3679a829de2141baa3dea5bde71e35bac1085743dd9c83e708fe"
+    },
+    "sha256": "7aa35887e5d547cbc3d21023d601b25daf08be7dc7dfebb6698827daac210d9f"
+  },
+  "artifact": {
+    "boundaryId": "block13-task13-11-product-artifact-v1",
+    "files": [
+      {
+        "id": "writestorm_executable",
+        "size": 235706368,
+        "sha256": "65c57fffdc28c34492b8c8a8d7e4c555b87a90e0fd9c8e1757547733779e0db0"
+      },
+      {
+        "id": "app_asar",
+        "size": 71278051,
+        "sha256": "6536447730a0e58dc33ba2720433759fecbe0e5e98d91ada518d0ec8acd0bf43"
+      },
+      {
+        "id": "codex_executable",
+        "size": 341225264,
+        "sha256": "4b76ded066d0239115ca97473d010c92072bc5c5550a45dd7cbebe1e9eb956a7"
+      }
+    ],
+    "asarEntries": [
+      {
+        "id": "product_main_bundle",
+        "size": 443765,
+        "sha256": "5bea33c726f07f6f2f83ab2f13763a8bc83b89c7dd79a686c0775ac0984c92d3"
+      },
+      {
+        "id": "product_codex_utility_bundle",
+        "size": 11551,
+        "sha256": "611a718669873507c96fa4685e5ddd858818ac0b2b67b5e2e4910e64d1014bfd"
+      },
+      {
+        "id": "codex_sdk_manifest",
+        "size": 1830,
+        "sha256": "1e3149ad577ed116ec8972cff47b18f283898c42b7ef697cc13d06e472971d39"
+      },
+      {
+        "id": "codex_cli_manifest",
+        "size": 1082,
+        "sha256": "b701b7d7b7683263e5612e612c468c526d78c3deb1360741e976dc40e0456919"
+      },
+      {
+        "id": "codex_platform_manifest",
+        "size": 511,
+        "sha256": "8e55431148bb2ffc633a7aff1870ee213627f56357138fa0cb86d8a2e42f7106"
+      }
+    ],
+    "sha256": "6d257da254a05e4bfe9170c152d0c6a2cbfe5494e35c8458b06b2f86a7d3a51b"
+  }
+}

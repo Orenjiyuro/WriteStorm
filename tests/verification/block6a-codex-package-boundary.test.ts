@@ -7,7 +7,7 @@ const rootDir = path.resolve(__dirname, '../..');
 const resourcesDir = path.join(rootDir, 'out', `writestorm-win32-${process.arch}`, 'resources');
 const asarPath = path.join(resourcesDir, 'app.asar');
 
-describe('Block 6A packaged security boundary', () => {
+describe('Block 13.11 product packaged security boundary', () => {
   it('keeps packaged renderer resources free of SDK and secret-bearing runtime surfaces', () => {
     expect(existsSync(asarPath)).toBe(true);
     const entries = normalizedEntries();
@@ -23,34 +23,52 @@ describe('Block 6A packaged security boundary', () => {
     expect(rendererOutput).not.toMatch(/\b(?:apiKey|accessToken|authToken|credentialValue|secretValue|secureStorageValue|codexSession)\b/);
   });
 
-  it('keeps the Codex feasibility SDK, CLI and utility outside the product package', () => {
+  it('includes only the production Codex utility and pinned product runtime', () => {
     const entries = normalizedEntries().map(({ normalized }) => normalized);
 
     expect(entries).toContain('.vite/build/main.js');
+    expect(entries).toContain('.vite/build/codex-utility-entry.js');
     expect(entries).not.toContain('.vite/build/utility-entry.js');
-    expect(entries.some((entry) => entry.startsWith('node_modules/@openai/codex'))).toBe(false);
+    expect(entries).toContain('node_modules/@openai/codex-sdk/package.json');
+    expect(entries).toContain('node_modules/@openai/codex/package.json');
+    expect(entries).toContain('node_modules/@openai/codex-win32-x64/package.json');
+
+    const productMain = extractFile(asarPath, '.vite\\build\\main.js').toString('utf8');
+    const productUtility = extractFile(
+      asarPath,
+      '.vite\\build\\codex-utility-entry.js',
+    ).toString('utf8');
+    expect(productMain).not.toContain('@openai/codex-sdk');
+    expect(productMain).not.toContain('certification-main');
+    expect(productUtility).toContain('@openai/codex-sdk');
+    expect(productUtility).not.toContain('codex-feasibility');
   });
 
-  it('does not leave an unpacked Codex runtime beside the product ASAR', () => {
+  it('unpacks the exact Windows Codex executable required by the production utility', () => {
     expect(existsSync(path.join(
       resourcesDir,
       'app.asar.unpacked',
       'node_modules',
       '@openai',
       'codex-win32-x64',
-    ))).toBe(false);
+      'vendor',
+      'x86_64-pc-windows-msvc',
+      'bin',
+      'codex.exe',
+    ))).toBe(true);
   });
 
   it('has a positive rejection witness for packaged renderer and platform contamination', () => {
     const forbiddenRenderer = 'const credentialValue = process.env.CODEX_TOKEN;';
     const contaminatedProductEntries = [
       '.vite/build/utility-entry.js',
-      'node_modules/@openai/codex-sdk/dist/index.js',
+      '.vite/build/certification-main.js',
     ];
 
     expect(forbiddenRenderer).toMatch(/process\.env/);
     expect(forbiddenRenderer).toMatch(/\bcredentialValue\b/);
     expect(contaminatedProductEntries).toContain('.vite/build/utility-entry.js');
+    expect(contaminatedProductEntries).toContain('.vite/build/certification-main.js');
   });
 });
 

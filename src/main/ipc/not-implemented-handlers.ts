@@ -76,6 +76,9 @@ export type ProductIpcRegistrationOptions = {
   readonly jobs?: JobIpcDependencies;
   readonly exports?: ExportStatusIpcDependencies;
   readonly typeLibrary?: TypeLibraryIpcDependencies;
+  readonly ai?: {
+    readonly checkConnection: () => MaybePromise<ContractResponse<'ai:check-connection'>>;
+  };
 };
 
 export function registerNotImplementedProductIpcHandlers(
@@ -125,6 +128,15 @@ function createProductHandlers(options: ProductIpcRegistrationOptions): TypedIpc
     ...(options.jobs ? createJobProductHandlers(options.jobs) : {}),
     ...(options.exports ? createExportProductHandlers(options.exports) : {}),
     ...(options.typeLibrary ? createTypeLibraryProductHandlers(options.typeLibrary) : {}),
+    ...(options.ai ? createAiProductHandlers(options.ai) : {}),
+  };
+}
+
+function createAiProductHandlers(
+  ai: NonNullable<ProductIpcRegistrationOptions['ai']>,
+): TypedIpcHandlerMap {
+  return {
+    'ai:check-connection': () => ai.checkConnection(),
   };
 }
 

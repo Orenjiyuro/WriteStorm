@@ -326,7 +326,7 @@ export function AppRouter(props: AppRouterProps = {}): ReactElement {
     <div className="product-frame">
       <ProductNavigation activeRoute={route} />
       {route === 'settings' ? (
-        <SettingsRoute />
+        <SettingsRoute api={rendererApi} />
       ) : currentLibrary && route === 'techniques' ? (
         <TechniqueLibraryRoute library={currentLibrary} />
       ) : currentLibrary && route === 'originals' ? (

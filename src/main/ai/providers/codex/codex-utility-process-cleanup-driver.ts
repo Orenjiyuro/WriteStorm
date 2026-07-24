@@ -8,6 +8,7 @@ import {
   type CodexUtilityShutdownRequest,
 } from './codex-utility-lifecycle-protocol';
 import { isCodexProductProbeResponse } from './codex-product-probe-protocol';
+import { isCodexConnectionCheckResponse } from './codex-connection-check-protocol';
 
 export type CodexUtilityLifecycleProcess = {
   readonly pid: number | undefined;
@@ -125,7 +126,7 @@ export class CodexUtilityProcessCleanupDriver implements CodexUtilityCleanupDriv
   }
 
   private readonly onMessage = (message: unknown): void => {
-    if (isCodexProductProbeResponse(message)) return;
+    if (isCodexProductProbeResponse(message) || isCodexConnectionCheckResponse(message)) return;
     if (!isCodexUtilityLifecycleResponse(message)
       || !sameAttemptToken(message.token, this.input.token)) {
       this.rejectPending();

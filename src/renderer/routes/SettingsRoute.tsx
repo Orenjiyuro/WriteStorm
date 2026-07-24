@@ -1,11 +1,14 @@
 import type { ReactElement } from 'react';
+import type { WritestormApi } from '../../shared/contracts';
 import { PROMPT_SAMPLE_PREVIEW_POLICY } from '../../shared/domain';
 import { rendererText } from '../i18n';
 import { PromptPublicationControlsShell } from '../features/prompt-template/PromptPublicationControlsShell';
 import { LocalObservabilityShell } from '../features/settings/LocalObservabilityShell';
 import { SettingsUnavailableShell } from '../features/settings/SettingsUnavailableShell';
 
-export function SettingsRoute(): ReactElement {
+export function SettingsRoute(props: {
+  readonly api?: Pick<WritestormApi, 'ai'> | null;
+} = {}): ReactElement {
   return (
     <main className="app-shell settings-route" aria-labelledby="settings-title">
       <section className="settings-page">
@@ -13,7 +16,7 @@ export function SettingsRoute(): ReactElement {
         <h1 id="settings-title">{rendererText.settings.title}</h1>
         <p className="settings-context">{rendererText.settings.context}</p>
 
-        <SettingsUnavailableShell />
+        <SettingsUnavailableShell api={props.api ?? null} />
         <LocalObservabilityShell />
 
         <section className="template-settings" aria-labelledby="template-settings-title">

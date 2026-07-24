@@ -20,13 +20,26 @@
         "config/codex-product-runtime-package.ts",
         "forge.config.ts",
         "scripts/smoke-block13-production-utility.mjs",
+        "src/main/ipc/not-implemented-handlers.ts",
         "src/main/main-lifecycle.ts",
         "src/main/main.ts",
         "src/main/windows/main-window.ts",
+        "src/preload/writestorm-api.ts",
+        "src/renderer/app/AppRouter.tsx",
+        "src/renderer/features/settings/SettingsUnavailableShell.tsx",
+        "src/renderer/features/settings/ai-connection-check-view-state.ts",
+        "src/renderer/i18n.ts",
+        "src/renderer/routes/SettingsRoute.tsx",
+        "src/shared/contracts/ai.ts",
+        "src/shared/contracts/channels.ts",
+        "src/shared/contracts/preload-api.ts",
+        "src/shared/contracts/registry.ts",
         "tests/smoke/block13-network-blocker.cjs",
         "tests/smoke/block13-production-utility-smoke-main.ts",
         "vite.codex-utility.config.ts",
-        "vite.main.config.ts"
+        "vite.main.config.ts",
+        "vite.preload.config.ts",
+        "vite.renderer.config.ts"
       ]
     },
     "probeArtifact": {

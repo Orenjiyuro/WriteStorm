@@ -176,6 +176,7 @@ async function invokeEveryProductMethod(api: WritestormApi): Promise<void> {
   await api.jobs.get(jobRequest);
   await api.jobs.cancel(jobRequest);
   await api.exports.getStatus(bookRequest);
+  await api.ai.checkConnection();
 }
 
 function sourceFiles(dir: string): string[] {

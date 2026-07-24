@@ -119,6 +119,7 @@ const validRequests = {
   'exports:get-status': {
     bookId,
   },
+  'ai:check-connection': {},
 } satisfies Record<ProductIpcChannel, unknown>;
 
 describe('main NOT_IMPLEMENTED product IPC handlers', () => {

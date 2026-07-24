@@ -4,16 +4,18 @@ import { describe, expect, it } from 'vitest';
 import { SettingsRoute } from '../../src/renderer/routes/SettingsRoute';
 
 describe('Block 12 Task 12.13 Settings and AI unavailable shell', () => {
-  it('shows the truthful Codex gate and connector status without probing either runtime', () => {
+  it('shows the three-layer unknown state without probing runtime during render', () => {
     const markup = renderToStaticMarkup(<SettingsRoute />);
 
     expect(markup).toContain('AI &amp; connectors');
-    expect(markup).toContain('Codex SDK gate');
-    expect(markup).toContain('Required');
-    expect(markup).toContain('Connector');
-    expect(markup).toContain('Unavailable');
+    expect(markup).toContain('Integration gate');
+    expect(markup).toContain('Windows feasibility');
+    expect(markup).toContain('Platform boundary');
+    expect(markup).toContain('SDK compatibility');
+    expect(markup).toContain('Runtime authentication');
+    expect(markup).toContain('Not observed');
     expect(markup).toContain(
-      'AI features remain disabled until the Codex SDK feasibility gate passes and an admitted connector exists.',
+      'AI actions remain disabled. This check reports gate, compatibility, and current runtime authentication separately.',
     );
   });
 
@@ -41,8 +43,9 @@ describe('Block 12 Task 12.13 Settings and AI unavailable shell', () => {
       'utf8',
     );
 
-    expect(source).not.toMatch(/onClick=|window\.writestorm|preload|\bipc\b|better-sqlite3/);
+    expect(source).not.toMatch(/window\.writestorm|preload|\bipc\b|better-sqlite3/);
     expect(source).not.toMatch(/node:fs|node:child_process|CodexClient|@openai\//);
-    expect(source).not.toMatch(/readonly onAction|readonly onConnect|readonly onRepair/);
+    expect(source.match(/onClick=/g)).toHaveLength(1);
+    expect(source).toContain('controller.current?.check()');
   });
 });

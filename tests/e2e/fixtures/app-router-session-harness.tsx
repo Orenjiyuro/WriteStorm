@@ -197,6 +197,9 @@ const api: WritestormApi = {
       return { ok: true as const, data: exportStatus() };
     },
   },
+  ai: {
+    checkConnection: unavailable,
+  },
 };
 
 Object.assign(window, {

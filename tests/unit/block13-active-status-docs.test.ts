@@ -16,13 +16,16 @@ describe('Block 13 active status authority', () => {
   it('records the exact platform-limited verdict and current task boundary', () => {
     expect(context).toContain(verdict);
     expect(status).toContain(verdict);
-    expect(status).toContain('| 13.5 | PASS for Windows |');
+    expect(status).toContain('| 13.5 | REVALIDATION REQUIRED |');
     expect(status).toContain('| 13.6 | PASS for boundary |');
     expect(status).toContain('| 13.7 | PASS for contract |');
     expect(status).toContain('| 13.8 | PASS for pure in-memory boundary |');
     expect(status).toContain('| 13.9 | PASS for lifecycle/cleanup boundary |');
     expect(status).toContain('| 13.10 | PASS for diagnostic contract boundary |');
-    expect(status).toContain('| 13.11 | PASS for Windows development machine |');
+    expect(status).toContain('| 13.11 | REVALIDATION REQUIRED |');
+    expect(status).toContain(
+      '| 13.12 | IMPLEMENTED; RUNTIME BLOCKED BY STALE COMPATIBILITY |',
+    );
   });
 
   it('preserves historical decisions and appends the remediation decision', () => {
@@ -47,6 +50,9 @@ describe('Block 13 active status authority', () => {
     );
     expect(decisions).toContain(
       '## D112: Current Windows Packaged Runtime Is Recertified Without Global Git',
+    );
+    expect(decisions).toContain(
+      '## D113: Settings Connection Check Is Explicit, Three-Layered and Ephemeral',
     );
     expect(decisions).toContain('26d548e03dfbe71e1f62081998e9942a2dfaa94c');
   });
@@ -110,5 +116,13 @@ describe('Block 13 active status authority', () => {
     expect(status).toContain('does not write a file, log to console, upload telemetry or expose IPC');
     expect(status).toContain('clean-machine');
     expect(status).toContain('SDK/CLI licenses/notices');
+  });
+
+  it('records the explicit Task 13.12 channel without promoting stale runtime evidence', () => {
+    expect(status).toContain('`ai:check-connection` accepts only `{}`');
+    expect(status).toContain('never invokes it on startup, route render, Library open or navigation');
+    expect(status).toContain('concurrent admission is rejected by the lifecycle controller');
+    expect(status).toContain('No new SDK/auth/network probe ran in Task 13.12');
+    expect(status).toContain('Task 13.12 makes both packaged records stale again');
   });
 });

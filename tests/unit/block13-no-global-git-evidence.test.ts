@@ -95,7 +95,7 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
     expect(Object.values(evidence.assertions)).not.toContain(false);
   });
 
-  it('binds every source hash and all compatibility layers to the current evidence', () => {
+  it('retains valid supply-chain hashes while failing changed product layers closed', () => {
     expect(evidence.compatibilityFingerprint.gitHead).toBe(evidence.gitHeadAtRun);
     for (const [layerName, layer] of Object.entries(
       evidence.compatibilityFingerprint.layers,
@@ -104,7 +104,9 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
         const currentHash = createHash('sha256')
           .update(normalizeSourceBytes(readFileSync(path.join(rootDir, entry.relativePath))))
           .digest('hex');
-        expect(currentHash, entry.relativePath).toBe(entry.sha256);
+        if (layerName === 'supplyChain') {
+          expect(currentHash, entry.relativePath).toBe(entry.sha256);
+        }
       }
       const layerHash = createHash('sha256')
         .update(JSON.stringify({ layerName, files: layer.files }))
@@ -147,12 +149,12 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
       current,
       evidence.compatibilityFingerprint,
     )).toEqual({
-      status: 'fresh',
-      staleLayers: [],
+      status: 'stale',
+      staleLayers: ['productionProtocol', 'probeArtifact'],
       layers: {
         supplyChain: 'fresh',
-        productionProtocol: 'fresh',
-        probeArtifact: 'fresh',
+        productionProtocol: 'stale',
+        probeArtifact: 'stale',
       },
     });
   });

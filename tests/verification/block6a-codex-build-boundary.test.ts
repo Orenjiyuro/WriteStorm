@@ -7,8 +7,18 @@ const utilityBuildPath = path.join(rootDir, '.vite/build/utility-entry.js');
 const rendererBuildDir = path.join(rootDir, '.vite/renderer/main_window');
 
 describe('Block 6A.4 built output boundary', () => {
-  it('keeps the feasibility utility outside the product build output', () => {
-    expect(existsSync(utilityBuildPath)).toBe(false);
+  it('keeps the feasibility utility outside the admitted product utility bundle', () => {
+    const forgeSource = readFileSync(path.join(rootDir, 'forge.config.ts'), 'utf8');
+    expect(forgeSource).toContain(
+      "entry: 'src/main/ai/providers/codex/codex-utility-entry.ts'",
+    );
+    expect(forgeSource).not.toMatch(/entry:\s*['"][^'"]*codex-feasibility/);
+    if (existsSync(utilityBuildPath)) {
+      const utilitySource = readFileSync(utilityBuildPath, 'utf8');
+      expect(utilitySource).not.toMatch(
+        /src\/main\/codex-feasibility|codex-feasibility\/(?:probe|utility)/,
+      );
+    }
   });
 
   it('keeps renderer output free of SDK, process and secret-bearing runtime surfaces', () => {
@@ -19,10 +29,10 @@ describe('Block 6A.4 built output boundary', () => {
   });
 
   it('has a positive rejection witness for both build guards', () => {
-    const forbiddenUtilityBundle = '.vite/build/utility-entry.js';
+    const forbiddenUtilityBundle = 'src/main/codex-feasibility/utility-entry.ts';
     const forbiddenRendererBundle = 'const accessToken = process.env.CODEX_TOKEN;';
 
-    expect(forbiddenUtilityBundle).toContain('utility-entry.js');
+    expect(forbiddenUtilityBundle).toContain('codex-feasibility');
     expect(forbiddenRendererBundle).toMatch(/process\.env/);
     expect(forbiddenRendererBundle).toMatch(/\baccessToken\b/);
   });

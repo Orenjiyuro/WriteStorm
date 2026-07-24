@@ -147,7 +147,18 @@ describe('Block 6A.4 Codex utility boundary', () => {
     expect(rendererAndSharedOffenders).toEqual([]);
     expect(preloadOffenders).toEqual([]);
     expect(secretBearingOffenders).toEqual([]);
-    expect(PRODUCT_IPC_CHANNELS.filter((channel) => /ai|codex|openai|provider/i.test(channel))).toEqual([]);
+    expect(PRODUCT_IPC_CHANNELS.filter(
+      (channel) => /ai|codex|openai|provider/i.test(channel),
+    )).toEqual(['ai:check-connection']);
+    for (const rejected of [
+      'ai:run',
+      'ai:generate',
+      'ai:invoke',
+      'codex:run',
+      'provider:invoke',
+    ]) {
+      expect(PRODUCT_IPC_CHANNELS).not.toContain(rejected);
+    }
     expect(preloadSource).not.toMatch(/@openai\/|codex|process\.env/i);
 
     expect(findForbiddenImportSpecifiers(

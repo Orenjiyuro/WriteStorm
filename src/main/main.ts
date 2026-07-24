@@ -60,6 +60,20 @@ import { ExportStatusService } from './exports/export-status-service';
 import { TypeLibraryService } from './type-library/type-library-service';
 import { AiRuntimeLifecycleRegistry } from './ai/ai-attempt-lifecycle';
 import { runOptionalCodexProductPackagedProbe } from './ai/providers/codex/codex-product-packaged-probe';
+import { AiConnectionCheckService } from './ai/ai-connection-check-service';
+import { readAiRuntimeCompatibility } from './ai/ai-runtime-compatibility';
+import { CodexAuthObservationAuthority } from './ai/providers/codex/codex-auth-observation';
+import {
+  CodexConnectionCheckAttemptController,
+} from './ai/providers/codex/codex-connection-check-attempt-controller';
+import {
+  CodexConnectionCheckRuntime,
+} from './ai/providers/codex/codex-connection-check-runtime';
+import { CodexUtilityLauncher } from './ai/providers/codex/codex-utility-launcher';
+import {
+  resolvePackagedCodexExecutablePath,
+} from './ai/providers/codex/codex-product-runtime-path';
+import { CodexWindowsProcessGuard } from './ai/providers/codex/codex-windows-process-guard';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -114,6 +128,34 @@ const books = createBookImportIpcDependencies({
   showOpenDialog: (options) => dialog.showOpenDialog(options),
 });
 const aiRuntimeLifecycle = new AiRuntimeLifecycleRegistry();
+const codexConnectionLauncher = new CodexUtilityLauncher({
+  mainBundleDirectory: __dirname,
+  fork: (modulePath, args, options) => utilityProcess.fork(modulePath, [...args], options),
+});
+const codexConnectionRuntime = new CodexConnectionCheckRuntime({
+  launcher: codexConnectionLauncher,
+  createProcessGuard: (observationStartedAt) => new CodexWindowsProcessGuard({
+    utilityExecutablePath: process.execPath,
+    cliExecutablePath: resolvePackagedCodexExecutablePath(process.resourcesPath),
+    observationStartedAt,
+  }),
+  cleanupGraceMs: 5_000,
+});
+const codexConnectionAttempts = new CodexConnectionCheckAttemptController({
+  runtime: codexConnectionRuntime,
+  timeoutMs: 30_000,
+});
+aiRuntimeLifecycle.track(codexConnectionAttempts);
+const codexAuthObservation = new CodexAuthObservationAuthority();
+const aiConnectionCheckService = new AiConnectionCheckService({
+  assessCompatibility: () => readAiRuntimeCompatibility({
+    isPackaged: app.isPackaged,
+    platform: process.platform,
+    architecture: process.arch,
+  }),
+  auth: codexAuthObservation,
+  attempts: codexConnectionAttempts,
+});
 const mainLifecycle = createMainLifecycleCoordinator({
   ai: aiRuntimeLifecycle,
   jobs: jobApplicationService,
@@ -144,6 +186,7 @@ async function shutdownAndExit(): Promise<void> {
 }
 
 async function prepareForLibrarySessionChange(): Promise<void> {
+  aiConnectionCheckService.invalidate();
   sourceImportService.pauseImports();
   await Promise.all([
     sourceImportService.waitForIdle(),
@@ -152,6 +195,7 @@ async function prepareForLibrarySessionChange(): Promise<void> {
 }
 
 async function cleanupSourceImportsForWindowClose(): Promise<void> {
+  aiConnectionCheckService.invalidate();
   books.invalidateWindowSelections();
   sourceImportService.pauseImports();
   try {
@@ -439,6 +483,12 @@ app.whenReady().then(async () => {
     jobs: createJobIpcDependencies(jobApplicationService),
     exports: createExportStatusIpcDependencies(exportStatusService),
     typeLibrary: createTypeLibraryIpcDependencies(typeLibraryService),
+    ai: {
+      checkConnection: async () => ({
+        ok: true,
+        data: await aiConnectionCheckService.checkConnection(),
+      }),
+    },
   });
   await createWindow();
   await runOptionalNativeSqliteProbe();

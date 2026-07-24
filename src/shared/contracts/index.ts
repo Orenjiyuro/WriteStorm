@@ -139,6 +139,22 @@ export {
   updateStorySegmentRangeRequestSchema,
   updateStructureNodeRequestSchema,
 } from './structure';
+export {
+  aiCheckConnectionRequestSchema,
+  aiCheckConnectionResponseSchema,
+  aiCompatibilityStateSchema,
+  aiConnectionCheckDataSchema,
+  aiGateStateSchema,
+  aiRuntimeAuthStateSchema,
+  aiRuntimeObservationDtoSchema,
+  UNKNOWN_AI_CONNECTION_CHECK_DATA,
+} from './ai';
+export type {
+  AiCompatibilityStateDto,
+  AiConnectionCheckData,
+  AiGateStateDto,
+  AiRuntimeObservationDto,
+} from './ai';
 export type {
   StorySegmentRangeDto,
   StructureDetectionStartResult,

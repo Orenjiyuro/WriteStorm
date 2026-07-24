@@ -41,11 +41,21 @@ describe('Block 13.5 canonical compatibility boundary', () => {
       'config/codex-product-runtime-package.ts',
       'config/codex-utility-vite-config.ts',
       'forge.config.ts',
+      'src/main/ipc/not-implemented-handlers.ts',
       'src/main/main-lifecycle.ts',
       'src/main/main.ts',
       'src/main/windows/main-window.ts',
+      'src/preload/writestorm-api.ts',
+      'src/renderer/features/settings/SettingsUnavailableShell.tsx',
+      'src/renderer/features/settings/ai-connection-check-view-state.ts',
+      'src/shared/contracts/ai.ts',
+      'src/shared/contracts/channels.ts',
+      'src/shared/contracts/preload-api.ts',
+      'src/shared/contracts/registry.ts',
       'vite.codex-utility.config.ts',
       'vite.main.config.ts',
+      'vite.preload.config.ts',
+      'vite.renderer.config.ts',
     ]));
     expect(boundary.layers.probeArtifact.sourceFiles).toEqual(expect.arrayContaining([
       'config/block13-task13-11-product-artifact-v1.json',
@@ -163,7 +173,7 @@ describe('Block 13.5 canonical compatibility boundary', () => {
     }
   });
 
-  it('accepts the recertified no-global-Git evidence against every current layer', () => {
+  it('fails the pre-13.12 packaged evidence closed after connection-check drift', () => {
     const boundary = loadTask135CompatibilityBoundary(rootDir);
     const evidence = JSON.parse(readFileSync(
       path.join(
@@ -181,12 +191,12 @@ describe('Block 13.5 canonical compatibility boundary', () => {
       current,
       evidence.compatibilityFingerprint,
     )).toEqual({
-      status: 'fresh',
-      staleLayers: [],
+      status: 'stale',
+      staleLayers: ['productionProtocol', 'probeArtifact'],
       layers: {
         supplyChain: 'fresh',
-        productionProtocol: 'fresh',
-        probeArtifact: 'fresh',
+        productionProtocol: 'stale',
+        probeArtifact: 'stale',
       },
     });
     expect(evidence.artifact.sha256).toMatch(/^[0-9a-f]{64}$/);

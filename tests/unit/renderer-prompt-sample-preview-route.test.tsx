@@ -69,6 +69,6 @@ describe('Block 12 Task 12.10 Prompt sample preview route', () => {
 
     expect(routeSource).not.toMatch(/onClick=|window\.writestorm|preload|ipc|Codex|@openai/);
     expect(routerSource).toContain("route === 'settings'");
-    expect(routerSource).toContain('<SettingsRoute />');
+    expect(routerSource).toContain('<SettingsRoute api={rendererApi} />');
   });
 });

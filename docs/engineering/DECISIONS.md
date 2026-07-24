@@ -1511,3 +1511,20 @@ Rules:
 - The evidence contains bounded assertions, versions and hashes only. It records no credential, prompt, response, environment value, arbitrary path or process identifier.
 - This revalidation changes no package or lockfile, adds no IPC, UI, Job, SQLite write, checkpoint, retry, fallback or business AI workflow, and does not authorize Task 13.12.
 - The result applies only to the Windows development-machine artifact. It does not verify clean-machine behavior, signing, notarization, Defender, proxy, enterprise certificates, firewall, offline behavior, SDK telemetry or macOS. macOS remains deferred-by-user; this is not full Go, cross-platform compatibility or release readiness.
+
+## D113: Settings Connection Check Is Explicit, Three-Layered and Ephemeral
+
+Decision: Task 13.12 exposes one user-triggered connection check without admitting AI generation, automatic network activity or stale runtime evidence.
+
+Rules:
+
+- `ai:check-connection` is the only admitted AI namespace channel. Its request is strict `{}`; `ai:run`, `ai:generate`, `codex:*`, provider invocation and generic raw invoke remain rejected.
+- The response separates versioned Gate authority, build-time compatibility assessment and ephemeral runtime/auth observation. It contains no provider identifier, prompt, response body, Library/SQLite fact, source text, path, environment value, credential or process identifier.
+- Startup, Settings render, Library open and navigation do not invoke the channel. Only the visible Settings button starts the fixed short synthetic check. No polling, TTL or time-driven refresh exists.
+- `AiConnectionCheckService` clears the prior observation only after the lifecycle controller admits a new explicit attempt. It does not own attempt/generation, retry, timeout or cancellation state. Concurrent admission is rejected by the sole Task 13.8/13.9 controller.
+- The Codex-private utility owns the fixed input and strict schema, uses an OS-temp non-Git scratch workspace with `skipGitRepoCheck=true`, and returns only authenticated success or runtime unavailable. Unknown SDK failures are never classified by English-message parsing.
+- Authenticated is accepted only after strict structured success, graceful cleanup and unchanged fresh compatibility. Library replacement/window close invalidates observation before cleanup; late invalidated results cannot write Main memory. Renderer unmount ignores its late IPC response.
+- Observation remains Main-memory only. Restart begins unknown, fingerprint drift clears it, a new attempt hides the old result, and `observedAt` does not imply permanent availability.
+- Default tests use injected runtime/recorded protocol data and remain offline. A real SDK/auth/network check is never part of `npm run check`.
+- Task 13.12 changes production-protocol and probe-artifact inputs, so the D111 and D112 packaged records become historical and compatibility fails closed until separately authorized Windows recertification. No real runtime probe ran in this task.
+- No Task 13.12 path creates an AI Job, checkpoint, AnalysisModuleInstance, SQLite/Library write, generation action, automatic retry, fallback, alternate provider or resumable state. macOS remains deferred-by-user; this is not full Go, cross-platform compatibility or release readiness.

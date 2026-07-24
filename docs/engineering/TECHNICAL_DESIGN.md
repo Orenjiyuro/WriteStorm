@@ -143,6 +143,18 @@ Usage crosses the provider boundary only as `reported` or `unknown`. Reported us
 
 `AiDiagnosticLog` is a maximum-256-entry in-memory ring containing only frozen closed records. It accepts no free-form prompt, response, error, path, environment, credential or provider identifier field and has no filesystem, console, network or remote telemetry behavior. `config/block13-release-limitations-v1.json` separately records platform, clean-machine, signing/notarization, Defender, proxy, certificate, firewall, offline, telemetry and redistribution constraints. No Task 13.10 surface adds IPC, Job/checkpoint writes, SQLite, automatic retry or a product execution path.
 
+### Task 13.11–13.12 packaged runtime and explicit Settings check
+
+Task 13.11's dated Windows development-machine artifact proves its recorded product Main, launcher, utility, success/cancel/timeout and cleanup boundary. It does not permanently authorize later builds. The build-time compatibility evaluator independently fingerprints supply chain, production protocol and probe artifact inputs; changing any relevant product AI, typed IPC, preload, Settings or build-authority source makes the prior runtime observation unusable.
+
+Task 13.12 adds exactly one product channel, `ai:check-connection`. Its request schema is strict `{}` and its response contains only provider-neutral Gate, compatibility and runtime/auth observation fields. Gate authority remains the versioned conditional Windows verdict; compatibility is injected from the build fingerprint; auth/runtime observation is ephemeral Main memory with `observedAt`. These layers never overwrite one another.
+
+Settings starts no check on application startup, render, Library open or navigation. Only the visible button invokes the fixed short synthetic utility request. The renderer has no prompt, schema, SDK, filesystem, process, token or raw IPC surface. Starting an admitted check clears the previous displayed/runtime observation. The application service delegates admission, attempt/generation, timeout and cleanup to the existing `AiAttemptLifecycleService`/`AiAttemptController`; concurrent checks do not create another generation. Library replacement and window close invalidate observation before lifecycle termination, and a Settings component that unmounts ignores its late IPC response.
+
+The Codex-private utility owns the fixed input and strict one-field schema, uses an OS-temp non-Git scratch directory with `skipGitRepoCheck=true`, and emits only `authenticated` or `runtime_unavailable`. It does not infer login-required, expiration, permission, network or rate classifications from messages. Main promotes authenticated only after strict output and graceful cleanup under the same fresh fingerprint. All other or stale cases remain unknown/runtime-unavailable as defined by D104.
+
+Observation is never written to Library SQLite, Job, checkpoint, export, log or credential storage. Restart begins unknown; fingerprint drift immediately invalidates prior observation; time passage alone does not refresh it, and no TTL is invented. AI generation actions remain disabled. Default unit/integration/UI tests inject transport and remain offline; a real packaged check is never part of `npm run check`.
+
 ### Main process
 
 Owns:

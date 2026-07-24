@@ -44,6 +44,7 @@ describe('preload WriteStorm API', () => {
       'modules',
       'jobs',
       'exports',
+      'ai',
     ]);
     expect(Object.keys(api.internal)).toEqual(['health']);
     expect(Object.keys(api.library)).toEqual(['create', 'open', 'getCurrent']);
@@ -68,6 +69,7 @@ describe('preload WriteStorm API', () => {
     expect(Object.keys(api.modules)).toEqual(['listInstances', 'updateBody']);
     expect(Object.keys(api.jobs)).toEqual(['list', 'get', 'cancel']);
     expect(Object.keys(api.exports)).toEqual(['getStatus']);
+    expect(Object.keys(api.ai)).toEqual(['checkConnection']);
     expect('invoke' in api).toBe(false);
     expect('ipcRenderer' in api).toBe(false);
   });
@@ -154,6 +156,7 @@ describe('preload WriteStorm API', () => {
     await api.jobs.get(jobRequest);
     await api.jobs.cancel(jobRequest);
     await api.exports.getStatus(bookRequest);
+    await api.ai.checkConnection();
 
     expect(calls.map((call) => call.channel)).toEqual([...PRODUCT_IPC_CHANNELS]);
     expect(calls).toEqual([
@@ -184,6 +187,7 @@ describe('preload WriteStorm API', () => {
       { channel: 'jobs:get', request: jobRequest },
       { channel: 'jobs:cancel', request: jobRequest },
       { channel: 'exports:get-status', request: bookRequest },
+      { channel: 'ai:check-connection', request: {} },
     ]);
   });
 });

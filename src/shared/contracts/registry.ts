@@ -31,6 +31,10 @@ import {
   updateStructureNodeRequestSchema,
 } from './structure';
 import type { ProductIpcChannel } from './channels';
+import {
+  aiCheckConnectionRequestSchema,
+  aiCheckConnectionResponseSchema,
+} from './ai';
 
 export type IpcContract<
   TChannel extends ProductIpcChannel,
@@ -178,6 +182,11 @@ export const CONTRACT_REGISTRY = {
     'exports:get-status',
     bookRequestSchema,
     contractResponseSchema(exportStatusSchema),
+  ),
+  'ai:check-connection': createContract(
+    'ai:check-connection',
+    aiCheckConnectionRequestSchema,
+    aiCheckConnectionResponseSchema,
   ),
 } as const satisfies {
   [TChannel in ProductIpcChannel]: IpcContract<TChannel, z.ZodTypeAny, z.ZodTypeAny>;

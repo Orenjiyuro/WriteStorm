@@ -65,5 +65,11 @@ export function createWritestormPreloadApi(invoke: WritestormIpcInvoke): Writest
     exports: {
       getStatus: (request) => productInvoke('exports:get-status', request),
     },
+    ai: {
+      checkConnection: () => productInvoke(
+        'ai:check-connection',
+        emptyRequest<'ai:check-connection'>(),
+      ),
+    },
   };
 }

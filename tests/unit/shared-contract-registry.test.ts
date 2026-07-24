@@ -56,6 +56,7 @@ const expectedChannels = [
   'jobs:get',
   'jobs:cancel',
   'exports:get-status',
+  'ai:check-connection',
 ] as const;
 
 const libraryId = 'library-1' as LibraryId;
@@ -175,6 +176,7 @@ describe('shared contract registry', () => {
           'books:import-source',
           'type-library:list-options',
           'jobs:list',
+          'ai:check-connection',
         ].includes(channel),
       );
       expect(

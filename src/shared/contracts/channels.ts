@@ -23,6 +23,7 @@ export const PRODUCT_IPC_CHANNELS = [
   'jobs:get',
   'jobs:cancel',
   'exports:get-status',
+  'ai:check-connection',
 ] as const;
 
 export type ProductIpcChannel = (typeof PRODUCT_IPC_CHANNELS)[number];

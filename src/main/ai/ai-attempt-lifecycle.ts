@@ -179,6 +179,28 @@ export class AiAttemptLifecycleService implements AiLifecycleParticipant {
     return this.beginAttempt();
   }
 
+  beginExplicit():
+    | Readonly<{ accepted: true; token: AiAttemptToken }>
+    | Readonly<{
+      accepted: false;
+      reason:
+        | 'attempt_active'
+        | 'cleanup_unverified'
+        | 'admission_paused'
+        | 'session_start_failed';
+    }> {
+    if (this.admissionPaused) {
+      return Object.freeze({ accepted: false, reason: 'admission_paused' });
+    }
+    if (this.active) {
+      return Object.freeze({
+        accepted: false,
+        reason: this.active.quarantined ? 'cleanup_unverified' : 'attempt_active',
+      });
+    }
+    return this.beginAttempt();
+  }
+
   retryExplicit():
     | Readonly<{ accepted: true; token: AiAttemptToken }>
     | Readonly<{

@@ -65,11 +65,18 @@ describe('Block 12 Task 12.14 cross-domain boundary gates', () => {
     expect(importSpecifiers("const fileSystem = require('node:fs');")).toEqual(['node:fs']);
     expect(importSpecifiers('const electron = require("electron");')).toEqual(['electron']);
 
-    expect(PRODUCT_IPC_CHANNELS.filter(isSensitiveOrAiChannel)).toEqual([]);
+    expect(PRODUCT_IPC_CHANNELS.filter(isSensitiveOrAiChannel)).toEqual([
+      'ai:check-connection',
+    ]);
+    expect(isAllowedAiChannel('ai:check-connection')).toBe(true);
     for (const channel of [
       'codex:run',
       'secrets:get-token',
       'ai:run',
+      'ai:generate',
+      'ai:invoke',
+      'codex:check-connection',
+      'providers:invoke',
       'fs:read',
       'logging:upload',
       'observability:export',
@@ -77,6 +84,7 @@ describe('Block 12 Task 12.14 cross-domain boundary gates', () => {
       'telemetry:send',
     ]) {
       expect.soft(isSensitiveOrAiChannel(channel), channel).toBe(true);
+      expect.soft(isAllowedAiChannel(channel), channel).toBe(false);
     }
   });
 
@@ -143,6 +151,10 @@ function isOriginalCreationChannel(channel: string): boolean {
 function isSensitiveOrAiChannel(channel: string): boolean {
   return /^(?:ai|codex|llm|models?|providers?|secrets?|credentials?|tokens?|secure-storage|fs|filesystem|file-system|shell|logging|logs|observability|crash-reports?|telemetry|usage-statistics):/.test(channel) ||
     /(secret|credential|token|secure-storage|filesystem|file-system|shell)/.test(channel);
+}
+
+function isAllowedAiChannel(channel: string): boolean {
+  return channel === 'ai:check-connection';
 }
 
 function isSilentTemplateUpgradeChannel(channel: string): boolean {

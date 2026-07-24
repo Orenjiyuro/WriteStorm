@@ -57,4 +57,7 @@ export type WritestormApi = {
   exports: {
     getStatus(request: ContractRequest<'exports:get-status'>): Promise<ContractResponse<'exports:get-status'>>;
   };
+  ai: {
+    checkConnection(): Promise<ContractResponse<'ai:check-connection'>>;
+  };
 };

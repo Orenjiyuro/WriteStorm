@@ -5,6 +5,7 @@ import {
   CodexUtilityLifecycleHost,
   CODEX_UTILITY_UNSUPPORTED_MESSAGE_EXIT_CODE,
 } from './codex-utility-lifecycle-host';
+import { CodexConnectionCheckUtilityHost } from './codex-connection-check-utility-host';
 
 export { CODEX_UTILITY_UNSUPPORTED_MESSAGE_EXIT_CODE };
 export const CODEX_UTILITY_INVALID_SDK_EXPORT_EXIT_CODE = 29 as const;
@@ -47,8 +48,17 @@ async function initializeCodexUtility(): Promise<void> {
       lifecycle,
       postMessage: (message) => parentPort.postMessage(message),
     });
+    const connectionCheck = new CodexConnectionCheckUtilityHost({
+      createClient: createCodexSdkClient,
+      lifecycle,
+      postMessage: (message) => parentPort.postMessage(message),
+    });
     parentPort.on('message', (event: ElectronUtilityMessageEvent) => {
       try {
+        if (connectionCheck.accepts(event.data)) {
+          connectionCheck.accept(event.data);
+          return;
+        }
         if (productProbe.accepts(event.data)) {
           productProbe.accept(event.data);
           return;

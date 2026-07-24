@@ -114,6 +114,19 @@ describe('Block 13.7 provider-neutral structured output contract', () => {
     })).toThrow(AiStructuredOutputSchemaError);
   });
 
+  it.each([
+    z.strictObject({ value: z.coerce.string() }),
+    z.strictObject({ value: z.string().default('invented') }),
+    z.strictObject({ value: z.string().catch('invented') }),
+    z.strictObject({ value: z.string().trim() }),
+    z.strictObject({ value: z.string().transform((value) => value) }),
+  ])('rejects schemas that can coerce, invent or rewrite model output', (schema) => {
+    expect(() => createAiStructuredOutputContract({
+      schema,
+      maxFinalBytes: 1_024,
+    })).toThrow(AiStructuredOutputSchemaError);
+  });
+
   it('keeps schema/validation offline and leaves runtime capability false', () => {
     expect(createCodexStructuredOutputOptions).toBeTypeOf('function');
     expect(CODEX_PROVIDER_CAPABILITIES.structuredOutput).toBe(false);

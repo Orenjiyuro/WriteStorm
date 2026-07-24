@@ -24,11 +24,18 @@ export type AiRuntimeObservation = {
   readonly compatibilityFingerprint: string | null;
 };
 
+declare const observationReceiptBrand: unique symbol;
+
+export interface AiRuntimeObservationReceipt extends AiRuntimeObservation {
+  readonly [observationReceiptBrand]: never;
+}
+
 const UNKNOWN_AI_RUNTIME_OBSERVATION: AiRuntimeObservation = Object.freeze({
   authState: 'unknown',
   observedAt: null,
   compatibilityFingerprint: null,
 });
+const runtimeObservationReceipts = new WeakSet<AiRuntimeObservationReceipt>();
 
 export function unknownAiRuntimeObservation(): AiRuntimeObservation {
   return UNKNOWN_AI_RUNTIME_OBSERVATION;
@@ -51,8 +58,9 @@ export class AiRuntimeObservationMemory {
     this.compatibilityFingerprint = assessment.fingerprint;
   }
 
-  accept(observation: AiRuntimeObservation): boolean {
+  accept(observation: AiRuntimeObservationReceipt): boolean {
     if (!this.compatibilityFingerprint
+      || !runtimeObservationReceipts.has(observation)
       || observation.compatibilityFingerprint !== this.compatibilityFingerprint) {
       return false;
     }
@@ -67,6 +75,15 @@ export class AiRuntimeObservationMemory {
   read(): AiRuntimeObservation {
     return this.observation;
   }
+}
+
+/** @internal Only reviewed provider runtime mappers may call this capability. */
+export function mintAiRuntimeObservationReceipt(
+  observation: AiRuntimeObservation,
+): AiRuntimeObservationReceipt {
+  const receipt = Object.freeze({ ...observation }) as AiRuntimeObservationReceipt;
+  runtimeObservationReceipts.add(receipt);
+  return receipt;
 }
 
 function assertSha256(value: string): void {

@@ -9,6 +9,7 @@ import { AI_ATTEMPT_RESOURCE_CEILINGS } from '../../ai-attempt-controller';
 
 export type CodexEventProjectionRejection =
   | 'event_too_large'
+  | 'resource_limit'
   | 'malformed_event'
   | 'unsupported_event';
 
@@ -24,12 +25,18 @@ export class CodexEventProjectionError extends Error {
 export class CodexStreamEventProjector {
   private readonly token: AiAttemptToken;
   private readonly maxEventBytes: number;
+  private readonly maxTotalBytes: number;
+  private readonly maxEventCount: number;
   private sequence = 0;
+  private totalRawBytes = 0;
+  private rawEventCount = 0;
   private completedAgentText: string | null = null;
 
   constructor(input: {
     readonly token: AiAttemptToken;
     readonly maxEventBytes: number;
+    readonly maxTotalBytes: number;
+    readonly maxEventCount: number;
   }) {
     if (!Number.isSafeInteger(input.token.attempt)
       || input.token.attempt < 1
@@ -37,18 +44,34 @@ export class CodexStreamEventProjector {
       || input.token.generation < 1
       || !Number.isSafeInteger(input.maxEventBytes)
       || input.maxEventBytes < 1
-      || input.maxEventBytes > AI_ATTEMPT_RESOURCE_CEILINGS.maxEventBytes) {
+      || input.maxEventBytes > AI_ATTEMPT_RESOURCE_CEILINGS.maxEventBytes
+      || !Number.isSafeInteger(input.maxTotalBytes)
+      || input.maxTotalBytes < input.maxEventBytes
+      || input.maxTotalBytes > AI_ATTEMPT_RESOURCE_CEILINGS.maxTotalBytes
+      || !Number.isSafeInteger(input.maxEventCount)
+      || input.maxEventCount < 1
+      || input.maxEventCount > AI_ATTEMPT_RESOURCE_CEILINGS.maxEventCount) {
       throw new CodexEventProjectionError('malformed_event');
     }
     this.token = Object.freeze({ ...input.token });
     this.maxEventBytes = input.maxEventBytes;
+    this.maxTotalBytes = input.maxTotalBytes;
+    this.maxEventCount = input.maxEventCount;
   }
 
   project(line: string): AiExecutionEvent {
-    if (typeof line !== 'string'
-      || Buffer.byteLength(line, 'utf8') > this.maxEventBytes) {
+    const rawBytes = typeof line === 'string'
+      ? Buffer.byteLength(line, 'utf8')
+      : this.maxEventBytes + 1;
+    if (typeof line !== 'string' || rawBytes > this.maxEventBytes) {
       throw new CodexEventProjectionError('event_too_large');
     }
+    if (this.rawEventCount + 1 > this.maxEventCount
+      || this.totalRawBytes + rawBytes > this.maxTotalBytes) {
+      throw new CodexEventProjectionError('resource_limit');
+    }
+    this.rawEventCount += 1;
+    this.totalRawBytes += rawBytes;
 
     let raw: unknown;
     try {

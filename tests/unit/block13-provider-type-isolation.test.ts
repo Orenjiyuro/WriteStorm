@@ -35,6 +35,18 @@ describe('Block 13 sealed provider type isolation', () => {
       }
     }
   });
+
+  it('restricts runtime observation receipt minting to the reviewed Codex mapper', () => {
+    const aiRoot = path.join(rootDir, 'src/main/ai');
+    const allowed = new Set([
+      path.join(aiRoot, 'ai-runtime-observation.ts'),
+      path.join(aiRoot, 'providers/codex/codex-auth-observation.ts'),
+    ]);
+    const consumers = sourceFiles(aiRoot).filter((filePath) => (
+      readFileSync(filePath, 'utf8').includes('mintAiRuntimeObservationReceipt')
+    ));
+    expect(new Set(consumers)).toEqual(allowed);
+  });
 });
 
 function sourceFiles(directory: string): string[] {

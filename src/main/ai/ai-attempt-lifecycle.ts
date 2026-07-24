@@ -1,11 +1,13 @@
 import {
-  type AiAttemptController,
+  AiAttemptController,
   type AiAttemptDisposition,
+  type AiAttemptResourceLimits,
 } from './ai-attempt-controller';
 import {
   type AiAttemptToken,
   type AiExecutionEvent,
 } from './ai-execution-port';
+import type { AiStructuredOutputContract } from './ai-structured-output';
 
 export const AI_TERMINATION_TRIGGERS = [
   'completed',
@@ -26,6 +28,7 @@ export type AiRuntimeCleanupObservation = Readonly<{
   executionSettled: boolean;
   cleanupAcknowledged: boolean;
   utilityExitObserved: boolean;
+  utilityExitClean: boolean;
   utilityKillOwnershipProven: boolean;
   utilityKillAttempted: boolean;
   residualScanCompleted: boolean;
@@ -41,7 +44,7 @@ export type AiLifecycleParticipant = {
   isActive(): boolean;
   pauseAdmission(): void;
   resumeAdmission(): void;
-  requestTermination(trigger: AiTerminationTrigger): Promise<unknown>;
+  requestTermination(trigger: AiTerminationTrigger): Promise<AiLifecycleSettlement>;
 };
 
 type LifecycleTerminatingDisposition = Readonly<{
@@ -65,6 +68,8 @@ type ActiveLifecycleAttempt = {
   readonly session: AiRuntimeSession;
   cancelTimeout: () => void;
   termination: Promise<AiLifecycleSettlement> | null;
+  quarantined: boolean;
+  readonly idle: Deferred<void>;
 };
 
 const UNVERIFIED_CLEANUP = createAiRuntimeCleanupObservation({
@@ -74,6 +79,7 @@ const UNVERIFIED_CLEANUP = createAiRuntimeCleanupObservation({
   executionSettled: false,
   cleanupAcknowledged: false,
   utilityExitObserved: false,
+  utilityExitClean: false,
   utilityKillOwnershipProven: false,
   utilityKillAttempted: false,
   residualScanCompleted: false,
@@ -90,6 +96,7 @@ export function createAiRuntimeCleanupObservation(
     'executionSettled',
     'cleanupAcknowledged',
     'utilityExitObserved',
+    'utilityExitClean',
     'utilityKillOwnershipProven',
     'utilityKillAttempted',
     'residualScanCompleted',
@@ -112,7 +119,7 @@ export function createAiRuntimeCleanupObservation(
 }
 
 export class AiAttemptLifecycleService implements AiLifecycleParticipant {
-  readonly controller: AiAttemptController;
+  readonly #controller: AiAttemptController;
   private readonly createSession: (token: AiAttemptToken) => AiRuntimeSession;
   private readonly timeoutMs: number;
   private readonly scheduleTimeout: (
@@ -125,7 +132,8 @@ export class AiAttemptLifecycleService implements AiLifecycleParticipant {
   private latestSettlement: AiLifecycleSettlement | null = null;
 
   constructor(input: {
-    readonly controller: AiAttemptController;
+    readonly structuredOutput: AiStructuredOutputContract;
+    readonly resourceLimits: AiAttemptResourceLimits;
     readonly createSession: (token: AiAttemptToken) => AiRuntimeSession;
     readonly timeoutMs: number;
     readonly scheduleTimeout?: (
@@ -136,7 +144,10 @@ export class AiAttemptLifecycleService implements AiLifecycleParticipant {
     if (!Number.isSafeInteger(input.timeoutMs) || input.timeoutMs < 1) {
       throw new Error('AI attempt timeout is invalid.');
     }
-    this.controller = input.controller;
+    this.#controller = new AiAttemptController({
+      structuredOutput: input.structuredOutput,
+      resourceLimits: input.resourceLimits,
+    });
     this.createSession = input.createSession;
     this.timeoutMs = input.timeoutMs;
     this.scheduleTimeout = input.scheduleTimeout ?? scheduleTimeout;
@@ -148,6 +159,7 @@ export class AiAttemptLifecycleService implements AiLifecycleParticipant {
       accepted: false;
       reason:
         | 'attempt_active'
+        | 'cleanup_unverified'
         | 'admission_paused'
         | 'explicit_retry_required'
         | 'session_start_failed';
@@ -155,7 +167,12 @@ export class AiAttemptLifecycleService implements AiLifecycleParticipant {
     if (this.admissionPaused) {
       return Object.freeze({ accepted: false, reason: 'admission_paused' });
     }
-    if (this.active) return Object.freeze({ accepted: false, reason: 'attempt_active' });
+    if (this.active) {
+      return Object.freeze({
+        accepted: false,
+        reason: this.active.quarantined ? 'cleanup_unverified' : 'attempt_active',
+      });
+    }
     if (this.hasStarted) {
       return Object.freeze({ accepted: false, reason: 'explicit_retry_required' });
     }
@@ -168,6 +185,7 @@ export class AiAttemptLifecycleService implements AiLifecycleParticipant {
       accepted: false;
       reason:
         | 'attempt_active'
+        | 'cleanup_unverified'
         | 'admission_paused'
         | 'no_previous_attempt'
         | 'session_start_failed';
@@ -175,7 +193,12 @@ export class AiAttemptLifecycleService implements AiLifecycleParticipant {
     if (this.admissionPaused) {
       return Object.freeze({ accepted: false, reason: 'admission_paused' });
     }
-    if (this.active) return Object.freeze({ accepted: false, reason: 'attempt_active' });
+    if (this.active) {
+      return Object.freeze({
+        accepted: false,
+        reason: this.active.quarantined ? 'cleanup_unverified' : 'attempt_active',
+      });
+    }
     if (!this.hasStarted) {
       return Object.freeze({ accepted: false, reason: 'no_previous_attempt' });
     }
@@ -193,7 +216,7 @@ export class AiAttemptLifecycleService implements AiLifecycleParticipant {
         cleanup: null,
       }));
     }
-    const disposition = this.controller.accept(event);
+    const disposition = this.#controller.accept(event);
     if (disposition.disposition === 'accepted' && disposition.terminalCandidate) {
       const trigger = disposition.terminalCandidate.state === 'succeeded'
         ? 'completed'
@@ -234,18 +257,24 @@ export class AiAttemptLifecycleService implements AiLifecycleParticipant {
   }
 
   read(): Readonly<{
-    phase: 'idle' | 'active' | 'terminating';
+    phase: 'idle' | 'active' | 'terminating' | 'quarantined';
     token: AiAttemptToken | null;
   }> {
     const active = this.active;
     return Object.freeze({
-      phase: active?.termination ? 'terminating' : active ? 'active' : 'idle',
+      phase: active?.quarantined
+        ? 'quarantined'
+        : active?.termination
+          ? 'terminating'
+          : active
+            ? 'active'
+            : 'idle',
       token: active?.token ?? null,
     });
   }
 
   waitForIdle(): Promise<void> {
-    return this.active?.termination?.then(() => undefined) ?? Promise.resolve();
+    return this.active?.idle.promise ?? Promise.resolve();
   }
 
   lastSettlement(): AiLifecycleSettlement | null {
@@ -255,14 +284,14 @@ export class AiAttemptLifecycleService implements AiLifecycleParticipant {
   private beginAttempt():
     | Readonly<{ accepted: true; token: AiAttemptToken }>
     | Readonly<{ accepted: false; reason: 'attempt_active' | 'session_start_failed' }> {
-    const started = this.controller.startAttempt();
+    const started = this.#controller.startAttempt();
     if (!started.accepted) return started;
     this.hasStarted = true;
     let session: AiRuntimeSession;
     try {
       session = this.createSession(started.token);
     } catch {
-      this.controller.failLifecycle(started.token, 'session_start_failed');
+      this.#controller.failLifecycle(started.token, 'session_start_failed');
       return Object.freeze({ accepted: false, reason: 'session_start_failed' });
     }
     const active: ActiveLifecycleAttempt = {
@@ -270,7 +299,10 @@ export class AiAttemptLifecycleService implements AiLifecycleParticipant {
       session,
       cancelTimeout: () => undefined,
       termination: null,
+      quarantined: false,
+      idle: deferred<void>(),
     };
+    this.latestSettlement = null;
     this.active = active;
     active.cancelTimeout = this.scheduleTimeout(() => {
       void this.requestTermination('timeout');
@@ -304,21 +336,26 @@ export class AiAttemptLifecycleService implements AiLifecycleParticipant {
 
     let disposition: AiAttemptDisposition;
     if (cleanup.classification === 'forced') {
-      disposition = this.controller.failLifecycle(active.token, 'cleanup_forced');
+      disposition = this.#controller.failLifecycle(active.token, 'cleanup_forced');
     } else if (cleanup.classification !== 'graceful') {
-      disposition = this.controller.failLifecycle(active.token, 'cleanup_unverified');
+      disposition = this.#controller.failLifecycle(active.token, 'cleanup_unverified');
     } else if (trigger === 'timeout') {
-      disposition = this.controller.failLifecycle(active.token, 'timeout');
+      disposition = this.#controller.failLifecycle(active.token, 'timeout');
     } else if (trigger === 'completed' || trigger === 'failed') {
-      disposition = terminalDisposition ?? this.controller.failLifecycle(
+      disposition = terminalDisposition ?? this.#controller.failLifecycle(
         active.token,
         'cleanup_unverified',
       );
     } else {
-      disposition = this.controller.cancel(active.token);
+      disposition = this.#controller.cancel(active.token);
     }
     const settlement = Object.freeze({ trigger, disposition, cleanup });
-    if (this.active === active) this.active = null;
+    if (cleanup.classification === 'unverified') {
+      active.quarantined = true;
+    } else if (this.active === active) {
+      this.active = null;
+      active.idle.resolve(undefined);
+    }
     this.latestSettlement = settlement;
     return settlement;
   }
@@ -362,9 +399,12 @@ export class AiRuntimeLifecycleRegistry {
   }
 
   private async terminateActive(trigger: AiTerminationTrigger): Promise<void> {
-    await Promise.all([...this.participants]
+    const settlements = await Promise.all([...this.participants]
       .filter((participant) => participant.isActive())
       .map((participant) => participant.requestTermination(trigger)));
+    if (settlements.some((settlement) => settlement.cleanup.classification === 'unverified')) {
+      throw new Error('AI runtime cleanup remains unverified.');
+    }
   }
 }
 
@@ -379,6 +419,7 @@ function isGraceful(value: AiRuntimeCleanupObservation): boolean {
     && value.executionSettled
     && value.cleanupAcknowledged
     && value.utilityExitObserved
+    && value.utilityExitClean
     && !value.utilityKillOwnershipProven
     && !value.utilityKillAttempted
     && value.residualScanCompleted
@@ -393,6 +434,19 @@ function isForced(value: AiRuntimeCleanupObservation): boolean {
     && value.residualScanCompleted
     && value.utilityResidualAbsent
     && value.cliResidualAbsent;
+}
+
+type Deferred<T> = {
+  readonly promise: Promise<T>;
+  readonly resolve: (value: T | PromiseLike<T>) => void;
+};
+
+function deferred<T>(): Deferred<T> {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  const promise = new Promise<T>((resolver) => {
+    resolve = resolver;
+  });
+  return { promise, resolve };
 }
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {

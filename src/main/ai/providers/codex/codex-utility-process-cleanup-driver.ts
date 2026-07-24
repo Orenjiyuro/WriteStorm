@@ -11,9 +11,12 @@ import {
 export type CodexUtilityLifecycleProcess = {
   readonly pid: number | undefined;
   on(event: 'message', listener: (message: unknown) => void): unknown;
-  on(event: 'exit', listener: (code: number) => void): unknown;
+  on(event: 'exit', listener: (code: number | null, signal?: string | null) => void): unknown;
   removeListener(event: 'message', listener: (message: unknown) => void): unknown;
-  removeListener(event: 'exit', listener: (code: number) => void): unknown;
+  removeListener(
+    event: 'exit',
+    listener: (code: number | null, signal?: string | null) => void,
+  ): unknown;
   postMessage(message: unknown): void;
   kill(): boolean;
 };
@@ -26,6 +29,7 @@ export class CodexUtilityProcessCleanupDriver implements CodexUtilityCleanupDriv
   private shutdownDeferred: Deferred<ShutdownResult> | null = null;
   private shutdownAcknowledged = false;
   private exited = false;
+  private exitClean = false;
   private exitDeferred = deferred<void>();
 
   constructor(private readonly input: {
@@ -59,6 +63,7 @@ export class CodexUtilityProcessCleanupDriver implements CodexUtilityCleanupDriv
       this.shutdownDeferred.resolve({
         cleanupAcknowledged: false,
         utilityExitObserved: true,
+        utilityExitClean: this.exitClean,
       });
       return this.shutdownDeferred.promise;
     }
@@ -141,8 +146,9 @@ export class CodexUtilityProcessCleanupDriver implements CodexUtilityCleanupDriv
     this.rejectPending();
   };
 
-  private readonly onExit = (_code: number): void => {
+  private readonly onExit = (code: number | null, signal?: string | null): void => {
     this.exited = true;
+    this.exitClean = code === 0 && !signal;
     this.exitDeferred.resolve();
     if (this.abortDeferred) {
       this.abortDeferred.reject(new Error('Codex utility exited before abort acknowledgement.'));
@@ -157,6 +163,7 @@ export class CodexUtilityProcessCleanupDriver implements CodexUtilityCleanupDriv
     this.shutdownDeferred.resolve({
       cleanupAcknowledged: this.shutdownAcknowledged,
       utilityExitObserved: true,
+      utilityExitClean: this.exitClean,
     });
     this.shutdownDeferred = null;
   }

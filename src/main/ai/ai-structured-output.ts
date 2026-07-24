@@ -65,7 +65,8 @@ export function createAiStructuredOutputContract(input: {
   if (!(input.schema instanceof z.ZodObject)
     || !Number.isSafeInteger(input.maxFinalBytes)
     || input.maxFinalBytes < 1
-    || input.maxFinalBytes > AI_STRUCTURED_OUTPUT_MAX_FINAL_BYTES) {
+    || input.maxFinalBytes > AI_STRUCTURED_OUTPUT_MAX_FINAL_BYTES
+    || !isEffectFreeZodSchema(input.schema)) {
     throw new AiStructuredOutputSchemaError();
   }
 
@@ -115,6 +116,7 @@ export function validateAiStructuredOutput(
     return rejected('invalid_json');
   }
   if (!isPlainRecord(parsed)) return rejected('invalid_shape');
+  if (!isJsonObject(parsed)) return rejected('invalid_value');
 
   const validation = definition.schema.safeParse(parsed);
   if (!validation.success) {
@@ -127,6 +129,7 @@ export function validateAiStructuredOutput(
     return rejected('invalid_value');
   }
   if (!isJsonValue(validation.data)) return rejected('invalid_value');
+  if (!jsonValuesEqual(parsed, validation.data)) return rejected('invalid_value');
 
   const value = Object.freeze({
     data: deepFreeze(validation.data),
@@ -216,4 +219,66 @@ function deepFreeze<T>(value: T): T {
     Object.freeze(value);
   }
   return value;
+}
+
+function isEffectFreeZodSchema(
+  schema: z.ZodType,
+  visited = new Set<z.ZodType>(),
+): boolean {
+  if (visited.has(schema)) return true;
+  visited.add(schema);
+  const definition = (schema as unknown as {
+    readonly _def?: Readonly<Record<string, unknown>>;
+  })._def;
+  if (!definition || typeof definition.type !== 'string') return false;
+  if (definition.coerce === true
+    || ['default', 'catch', 'prefault', 'pipe', 'transform', 'readonly']
+      .includes(definition.type)) {
+    return false;
+  }
+  if (Array.isArray(definition.checks)
+    && definition.checks.some((check) => (
+      (check as {
+        readonly _zod?: { readonly def?: { readonly check?: unknown } };
+      })?._zod?.def?.check === 'overwrite'
+    ))) {
+    return false;
+  }
+  for (const value of Object.values(definition)) {
+    if (isZodType(value) && !isEffectFreeZodSchema(value, visited)) return false;
+    if (Array.isArray(value)
+      && value.some((child) => isZodType(child) && !isEffectFreeZodSchema(child, visited))) {
+      return false;
+    }
+    if (isPlainRecord(value)) {
+      for (const child of Object.values(value)) {
+        if (isZodType(child) && !isEffectFreeZodSchema(child, visited)) return false;
+      }
+    }
+  }
+  return true;
+}
+
+function isZodType(value: unknown): value is z.ZodType {
+  return Boolean(value)
+    && typeof value === 'object'
+    && isPlainRecord((value as { readonly _def?: unknown })._def)
+    && typeof (value as { readonly safeParse?: unknown }).safeParse === 'function';
+}
+
+function jsonValuesEqual(left: AiJsonValue, right: AiJsonValue): boolean {
+  if (left === right) return true;
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return Array.isArray(left)
+      && Array.isArray(right)
+      && left.length === right.length
+      && left.every((value, index) => jsonValuesEqual(value, right[index]));
+  }
+  if (!isJsonObject(left) || !isJsonObject(right)) return false;
+  const leftKeys = Object.keys(left).sort();
+  const rightKeys = Object.keys(right).sort();
+  return leftKeys.length === rightKeys.length
+    && leftKeys.every((key, index) => (
+      key === rightKeys[index] && jsonValuesEqual(left[key], right[key])
+    ));
 }

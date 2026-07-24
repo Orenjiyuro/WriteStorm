@@ -80,7 +80,12 @@ describe('Block 13.8 Codex-private event projection', () => {
 
   it('checks the raw JSONL event byte ceiling before parsing', () => {
     try {
-      const projector = new CodexStreamEventProjector({ token, maxEventBytes: 32 });
+      const projector = new CodexStreamEventProjector({
+        token,
+        maxEventBytes: 32,
+        maxTotalBytes: 64,
+        maxEventCount: 2,
+      });
       projector.project(JSON.stringify({
         type: 'item.updated',
         item: { id: '1', type: 'agent_message', text: 'x'.repeat(128) },
@@ -93,6 +98,37 @@ describe('Block 13.8 Codex-private event projection', () => {
     }
   });
 
+  it('rejects cumulative raw JSONL bytes before ignored provider fields bypass the total budget', () => {
+    const projector = new CodexStreamEventProjector({
+      token,
+      maxEventBytes: 256,
+      maxTotalBytes: 300,
+      maxEventCount: 8,
+    });
+    const paddedProgress = JSON.stringify({
+      type: 'turn.started',
+      ignored: 'x'.repeat(140),
+    });
+
+    projector.project(paddedProgress);
+    expect(() => projector.project(paddedProgress)).toThrowError(
+      expect.objectContaining({ classification: 'resource_limit' }),
+    );
+  });
+
+  it('rejects raw event count before parsing another frame', () => {
+    const projector = new CodexStreamEventProjector({
+      token,
+      maxEventBytes: 128,
+      maxTotalBytes: 256,
+      maxEventCount: 1,
+    });
+    projector.project('{"type":"turn.started"}');
+    expect(() => projector.project('{"type":"turn.started"}')).toThrowError(
+      expect.objectContaining({ classification: 'resource_limit' }),
+    );
+  });
+
   it('rejects turn completion without a completed agent message', () => {
     expect(() => createProjector().project(JSON.stringify({
       type: 'turn.completed',
@@ -102,5 +138,10 @@ describe('Block 13.8 Codex-private event projection', () => {
 });
 
 function createProjector(): CodexStreamEventProjector {
-  return new CodexStreamEventProjector({ token, maxEventBytes: 512 });
+  return new CodexStreamEventProjector({
+    token,
+    maxEventBytes: 512,
+    maxTotalBytes: 2_048,
+    maxEventCount: 8,
+  });
 }

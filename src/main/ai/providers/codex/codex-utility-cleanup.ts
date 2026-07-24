@@ -14,6 +14,7 @@ type AbortObservation = {
 type ShutdownObservation = {
   readonly cleanupAcknowledged: boolean;
   readonly utilityExitObserved: boolean;
+  readonly utilityExitClean: boolean;
 };
 
 type ForceObservation = {
@@ -77,6 +78,7 @@ export class CodexUtilityCleanupController implements AiRuntimeSession {
       && abort.executionSettled
       && shutdown.cleanupAcknowledged
       && shutdown.utilityExitObserved
+      && shutdown.utilityExitClean
       && residuals.residualScanCompleted
       && residuals.utilityResidualAbsent
       && residuals.cliResidualAbsent;
@@ -91,6 +93,7 @@ export class CodexUtilityCleanupController implements AiRuntimeSession {
       ...abort,
       ...shutdown,
       utilityExitObserved,
+      utilityExitClean: shutdown.utilityExitClean,
       utilityKillOwnershipProven: force.utilityKillOwnershipProven,
       utilityKillAttempted: force.utilityKillAttempted,
       ...residuals,
@@ -133,6 +136,7 @@ function failedShutdown(): ShutdownObservation {
   return {
     cleanupAcknowledged: false,
     utilityExitObserved: false,
+    utilityExitClean: false,
   };
 }
 

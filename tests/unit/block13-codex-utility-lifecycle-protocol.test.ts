@@ -100,6 +100,32 @@ describe('Block 13.9 Codex utility lifecycle protocol', () => {
     await expect(shuttingDown).resolves.toEqual({
       cleanupAcknowledged: true,
       utilityExitObserved: true,
+      utilityExitClean: true,
+    });
+  });
+
+  it('does not treat shutdown acknowledgement followed by abnormal exit as clean', async () => {
+    const process = fakeProcess();
+    const driver = new CodexUtilityProcessCleanupDriver({
+      process,
+      token,
+      isOwnedAndRunning: () => true,
+      scanResiduals: async () => cleanResiduals(),
+    });
+    const shuttingDown = driver.requestShutdown();
+    process.emitMessage({
+      version: 1,
+      origin: 'utility',
+      type: 'ai.shutdown-result',
+      token,
+      cleanupAcknowledged: true,
+    });
+    process.emitExit(23);
+
+    await expect(shuttingDown).resolves.toEqual({
+      cleanupAcknowledged: true,
+      utilityExitObserved: true,
+      utilityExitClean: false,
     });
   });
 

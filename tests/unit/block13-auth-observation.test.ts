@@ -146,6 +146,19 @@ describe('Block 13.6 auth observation contract (synthetic mapping inputs only)',
     expect(new AiRuntimeObservationMemory().read().authState).toBe('unknown');
   });
 
+  it('does not admit a structurally forged auth observation into memory', () => {
+    const memory = new AiRuntimeObservationMemory();
+    memory.setCompatibility(freshCompatibility);
+    const forged = {
+      authState: 'authenticated',
+      observedAt,
+      compatibilityFingerprint: fingerprint,
+    };
+
+    // @ts-expect-error only a runtime-minted receipt may cross the storage boundary
+    expect(memory.accept(forged)).toBe(false);
+  });
+
   it('defines expired and permission states without pretending they were observed', () => {
     expect(AI_RUNTIME_AUTH_STATES).toEqual([
       'authenticated',

@@ -22,6 +22,7 @@ describe('Block 13.9 Codex utility cleanup controller', () => {
           return {
             cleanupAcknowledged: true,
             utilityExitObserved: true,
+            utilityExitClean: true,
           };
         },
         scanResiduals: async () => {
@@ -55,6 +56,7 @@ describe('Block 13.9 Codex utility cleanup controller', () => {
         requestShutdown: async () => ({
           cleanupAcknowledged: false,
           utilityExitObserved: false,
+          utilityExitClean: false,
         }),
         forceOwnedUtility,
       }),
@@ -77,6 +79,7 @@ describe('Block 13.9 Codex utility cleanup controller', () => {
         requestShutdown: async () => ({
           cleanupAcknowledged: false,
           utilityExitObserved: false,
+          utilityExitClean: false,
         }),
         forceOwnedUtility: async () => ({
           utilityKillOwnershipProven: false,
@@ -99,10 +102,31 @@ describe('Block 13.9 Codex utility cleanup controller', () => {
     });
   });
 
+  it('reports unverified after an acknowledged but abnormal utility exit', async () => {
+    const controller = new CodexUtilityCleanupController({
+      driver: driver({
+        requestShutdown: async () => ({
+          cleanupAcknowledged: true,
+          utilityExitObserved: true,
+          utilityExitClean: false,
+        }),
+      }),
+      graceMs: 1_000,
+    });
+
+    await expect(controller.terminate('app_quit')).resolves.toMatchObject({
+      classification: 'unverified',
+      cleanupAcknowledged: true,
+      utilityExitObserved: true,
+      utilityExitClean: false,
+    });
+  });
+
   it('continues to shutdown and residual scan after a synchronous abort failure', async () => {
     const requestShutdown = vi.fn(async () => ({
       cleanupAcknowledged: true,
       utilityExitObserved: true,
+      utilityExitClean: true,
     }));
     const scanResiduals = vi.fn(async () => cleanResiduals());
     const controller = new CodexUtilityCleanupController({
@@ -120,6 +144,7 @@ describe('Block 13.9 Codex utility cleanup controller', () => {
       classification: 'unverified',
       cleanupAcknowledged: true,
       utilityExitObserved: true,
+      utilityExitClean: true,
       residualScanCompleted: true,
     });
     expect(requestShutdown).toHaveBeenCalledOnce();
@@ -165,6 +190,7 @@ function driver(
     requestShutdown: async () => ({
       cleanupAcknowledged: true,
       utilityExitObserved: true,
+      utilityExitClean: true,
     }),
     forceOwnedUtility: async () => ({
       utilityKillOwnershipProven: false,

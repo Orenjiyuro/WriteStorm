@@ -3,7 +3,6 @@ import path from 'node:path';
 import { z } from 'zod';
 import { describe, expect, it, vi } from 'vitest';
 import {
-  AiAttemptController,
   createAiAttemptResourceLimits,
 } from '../../src/main/ai/ai-attempt-controller';
 import {
@@ -24,6 +23,7 @@ const gracefulCleanup = createAiRuntimeCleanupObservation({
   executionSettled: true,
   cleanupAcknowledged: true,
   utilityExitObserved: true,
+  utilityExitClean: true,
   utilityKillOwnershipProven: false,
   utilityKillAttempted: false,
   residualScanCompleted: true,
@@ -38,6 +38,7 @@ const unverifiedCleanup = createAiRuntimeCleanupObservation({
   executionSettled: false,
   cleanupAcknowledged: false,
   utilityExitObserved: false,
+  utilityExitClean: false,
   utilityKillOwnershipProven: false,
   utilityKillAttempted: false,
   residualScanCompleted: false,
@@ -57,7 +58,6 @@ describe('Block 13.9 application attempt lifecycle', () => {
     const cancelling = service.requestTermination('explicit_cancel');
     expect(session.terminate).toHaveBeenCalledWith('explicit_cancel');
     expect(service.read().phase).toBe('terminating');
-    expect(service.controller.read().phase).toBe('active');
 
     cleanup.resolve(gracefulCleanup);
     await expect(cancelling).resolves.toMatchObject({
@@ -68,7 +68,6 @@ describe('Block 13.9 application attempt lifecycle', () => {
       },
     });
     expect(service.read().phase).toBe('idle');
-    expect(service.controller.read().phase).toBe('terminal');
   });
 
   it('preserves the first lifecycle trigger and executes cleanup once', async () => {
@@ -99,12 +98,15 @@ describe('Block 13.9 application attempt lifecycle', () => {
     fireTimeout();
     await service.waitForIdle();
 
-    expect(service.controller.read()).toMatchObject({
-      phase: 'terminal',
-      token: { attempt: 1, generation: 1 },
-    });
     expect(service.lastSettlement()).toMatchObject({
       trigger: 'timeout',
+      disposition: {
+        terminalCandidate: {
+          token: { attempt: 1, generation: 1 },
+        },
+      },
+    });
+    expect(service.lastSettlement()).toMatchObject({
       disposition: {
         terminalCandidate: { state: 'failed', reason: 'timeout' },
       },
@@ -179,10 +181,7 @@ describe('Block 13.9 application attempt lifecycle', () => {
       disposition: { disposition: 'ignored', reason: 'stale_generation' },
       cleanup: null,
     });
-    expect(service.controller.read()).toMatchObject({
-      phase: 'active',
-      token: retry.token,
-    });
+    expect(service.read()).toMatchObject({ phase: 'active', token: retry.token });
     expect(createSession).toHaveBeenCalledTimes(2);
   });
 
@@ -219,7 +218,11 @@ describe('Block 13.9 application attempt lifecycle', () => {
       resumeAdmission: vi.fn(),
       requestTermination: vi.fn(async (trigger: AiTerminationTrigger) => {
         triggers.push(trigger);
-        return null;
+        return {
+          trigger,
+          disposition: { disposition: 'ignored', reason: 'no_active_attempt' },
+          cleanup: gracefulCleanup,
+        } as const;
       }),
     };
     registry.track(participant);
@@ -250,6 +253,43 @@ describe('Block 13.9 application attempt lifecycle', () => {
     expect(service.startExplicit()).toMatchObject({ accepted: true });
   });
 
+  it('quarantines unverified cleanup and blocks retry plus Library replacement', async () => {
+    const registry = new AiRuntimeLifecycleRegistry();
+    const service = createService(() => fakeSession(async () => unverifiedCleanup));
+    registry.track(service);
+    service.startExplicit();
+
+    await service.requestTermination('explicit_cancel');
+    expect(service.read().phase).toBe('quarantined');
+    expect(service.retryExplicit()).toEqual({
+      accepted: false,
+      reason: 'cleanup_unverified',
+    });
+    await expect(registry.prepareForLibraryReplacement()).rejects.toThrow(
+      'AI runtime cleanup remains unverified.',
+    );
+  });
+
+  it('waitForIdle remains pending while execution is active and resolves after safe cleanup', async () => {
+    const service = createService(() => fakeSession(async () => gracefulCleanup));
+    service.startExplicit();
+    let idle = false;
+    void service.waitForIdle().then(() => {
+      idle = true;
+    });
+    await Promise.resolve();
+    expect(idle).toBe(false);
+
+    await service.requestTermination('explicit_cancel');
+    await expect(service.waitForIdle()).resolves.toBeUndefined();
+    expect(idle).toBe(true);
+  });
+
+  it('does not expose its mutable attempt controller', () => {
+    const service = createService(() => fakeSession(async () => gracefulCleanup));
+    expect(service).not.toHaveProperty('controller');
+  });
+
   it('contains no persistence, Job, renderer, provider or automatic retry dependency', () => {
     const source = readFileSync(
       path.resolve(__dirname, '../../src/main/ai/ai-attempt-lifecycle.ts'),
@@ -269,17 +309,15 @@ function createService(
   ) => () => void = () => () => undefined,
 ): AiAttemptLifecycleService {
   return new AiAttemptLifecycleService({
-    controller: new AiAttemptController({
-      structuredOutput: createAiStructuredOutputContract({
-        schema: z.object({ summary: z.string() }).strict(),
-        maxFinalBytes: 256,
-      }),
-      resourceLimits: createAiAttemptResourceLimits({
-        maxEventBytes: 512,
-        maxTotalBytes: 2_048,
-        maxEventCount: 8,
-        maxPartialBytes: 256,
-      }),
+    structuredOutput: createAiStructuredOutputContract({
+      schema: z.object({ summary: z.string() }).strict(),
+      maxFinalBytes: 256,
+    }),
+    resourceLimits: createAiAttemptResourceLimits({
+      maxEventBytes: 512,
+      maxTotalBytes: 2_048,
+      maxEventCount: 8,
+      maxPartialBytes: 256,
     }),
     createSession: () => createSession(),
     timeoutMs: 1_000,
@@ -303,6 +341,7 @@ function forcedCleanup(): AiRuntimeCleanupObservation {
     executionSettled: false,
     cleanupAcknowledged: false,
     utilityExitObserved: true,
+    utilityExitClean: false,
     utilityKillOwnershipProven: true,
     utilityKillAttempted: true,
     residualScanCompleted: true,

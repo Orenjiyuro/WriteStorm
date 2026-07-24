@@ -1,6 +1,8 @@
 import {
   type AiCompatibilityAssessment,
   type AiRuntimeObservation,
+  type AiRuntimeObservationReceipt,
+  mintAiRuntimeObservationReceipt,
   unknownAiRuntimeObservation,
 } from '../../ai-runtime-observation';
 
@@ -71,9 +73,9 @@ export function parseCodexAuthRuntimeObservation(
 export function mapCodexAuthObservation(input: {
   readonly compatibility: AiCompatibilityAssessment;
   readonly observation: CodexAuthRuntimeObservation | null;
-}): AiRuntimeObservation {
+}): AiRuntimeObservationReceipt {
   if (input.compatibility.state !== 'fresh' || !input.observation) {
-    return unknownAiRuntimeObservation();
+    return mintAiRuntimeObservationReceipt(unknownAiRuntimeObservation());
   }
   const { fingerprint } = input.compatibility;
   const { observation } = input;
@@ -98,8 +100,10 @@ function createObservation(
   authState: AiRuntimeObservation['authState'],
   observedAt: string,
   compatibilityFingerprint: string,
-): AiRuntimeObservation {
-  return Object.freeze({ authState, observedAt, compatibilityFingerprint });
+): AiRuntimeObservationReceipt {
+  return mintAiRuntimeObservationReceipt(
+    Object.freeze({ authState, observedAt, compatibilityFingerprint }),
+  );
 }
 
 function assertObservedAt(value: unknown): asserts value is string {

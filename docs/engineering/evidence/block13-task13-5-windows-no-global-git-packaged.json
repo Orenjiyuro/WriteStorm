@@ -3,10 +3,10 @@
   "evidenceId": "block13-task13-5-windows-no-global-git-packaged-001",
   "task": "13.5",
   "source": "packaged_sdk",
-  "recordedAt": "2026-07-24T05:45:03.056Z",
+  "recordedAt": "2026-07-24T06:35:17.710Z",
   "commandName": "writestorm-task13-5-no-global-git-packaged-probe",
   "classification": "windows_packaged_no_global_git_verified",
-  "gitHeadAtRun": "afd6ced7bd5634224f36ebc13aa4bb0c61076c0e",
+  "gitHeadAtRun": "346505dea6960d288011be2f5881db1c8fd97f4c",
   "versions": {
     "electron": "43.0.0",
     "nodeRuntime": "24.17.0",
@@ -50,13 +50,13 @@
         "id": "writestorm_executable",
         "relativePath": "writestorm.exe",
         "size": 235706368,
-        "sha256": "1558b2fcf26e199107ab757f0c873ed4903ff74148232474723e83b3feec15c7"
+        "sha256": "854e26bc332bdb4d7101529d09361c817b3bdb43f01258181cdeb3ab934ce108"
       },
       {
         "id": "app_asar",
         "relativePath": "resources/app.asar",
-        "size": 71010984,
-        "sha256": "16a3d61caf4b26be89be2ebb05ed7b1a4684485453dfc72fe638ad7fa269da0e"
+        "size": 71010996,
+        "sha256": "5d738d537abc4f930da5c3c2cea9eef496b3676a4901019919079262561fbd71"
       },
       {
         "id": "codex_executable",
@@ -88,11 +88,11 @@
         "sha256": "dbdd5bc7f4f5fb6f8db199fd845a34219e3a14229654f868af4d04b944eeb09b"
       }
     ],
-    "sha256": "92cac73bd3dcdce3f70051174920d39f0db11c8fd4bf4a6fe172d92e7150b7f0"
+    "sha256": "ec2ebea82033d30423a33c1939892f62f3186a9b9775e1cf24155aed37f62b98"
   },
   "compatibilityFingerprint": {
     "boundaryId": "block13-task13-5-compatibility-v1",
-    "gitHead": "afd6ced7bd5634224f36ebc13aa4bb0c61076c0e",
+    "gitHead": "346505dea6960d288011be2f5881db1c8fd97f4c",
     "layers": {
       "supplyChain": {
         "files": [
@@ -131,7 +131,7 @@
           },
           {
             "relativePath": "src/main/ai/ai-attempt-lifecycle.ts",
-            "sha256": "dd84275c3e40805869546a4edd3ec87e4bf5fd28fdbd58b555b17352236f347c"
+            "sha256": "977775ca5e5315c76615321cdb2dfa931a1481e36d62ad2ad18574483f019f7e"
           },
           {
             "relativePath": "src/main/ai/ai-execution-port.ts",
@@ -139,15 +139,15 @@
           },
           {
             "relativePath": "src/main/ai/ai-runtime-observation.ts",
-            "sha256": "b2311eb9d6fc444814e997ee1b17836d71fa17581f2e88bee276324864dfc35f"
+            "sha256": "36982a5ba0ff2606e3cf0d5b785a03eac2779915244822679503788de3ddbb58"
           },
           {
             "relativePath": "src/main/ai/ai-structured-output.ts",
-            "sha256": "e5bbc12bc0de665c5198942b98a6176337d47bb8eb7262912ce266f285cdd208"
+            "sha256": "163b1d4c6437a68a1a1a0b6de47d983fcdf59263ae45c5e906f820f1e98ec619"
           },
           {
             "relativePath": "src/main/ai/providers/codex/codex-auth-observation.ts",
-            "sha256": "8bb8ca98f531297df682938a601d45f69827172637a911648793415e2f2ccdfe"
+            "sha256": "fa707fdc8cf25aa2971ab09869ad42fa8a7337f4a0ebe31186b5de69e24d3fa6"
           },
           {
             "relativePath": "src/main/ai/providers/codex/codex-environment.ts",
@@ -155,7 +155,7 @@
           },
           {
             "relativePath": "src/main/ai/providers/codex/codex-event-projection.ts",
-            "sha256": "67a1914317368041f4732776e2ebb5f28b7d61614cf6d14124db9fe7658c5ccd"
+            "sha256": "6d2d349fdf9d370c8aecde2707746f3cbcc85fb5201adeb446a69df05b27e3ad"
           },
           {
             "relativePath": "src/main/ai/providers/codex/codex-provider-adapter.ts",
@@ -171,7 +171,7 @@
           },
           {
             "relativePath": "src/main/ai/providers/codex/codex-utility-cleanup.ts",
-            "sha256": "dff213df43afd4d6c5d407fba9caf61d45cad056dee2393749cf5b782475e1c9"
+            "sha256": "f47b29ec935e85af00e3856c1c23a0872df32027d1d832db19a60607586ed9f4"
           },
           {
             "relativePath": "src/main/ai/providers/codex/codex-utility-entry.ts",
@@ -191,7 +191,7 @@
           },
           {
             "relativePath": "src/main/ai/providers/codex/codex-utility-process-cleanup-driver.ts",
-            "sha256": "7c90d9cba7e62f723d4975c64294efc9f25c55c3d6ef505302494bc064bbaece"
+            "sha256": "1cf38f3744cf0cf0d2078a089778a4240d4663d884bd38feba014ec880eb770c"
           },
           {
             "relativePath": "src/main/ai/providers/codex/codex-utility-transport.ts",
@@ -218,7 +218,7 @@
             "sha256": "8cb80a8a48dd8b9dd247628501ff3799088fba4e96a87421c0246dcf661275be"
           }
         ],
-        "sha256": "61ca4db8350b356e028ff15b088f4ee51c5898da0c2634ff7ba86e64fd3d2096"
+        "sha256": "b73843a9ed4fc4f6f1e9083132389c0e6d40b63bc2e0a1f2ffc077e4fe34a904"
       },
       "probeArtifact": {
         "files": [
@@ -350,7 +350,7 @@
         "sha256": "a92fc5fdb45ac387f1374c2fb36fa8c61240667e0185c08a5063d1332192cec6"
       }
     },
-    "sha256": "006c60b20661b41479e388a0b82da8ff3581c1ca4cbf4ece712d0024ba14b45b"
+    "sha256": "4de49846f2213d7711234fe512fe6e52b29afb94768f538d4d8de6a97d068f46"
   },
   "invocation": {
     "command": "node scripts/run-task13-5-no-git-packaged-probe.mjs --artifact-root <artifact> --evidence-output <evidence>",

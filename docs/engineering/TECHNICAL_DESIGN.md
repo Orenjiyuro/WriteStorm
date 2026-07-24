@@ -131,6 +131,10 @@ The Codex-private lifecycle protocol admits only exact, correlated `ai.abort` an
 
 The deterministic production-utility smoke uses the shared Vite configuration and two independent hidden Electron processes. One proves fail-closed exit 28 for unsupported input; the other proves a valid lifecycle-only shutdown acknowledgement followed by exit 0. The installed network guard must report zero attempts, and no SDK client/turn or authentication is used. The separate Windows packaged no-Git synthetic probe is rerun only after compatibility drift and retains its own provenance. It does not prove a real production lifecycle execution; that packaged runtime gate remains Task 13.11. Adapter capabilities therefore remain false.
 
+Task 13.9 review remediation makes the pre-execution boundaries fail closed under adversarial inputs. `CodexStreamEventProjector` receives explicit raw byte and frame budgets and charges them before JSON parsing, so ignored provider fields cannot bypass the application projected-byte budget. Structured-output contracts reject every known Zod rewrite surface (coercion, default, catch, prefault, pipe/transform, readonly and overwrite checks) and also require parsed JSON to equal validated output.
+
+Auth storage accepts an opaque receipt tracked by a private runtime registry; only the reviewed Codex mapper may import the internal minting capability, enforced by source scan. `AiAttemptLifecycleService` constructs its controller privately and publishes terminal settlement only through the cleanup-completed lifecycle outcome. Its idle promise begins with the attempt and resolves only after positively safe cleanup. Unverified cleanup remains quarantined: retry and Library replacement fail closed rather than opening another generation. A utility exit is graceful only when shutdown was acknowledged and exit code/signal proves a clean exit; abnormal exit remains unverified even when the utility sent an acknowledgement first.
+
 ### Main process
 
 Owns:

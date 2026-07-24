@@ -1437,3 +1437,20 @@ Rules:
 - No Task 13.9 path creates an AI IPC channel, production AI request, Job, checkpoint, AnalysisModuleInstance, migration, SQLite/Library write, durable recovery or resumable state. Adapter capabilities remain false; real production packaged runtime admission remains Task 13.11.
 - Fresh Windows evidence `block13-task13-5-windows-no-global-git-packaged-001` binds clean runtime HEAD `afd6ced7bd5634224f36ebc13aa4bb0c61076c0e`, compatibility fingerprint `006c60b20661b41479e388a0b82da8ff3581c1ca4cbf4ece712d0024ba14b45b`, and artifact-content record `92cac73bd3dcdce3f70051174920d39f0db11c8fd4bf4a6fe172d92e7150b7f0`. The separate explicit probe passed all 17 Windows no-global-Git assertions but did not exercise the production lifecycle path.
 - macOS remains deferred-by-user. This is not full Go, cross-platform compatibility, a production AI Job or release readiness.
+
+## D108: Task 13.9 Review Remediation Seals Raw, Auth and Cleanup Bypasses
+
+Decision: Task 13.9 remains admitted only with independent raw-stream accounting, non-transforming validation, opaque auth provenance and quarantine after unverified cleanup.
+
+Rules:
+
+- Codex-private projection charges raw UTF-8 bytes and frame count before parsing. Both limits are explicit and bounded by the Task 13.8 repository ceilings; projected-size accounting cannot substitute for raw accounting.
+- Structured-output schemas that coerce, invent, catch, transform, normalize or otherwise overwrite input are rejected at contract creation. Accepted validation data must be structurally identical to parsed JSON.
+- `AiRuntimeObservationMemory` accepts only an opaque receipt registered by the application runtime. A source gate restricts the internal mint capability to the Codex actual-runtime mapper; ordinary structural auth objects are rejected at type and runtime boundaries.
+- `AiAttemptLifecycleService` privately constructs and owns its controller. A caller cannot start an unowned generation or observe the controller's pre-cleanup terminal state.
+- `waitForIdle()` starts waiting with the active attempt and resolves only after safe cleanup. It does not resolve merely because termination has not started.
+- Unverified cleanup retains the active token in `quarantined`. Explicit retry is rejected, and Library replacement/window/app lifecycle coordination reports a sanitized failure until process safety is positively established.
+- Shutdown acknowledgement alone is insufficient. Graceful cleanup requires an observed clean utility exit; non-zero or signalled exits are unverified. Ownership-proven force cleanup remains a distinct failed terminal outcome.
+- The remediation adds no automatic retry, AI IPC, production AI request, Job, checkpoint, AnalysisModuleInstance, SQLite/Library write, durable recovery, fallback or resumable state.
+- Refreshed Windows evidence `block13-task13-5-windows-no-global-git-packaged-001` binds clean runtime HEAD `346505dea6960d288011be2f5881db1c8fd97f4c`, compatibility fingerprint `4de49846f2213d7711234fe512fe6e52b29afb94768f538d4d8de6a97d068f46`, and artifact-content record `ec2ebea82033d30423a33c1939892f62f3186a9b9775e1cf24155aed37f62b98`. All 17 Windows no-global-Git assertions passed.
+- macOS remains deferred-by-user. This is not full Go, cross-platform compatibility, a production AI Job or release readiness.

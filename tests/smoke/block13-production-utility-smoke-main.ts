@@ -10,10 +10,13 @@ const expectedBundlePath = path.resolve(
   process.env.WRITESTORM_BLOCK13_UTILITY_BUNDLE ?? '',
 );
 const smokeRoot = process.env.WRITESTORM_BLOCK13_UTILITY_SMOKE_ROOT;
+const networkObservationPath = process.env.WRITESTORM_BLOCK13_NETWORK_OBSERVATION;
 if (process.env.WRITESTORM_BLOCK13_UTILITY_SMOKE !== '1'
   || !path.isAbsolute(expectedBundlePath)
   || !smokeRoot
-  || !path.isAbsolute(smokeRoot)) {
+  || !path.isAbsolute(smokeRoot)
+  || !networkObservationPath
+  || !path.isAbsolute(networkObservationPath)) {
   process.exit(70);
 }
 mkdirSync(smokeRoot, { recursive: true });
@@ -34,7 +37,13 @@ app.whenReady().then(() => {
   let utilityStderr = '';
   const fork = ((modulePath, args, options) => {
     exactBundleResolved = path.resolve(modulePath) === expectedBundlePath;
-    const utility = utilityProcess.fork(modulePath, [...args], options);
+    const utility = utilityProcess.fork(modulePath, [...args], {
+      ...options,
+      env: {
+        ...options.env,
+        WRITESTORM_BLOCK13_NETWORK_OBSERVATION: networkObservationPath,
+      },
+    });
     utility.stderr?.on('data', (chunk) => {
       utilityStderr = `${utilityStderr}${String(chunk)}`.slice(-4_000);
     });

@@ -58,14 +58,26 @@ describe('Block 13.4 Codex adapter and utility boundary', () => {
       postMessage: vi.fn(),
       kill: vi.fn(() => true),
     };
-    const fork = vi.fn(() => child) as unknown as ForkCodexUtilityProcess;
+    const forkMock = vi.fn((
+      _modulePath: string,
+      _args: readonly [],
+      _options: Parameters<ForkCodexUtilityProcess>[2],
+    ) => child);
+    const fork = forkMock as unknown as ForkCodexUtilityProcess;
     const launcher = new CodexUtilityLauncher({ mainBundleDirectory, fork });
 
     expect(launcher.launch()).toBe(child);
     expect(fork).toHaveBeenCalledWith(modulePath, [], {
       serviceName: 'WriteStorm AI Utility',
       stdio: 'pipe',
+      env: expect.any(Object),
     });
+    const forkCall = forkMock.mock.calls[0];
+    if (!forkCall) throw new Error('Expected the utility launcher to fork once.');
+    const environment = forkCall[2].env;
+    expect(environment).not.toHaveProperty('OPENAI_API_KEY');
+    expect(environment).not.toHaveProperty('CODEX_API_KEY');
+    expect(environment).not.toHaveProperty('NODE_OPTIONS');
     expect(() => new CodexUtilityLauncher({
       mainBundleDirectory: 'relative-build-directory',
       fork,

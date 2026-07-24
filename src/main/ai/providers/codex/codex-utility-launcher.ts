@@ -1,4 +1,5 @@
 import * as path from 'node:path';
+import { createCodexUtilityEnvironment } from './codex-environment';
 
 export type CodexUtilityProcessHandle = {
   readonly pid: number | undefined;
@@ -18,6 +19,7 @@ export type ForkCodexUtilityProcess = (
   options: {
     readonly serviceName: 'WriteStorm AI Utility';
     readonly stdio: 'pipe';
+    readonly env: Readonly<Record<string, string>>;
   },
 ) => CodexUtilityProcessHandle;
 
@@ -39,6 +41,7 @@ export class CodexUtilityLauncher {
     return this.fork(this.modulePath, [], {
       serviceName: 'WriteStorm AI Utility',
       stdio: 'pipe',
+      env: createCodexUtilityEnvironment(process.env),
     });
   }
 }

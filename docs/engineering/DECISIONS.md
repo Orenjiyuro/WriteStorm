@@ -1358,3 +1358,16 @@ Rules:
 - The production-protocol layer expands all production AI sources and includes the shared/Forge utility build authorities plus offline-smoke instrumentation. Port, adapter, transport, launcher, utility, scratch or build-boundary drift invalidates prior Task 13.5 evidence.
 - Fresh evidence `block13-task13-5-windows-no-global-git-packaged-001` binds clean runtime HEAD `028c0994692b1843eea57d18b2d5fe769e918289`, compatibility fingerprint `29d6131b2c83cda03984f68851b74f7e97ed814253226e3a1768acd5c7412e40`, and artifact-content record `2c43bf56940728ddd9db95d8e349aadceafce53fd7b871e9bfbf3c1973b88f70`.
 - The explicit Windows probe again passed all 17 no-global-Git assertions with SDK/CLI `0.144.6`; macOS remains deferred-by-user. This is not full Go, cross-platform compatibility, a production AI Job or release readiness.
+
+## D103: Offline DNS Promise Paths Are Blocked Without Transitive Imports
+
+Decision: Task 13.4 supersedes the D102 offline-smoke implementation boundary by covering callback and Promise DNS entry points and loading the shared utility configuration only through Vite's declared public API.
+
+Rules:
+
+- The guard covers callback `node:dns`, its `Resolver` prototype, the `dns.promises` getter surface, direct `node:dns/promises`, and the Promise `Resolver` prototype. Both top-level Promise entry paths have executable negative witnesses that fail before resolution and increment the sanitized observation.
+- The smoke imports no `jiti` or other undeclared transitive package. Vite `loadConfigFromFile` must return the exact shared configuration path before the isolated utility build can proceed.
+- The default integration remains deterministic and offline: it imports the SDK boundary but starts no SDK turn, requires no authentication, and rejects any observed network attempt.
+- Because the blocker, smoke and shared Vite authority belong to the production-protocol fingerprint, their correction made the D102 evidence stale only in that layer. Supply-chain and probe-artifact layers remained fresh.
+- Fresh evidence `block13-task13-5-windows-no-global-git-packaged-001` binds clean runtime HEAD `a8e8961814b9736e5ab3df1ae00224a2972f5eff`, compatibility fingerprint `bc63155f9f97ce404a8c1eb7d780c8e5f82225d4f6666da18088220c66fa1148`, and artifact-content record `1d2dcefdcb9099548389f158922709985482ddd5f53a4a825469fddbe6ef45ea`.
+- The refreshed Windows probe passed all 17 no-global-Git assertions. macOS remains deferred-by-user; this is not full Go, cross-platform compatibility, a production AI Job or release readiness.

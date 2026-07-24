@@ -1,0 +1,96 @@
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { extractFile } from '@electron/asar';
+
+const manifestRelativePath =
+  'config/block13-task13-11-product-artifact-v1.json';
+
+export function loadTask1311ProductArtifactBoundary(repositoryRoot) {
+  const manifest = JSON.parse(readFileSync(
+    path.join(repositoryRoot, manifestRelativePath),
+    'utf8',
+  ));
+  if (manifest?.schemaVersion !== 1
+    || manifest?.boundaryId !== 'block13-task13-11-product-artifact-v1'
+    || !Array.isArray(manifest.artifactFiles)
+    || !Array.isArray(manifest.asarEntries)) {
+    throw new Error('Task 13.11 product artifact boundary is invalid.');
+  }
+  assertDescriptors(manifest.artifactFiles, false);
+  assertDescriptors(manifest.asarEntries, true);
+  return manifest;
+}
+
+export function createTask1311ProductArtifactRecord(artifactRoot, boundary) {
+  const files = boundary.artifactFiles.map(({ id, relativePath }) => {
+    const bytes = readFileSync(resolveInside(artifactRoot, relativePath));
+    return { id, size: bytes.length, sha256: hash(bytes) };
+  });
+  const asarEntries = boundary.asarEntries.map(({
+    id,
+    archiveRelativePath,
+    entryPath,
+  }) => {
+    const archive = resolveInside(artifactRoot, archiveRelativePath);
+    const bytes = extractFile(archive, entryPath.split('/').join(path.sep));
+    return { id, size: bytes.length, sha256: hash(bytes) };
+  });
+  return {
+    boundaryId: boundary.boundaryId,
+    files,
+    asarEntries,
+    sha256: hash(Buffer.from(JSON.stringify({ files, asarEntries }))),
+  };
+}
+
+export function compactTask1311CompatibilityFingerprint(fingerprint) {
+  return {
+    boundaryId: fingerprint.boundaryId,
+    gitHead: fingerprint.gitHead,
+    layers: {
+      supplyChain: fingerprint.layers.supplyChain.sha256,
+      productionProtocol: fingerprint.layers.productionProtocol.sha256,
+      probeArtifact: fingerprint.layers.probeArtifact.sha256,
+    },
+    sha256: fingerprint.sha256,
+  };
+}
+
+function assertDescriptors(descriptors, asar) {
+  const ids = new Set();
+  for (const descriptor of descriptors) {
+    if (!/^[a-z][a-z0-9_]{0,79}$/.test(descriptor?.id)
+      || ids.has(descriptor.id)) {
+      throw new Error('Task 13.11 product artifact descriptor is invalid.');
+    }
+    ids.add(descriptor.id);
+    const values = asar
+      ? [descriptor.archiveRelativePath, descriptor.entryPath]
+      : [descriptor.relativePath];
+    for (const value of values) assertSafeRelativePath(value);
+  }
+}
+
+function assertSafeRelativePath(value) {
+  if (typeof value !== 'string'
+    || value.length === 0
+    || path.isAbsolute(value)
+    || value.split(/[\\/]/).includes('..')) {
+    throw new Error('Task 13.11 product artifact path is invalid.');
+  }
+}
+
+function resolveInside(root, relativePath) {
+  const resolvedRoot = path.resolve(root);
+  const resolved = path.resolve(resolvedRoot, relativePath.split('/').join(path.sep));
+  const relative = path.relative(resolvedRoot, resolved);
+  if (relative.startsWith('..') || path.isAbsolute(relative)) {
+    throw new Error('Task 13.11 product artifact path escaped its root.');
+  }
+  return resolved;
+}
+
+function hash(bytes) {
+  return createHash('sha256').update(bytes).digest('hex');
+}

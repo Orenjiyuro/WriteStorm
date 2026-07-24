@@ -1,4 +1,15 @@
-import { app, BrowserWindow, dialog, ipcMain, protocol, screen, session, shell } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  protocol,
+  screen,
+  session,
+  shell,
+  utilityProcess,
+} from 'electron';
+import os from 'node:os';
 import path from 'node:path';
 import {
   createContentSecurityPolicy,
@@ -48,6 +59,7 @@ import { JobApplicationService } from './jobs/job-application-service';
 import { ExportStatusService } from './exports/export-status-service';
 import { TypeLibraryService } from './type-library/type-library-service';
 import { AiRuntimeLifecycleRegistry } from './ai/ai-attempt-lifecycle';
+import { runOptionalCodexProductPackagedProbe } from './ai/providers/codex/codex-product-packaged-probe';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -374,6 +386,26 @@ function registerInternalIpc(): void {
 }
 
 app.whenReady().then(async () => {
+  const productProbeHandled = await runOptionalCodexProductPackagedProbe({
+    env: process.env,
+    isPackaged: app.isPackaged,
+    platform: process.platform,
+    architecture: process.arch,
+    temporaryDirectory: os.tmpdir(),
+    mainBundleDirectory: __dirname,
+    resourcesPath: process.resourcesPath,
+    executablePath: process.execPath,
+    fork: (modulePath, args, options) => utilityProcess.fork(
+      modulePath,
+      [...args],
+      options,
+    ),
+    electronVersion: process.versions.electron,
+    nodeRuntimeVersion: process.versions.node,
+    exitApp: (code) => app.exit(code),
+  });
+  if (productProbeHandled) return;
+
   testDisplayTarget = resolveTestDisplayTarget(process.env);
   if (testDisplayTarget) installTestDisplayGuards();
   installContentSecurityPolicy();

@@ -1,7 +1,9 @@
 import type { ForgeConfig } from '@electron-forge/shared-types';
 import { VitePlugin } from '@electron-forge/plugin-vite';
+import { resolveCodexProductRuntimePackage } from './config/codex-product-runtime-package';
 
 const electronChecksums = require('electron/checksums.json') as Record<string, string>;
+const codexRuntime = resolveCodexProductRuntimePackage(process.platform, process.arch);
 
 const allowedPackageRuntimePaths = [
   '/.vite',
@@ -9,6 +11,7 @@ const allowedPackageRuntimePaths = [
   '/node_modules/better-sqlite3',
   '/node_modules/bindings',
   '/node_modules/file-uri-to-path',
+  ...codexRuntime.allowedPaths,
 ] as const;
 
 const asarUnpackPattern = '**/*.node';
@@ -29,6 +32,7 @@ const config: ForgeConfig = {
   packagerConfig: {
     asar: {
       unpack: asarUnpackPattern,
+      unpackDir: codexRuntime.unpackDirectory,
     },
     download: {
       checksums: electronChecksums,

@@ -41,3 +41,21 @@ export function createCodexUtilityEnvironment(
   }
   return Object.freeze(environment);
 }
+
+export function isCodexUtilityEnvironmentAllowlisted(
+  environment: NodeJS.ProcessEnv,
+): boolean {
+  const admitted = new Set(
+    CODEX_UTILITY_ENVIRONMENT_KEYS.map((key) => key.toLowerCase()),
+  );
+  const electronRuntimeKeys = new Set([
+    'electron_run_as_node',
+    'node_channel_fd',
+    'node_channel_serialization_mode',
+  ]);
+  return Object.entries(environment).every(([key, value]) => (
+    value === undefined
+    || admitted.has(key.toLowerCase())
+    || electronRuntimeKeys.has(key.toLowerCase())
+  ));
+}

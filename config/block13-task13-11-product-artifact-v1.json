@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "boundaryId": "block13-task13-11-product-artifact-v1",
+  "artifactFiles": [
+    {
+      "id": "writestorm_executable",
+      "relativePath": "writestorm.exe"
+    },
+    {
+      "id": "app_asar",
+      "relativePath": "resources/app.asar"
+    },
+    {
+      "id": "codex_executable",
+      "relativePath": "resources/app.asar.unpacked/node_modules/@openai/codex-win32-x64/vendor/x86_64-pc-windows-msvc/bin/codex.exe"
+    }
+  ],
+  "asarEntries": [
+    {
+      "id": "product_main_bundle",
+      "archiveRelativePath": "resources/app.asar",
+      "entryPath": ".vite/build/main.js"
+    },
+    {
+      "id": "product_codex_utility_bundle",
+      "archiveRelativePath": "resources/app.asar",
+      "entryPath": ".vite/build/codex-utility-entry.js"
+    },
+    {
+      "id": "codex_sdk_manifest",
+      "archiveRelativePath": "resources/app.asar",
+      "entryPath": "node_modules/@openai/codex-sdk/package.json"
+    },
+    {
+      "id": "codex_cli_manifest",
+      "archiveRelativePath": "resources/app.asar",
+      "entryPath": "node_modules/@openai/codex/package.json"
+    },
+    {
+      "id": "codex_platform_manifest",
+      "archiveRelativePath": "resources/app.asar",
+      "entryPath": "node_modules/@openai/codex-win32-x64/package.json"
+    }
+  ]
+}

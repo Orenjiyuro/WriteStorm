@@ -5,10 +5,13 @@ export type CodexUtilityProcessHandle = {
   readonly pid: number | undefined;
   on(event: 'spawn', listener: () => void): unknown;
   on(event: 'message', listener: (message: unknown) => void): unknown;
-  on(event: 'exit', listener: (code: number) => void): unknown;
+  on(event: 'exit', listener: (code: number | null, signal?: string | null) => void): unknown;
   removeListener(event: 'spawn', listener: () => void): unknown;
   removeListener(event: 'message', listener: (message: unknown) => void): unknown;
-  removeListener(event: 'exit', listener: (code: number) => void): unknown;
+  removeListener(
+    event: 'exit',
+    listener: (code: number | null, signal?: string | null) => void,
+  ): unknown;
   postMessage(message: unknown): void;
   kill(): boolean;
 };

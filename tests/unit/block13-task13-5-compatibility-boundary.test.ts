@@ -37,19 +37,26 @@ describe('Block 13.5 canonical compatibility boundary', () => {
       'package.json',
     ]));
     expect(boundary.layers.productionProtocol.sourceFiles).toEqual(expect.arrayContaining([
+      'config/block13-product-packaged-probe-v1.json',
+      'config/codex-product-runtime-package.ts',
       'config/codex-utility-vite-config.ts',
       'forge.config.ts',
       'src/main/main-lifecycle.ts',
       'src/main/main.ts',
       'src/main/windows/main-window.ts',
       'vite.codex-utility.config.ts',
+      'vite.main.config.ts',
     ]));
     expect(boundary.layers.probeArtifact.sourceFiles).toEqual(expect.arrayContaining([
+      'config/block13-task13-11-product-artifact-v1.json',
       'config/block13-task13-5-compatibility-boundary-v1.json',
       'forge.block6a-certification.config.ts',
       'vite.block6a-certification-main.config.ts',
       'vite.codex-feasibility.config.ts',
       'scripts/run-task13-5-no-git-packaged-probe.mjs',
+      'scripts/run-task13-11-product-packaged-probe.mjs',
+      'scripts/task13-11-product-artifact.d.mts',
+      'scripts/task13-11-product-artifact.mjs',
       'scripts/task13-5-compatibility-boundary.mjs',
       'scripts/verify-task13-5-packaged-evidence.mjs',
     ]));

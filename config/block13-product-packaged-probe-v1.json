@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "fixtureId": "block13-product-packaged-probe-v1",
+  "classification": "public_non_sensitive",
+  "input": "Return only one JSON object with exactly this shape: {\"status\":\"WS13\"}. Do not add markdown or any other text.",
+  "inputSha256": "59aa434b8ea52837a69ea3108fed8b68ba88d1619a52a2238beba6131f4c652d",
+  "expectedJson": "{\"status\":\"WS13\"}",
+  "expectedSha256": "a7f22d406f5cfb05b2d81c85aa8a8672196fb79e98ab44da89c45450bf9f344a",
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string",
+        "const": "WS13"
+      }
+    },
+    "required": [
+      "status"
+    ],
+    "additionalProperties": false
+  },
+  "schemaSha256": "519d24096fd78b806b351fd28ef4c0167acf3c035e91fc9abacadadcd76f0ed8"
+}

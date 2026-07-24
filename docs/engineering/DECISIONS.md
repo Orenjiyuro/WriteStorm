@@ -1403,3 +1403,20 @@ Rules:
 - Task 13.7 adds no prompt, executable application request, utility command, event projection, attempt/generation state, cancellation, retry or Settings action. Production utility messages remain fail-closed and structured-output capability remains false.
 - Fresh Windows evidence `block13-task13-5-windows-no-global-git-packaged-001` binds clean runtime HEAD `7987cc759158205291a8cadc22910992fa785e12`, compatibility fingerprint `5ad95e0c2a9529b8141bc12632e11535312d524fd9c278108e90bf9a4f4c9e37`, and artifact-content record `747afe9074fbba55eef969d11ea0d36b350b6cd0e3e9f42156d519eb278712e8`. Its fixed synthetic structured turn passed local parsing/validation and all 17 no-global-Git assertions.
 - macOS remains deferred-by-user. This is not full Go, cross-platform compatibility, a production AI Job or release readiness.
+
+## D106: Task 13.8 Has One Bounded In-Memory Attempt State Machine
+
+Decision: WriteStorm admits provider-neutral progress/partial/final/error projection and one pure `AiAttemptController`, while keeping production execution, lifecycle wiring and durable Job/checkpoint work closed.
+
+Rules:
+
+- Application events are exact branded factory outputs with positive attempt, generation and sequence metadata. Codex SDK, CLI, JSONL, cwd/Git and provider error/usage types stay inside the Codex projector.
+- Codex raw lines are byte-bounded before parsing. Malformed, truncated, unsupported and oversized input fails closed without returning raw content. Agent-message completion remains a replace-style partial snapshot; only `turn.completed` confirms the latest completed message as final.
+- `AiAttemptController` alone owns attempt/generation and ordered event projection. Concurrent starts are rejected, each later explicit attempt receives a new generation, and stale generations or terminal-late output can never mutate the current attempt.
+- Duplicate/out-of-order events, incomplete input, payload-free provider error and resource exhaustion produce sanitized terminal candidates. A valid final must pass D105 validation. Progress and partial candidates never imply completion.
+- Repository ceilings are 2,621,440 event bytes, 16 MiB total projected bytes, 4,096 events and 1 MiB retained partial content. Each controller requires an explicit positive policy at or below every ceiling.
+- Checkpoint and terminal-state candidates live only in Main memory. Task 13.8 writes no Job, `JobCheckpoint`, AnalysisModuleInstance, SQLite, Library, migration or export and makes no durable recovery/resume claim.
+- Task 13.9 may connect this controller to utility/lifecycle cancellation, timeout, close/quit, Library replacement and explicit retry. It must not create a second attempt/generation implementation.
+- Default tests are offline deterministic fixtures and pure-state witnesses. Production utility messages and adapter capabilities remain fail-closed/false.
+- Fresh Windows evidence `block13-task13-5-windows-no-global-git-packaged-001` binds clean runtime HEAD `77e4e2f232c42f41bb923d1d297f67fd5147ccad`, compatibility fingerprint `847ba030592f54b683e0e94f8840cdfa30fc7c9197c89ab874a56c9c3aa6906b`, and artifact-content record `aad36722b15000137710c7cf7987d40f102c36f8d8b373965a4f31cb4c49b778`. The separate explicit probe passed all 17 Windows no-global-Git assertions.
+- macOS remains deferred-by-user. This is not full Go, cross-platform compatibility, a production AI Job or release readiness.

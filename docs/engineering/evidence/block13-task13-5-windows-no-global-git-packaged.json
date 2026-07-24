@@ -3,10 +3,10 @@
   "evidenceId": "block13-task13-5-windows-no-global-git-packaged-001",
   "task": "13.5",
   "source": "packaged_sdk",
-  "recordedAt": "2026-07-24T03:42:50.327Z",
+  "recordedAt": "2026-07-24T05:20:31.984Z",
   "commandName": "writestorm-task13-5-no-global-git-packaged-probe",
   "classification": "windows_packaged_no_global_git_verified",
-  "gitHeadAtRun": "7987cc759158205291a8cadc22910992fa785e12",
+  "gitHeadAtRun": "77e4e2f232c42f41bb923d1d297f67fd5147ccad",
   "versions": {
     "electron": "43.0.0",
     "nodeRuntime": "24.17.0",
@@ -50,13 +50,13 @@
         "id": "writestorm_executable",
         "relativePath": "writestorm.exe",
         "size": 235706368,
-        "sha256": "c807c8f1be968229b9308baad077eedf947b7d224914906afa1f743788c73e9a"
+        "sha256": "096c3d1825f0f28d6c8ef1c83eb91de6352debaa8976071ee91ff455062dbff8"
       },
       {
         "id": "app_asar",
         "relativePath": "resources/app.asar",
-        "size": 71011031,
-        "sha256": "d9fb19a72b90cd1d8e4535e3a3af410573386a36d8b8379d70de4560d782e7c0"
+        "size": 71010984,
+        "sha256": "65dbcbbbcf4b7a22bde76659ad8f6c917ec8da1e046d1ce5a4d7d4379c4121d5"
       },
       {
         "id": "codex_executable",
@@ -88,11 +88,11 @@
         "sha256": "dbdd5bc7f4f5fb6f8db199fd845a34219e3a14229654f868af4d04b944eeb09b"
       }
     ],
-    "sha256": "747afe9074fbba55eef969d11ea0d36b350b6cd0e3e9f42156d519eb278712e8"
+    "sha256": "aad36722b15000137710c7cf7987d40f102c36f8d8b373965a4f31cb4c49b778"
   },
   "compatibilityFingerprint": {
     "boundaryId": "block13-task13-5-compatibility-v1",
-    "gitHead": "7987cc759158205291a8cadc22910992fa785e12",
+    "gitHead": "77e4e2f232c42f41bb923d1d297f67fd5147ccad",
     "layers": {
       "supplyChain": {
         "files": [
@@ -126,8 +126,12 @@
             "sha256": "0b75424157f6cf03b4ce59e3ae1ff66fe64d32c37baaeacbfc86bcbf4ae13cbc"
           },
           {
+            "relativePath": "src/main/ai/ai-attempt-controller.ts",
+            "sha256": "a1fe9329b3fdd91a27b337e536e7f5db9c99f46b60c8fa50e0aec4fe4ae81b8e"
+          },
+          {
             "relativePath": "src/main/ai/ai-execution-port.ts",
-            "sha256": "4ec56ac48091793c53f2dd29192375c3c11a0637994ecde33b48ddadea3c6134"
+            "sha256": "0e8d1c1694a234c3726fd25d4869104a948cb1bb7978cf8703d01bf996438d84"
           },
           {
             "relativePath": "src/main/ai/ai-runtime-observation.ts",
@@ -144,6 +148,10 @@
           {
             "relativePath": "src/main/ai/providers/codex/codex-environment.ts",
             "sha256": "0a621746a721c28cb9fc47bdbdb2ca59102b3ab9e9781e9f41c18962e231ec70"
+          },
+          {
+            "relativePath": "src/main/ai/providers/codex/codex-event-projection.ts",
+            "sha256": "67a1914317368041f4732776e2ebb5f28b7d61614cf6d14124db9fe7658c5ccd"
           },
           {
             "relativePath": "src/main/ai/providers/codex/codex-provider-adapter.ts",
@@ -182,7 +190,7 @@
             "sha256": "8cb80a8a48dd8b9dd247628501ff3799088fba4e96a87421c0246dcf661275be"
           }
         ],
-        "sha256": "658d511624b021db6211f5882deb819f9d3ad9b25a8c9878c8b669a16b34926b"
+        "sha256": "8e7bcdb780e8c967c52a8379974398ba9c31ff63c0d2db795cab5e330a28c6fd"
       },
       "probeArtifact": {
         "files": [
@@ -314,7 +322,7 @@
         "sha256": "422a73c753f19a498d62224991b7e0efeedb912dc3d7e36963fe401ff6712dd2"
       }
     },
-    "sha256": "5ad95e0c2a9529b8141bc12632e11535312d524fd9c278108e90bf9a4f4c9e37"
+    "sha256": "847ba030592f54b683e0e94f8840cdfa30fc7c9197c89ab874a56c9c3aa6906b"
   },
   "invocation": {
     "command": "node scripts/run-task13-5-no-git-packaged-probe.mjs --artifact-root <artifact> --evidence-output <evidence>",

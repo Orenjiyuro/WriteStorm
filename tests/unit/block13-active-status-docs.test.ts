@@ -19,7 +19,8 @@ describe('Block 13 active status authority', () => {
     expect(status).toContain('| 13.5 | PASS for Windows |');
     expect(status).toContain('| 13.6 | PASS for boundary |');
     expect(status).toContain('| 13.7 | PASS for contract |');
-    expect(status).toContain('| 13.8 | NOT STARTED |');
+    expect(status).toContain('| 13.8 | PASS for pure in-memory boundary |');
+    expect(status).toContain('| 13.9 | NOT STARTED |');
   });
 
   it('preserves historical decisions and appends the remediation decision', () => {
@@ -28,6 +29,7 @@ describe('Block 13 active status authority', () => {
     expect(decisions).toContain('## D101: The V1 AI Execution Port Is One Sealed Application Protocol');
     expect(decisions).toContain('## D104: Task 13.6 Auth Observation Is Fail-Closed and Ephemeral');
     expect(decisions).toContain('## D105: Task 13.7 Structured Output Is Strict Before Execution');
+    expect(decisions).toContain('## D106: Task 13.8 Has One Bounded In-Memory Attempt State Machine');
     expect(decisions).toContain('26d548e03dfbe71e1f62081998e9942a2dfaa94c');
   });
 
@@ -44,6 +46,14 @@ describe('Block 13 active status authority', () => {
     expect(status).toContain('`output_too_large`');
     expect(status).toContain('structured-output capability remains `false`');
     expect(status).toContain('missing/extra cases are local deterministic witnesses');
+  });
+
+  it('records bounded in-memory candidates without claiming persistence or resume', () => {
+    expect(status).toContain('2,621,440 bytes per projected/raw provider event');
+    expect(status).toContain('4,096 events');
+    expect(status).toContain('candidates are not durable checkpoints');
+    expect(status).toContain('no result is resumable');
+    expect(status).toContain('capabilities remain `false`');
   });
 
   it('does not promote the current state to broader readiness', () => {

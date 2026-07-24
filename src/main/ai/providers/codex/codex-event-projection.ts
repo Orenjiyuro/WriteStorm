@@ -21,79 +21,111 @@ export class CodexEventProjectionError extends Error {
   }
 }
 
-export function projectCodexStreamLine(input: {
-  readonly token: AiAttemptToken;
-  readonly sequence: number;
-  readonly line: string;
-  readonly maxEventBytes: number;
-}): AiExecutionEvent {
-  if (typeof input.line !== 'string'
-    || !Number.isSafeInteger(input.maxEventBytes)
-    || input.maxEventBytes < 1
-    || input.maxEventBytes > AI_ATTEMPT_RESOURCE_CEILINGS.maxEventBytes
-    || Buffer.byteLength(input.line, 'utf8') > input.maxEventBytes) {
-    throw new CodexEventProjectionError('event_too_large');
+export class CodexStreamEventProjector {
+  private readonly token: AiAttemptToken;
+  private readonly maxEventBytes: number;
+  private sequence = 0;
+  private completedAgentText: string | null = null;
+
+  constructor(input: {
+    readonly token: AiAttemptToken;
+    readonly maxEventBytes: number;
+  }) {
+    if (!Number.isSafeInteger(input.token.attempt)
+      || input.token.attempt < 1
+      || !Number.isSafeInteger(input.token.generation)
+      || input.token.generation < 1
+      || !Number.isSafeInteger(input.maxEventBytes)
+      || input.maxEventBytes < 1
+      || input.maxEventBytes > AI_ATTEMPT_RESOURCE_CEILINGS.maxEventBytes) {
+      throw new CodexEventProjectionError('malformed_event');
+    }
+    this.token = Object.freeze({ ...input.token });
+    this.maxEventBytes = input.maxEventBytes;
   }
 
-  let raw: unknown;
-  try {
-    raw = JSON.parse(input.line);
-  } catch {
-    throw new CodexEventProjectionError('malformed_event');
-  }
-  if (!isPlainRecord(raw) || typeof raw.type !== 'string') {
-    throw new CodexEventProjectionError('malformed_event');
+  project(line: string): AiExecutionEvent {
+    if (typeof line !== 'string'
+      || Buffer.byteLength(line, 'utf8') > this.maxEventBytes) {
+      throw new CodexEventProjectionError('event_too_large');
+    }
+
+    let raw: unknown;
+    try {
+      raw = JSON.parse(line);
+    } catch {
+      throw new CodexEventProjectionError('malformed_event');
+    }
+    if (!isPlainRecord(raw) || typeof raw.type !== 'string') {
+      throw new CodexEventProjectionError('malformed_event');
+    }
+
+    const metadata = {
+      ...this.token,
+      sequence: this.sequence + 1,
+    };
+    const projected = this.projectRecord(metadata, raw);
+    this.sequence += 1;
+    return projected;
   }
 
-  const metadata = {
-    ...input.token,
-    sequence: input.sequence,
-  };
-  switch (raw.type) {
-    case 'thread.started':
-      if (typeof raw.thread_id !== 'string') malformed();
-      return createAiExecutionEvent({ ...metadata, kind: 'progress' });
-    case 'turn.started':
-      return createAiExecutionEvent({ ...metadata, kind: 'progress' });
-    case 'turn.completed':
-      if (!isPlainRecord(raw.usage)) malformed();
-      return createAiExecutionEvent({ ...metadata, kind: 'progress' });
-    case 'turn.failed':
-      if (!isPlainRecord(raw.error) || typeof raw.error.message !== 'string') malformed();
-      return createAiExecutionEvent({ ...metadata, kind: 'error' });
-    case 'error':
-      if (typeof raw.message !== 'string') malformed();
-      return createAiExecutionEvent({ ...metadata, kind: 'error' });
-    case 'item.started':
-    case 'item.updated':
-    case 'item.completed':
-      return projectItemEvent(metadata, raw);
-    default:
-      throw new CodexEventProjectionError('unsupported_event');
+  private projectRecord(
+    metadata: AiAttemptToken & { readonly sequence: number },
+    raw: Readonly<Record<string, unknown>>,
+  ): AiExecutionEvent {
+    switch (raw.type) {
+      case 'thread.started':
+        if (typeof raw.thread_id !== 'string') malformed();
+        return createAiExecutionEvent({ ...metadata, kind: 'progress' });
+      case 'turn.started':
+        return createAiExecutionEvent({ ...metadata, kind: 'progress' });
+      case 'turn.completed':
+        if (!isPlainRecord(raw.usage) || this.completedAgentText === null) malformed();
+        return createAiExecutionEvent({
+          ...metadata,
+          kind: 'final',
+          content: this.completedAgentText,
+        });
+      case 'turn.failed':
+        if (!isPlainRecord(raw.error) || typeof raw.error.message !== 'string') malformed();
+        return createAiExecutionEvent({ ...metadata, kind: 'error' });
+      case 'error':
+        if (typeof raw.message !== 'string') malformed();
+        return createAiExecutionEvent({ ...metadata, kind: 'error' });
+      case 'item.started':
+      case 'item.updated':
+      case 'item.completed':
+        return this.projectItemEvent(metadata, raw);
+      default:
+        throw new CodexEventProjectionError('unsupported_event');
+    }
   }
-}
 
-function projectItemEvent(
-  metadata: AiAttemptToken & { readonly sequence: number },
-  raw: Readonly<Record<string, unknown>>,
-): AiExecutionEvent {
-  if (!isPlainRecord(raw.item) || typeof raw.item.type !== 'string') {
-    throw new CodexEventProjectionError('malformed_event');
+  private projectItemEvent(
+    metadata: AiAttemptToken & { readonly sequence: number },
+    raw: Readonly<Record<string, unknown>>,
+  ): AiExecutionEvent {
+    if (!isPlainRecord(raw.item) || typeof raw.item.type !== 'string') {
+      throw new CodexEventProjectionError('malformed_event');
+    }
+    if (typeof raw.item.id !== 'string') malformed();
+    if (raw.item.type !== 'agent_message') {
+      return createAiExecutionEvent({ ...metadata, kind: 'progress' });
+    }
+    if (raw.type === 'item.started') {
+      return createAiExecutionEvent({ ...metadata, kind: 'progress' });
+    }
+    if (typeof raw.item.text !== 'string') {
+      throw new CodexEventProjectionError('malformed_event');
+    }
+    if (raw.type === 'item.completed') this.completedAgentText = raw.item.text;
+    const projected: AiExecutionEventInput = {
+      ...metadata,
+      kind: 'partial',
+      content: raw.item.text,
+    };
+    return createAiExecutionEvent(projected);
   }
-  if (typeof raw.item.id !== 'string') malformed();
-  if (raw.item.type !== 'agent_message') {
-    return createAiExecutionEvent({ ...metadata, kind: 'progress' });
-  }
-  if (raw.type === 'item.started') {
-    return createAiExecutionEvent({ ...metadata, kind: 'progress' });
-  }
-  if (typeof raw.item.text !== 'string') {
-    throw new CodexEventProjectionError('malformed_event');
-  }
-  const projected: AiExecutionEventInput = raw.type === 'item.completed'
-    ? { ...metadata, kind: 'final', content: raw.item.text }
-    : { ...metadata, kind: 'partial', content: raw.item.text };
-  return createAiExecutionEvent(projected);
 }
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {

@@ -103,13 +103,21 @@ describe('Block 13.4 Codex adapter and utility boundary', () => {
     }
   });
 
-  it('keeps the not-yet-defined utility protocol fail-closed and offline', () => {
+  it('admits only the lifecycle control protocol while execution remains fail-closed and offline', () => {
     const source = readFileSync(utilityEntry, 'utf8');
+    const lifecycleHost = readFileSync(path.join(
+      productionAiRoot,
+      'providers/codex/codex-utility-lifecycle-host.ts',
+    ), 'utf8');
 
     expect(source).toContain("import type { Codex } from '@openai/codex-sdk'");
     expect(source).toContain("await import('@openai/codex-sdk')");
     expect(source).toContain("if (typeof sdk.Codex !== 'function')");
-    expect(source).toContain('process.exit(CODEX_UTILITY_UNSUPPORTED_MESSAGE_EXIT_CODE)');
+    expect(source).toContain('new CodexUtilityLifecycleHost');
+    expect(source).toContain('void lifecycle.accept(event.data)');
+    expect(lifecycleHost).toContain(
+      'scheduleExit(CODEX_UTILITY_UNSUPPORTED_MESSAGE_EXIT_CODE)',
+    );
     expect(source).not.toMatch(/^const\s+\w+\s*=\s*new\s+Codex/m);
     expect(source).not.toMatch(/startThread|resumeThread|\.run\(|runStreamed|process\.env/);
     expect(source).not.toMatch(/codex exec|child_process|spawn\(/i);
@@ -134,6 +142,8 @@ describe('Block 13.4 Codex adapter and utility boundary', () => {
     expect(sharedVite).toContain("target: 'node22'");
     expect(smoke).toContain('codex-utility-vite-config.ts');
     expect(smoke).toContain('loadConfigFromFile');
+    expect(smoke).toContain('lifecycleShutdownAcknowledged');
+    expect(smoke).toContain('lifecycleExitCode');
     expect(smoke).not.toContain("from 'jiti'");
     expect(smoke).not.toContain("external: ['@openai/codex-sdk', '@openai/codex']");
     expect(smoke).not.toContain("networkRequestStarted: false");

@@ -9,6 +9,10 @@ describe('main lifecycle coordinator', () => {
       releaseJobs = resolve;
     });
     const lifecycle = createMainLifecycleCoordinator({
+      ai: {
+        prepareForLibraryReplacement: async () => undefined,
+        shutdown: async () => undefined,
+      },
       jobs: {
         pauseCancellations: () => {
           events.push('pause-jobs');
@@ -47,6 +51,14 @@ describe('main lifecycle coordinator', () => {
       releaseIdle = resolve;
     });
     const lifecycle = createMainLifecycleCoordinator({
+      ai: {
+        prepareForLibraryReplacement: async () => {
+          events.push('ai-library');
+        },
+        shutdown: async () => {
+          events.push('ai-quit');
+        },
+      },
       jobs: {
         pauseCancellations: () => {
           events.push('pause-jobs');
@@ -72,11 +84,11 @@ describe('main lifecycle coordinator', () => {
 
     const preparing = lifecycle.prepareForLibrarySessionChange();
     await Promise.resolve();
-    expect(events).toEqual(['pause-jobs', 'cancel', 'wait-jobs', 'wait']);
+    expect(events).toEqual(['ai-library', 'pause-jobs', 'cancel', 'wait-jobs', 'wait']);
 
     releaseIdle();
     await preparing;
-    expect(events).toEqual(['pause-jobs', 'cancel', 'wait-jobs', 'wait']);
+    expect(events).toEqual(['ai-library', 'pause-jobs', 'cancel', 'wait-jobs', 'wait']);
   });
 
   it('shares one shutdown barrier and closes resources only after detection is idle', async () => {
@@ -86,6 +98,14 @@ describe('main lifecycle coordinator', () => {
       releaseIdle = resolve;
     });
     const lifecycle = createMainLifecycleCoordinator({
+      ai: {
+        prepareForLibraryReplacement: async () => {
+          events.push('ai-library');
+        },
+        shutdown: async () => {
+          events.push('ai-quit');
+        },
+      },
       jobs: {
         pauseCancellations: () => {
           events.push('pause-jobs');
@@ -113,11 +133,12 @@ describe('main lifecycle coordinator', () => {
     const second = lifecycle.shutdown();
     expect(second).toBe(first);
     await Promise.resolve();
-    expect(events).toEqual(['pause-jobs', 'cancel', 'wait-jobs', 'wait']);
+    expect(events).toEqual(['ai-quit', 'pause-jobs', 'cancel', 'wait-jobs', 'wait']);
 
     releaseIdle();
     await first;
     expect(events).toEqual([
+      'ai-quit',
       'pause-jobs',
       'cancel',
       'wait-jobs',

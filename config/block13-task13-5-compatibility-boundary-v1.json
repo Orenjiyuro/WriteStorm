@@ -18,6 +18,8 @@
         "config/codex-utility-vite-config.ts",
         "forge.config.ts",
         "scripts/smoke-block13-production-utility.mjs",
+        "src/main/main-lifecycle.ts",
+        "src/main/main.ts",
         "tests/smoke/block13-network-blocker.cjs",
         "tests/smoke/block13-production-utility-smoke-main.ts",
         "vite.codex-utility.config.ts"

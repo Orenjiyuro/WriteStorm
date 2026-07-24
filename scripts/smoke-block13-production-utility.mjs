@@ -31,9 +31,8 @@ const networkBlockerPath = path.join(
   repositoryRoot,
   'tests/smoke/block13-network-blocker.cjs',
 );
-const networkObservationPath = path.join(smokeRoot, 'network-observation.json');
 const utilitySource = readFileSync(utilityEntry, 'utf8');
-let processResult;
+let processResults;
 let networkObservation;
 
 if (/^const\s+\w+\s*=\s*new\s+Codex/m.test(utilitySource)
@@ -102,28 +101,54 @@ try {
     main: 'smoke-main.cjs',
   }));
 
-  processResult = spawnSync(electronPath, ['--enable-logging=stderr', smokeAppRoot], {
-    cwd: repositoryRoot,
-    env: createOfflineEnvironment(smokeRoot, utilityBundle),
-    encoding: 'utf8',
-    timeout: 30_000,
-    windowsHide: true,
-  });
-  if (processResult.error || processResult.status !== 0) {
-    const smokeObservation = readSmokeObservation(smokeRoot);
-    const startupDiagnostic = sanitizeStartupDiagnostic(processResult.stderr);
-    throw new Error(
-      `Production utility smoke process failed (status=${String(processResult.status)}, `
-      + `signal=${String(processResult.signal)}, code=${processResult.error?.code ?? 'none'}, `
-      + `stage=${smokeObservation.stage}, utility=${smokeObservation.diagnostic}, `
-      + `startup=${startupDiagnostic}).`,
-    );
-  }
-  const processEvidence = JSON.parse(processResult.stdout.trim());
-  networkObservation = readNetworkObservation(networkObservationPath);
-  if (processEvidence.exactBundleResolved !== true
-    || processEvidence.sdkExportImported !== true
-    || processEvidence.unsupportedMessageExitCode !== 28
+  processResults = Object.fromEntries([
+    'unsupported',
+    'lifecycle_shutdown',
+  ].map((mode) => {
+    const result = spawnSync(electronPath, ['--enable-logging=stderr', smokeAppRoot], {
+      cwd: repositoryRoot,
+      env: createOfflineEnvironment(smokeRoot, utilityBundle, mode),
+      encoding: 'utf8',
+      timeout: 30_000,
+      windowsHide: true,
+    });
+    if (result.error || result.status !== 0) {
+      const smokeObservation = readSmokeObservation(smokeRoot);
+      const startupDiagnostic = sanitizeStartupDiagnostic(result.stderr);
+      throw new Error(
+        `Production utility smoke process failed (mode=${mode}, `
+        + `status=${String(result.status)}, signal=${String(result.signal)}, `
+        + `code=${result.error?.code ?? 'none'}, stage=${smokeObservation.stage}, `
+        + `utility=${smokeObservation.diagnostic}, startup=${startupDiagnostic}).`,
+      );
+    }
+    return [mode, JSON.parse(result.stdout.trim())];
+  }));
+  const unsupportedEvidence = processResults.unsupported;
+  const lifecycleEvidence = processResults.lifecycle_shutdown;
+  const networkObservations = [
+    'unsupported',
+    'lifecycle_shutdown',
+  ].map((mode) => readNetworkObservation(
+    path.join(smokeRoot, `network-observation-${mode}.json`),
+  ));
+  networkObservation = {
+    installed: networkObservations.every((observation) => observation.installed === true),
+    attemptCount: networkObservations.reduce(
+      (count, observation) => count + observation.attemptCount,
+      0,
+    ),
+    attemptedKinds: networkObservations.flatMap(
+      (observation) => observation.attemptedKinds,
+    ),
+  };
+  if (unsupportedEvidence.exactBundleResolved !== true
+    || unsupportedEvidence.sdkExportImported !== true
+    || unsupportedEvidence.unsupportedMessageExitCode !== 28
+    || lifecycleEvidence.exactBundleResolved !== true
+    || lifecycleEvidence.sdkExportImported !== true
+    || lifecycleEvidence.lifecycleShutdownAcknowledged !== true
+    || lifecycleEvidence.lifecycleExitCode !== 0
     || networkObservation.installed !== true
     || networkObservation.attemptCount !== 0
     || networkObservation.attemptedKinds.length !== 0) {
@@ -140,6 +165,8 @@ process.stdout.write(`${JSON.stringify({
   exactBundleResolved: true,
   sdkExportImported: true,
   unsupportedMessageExitCode: 28,
+  lifecycleShutdownAcknowledged: true,
+  lifecycleExitCode: 0,
   credentialEnvironmentExcluded: true,
   proxyEnvironmentExcluded: true,
   networkGuardInstalled: networkObservation.installed,
@@ -148,7 +175,7 @@ process.stdout.write(`${JSON.stringify({
   cleanupCompleted: !existsSync(buildRoot) && !existsSync(smokeRoot),
 })}\n`);
 
-function createOfflineEnvironment(smokeRootPath, utilityBundlePath) {
+function createOfflineEnvironment(smokeRootPath, utilityBundlePath, smokeMode) {
   const environment = {};
   for (const [key, value] of Object.entries(process.env)) {
     if (!value || isRejectedEnvironmentKey(key)) continue;
@@ -158,9 +185,13 @@ function createOfflineEnvironment(smokeRootPath, utilityBundlePath) {
     throw new Error('Offline smoke environment retained a rejected key.');
   }
   environment.WRITESTORM_BLOCK13_UTILITY_SMOKE = '1';
+  environment.WRITESTORM_BLOCK13_UTILITY_SMOKE_MODE = smokeMode;
   environment.WRITESTORM_BLOCK13_UTILITY_SMOKE_ROOT = smokeRootPath;
   environment.WRITESTORM_BLOCK13_UTILITY_BUNDLE = utilityBundlePath;
-  environment.WRITESTORM_BLOCK13_NETWORK_OBSERVATION = networkObservationPath;
+  environment.WRITESTORM_BLOCK13_NETWORK_OBSERVATION = path.join(
+    smokeRootPath,
+    `network-observation-${smokeMode}.json`,
+  );
   return environment;
 }
 

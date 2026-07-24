@@ -1,6 +1,10 @@
 import type { Codex } from '@openai/codex-sdk';
+import {
+  CodexUtilityLifecycleHost,
+  CODEX_UTILITY_UNSUPPORTED_MESSAGE_EXIT_CODE,
+} from './codex-utility-lifecycle-host';
 
-export const CODEX_UTILITY_UNSUPPORTED_MESSAGE_EXIT_CODE = 28 as const;
+export { CODEX_UTILITY_UNSUPPORTED_MESSAGE_EXIT_CODE };
 export const CODEX_UTILITY_INVALID_SDK_EXPORT_EXIT_CODE = 29 as const;
 
 type CodexConstructor = new () => Codex;
@@ -25,8 +29,15 @@ async function initializeCodexUtility(): Promise<void> {
 
   const parentPort = process.parentPort;
   if (parentPort) {
-    parentPort.on('message', () => {
-      process.exit(CODEX_UTILITY_UNSUPPORTED_MESSAGE_EXIT_CODE);
+    type ElectronUtilityMessageEvent = { readonly data: unknown };
+    const lifecycle = new CodexUtilityLifecycleHost({
+      postMessage: (message) => parentPort.postMessage(message),
+      scheduleExit: (code) => {
+        setImmediate(() => process.exit(code));
+      },
+    });
+    parentPort.on('message', (event: ElectronUtilityMessageEvent) => {
+      void lifecycle.accept(event.data);
     });
   }
 }

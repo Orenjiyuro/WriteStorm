@@ -71,7 +71,14 @@ export type AiTerminalStateCandidate =
     readonly token: AiAttemptToken;
     readonly sequence: number;
     readonly state: 'failed';
-    readonly reason: 'event_sequence_violation' | 'runtime_error' | 'incomplete_stream';
+    readonly reason:
+      | 'event_sequence_violation'
+      | 'runtime_error'
+      | 'incomplete_stream'
+      | 'timeout'
+      | 'cleanup_forced'
+      | 'cleanup_unverified'
+      | 'session_start_failed';
   }
   | {
     readonly kind: 'terminal_state_candidate';
@@ -265,6 +272,23 @@ export class AiAttemptController {
     ));
   }
 
+  failLifecycle(
+    token: AiAttemptToken,
+    reason: 'timeout' | 'cleanup_forced' | 'cleanup_unverified' | 'session_start_failed',
+  ): AiAttemptDisposition {
+    const current = this.current;
+    if (!current) return ignored('no_active_attempt');
+    if (token.attempt !== current.token.attempt
+      || token.generation !== current.token.generation) {
+      return ignored('stale_generation');
+    }
+    return this.finish(failedCandidate(
+      current.token,
+      current.expectedSequence - 1,
+      reason,
+    ));
+  }
+
   read(): AiAttemptSnapshot {
     const current = this.current;
     if (!current) return Object.freeze({ phase: 'idle', token: null });
@@ -334,7 +358,14 @@ function resourceCandidate(
 function failedCandidate(
   token: AiAttemptToken,
   sequence: number,
-  reason: 'event_sequence_violation' | 'runtime_error' | 'incomplete_stream',
+  reason:
+    | 'event_sequence_violation'
+    | 'runtime_error'
+    | 'incomplete_stream'
+    | 'timeout'
+    | 'cleanup_forced'
+    | 'cleanup_unverified'
+    | 'session_start_failed',
 ): AiTerminalStateCandidate {
   return Object.freeze({
     kind: 'terminal_state_candidate',

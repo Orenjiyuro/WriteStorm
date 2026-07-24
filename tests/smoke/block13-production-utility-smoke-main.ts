@@ -11,7 +11,9 @@ const expectedBundlePath = path.resolve(
 );
 const smokeRoot = process.env.WRITESTORM_BLOCK13_UTILITY_SMOKE_ROOT;
 const networkObservationPath = process.env.WRITESTORM_BLOCK13_NETWORK_OBSERVATION;
+const smokeMode = process.env.WRITESTORM_BLOCK13_UTILITY_SMOKE_MODE;
 if (process.env.WRITESTORM_BLOCK13_UTILITY_SMOKE !== '1'
+  || (smokeMode !== 'unsupported' && smokeMode !== 'lifecycle_shutdown')
   || !path.isAbsolute(expectedBundlePath)
   || !smokeRoot
   || !path.isAbsolute(smokeRoot)
@@ -53,6 +55,10 @@ app.whenReady().then(() => {
     mainBundleDirectory: path.dirname(expectedBundlePath),
     fork,
   });
+  if (smokeMode === 'lifecycle_shutdown') {
+    runLifecycleShutdownSmoke(launcher, () => exactBundleResolved);
+    return;
+  }
   const child = launcher.launch();
   const timeout = setTimeout(() => {
     if (settled) return;
@@ -115,4 +121,63 @@ function sanitizeUtilityDiagnostic(stderr: string): string {
     .replace(/[A-Za-z]:\\Users\\[^\\\r\n]+/gi, '<user>')
     .replace(/[\r\n]+/g, ' ')
     .slice(0, 500);
+}
+
+function runLifecycleShutdownSmoke(
+  launcher: CodexUtilityLauncher,
+  exactBundleResolved: () => boolean,
+): void {
+  const token = { attempt: 1, generation: 1 } as const;
+  const child = launcher.launch();
+  let acknowledged = false;
+  let settled = false;
+  const timeout = setTimeout(() => {
+    if (settled) return;
+    settled = true;
+    child.kill();
+    process.exit(75);
+  }, 15_000);
+  child.on('spawn', () => {
+    recordStage('lifecycle_utility_spawned');
+    child.postMessage({
+      version: 1,
+      origin: 'main',
+      type: 'ai.shutdown',
+      token,
+    });
+  });
+  child.on('message', (message) => {
+    acknowledged = isLifecycleShutdownAcknowledgement(message, token);
+  });
+  child.on('exit', (code) => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(timeout);
+    if (!acknowledged || code !== 0) {
+      process.exit(76);
+      return;
+    }
+    process.stdout.write(`${JSON.stringify({
+      exactBundleResolved: exactBundleResolved(),
+      sdkExportImported: true,
+      lifecycleShutdownAcknowledged: true,
+      lifecycleExitCode: code,
+    })}\n`);
+    app.exit(0);
+  });
+}
+
+function isLifecycleShutdownAcknowledgement(
+  value: unknown,
+  token: { readonly attempt: number; readonly generation: number },
+): boolean {
+  if (!value || typeof value !== 'object') return false;
+  const record = value as Record<string, unknown>;
+  const receivedToken = record.token as Record<string, unknown> | undefined;
+  return record.version === 1
+    && record.origin === 'utility'
+    && record.type === 'ai.shutdown-result'
+    && record.cleanupAcknowledged === true
+    && receivedToken?.attempt === token.attempt
+    && receivedToken.generation === token.generation;
 }

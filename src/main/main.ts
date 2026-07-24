@@ -47,6 +47,7 @@ import { AnalysisModuleInstanceService } from './modules/analysis-module-instanc
 import { JobApplicationService } from './jobs/job-application-service';
 import { ExportStatusService } from './exports/export-status-service';
 import { TypeLibraryService } from './type-library/type-library-service';
+import { AiRuntimeLifecycleRegistry } from './ai/ai-attempt-lifecycle';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -100,7 +101,9 @@ const books = createBookImportIpcDependencies({
   env: process.env,
   showOpenDialog: (options) => dialog.showOpenDialog(options),
 });
+const aiRuntimeLifecycle = new AiRuntimeLifecycleRegistry();
 const mainLifecycle = createMainLifecycleCoordinator({
+  ai: aiRuntimeLifecycle,
   jobs: jobApplicationService,
   structure: structureService,
   disposeStructureWorker: () => structureWorkerRunner.dispose(),
@@ -140,7 +143,10 @@ async function cleanupSourceImportsForWindowClose(): Promise<void> {
   books.invalidateWindowSelections();
   sourceImportService.pauseImports();
   try {
-    await sourceImportService.waitForIdle();
+    await Promise.all([
+      sourceImportService.waitForIdle(),
+      aiRuntimeLifecycle.windowClosed(),
+    ]);
     sourceImportService.clearPendingImports();
   } finally {
     sourceImportService.resumeImports();
@@ -376,6 +382,7 @@ app.whenReady().then(async () => {
     afterLibrarySessionChange: () => {
       sourceImportService.resumeImports();
       jobApplicationService.resumeCancellations();
+      aiRuntimeLifecycle.resumeAfterLibraryReplacement();
     },
     afterLibrarySessionActivated: async () => {
       await sourceImportService.recoverAbandonedImports();

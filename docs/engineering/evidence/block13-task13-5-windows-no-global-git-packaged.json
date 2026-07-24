@@ -3,10 +3,10 @@
   "evidenceId": "block13-task13-5-windows-no-global-git-packaged-001",
   "task": "13.5",
   "source": "packaged_sdk",
-  "recordedAt": "2026-07-24T09:28:33.774Z",
+  "recordedAt": "2026-07-24T11:51:45.482Z",
   "commandName": "writestorm-task13-5-no-global-git-packaged-probe",
   "classification": "windows_packaged_no_global_git_verified",
-  "gitHeadAtRun": "c6ee1086cc30691df03c2a95b37d414b0eba5940",
+  "gitHeadAtRun": "2538722f7df36084b29500185a14eced33064386",
   "versions": {
     "electron": "43.0.0",
     "nodeRuntime": "24.17.0",
@@ -50,13 +50,13 @@
         "id": "writestorm_executable",
         "relativePath": "writestorm.exe",
         "size": 235706368,
-        "sha256": "811415fcf49d8b0736c1b2bf6b8e85acc51c4fa21a72b023a8251b92a7a3f60d"
+        "sha256": "ade3d11e3168c78f1e001d06dabe95f5e8f3963599c3f7d277c87e6ec9e44da9"
       },
       {
         "id": "app_asar",
         "relativePath": "resources/app.asar",
         "size": 71011088,
-        "sha256": "b26104c188282a6e8f5fb2365d82076837a506527d7ccc1f63215e6d15368e6a"
+        "sha256": "686832fc3127738ac4ecd9b9fe2d90188a2d6f4c23934d9c597c89e1cc916a3a"
       },
       {
         "id": "codex_executable",
@@ -88,11 +88,11 @@
         "sha256": "dbdd5bc7f4f5fb6f8db199fd845a34219e3a14229654f868af4d04b944eeb09b"
       }
     ],
-    "sha256": "b5003adaac16ffa8e831aec7ca3345acdcc8c1e99c31e7a83810ca51fd9fc754"
+    "sha256": "22fd3f7b6e1783bb4feb9830acc1f7bbc9500f44ce0c8716cf6b837c398620a5"
   },
   "compatibilityFingerprint": {
     "boundaryId": "block13-task13-5-compatibility-v1",
-    "gitHead": "c6ee1086cc30691df03c2a95b37d414b0eba5940",
+    "gitHead": "2538722f7df36084b29500185a14eced33064386",
     "layers": {
       "supplyChain": {
         "files": [
@@ -114,12 +114,20 @@
       "productionProtocol": {
         "files": [
           {
+            "relativePath": "config/block13-product-packaged-probe-v1.json",
+            "sha256": "bc6465aabb6a36c586b691563193d34d2e21457a903300785775c5f4344f975b"
+          },
+          {
+            "relativePath": "config/codex-product-runtime-package.ts",
+            "sha256": "320ff9af0f499de5460170c7a8f146a113c761eb8d6a3abe42694686c447c618"
+          },
+          {
             "relativePath": "config/codex-utility-vite-config.ts",
             "sha256": "ee419f57dc0a3faf7019ce380dc59600cbf3424b8c388dc422113b87226d2bef"
           },
           {
             "relativePath": "forge.config.ts",
-            "sha256": "f2c07742d76648f3526b8d823491d75abaf58677b9f074d11f34f0318f64c1aa"
+            "sha256": "e9bafe1b30e0582583e87fe6ed7abfe97a932f064be71f60f11b6e40ae513e98"
           },
           {
             "relativePath": "scripts/smoke-block13-production-utility.mjs",
@@ -155,11 +163,31 @@
           },
           {
             "relativePath": "src/main/ai/providers/codex/codex-environment.ts",
-            "sha256": "0a621746a721c28cb9fc47bdbdb2ca59102b3ab9e9781e9f41c18962e231ec70"
+            "sha256": "02577baed96faa0c57ac3f9002d1d5d32ba522013a89822e7a15007f7e412c23"
           },
           {
             "relativePath": "src/main/ai/providers/codex/codex-event-projection.ts",
             "sha256": "ae31992f2664319782dcb5c2e5e89952ccedfcb49f46adb4c180b20e751c198f"
+          },
+          {
+            "relativePath": "src/main/ai/providers/codex/codex-product-packaged-probe.ts",
+            "sha256": "e67a611732ed3f61dab69c45573d4425765aa6d6e69a163c7077e5d3b9891fc7"
+          },
+          {
+            "relativePath": "src/main/ai/providers/codex/codex-product-probe-fixture.ts",
+            "sha256": "9d233de36097ca27096ab69856630d9237b878fb0811713a9446e6d5deb84a2a"
+          },
+          {
+            "relativePath": "src/main/ai/providers/codex/codex-product-probe-protocol.ts",
+            "sha256": "7b26f2ca2ca7c2c051ba64970967c8de5bb2c665a6d4583725855e9a890421be"
+          },
+          {
+            "relativePath": "src/main/ai/providers/codex/codex-product-probe-utility-host.ts",
+            "sha256": "37152e75cdc626f5ea7dfeca4e46d92fb6a0ea103fd767db692f855f7a53028e"
+          },
+          {
+            "relativePath": "src/main/ai/providers/codex/codex-product-runtime-path.ts",
+            "sha256": "077f1cbe658e5e51357bc0423cc3edfaece25df3573baabb9aa16aa9d03f9251"
           },
           {
             "relativePath": "src/main/ai/providers/codex/codex-provider-adapter.ts",
@@ -183,11 +211,11 @@
           },
           {
             "relativePath": "src/main/ai/providers/codex/codex-utility-entry.ts",
-            "sha256": "a06babb2669084f9c45e4c95200ab30a9e4486acda7640ba9ecb0bb261717460"
+            "sha256": "1eee6dcd3af94155daa9dcc0bd29502fda79d0bbdb679d89699fb7307d319a43"
           },
           {
             "relativePath": "src/main/ai/providers/codex/codex-utility-launcher.ts",
-            "sha256": "4fb630235bcbfca9ef48363308cb774f89c2e4c9220f0fc727f987e5a60c11d4"
+            "sha256": "dba36469a9f8f33f0868cddddd36e04985a5a911f7a03d4d48b0efe6ae3b6c17"
           },
           {
             "relativePath": "src/main/ai/providers/codex/codex-utility-lifecycle-host.ts",
@@ -199,11 +227,15 @@
           },
           {
             "relativePath": "src/main/ai/providers/codex/codex-utility-process-cleanup-driver.ts",
-            "sha256": "1cf38f3744cf0cf0d2078a089778a4240d4663d884bd38feba014ec880eb770c"
+            "sha256": "64f5f25f2d6757a2826e894cf469c8b651a23669388020d4f4193a3dc18b122a"
           },
           {
             "relativePath": "src/main/ai/providers/codex/codex-utility-transport.ts",
             "sha256": "2889a3be8a7303549fb9e26192f4c4374a73f7744342669c1322aca6c93d7bd0"
+          },
+          {
+            "relativePath": "src/main/ai/providers/codex/codex-windows-process-guard.ts",
+            "sha256": "0a102911350a357692f8698a16711345c10744fa49e2d21afb394f23796c827d"
           },
           {
             "relativePath": "src/main/main-lifecycle.ts",
@@ -211,7 +243,7 @@
           },
           {
             "relativePath": "src/main/main.ts",
-            "sha256": "7d20139d1bfe2c540518c91baf6794b11c99cb2ce3c1bdc6de43370c7ef0e3b1"
+            "sha256": "0562e726895889d24ef93686b5dc39825936dda8f4b9473a892fddfdede50c45"
           },
           {
             "relativePath": "src/main/windows/main-window.ts",
@@ -228,15 +260,23 @@
           {
             "relativePath": "vite.codex-utility.config.ts",
             "sha256": "8cb80a8a48dd8b9dd247628501ff3799088fba4e96a87421c0246dcf661275be"
+          },
+          {
+            "relativePath": "vite.main.config.ts",
+            "sha256": "d57db6accea2489a6488ecc298ceafef8caca3e2d203ae503712e9b659f06a8a"
           }
         ],
-        "sha256": "43bcea3fe07a4a26c6a40f41756e455977767aabe901099e69eb4fd926c44b2f"
+        "sha256": "f205c48eace20efd74496ba2efe14be848ff2d8f92109184d628fc2ac6d7df54"
       },
       "probeArtifact": {
         "files": [
           {
+            "relativePath": "config/block13-task13-11-product-artifact-v1.json",
+            "sha256": "96f8b39634bb24a3e675137608c978ce098bc46db62df452689c12703816281a"
+          },
+          {
             "relativePath": "config/block13-task13-5-compatibility-boundary-v1.json",
-            "sha256": "6c9a86fe9f8b81880e46aa94a8fab65ccff747611fd70eee118b6f67ce6100a3"
+            "sha256": "5d1a091d8a80172f97d7fd7c2d937743ff24c15e31db15d74494ad65343162b4"
           },
           {
             "relativePath": "fixtures/block6a/codex-sdk-feasibility-v1.json",
@@ -259,8 +299,20 @@
             "sha256": "092e19a48c7d0ac5c6b0b7799462f8e5dd878472d2cea18699e7068f0b99ad67"
           },
           {
+            "relativePath": "scripts/run-task13-11-product-packaged-probe.mjs",
+            "sha256": "78879ac3b677b612ec68887b77c00a3ac2ca7a436fdbfb14e401915d9564eaa8"
+          },
+          {
             "relativePath": "scripts/run-task13-5-no-git-packaged-probe.mjs",
             "sha256": "538a703388f346f9f72814dc27632d8fabb02dd7f5bb6c5c878540ed132ca81c"
+          },
+          {
+            "relativePath": "scripts/task13-11-product-artifact.d.mts",
+            "sha256": "3fd824f20cb3669ef4f3354e1fb6266fc546726f67d44b2427dcbf64fdc7d8f6"
+          },
+          {
+            "relativePath": "scripts/task13-11-product-artifact.mjs",
+            "sha256": "2fa0bd83ffae630892ee866712ec9bf71c342433aedd28ccf21f5f382b900509"
           },
           {
             "relativePath": "scripts/task13-5-compatibility-boundary.d.mts",
@@ -359,10 +411,10 @@
             "sha256": "0551a1906e5c9fec68311088153304411881d6781c395e42e9ddae55293e1f83"
           }
         ],
-        "sha256": "07d8a561ed49f8e03cef70f7eb3b31645144a70a31b9463c1b5c6a9ca3dbb22b"
+        "sha256": "0ec43f1a36de3679a829de2141baa3dea5bde71e35bac1085743dd9c83e708fe"
       }
     },
-    "sha256": "54e0050b06a2387dfb87b4f2cc42df9dd0892c8962dbdf880b91ecdc7233b00f"
+    "sha256": "7aa35887e5d547cbc3d21023d601b25daf08be7dc7dfebb6698827daac210d9f"
   },
   "invocation": {
     "command": "node scripts/run-task13-5-no-git-packaged-probe.mjs --artifact-root <artifact> --evidence-output <evidence>",

@@ -163,7 +163,7 @@ describe('Block 13.5 canonical compatibility boundary', () => {
     }
   });
 
-  it('fails the historical no-global-Git evidence closed after Task 13.11 drift', () => {
+  it('accepts the recertified no-global-Git evidence against every current layer', () => {
     const boundary = loadTask135CompatibilityBoundary(rootDir);
     const evidence = JSON.parse(readFileSync(
       path.join(
@@ -180,9 +180,14 @@ describe('Block 13.5 canonical compatibility boundary', () => {
     expect(evaluateTask135CompatibilityFreshness(
       current,
       evidence.compatibilityFingerprint,
-    )).toMatchObject({
-      status: 'stale',
-      staleLayers: ['productionProtocol', 'probeArtifact'],
+    )).toEqual({
+      status: 'fresh',
+      staleLayers: [],
+      layers: {
+        supplyChain: 'fresh',
+        productionProtocol: 'fresh',
+        probeArtifact: 'fresh',
+      },
     });
     expect(evidence.artifact.sha256).toMatch(/^[0-9a-f]{64}$/);
   });

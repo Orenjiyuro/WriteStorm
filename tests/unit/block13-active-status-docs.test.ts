@@ -16,7 +16,7 @@ describe('Block 13 active status authority', () => {
   it('records the exact platform-limited verdict and current task boundary', () => {
     expect(context).toContain(verdict);
     expect(status).toContain(verdict);
-    expect(status).toContain('| 13.5 | REVALIDATION REQUIRED |');
+    expect(status).toContain('| 13.5 | PASS for Windows |');
     expect(status).toContain('| 13.6 | PASS for boundary |');
     expect(status).toContain('| 13.7 | PASS for contract |');
     expect(status).toContain('| 13.8 | PASS for pure in-memory boundary |');
@@ -44,6 +44,9 @@ describe('Block 13 active status authority', () => {
     );
     expect(decisions).toContain(
       '## D111: Product Packaged Runtime Certification Is Explicit, Fixed and Platform-Limited',
+    );
+    expect(decisions).toContain(
+      '## D112: Current Windows Packaged Runtime Is Recertified Without Global Git',
     );
     expect(decisions).toContain('26d548e03dfbe71e1f62081998e9942a2dfaa94c');
   });

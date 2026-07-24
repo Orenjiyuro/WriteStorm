@@ -74,7 +74,7 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
       evidenceId: 'block13-task13-5-windows-no-global-git-packaged-001',
       task: '13.5',
       classification: 'windows_packaged_no_global_git_verified',
-      gitHeadAtRun: 'c6ee1086cc30691df03c2a95b37d414b0eba5940',
+      gitHeadAtRun: '2538722f7df36084b29500185a14eced33064386',
       versions: {
         electron: '43.0.0',
         codexSdk: '0.144.6',
@@ -95,7 +95,7 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
     expect(Object.values(evidence.assertions)).not.toContain(false);
   });
 
-  it('retains valid historical hashes while failing current freshness closed', () => {
+  it('binds every source hash and all compatibility layers to the current evidence', () => {
     expect(evidence.compatibilityFingerprint.gitHead).toBe(evidence.gitHeadAtRun);
     for (const [layerName, layer] of Object.entries(
       evidence.compatibilityFingerprint.layers,
@@ -104,11 +104,7 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
         const currentHash = createHash('sha256')
           .update(normalizeSourceBytes(readFileSync(path.join(rootDir, entry.relativePath))))
           .digest('hex');
-        if (entry.relativePath === 'package.json'
-          || entry.relativePath === 'package-lock.json'
-          || entry.relativePath === 'config/block6a-feasibility-manifest-v1.json') {
-          expect(currentHash, entry.relativePath).toBe(entry.sha256);
-        }
+        expect(currentHash, entry.relativePath).toBe(entry.sha256);
       }
       const layerHash = createHash('sha256')
         .update(JSON.stringify({ layerName, files: layer.files }))
@@ -150,12 +146,13 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
     expect(evaluateTask135CompatibilityFreshness(
       current,
       evidence.compatibilityFingerprint,
-    )).toMatchObject({
-      status: 'stale',
+    )).toEqual({
+      status: 'fresh',
+      staleLayers: [],
       layers: {
         supplyChain: 'fresh',
-        productionProtocol: 'stale',
-        probeArtifact: 'stale',
+        productionProtocol: 'fresh',
+        probeArtifact: 'fresh',
       },
     });
   });

@@ -1498,3 +1498,16 @@ Rules:
 - This result does not verify clean-machine execution, signing, notarization, Defender, proxy, enterprise certificates, firewall, offline behavior, SDK telemetry or macOS. macOS remains deferred-by-user.
 - A non-Git scratch workspace is not proof that global Git is unavailable. Because Task 13.11 changes the production-protocol fingerprint, the older Task 13.5 no-global-Git evidence remains stale until a separately authorized current no-Git probe succeeds.
 - Task 13.11 adds no IPC, renderer action, Job, SQLite write, checkpoint, retry loop, fallback provider, direct CLI/app-server path or real business AI workflow.
+
+## D112: Current Windows Packaged Runtime Is Recertified Without Global Git
+
+Decision: A separately authorized Task 13.5 probe refreshes the Windows no-global-Git evidence against the current production and probe-artifact boundaries without changing the Task 13.11 product-runtime scope.
+
+Rules:
+
+- Evidence `block13-task13-5-windows-no-global-git-packaged-001` binds clean runtime HEAD `2538722f7df36084b29500185a14eced33064386`, compatibility fingerprint `7aa35887e5d547cbc3d21023d601b25daf08be7dc7dfebb6698827daac210d9f` and artifact-content record `22fd3f7b6e1783bb4feb9830acc1f7bbc9500f44ce0c8716cf6b837c398620a5`.
+- The packaged Windows x64 probe uses the fixed public synthetic input, a non-Git OS-temp scratch workspace and `skipGitRepoCheck=true`. Its sanitized PATH excludes Git locations; both outer `where git` and `Get-Command git` checks report Git unavailable.
+- All 17 assertions pass: the structured SDK turn and strict local validation succeed, timeout protection is installed, cleanup is acknowledged, process ownership is observed, and residual utility/CLI scans complete with no residual process.
+- The evidence contains bounded assertions, versions and hashes only. It records no credential, prompt, response, environment value, arbitrary path or process identifier.
+- This revalidation changes no package or lockfile, adds no IPC, UI, Job, SQLite write, checkpoint, retry, fallback or business AI workflow, and does not authorize Task 13.12.
+- The result applies only to the Windows development-machine artifact. It does not verify clean-machine behavior, signing, notarization, Defender, proxy, enterprise certificates, firewall, offline behavior, SDK telemetry or macOS. macOS remains deferred-by-user; this is not full Go, cross-platform compatibility or release readiness.

@@ -93,6 +93,16 @@ Each Codex attempt receives a newly created application-owned directory below th
 
 The explicit Windows packaged certification command removes every Git directory from both the application and SDK utility `PATH`, proves `where git` and `Get-Command git` fail in that same environment, and then runs one fixed public synthetic structured-output turn from a non-Git scratch directory. The versioned compatibility boundary has three independently evaluated fingerprints: supply chain, production protocol, and probe artifact. Any changed layer becomes `stale` fail-closed; production protocol expands all of `src/main/ai`, so a port, adapter, transport, launcher or utility change cannot retain old evidence. A separate artifact record recomputes the packaged executable, ASAR, pinned CLI and required ASAR entry bytes. Evidence `block13-task13-5-windows-no-global-git-packaged-001` records successful strict structured validation, cleanup acknowledgement and absence of owned utility/CLI residuals. It does not create a Job, checkpoint or resumable state, and it does not establish macOS packaged behavior.
 
+### Task 13.6 Environment, configuration and auth observation
+
+`AiRuntimeAuthState` is the provider-neutral application vocabulary: `authenticated | auth_required | auth_expired | permission_denied | auth_runtime_unavailable | unknown`. A Codex observation is accepted only through a strict provider-private parser with exact fields, canonical `observedAt`, no raw error/message/path/environment/credential fields, and source `actual_runtime`. With fresh compatibility, only `authenticated` plus successful execution maps to application `authenticated`; `login_required` maps to `auth_required`; `auth_failed` and `unverified` map to `unknown`. A dedicated `runtime_unavailable` observation alone maps to `auth_runtime_unavailable`. Stale, blocked or unknown compatibility always erases the observation to `unknown`.
+
+The current SDK 0.144.6 evidence supplies successful authenticated turns but no stable structured discriminator for login-required, generic auth failure, expiration or permission denial. `auth_expired` and `permission_denied` therefore have no Codex producer in Task 13.6. Synthetic mapping inputs prove only fail-closed code behavior and are not runtime capability evidence.
+
+`AiRuntimeObservationMemory` stores only the sanitized state, canonical observation time and compatibility fingerprint in Main memory. A fingerprint change or non-fresh assessment immediately clears it; a new instance starts `unknown`, and explicit `clear()` removes the previous result. There is no TTL, timer, automatic refresh, SQLite/Library write, Job/checkpoint, renderer DTO, export field, credential store or log payload. Task 13.12 must clear it when a future explicit connection attempt begins and must not invent independent attempt/generation logic.
+
+The production Codex launcher constructs its own case-insensitive environment allowlist from `process.env`. It passes only Windows runtime locations, ChatGPT/Codex home locations, temporary directories, proxy settings and enterprise certificate paths. API keys, access tokens, authorization values, `NODE_OPTIONS`, `ELECTRON_RUN_AS_NODE` and arbitrary WriteStorm/test configuration never cross the product utility boundary. Values are neither persisted nor logged.
+
 ### Main process
 
 Owns:

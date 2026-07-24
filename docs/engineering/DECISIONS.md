@@ -1371,3 +1371,19 @@ Rules:
 - Because the blocker, smoke and shared Vite authority belong to the production-protocol fingerprint, their correction made the D102 evidence stale only in that layer. Supply-chain and probe-artifact layers remained fresh.
 - Fresh evidence `block13-task13-5-windows-no-global-git-packaged-001` binds clean runtime HEAD `a8e8961814b9736e5ab3df1ae00224a2972f5eff`, compatibility fingerprint `bc63155f9f97ce404a8c1eb7d780c8e5f82225d4f6666da18088220c66fa1148`, and artifact-content record `1d2dcefdcb9099548389f158922709985482ddd5f53a4a825469fddbe6ef45ea`.
 - The refreshed Windows probe passed all 17 no-global-Git assertions. macOS remains deferred-by-user; this is not full Go, cross-platform compatibility, a production AI Job or release readiness.
+
+## D104: Task 13.6 Auth Observation Is Fail-Closed and Ephemeral
+
+Decision: WriteStorm separates the six-state provider-neutral application auth vocabulary from Codex's four-value feasibility observation, accepts only strict actual-runtime observations under a fresh compatibility fingerprint, and keeps the resulting observation in Main memory only.
+
+Rules:
+
+- Application auth states are exactly `authenticated`, `auth_required`, `auth_expired`, `permission_denied`, `auth_runtime_unavailable` and `unknown`.
+- Codex probe classifications are exactly `authenticated`, `login_required`, `auth_failed` and `unverified`. Mapping is fixed: authenticated requires both fresh compatibility and successful execution; `login_required → auth_required`; `auth_failed → unknown`; `unverified → unknown`.
+- `auth_runtime_unavailable` can arise only from the dedicated actual-runtime observation kind that says observation could not complete. It is not an alias for ordinary authentication failure.
+- SDK 0.144.6 has supplied no reliable structured expiration or permission-denial evidence. Task 13.6 exposes no producer for those states; contract fixtures must not be represented as real observations.
+- Every accepted observation has exact fields, canonical `observedAt` and no raw error, message, credential, environment value, path or provider payload. Compatibility drift clears it immediately; restart/new memory and explicit clearing return `unknown`. There is no TTL or automatic network refresh.
+- The Codex utility launcher owns a case-insensitive allowlist for runtime locations, ChatGPT-managed auth locations, proxy configuration and enterprise certificate paths. It rejects API credential variables, injection hooks and arbitrary app/test configuration without storing or logging values.
+- Task 13.6 adds no IPC, Settings service, startup/page-change connection check, background polling, Job, checkpoint, SQLite/Library write, export field, retry/generation controller or credential store. Task 13.12 owns the explicit user-triggered connection check.
+- Fresh Windows evidence `block13-task13-5-windows-no-global-git-packaged-001` binds clean runtime HEAD `0f6e3717f622e31ea39a46d6f6b41b5741c945f2`, compatibility fingerprint `e6302f255010c62bc2e9cd1128881f2d97837d3333077d0af8f3d8df00734b95`, and artifact-content record `5fa01b243aaa45e590a7b64d87ad4416a0e1f78bf4f6b7d3a480ffef6689cc50`. Its authenticated success is dated execution evidence, not permanent application state.
+- macOS remains deferred-by-user. This is not full Go, cross-platform compatibility, a production AI Job or release readiness.

@@ -18,7 +18,8 @@ describe('Block 13 active status authority', () => {
     expect(status).toContain(verdict);
     expect(status).toContain('| 13.5 | PASS for Windows |');
     expect(status).toContain('| 13.6 | PASS for boundary |');
-    expect(status).toContain('| 13.7 | NOT STARTED |');
+    expect(status).toContain('| 13.7 | PASS for contract |');
+    expect(status).toContain('| 13.8 | NOT STARTED |');
   });
 
   it('preserves historical decisions and appends the remediation decision', () => {
@@ -26,6 +27,7 @@ describe('Block 13 active status authority', () => {
     expect(decisions).toContain('## D100: Task 13.4–13.5 Review Remediation Is Freshness-Bound');
     expect(decisions).toContain('## D101: The V1 AI Execution Port Is One Sealed Application Protocol');
     expect(decisions).toContain('## D104: Task 13.6 Auth Observation Is Fail-Closed and Ephemeral');
+    expect(decisions).toContain('## D105: Task 13.7 Structured Output Is Strict Before Execution');
     expect(decisions).toContain('26d548e03dfbe71e1f62081998e9942a2dfaa94c');
   });
 
@@ -35,6 +37,13 @@ describe('Block 13 active status authority', () => {
     expect(status).toContain('`unverified → unknown`');
     expect(status).toContain('`auth_expired` and `permission_denied` remain unverified');
     expect(status).toContain('application observation remains `unknown`');
+  });
+
+  it('records strict structured output without promoting runtime execution', () => {
+    expect(status).toContain('`invalid_json`, `invalid_shape`, `missing_field`, `extra_field`');
+    expect(status).toContain('`output_too_large`');
+    expect(status).toContain('structured-output capability remains `false`');
+    expect(status).toContain('missing/extra cases are local deterministic witnesses');
   });
 
   it('does not promote the current state to broader readiness', () => {

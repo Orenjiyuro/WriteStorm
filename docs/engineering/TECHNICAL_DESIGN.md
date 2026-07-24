@@ -103,6 +103,14 @@ The current SDK 0.144.6 evidence supplies successful authenticated turns but no 
 
 The production Codex launcher constructs its own case-insensitive environment allowlist from `process.env`. It passes only Windows runtime locations, ChatGPT/Codex home locations, temporary directories, proxy settings and enterprise certificate paths. API keys, access tokens, authorization values, `NODE_OPTIONS`, `ELECTRON_RUN_AS_NODE` and arbitrary WriteStorm/test configuration never cross the product utility boundary. Values are neither persisted nor logged.
 
+### Task 13.7 Strict structured output contract
+
+`AiStructuredOutputContract` is an opaque Main-only application contract, not a provider type or renderer DTO. Its factory accepts only a Zod strict root object, rejects non-object schemas and every nested object that permits additional properties, derives a standard JSON Schema without provider fields, deep-freezes it, and binds an explicit final-byte limit. The repository-wide ceiling is 1 MiB; later callers may choose only a smaller positive integer.
+
+`validateAiStructuredOutput` checks UTF-8 byte size before parsing, requires a plain JSON object, runs the same application Zod schema, and returns only the closed classifications `accepted | output_too_large | invalid_json | invalid_shape | missing_field | extra_field | invalid_value`. It returns no raw output, Zod issues or error messages. Only accepted JSON is deep-frozen behind `AiStructuredOutputValue`; missing, extra, malformed, wrong-shape, wrong-value and oversized values cannot become application data.
+
+The Codex-private translation reads the frozen standard schema and produces exactly `{ outputSchema }`. It neither imports the SDK nor exposes SDK, CLI, JSONL, cwd/Git or utility protocol types to application/domain/UI layers. Task 13.7 does not add a prompt, executable request, message command, event, handle implementation, Job, checkpoint, persistence, retry or cancellation. The production utility still rejects messages fail-closed and `CODEX_PROVIDER_CAPABILITIES.structuredOutput` remains false. The packaged synthetic evidence confirms the unchanged pinned SDK mechanism; local invalid/missing/extra tests remain separate provenance.
+
 ### Main process
 
 Owns:

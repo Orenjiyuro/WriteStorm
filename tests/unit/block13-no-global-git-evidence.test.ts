@@ -69,7 +69,7 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
       evidenceId: 'block13-task13-5-windows-no-global-git-packaged-001',
       task: '13.5',
       classification: 'windows_packaged_no_global_git_verified',
-      gitHeadAtRun: '0f6e3717f622e31ea39a46d6f6b41b5741c945f2',
+      gitHeadAtRun: '7987cc759158205291a8cadc22910992fa785e12',
       versions: {
         electron: '43.0.0',
         codexSdk: '0.144.6',

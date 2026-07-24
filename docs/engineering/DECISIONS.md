@@ -1387,3 +1387,19 @@ Rules:
 - Task 13.6 adds no IPC, Settings service, startup/page-change connection check, background polling, Job, checkpoint, SQLite/Library write, export field, retry/generation controller or credential store. Task 13.12 owns the explicit user-triggered connection check.
 - Fresh Windows evidence `block13-task13-5-windows-no-global-git-packaged-001` binds clean runtime HEAD `0f6e3717f622e31ea39a46d6f6b41b5741c945f2`, compatibility fingerprint `e6302f255010c62bc2e9cd1128881f2d97837d3333077d0af8f3d8df00734b95`, and artifact-content record `5fa01b243aaa45e590a7b64d87ad4416a0e1f78bf4f6b7d3a480ffef6689cc50`. Its authenticated success is dated execution evidence, not permanent application state.
 - macOS remains deferred-by-user. This is not full Go, cross-platform compatibility, a production AI Job or release readiness.
+
+## D105: Task 13.7 Structured Output Is Strict Before Execution
+
+Decision: WriteStorm admits one opaque provider-neutral structured-output contract and strict local validation before admitting any production execution, event stream or completed capability claim.
+
+Rules:
+
+- The contract factory accepts only a strict Zod root object and requires every nested object to reject additional properties. Non-object, pass-through, unrepresentable, invalid-limit and reference-bearing schemas fail locally with `AI_STRUCTURED_OUTPUT_SCHEMA_INVALID`.
+- The generated standard JSON Schema is cloned and deeply frozen. Codex-private translation produces exactly `{ outputSchema }`; provider, SDK, CLI, JSONL and cwd/Git types do not enter the application contract.
+- Final UTF-8 output is bounded before JSON parsing. The repository ceiling is 1 MiB and every contract provides an explicit positive limit no larger than that ceiling.
+- Local validation has the closed outcomes `accepted`, `output_too_large`, `invalid_json`, `invalid_shape`, `missing_field`, `extra_field`, and `invalid_value`. Rejections contain no raw output, schema-engine issue, provider message or error detail.
+- Only accepted JSON becomes a deeply frozen branded `AiStructuredOutputValue`. No Task 13.7 value enters IPC, renderer DTOs, SQLite, Library, Job, checkpoint or export.
+- Default tests are offline deterministic contract witnesses. Missing and extra fields are not represented as model-produced evidence. Existing 6A R8b evidence remains the authority for the pinned SDK's valid `outputSchema` success and exact invalid-schema guard.
+- Task 13.7 adds no prompt, executable application request, utility command, event projection, attempt/generation state, cancellation, retry or Settings action. Production utility messages remain fail-closed and structured-output capability remains false.
+- Fresh Windows evidence `block13-task13-5-windows-no-global-git-packaged-001` binds clean runtime HEAD `7987cc759158205291a8cadc22910992fa785e12`, compatibility fingerprint `5ad95e0c2a9529b8141bc12632e11535312d524fd9c278108e90bf9a4f4c9e37`, and artifact-content record `747afe9074fbba55eef969d11ea0d36b350b6cd0e3e9f42156d519eb278712e8`. Its fixed synthetic structured turn passed local parsing/validation and all 17 no-global-Git assertions.
+- macOS remains deferred-by-user. This is not full Go, cross-platform compatibility, a production AI Job or release readiness.

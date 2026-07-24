@@ -3,10 +3,10 @@
   "evidenceId": "block13-task13-5-windows-no-global-git-packaged-001",
   "task": "13.5",
   "source": "packaged_sdk",
-  "recordedAt": "2026-07-24T05:20:31.984Z",
+  "recordedAt": "2026-07-24T05:45:03.056Z",
   "commandName": "writestorm-task13-5-no-global-git-packaged-probe",
   "classification": "windows_packaged_no_global_git_verified",
-  "gitHeadAtRun": "77e4e2f232c42f41bb923d1d297f67fd5147ccad",
+  "gitHeadAtRun": "afd6ced7bd5634224f36ebc13aa4bb0c61076c0e",
   "versions": {
     "electron": "43.0.0",
     "nodeRuntime": "24.17.0",
@@ -50,13 +50,13 @@
         "id": "writestorm_executable",
         "relativePath": "writestorm.exe",
         "size": 235706368,
-        "sha256": "096c3d1825f0f28d6c8ef1c83eb91de6352debaa8976071ee91ff455062dbff8"
+        "sha256": "1558b2fcf26e199107ab757f0c873ed4903ff74148232474723e83b3feec15c7"
       },
       {
         "id": "app_asar",
         "relativePath": "resources/app.asar",
         "size": 71010984,
-        "sha256": "65dbcbbbcf4b7a22bde76659ad8f6c917ec8da1e046d1ce5a4d7d4379c4121d5"
+        "sha256": "16a3d61caf4b26be89be2ebb05ed7b1a4684485453dfc72fe638ad7fa269da0e"
       },
       {
         "id": "codex_executable",
@@ -88,11 +88,11 @@
         "sha256": "dbdd5bc7f4f5fb6f8db199fd845a34219e3a14229654f868af4d04b944eeb09b"
       }
     ],
-    "sha256": "aad36722b15000137710c7cf7987d40f102c36f8d8b373965a4f31cb4c49b778"
+    "sha256": "92cac73bd3dcdce3f70051174920d39f0db11c8fd4bf4a6fe172d92e7150b7f0"
   },
   "compatibilityFingerprint": {
     "boundaryId": "block13-task13-5-compatibility-v1",
-    "gitHead": "77e4e2f232c42f41bb923d1d297f67fd5147ccad",
+    "gitHead": "afd6ced7bd5634224f36ebc13aa4bb0c61076c0e",
     "layers": {
       "supplyChain": {
         "files": [
@@ -123,11 +123,15 @@
           },
           {
             "relativePath": "scripts/smoke-block13-production-utility.mjs",
-            "sha256": "0b75424157f6cf03b4ce59e3ae1ff66fe64d32c37baaeacbfc86bcbf4ae13cbc"
+            "sha256": "bfc043e369ae10514052ac153557b01ca33f24b59e5205007826665e6aaee87d"
           },
           {
             "relativePath": "src/main/ai/ai-attempt-controller.ts",
-            "sha256": "a1fe9329b3fdd91a27b337e536e7f5db9c99f46b60c8fa50e0aec4fe4ae81b8e"
+            "sha256": "c7ba1333a3b26d283c5fa881d76fa76860e8287b3d9694c49b51493b1cca8259"
+          },
+          {
+            "relativePath": "src/main/ai/ai-attempt-lifecycle.ts",
+            "sha256": "dd84275c3e40805869546a4edd3ec87e4bf5fd28fdbd58b555b17352236f347c"
           },
           {
             "relativePath": "src/main/ai/ai-execution-port.ts",
@@ -166,16 +170,40 @@
             "sha256": "62096a6fc6e945ac9e540bb83fe9a234110b75cfd3b00be7f8df7d4810410ed7"
           },
           {
+            "relativePath": "src/main/ai/providers/codex/codex-utility-cleanup.ts",
+            "sha256": "dff213df43afd4d6c5d407fba9caf61d45cad056dee2393749cf5b782475e1c9"
+          },
+          {
             "relativePath": "src/main/ai/providers/codex/codex-utility-entry.ts",
-            "sha256": "f8d66fb5ace226f68df2870ebebe5fb79c38c36259407bb1b0c185ec3e7a0256"
+            "sha256": "a06babb2669084f9c45e4c95200ab30a9e4486acda7640ba9ecb0bb261717460"
           },
           {
             "relativePath": "src/main/ai/providers/codex/codex-utility-launcher.ts",
             "sha256": "4fb630235bcbfca9ef48363308cb774f89c2e4c9220f0fc727f987e5a60c11d4"
           },
           {
+            "relativePath": "src/main/ai/providers/codex/codex-utility-lifecycle-host.ts",
+            "sha256": "49c2bb3c0eda78b2f2fe8bf95821397c9bd08eb93b3587618b8cc18cc996c94a"
+          },
+          {
+            "relativePath": "src/main/ai/providers/codex/codex-utility-lifecycle-protocol.ts",
+            "sha256": "5327d066d33a9a45d4abf9b5c8bb34c75a834d4b80e2bea66b869d9f7432079a"
+          },
+          {
+            "relativePath": "src/main/ai/providers/codex/codex-utility-process-cleanup-driver.ts",
+            "sha256": "7c90d9cba7e62f723d4975c64294efc9f25c55c3d6ef505302494bc064bbaece"
+          },
+          {
             "relativePath": "src/main/ai/providers/codex/codex-utility-transport.ts",
             "sha256": "2889a3be8a7303549fb9e26192f4c4374a73f7744342669c1322aca6c93d7bd0"
+          },
+          {
+            "relativePath": "src/main/main-lifecycle.ts",
+            "sha256": "9c041b3795fb9abeae8c89bb3a0e10471411287a9f32a4879c78e259ed610676"
+          },
+          {
+            "relativePath": "src/main/main.ts",
+            "sha256": "32c838e535942ec33c16aca4d9ee5649d0155a52fd8c7afff0bfd96dc0d09bce"
           },
           {
             "relativePath": "tests/smoke/block13-network-blocker.cjs",
@@ -183,20 +211,20 @@
           },
           {
             "relativePath": "tests/smoke/block13-production-utility-smoke-main.ts",
-            "sha256": "502832337bb23443992e9b112fcaa8e99c9239cc4e10377886066da8f12f02bf"
+            "sha256": "c30c87e24518970496f858ed2ca7da140bc28f76dff75d11e04802fd95d26706"
           },
           {
             "relativePath": "vite.codex-utility.config.ts",
             "sha256": "8cb80a8a48dd8b9dd247628501ff3799088fba4e96a87421c0246dcf661275be"
           }
         ],
-        "sha256": "8e7bcdb780e8c967c52a8379974398ba9c31ff63c0d2db795cab5e330a28c6fd"
+        "sha256": "61ca4db8350b356e028ff15b088f4ee51c5898da0c2634ff7ba86e64fd3d2096"
       },
       "probeArtifact": {
         "files": [
           {
             "relativePath": "config/block13-task13-5-compatibility-boundary-v1.json",
-            "sha256": "1d034769329baafb88f14061a5a3eecd1026fc2526d6544a7b0420a80b4d4422"
+            "sha256": "514b80b488a71dbc0070072a713335393a8d389d49eb81b804f91607d7bbeb3a"
           },
           {
             "relativePath": "fixtures/block6a/codex-sdk-feasibility-v1.json",
@@ -319,10 +347,10 @@
             "sha256": "0551a1906e5c9fec68311088153304411881d6781c395e42e9ddae55293e1f83"
           }
         ],
-        "sha256": "422a73c753f19a498d62224991b7e0efeedb912dc3d7e36963fe401ff6712dd2"
+        "sha256": "a92fc5fdb45ac387f1374c2fb36fa8c61240667e0185c08a5063d1332192cec6"
       }
     },
-    "sha256": "847ba030592f54b683e0e94f8840cdfa30fc7c9197c89ab874a56c9c3aa6906b"
+    "sha256": "006c60b20661b41479e388a0b82da8ff3581c1ca4cbf4ece712d0024ba14b45b"
   },
   "invocation": {
     "command": "node scripts/run-task13-5-no-git-packaged-probe.mjs --artifact-root <artifact> --evidence-output <evidence>",

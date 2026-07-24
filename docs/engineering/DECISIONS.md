@@ -1420,3 +1420,20 @@ Rules:
 - Default tests are offline deterministic fixtures and pure-state witnesses. Production utility messages and adapter capabilities remain fail-closed/false.
 - Fresh Windows evidence `block13-task13-5-windows-no-global-git-packaged-001` binds clean runtime HEAD `77e4e2f232c42f41bb923d1d297f67fd5147ccad`, compatibility fingerprint `847ba030592f54b683e0e94f8840cdfa30fc7c9197c89ab874a56c9c3aa6906b`, and artifact-content record `aad36722b15000137710c7cf7987d40f102c36f8d8b373965a4f31cb4c49b778`. The separate explicit probe passed all 17 Windows no-global-Git assertions.
 - macOS remains deferred-by-user. This is not full Go, cross-platform compatibility, a production AI Job or release readiness.
+
+## D107: Task 13.9 Lifecycle Cleanup Is Single-Flight and Fail-Closed
+
+Decision: WriteStorm connects the sole Task 13.8 attempt controller to bounded lifecycle cleanup and explicit retry, while keeping production execution, persistence and capability admission closed.
+
+Rules:
+
+- `AiAttemptController` remains the only attempt/generation owner. `AiAttemptLifecycleService` may drive it but may not allocate its own generation, automatically retry or accept concurrent starts.
+- Initial execution and every retry are explicit. The first termination trigger wins; timeout, explicit cancel, Library replacement, window close and app quit share one cleanup flight. Events received after termination begins cannot mutate current state.
+- Terminal publication waits for cleanup. Forced or unverified cleanup overrides success/cancellation with `cleanup_forced` or `cleanup_unverified`; a graceful timeout ends as `timeout`.
+- The utility lifecycle protocol admits only exact, token-correlated abort/shutdown messages. It contains no prompt, path, PID, raw error or provider payload.
+- Cleanup observes abort request, execution settlement, shutdown acknowledgement and utility exit. Force termination requires positive ownership proof, and every path performs a bounded residual utility/CLI scan. Missing evidence remains unverified.
+- Library replacement pauses AI admission before cleanup and resumes only through the Main lifecycle hook. App quit closes admission permanently. The registry creates no parallel attempt/retry state.
+- Default lifecycle tests and the production-utility smoke are deterministic and offline. The smoke launches no SDK turn and requires no authentication; it proves unsupported exit 28 and lifecycle shutdown acknowledgement/exit 0 under an installed zero-attempt network guard.
+- No Task 13.9 path creates an AI IPC channel, production AI request, Job, checkpoint, AnalysisModuleInstance, migration, SQLite/Library write, durable recovery or resumable state. Adapter capabilities remain false; real production packaged runtime admission remains Task 13.11.
+- Fresh Windows evidence `block13-task13-5-windows-no-global-git-packaged-001` binds clean runtime HEAD `afd6ced7bd5634224f36ebc13aa4bb0c61076c0e`, compatibility fingerprint `006c60b20661b41479e388a0b82da8ff3581c1ca4cbf4ece712d0024ba14b45b`, and artifact-content record `92cac73bd3dcdce3f70051174920d39f0db11c8fd4bf4a6fe172d92e7150b7f0`. The separate explicit probe passed all 17 Windows no-global-Git assertions but did not exercise the production lifecycle path.
+- macOS remains deferred-by-user. This is not full Go, cross-platform compatibility, a production AI Job or release readiness.

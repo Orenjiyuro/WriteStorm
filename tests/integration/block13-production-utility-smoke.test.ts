@@ -24,6 +24,8 @@ describe('Block 13.4 production Codex utility smoke', () => {
       exactBundleResolved: true,
       sdkExportImported: true,
       unsupportedMessageExitCode: 28,
+      lifecycleShutdownAcknowledged: true,
+      lifecycleExitCode: 0,
       credentialEnvironmentExcluded: true,
       proxyEnvironmentExcluded: true,
       networkGuardInstalled: true,

@@ -20,7 +20,8 @@ describe('Block 13 active status authority', () => {
     expect(status).toContain('| 13.6 | PASS for boundary |');
     expect(status).toContain('| 13.7 | PASS for contract |');
     expect(status).toContain('| 13.8 | PASS for pure in-memory boundary |');
-    expect(status).toContain('| 13.9 | NOT STARTED |');
+    expect(status).toContain('| 13.9 | PASS for lifecycle/cleanup boundary |');
+    expect(status).toContain('| 13.10 | NOT STARTED |');
   });
 
   it('preserves historical decisions and appends the remediation decision', () => {
@@ -30,6 +31,7 @@ describe('Block 13 active status authority', () => {
     expect(decisions).toContain('## D104: Task 13.6 Auth Observation Is Fail-Closed and Ephemeral');
     expect(decisions).toContain('## D105: Task 13.7 Structured Output Is Strict Before Execution');
     expect(decisions).toContain('## D106: Task 13.8 Has One Bounded In-Memory Attempt State Machine');
+    expect(decisions).toContain('## D107: Task 13.9 Lifecycle Cleanup Is Single-Flight and Fail-Closed');
     expect(decisions).toContain('26d548e03dfbe71e1f62081998e9942a2dfaa94c');
   });
 
@@ -54,6 +56,14 @@ describe('Block 13 active status authority', () => {
     expect(status).toContain('candidates are not durable checkpoints');
     expect(status).toContain('no result is resumable');
     expect(status).toContain('capabilities remain `false`');
+  });
+
+  it('records single-flight lifecycle cleanup without promoting a real SDK execution', () => {
+    expect(status).toContain('exactly one attempt/generation owner');
+    expect(status).toContain('every retry is an explicit call');
+    expect(status).toContain('forced or unverified overrides');
+    expect(status).toContain('no SDK client or turn');
+    expect(status).toContain('real production packaged runtime admission remains Task 13.11');
   });
 
   it('does not promote the current state to broader readiness', () => {

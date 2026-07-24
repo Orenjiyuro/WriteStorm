@@ -121,6 +121,16 @@ The controller enforces explicit caller limits below repository ceilings: 2,621,
 
 Default Task 13.8 tests use recorded SDK-shaped lines and injected pure state; they are offline, deterministic and authentication-free. The production utility still rejects messages fail-closed, and all Codex adapter capabilities remain false because the projector/controller are not wired to an executable request or handle. Fresh Windows certification evidence separately rebinds the compatibility and artifact fingerprints after the production-protocol change; it does not convert fixtures into runtime malformed/late-event evidence and does not establish macOS behavior.
 
+### Task 13.9 Lifecycle, cleanup and explicit retry
+
+`AiAttemptLifecycleService` composes the existing `AiAttemptController`; it does not own attempt or generation counters. The initial attempt and every later retry require separate explicit calls. Concurrent starts/retries are rejected, the first termination trigger is single-flight, and a bounded timeout requests termination without automatically creating another attempt. Events received after termination begins cannot mutate state. A completed/failed stream candidate is withheld until cleanup finishes; forced or unverified cleanup overrides it with a closed failure candidate.
+
+The Codex-private lifecycle protocol admits only exact, correlated `ai.abort` and `ai.shutdown` utility messages containing an application token and closed trigger. It contains no prompt, path, PID, raw error or provider payload. Cleanup proceeds through abort observation, execution settlement, shutdown acknowledgement and actual utility exit. Only an ownership-proven live utility may enter the force-kill fallback, and every path ends in a bounded residual utility/CLI scan. Missing evidence is `unverified`, never inferred success.
+
+`AiRuntimeLifecycleRegistry` pauses admission and fans Library replacement or app quit into all tracked active sessions; window close also terminates active sessions. Main waits for this cleanup alongside existing Job/structure/source-import lifecycle work. All cleanup observations and checkpoint/terminal candidates remain in Main memory. No AI IPC, Job, checkpoint, AnalysisModuleInstance, migration, SQLite/Library write, durable recovery or resumable state is introduced.
+
+The deterministic production-utility smoke uses the shared Vite configuration and two independent hidden Electron processes. One proves fail-closed exit 28 for unsupported input; the other proves a valid lifecycle-only shutdown acknowledgement followed by exit 0. The installed network guard must report zero attempts, and no SDK client/turn or authentication is used. The separate Windows packaged no-Git synthetic probe is rerun only after compatibility drift and retains its own provenance. It does not prove a real production lifecycle execution; that packaged runtime gate remains Task 13.11. Adapter capabilities therefore remain false.
+
 ### Main process
 
 Owns:

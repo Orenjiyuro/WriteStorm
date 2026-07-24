@@ -193,6 +193,9 @@ const createWindow = async (): Promise<void> => {
     bindSenderPolicy: productSenderPolicy.bindWebContents,
     unbindSenderPolicy: productSenderPolicy.unbindWebContents,
     onClosed: cleanupSourceImportsForWindowClose,
+    onClosedCleanupFailure: (failure) => {
+      console.error('WRITESTORM_WINDOW_CLEANUP', failure.code);
+    },
   });
 
   if (placement) {

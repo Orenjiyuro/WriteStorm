@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   AI_RUNTIME_AUTH_STATES,
-  AiRuntimeObservationMemory,
   type AiCompatibilityAssessment,
 } from '../../src/main/ai/ai-runtime-observation';
 import {
+  CodexAuthObservationAuthority,
   mapCodexAuthObservation,
   parseCodexAuthRuntimeObservation,
 } from '../../src/main/ai/providers/codex/codex-auth-observation';
@@ -116,7 +116,7 @@ describe('Block 13.6 auth observation contract (synthetic mapping inputs only)',
   });
 
   it('keeps observation only in memory and invalidates it on fingerprint change or clear', () => {
-    const memory = new AiRuntimeObservationMemory();
+    const memory = new CodexAuthObservationAuthority();
     expect(memory.read()).toEqual({
       authState: 'unknown',
       observedAt: null,
@@ -124,30 +124,30 @@ describe('Block 13.6 auth observation contract (synthetic mapping inputs only)',
     });
 
     memory.setCompatibility(freshCompatibility);
-    const observation = mapCodexAuthObservation({
-      compatibility: freshCompatibility,
-      observation: parseCodexAuthRuntimeObservation({
-        kind: 'probe',
-        source: 'actual_runtime',
-        classification: 'authenticated',
-        executionSucceeded: true,
-        observedAt,
-      }),
+    const runtimeInput = {
+      kind: 'probe',
+      source: 'actual_runtime',
+      classification: 'authenticated',
+      executionSucceeded: true,
+      observedAt,
+    } as const;
+    expect(memory.acceptActualRuntime(runtimeInput)).toBe(true);
+    expect(memory.read()).toEqual({
+      authState: 'authenticated',
+      observedAt,
+      compatibilityFingerprint: fingerprint,
     });
-    expect(memory.accept(observation)).toBe(true);
-    expect(memory.read()).toEqual(observation);
 
     memory.setCompatibility({ state: 'fresh', fingerprint: replacementFingerprint });
     expect(memory.read().authState).toBe('unknown');
-    expect(memory.accept(observation)).toBe(false);
 
     memory.clear();
     expect(memory.read().observedAt).toBeNull();
-    expect(new AiRuntimeObservationMemory().read().authState).toBe('unknown');
+    expect(new CodexAuthObservationAuthority().read().authState).toBe('unknown');
   });
 
   it('does not admit a structurally forged auth observation into memory', () => {
-    const memory = new AiRuntimeObservationMemory();
+    const memory = new CodexAuthObservationAuthority();
     memory.setCompatibility(freshCompatibility);
     const forged = {
       authState: 'authenticated',
@@ -155,8 +155,9 @@ describe('Block 13.6 auth observation contract (synthetic mapping inputs only)',
       compatibilityFingerprint: fingerprint,
     };
 
-    // @ts-expect-error only a runtime-minted receipt may cross the storage boundary
-    expect(memory.accept(forged)).toBe(false);
+    expect(() => memory.acceptActualRuntime(forged)).toThrow(
+      'Codex auth runtime observation is invalid.',
+    );
   });
 
   it('defines expired and permission states without pretending they were observed', () => {

@@ -45,6 +45,9 @@ export type MainWindowDependencies<TWindow extends MainWindowLike> = {
   readonly bindSenderPolicy: (webContentsId: number) => void;
   readonly unbindSenderPolicy: (webContentsId: number) => void;
   readonly onClosed?: () => void | Promise<void>;
+  readonly onClosedCleanupFailure?: (
+    failure: Readonly<{ code: 'MAIN_WINDOW_CLEANUP_FAILED' }>,
+  ) => void;
 };
 
 export async function createMainWindow<TWindow extends MainWindowLike>(
@@ -83,17 +86,23 @@ export async function createMainWindow<TWindow extends MainWindowLike>(
   dependencies.bindSenderPolicy(window.webContents.id);
   window.on('closed', () => {
     dependencies.unbindSenderPolicy(window.webContents.id);
-    void runClosedCleanup(dependencies.onClosed);
+    void runClosedCleanup(
+      dependencies.onClosed,
+      dependencies.onClosedCleanupFailure,
+    );
   });
   await window.loadURL(dependencies.appUrl);
 
   return window;
 }
 
-async function runClosedCleanup(cleanup: (() => void | Promise<void>) | undefined): Promise<void> {
+async function runClosedCleanup(
+  cleanup: (() => void | Promise<void>) | undefined,
+  reportFailure: MainWindowDependencies<MainWindowLike>['onClosedCleanupFailure'],
+): Promise<void> {
   try {
     await cleanup?.();
   } catch {
-    // Window teardown must not surface an unhandled rejection.
+    reportFailure?.(Object.freeze({ code: 'MAIN_WINDOW_CLEANUP_FAILED' }));
   }
 }

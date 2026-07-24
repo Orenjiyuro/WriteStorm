@@ -24,24 +24,34 @@ export type AiRuntimeObservation = {
   readonly compatibilityFingerprint: string | null;
 };
 
-declare const observationReceiptBrand: unique symbol;
-
-export interface AiRuntimeObservationReceipt extends AiRuntimeObservation {
-  readonly [observationReceiptBrand]: never;
-}
-
 const UNKNOWN_AI_RUNTIME_OBSERVATION: AiRuntimeObservation = Object.freeze({
   authState: 'unknown',
   observedAt: null,
   compatibilityFingerprint: null,
 });
-const runtimeObservationReceipts = new WeakSet<AiRuntimeObservationReceipt>();
 
 export function unknownAiRuntimeObservation(): AiRuntimeObservation {
   return UNKNOWN_AI_RUNTIME_OBSERVATION;
 }
 
-export class AiRuntimeObservationMemory {
+export type AiRuntimeObservationMemory = {
+  setCompatibility(assessment: AiCompatibilityAssessment): void;
+  clear(): void;
+  read(): AiRuntimeObservation;
+};
+
+export function createAiRuntimeObservationMemoryAuthority(): Readonly<{
+  memory: AiRuntimeObservationMemory;
+  accept(observation: AiRuntimeObservation): boolean;
+}> {
+  const memory = new RuntimeObservationMemory();
+  return Object.freeze({
+    memory,
+    accept: (observation: AiRuntimeObservation) => memory.accept(observation),
+  });
+}
+
+class RuntimeObservationMemory implements AiRuntimeObservationMemory {
   private compatibilityFingerprint: string | null = null;
   private observation: AiRuntimeObservation = UNKNOWN_AI_RUNTIME_OBSERVATION;
 
@@ -58,9 +68,8 @@ export class AiRuntimeObservationMemory {
     this.compatibilityFingerprint = assessment.fingerprint;
   }
 
-  accept(observation: AiRuntimeObservationReceipt): boolean {
+  accept(observation: AiRuntimeObservation): boolean {
     if (!this.compatibilityFingerprint
-      || !runtimeObservationReceipts.has(observation)
       || observation.compatibilityFingerprint !== this.compatibilityFingerprint) {
       return false;
     }
@@ -75,15 +84,6 @@ export class AiRuntimeObservationMemory {
   read(): AiRuntimeObservation {
     return this.observation;
   }
-}
-
-/** @internal Only reviewed provider runtime mappers may call this capability. */
-export function mintAiRuntimeObservationReceipt(
-  observation: AiRuntimeObservation,
-): AiRuntimeObservationReceipt {
-  const receipt = Object.freeze({ ...observation }) as AiRuntimeObservationReceipt;
-  runtimeObservationReceipts.add(receipt);
-  return receipt;
 }
 
 function assertSha256(value: string): void {

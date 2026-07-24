@@ -233,7 +233,7 @@ describe('Block 13.9 application attempt lifecycle', () => {
     await registry.shutdown();
 
     expect(triggers).toEqual(['library_replacement', 'window_close', 'app_quit']);
-    expect(participant.pauseAdmission).toHaveBeenCalledTimes(2);
+    expect(participant.pauseAdmission).toHaveBeenCalledTimes(3);
     expect(participant.resumeAdmission).toHaveBeenCalledOnce();
     expect(() => registry.track(participant)).toThrow();
   });
@@ -288,6 +288,67 @@ describe('Block 13.9 application attempt lifecycle', () => {
   it('does not expose its mutable attempt controller', () => {
     const service = createService(() => fakeSession(async () => gracefulCleanup));
     expect(service).not.toHaveProperty('controller');
+  });
+
+  it('pauses admission before taking the window-close cleanup snapshot', async () => {
+    const cleanup = deferred<AiRuntimeCleanupObservation>();
+    const registry = new AiRuntimeLifecycleRegistry();
+    const service = createService(() => fakeSession(() => cleanup.promise));
+    registry.track(service);
+    service.startExplicit();
+
+    const closing = registry.windowClosed();
+    expect(service.startExplicit()).toEqual({
+      accepted: false,
+      reason: 'admission_paused',
+    });
+    expect(service.retryExplicit()).toEqual({
+      accepted: false,
+      reason: 'admission_paused',
+    });
+    cleanup.resolve(gracefulCleanup);
+    await closing;
+    expect(service.startExplicit()).toEqual({
+      accepted: false,
+      reason: 'admission_paused',
+    });
+  });
+
+  it('refuses to unregister an active or quarantined participant', async () => {
+    const registry = new AiRuntimeLifecycleRegistry();
+    const service = createService(() => fakeSession(async () => unverifiedCleanup));
+    const unregister = registry.track(service);
+    service.startExplicit();
+
+    expect(unregister).toThrow('Cannot unregister an active AI lifecycle participant.');
+    await service.requestTermination('explicit_cancel');
+    expect(service.read().phase).toBe('quarantined');
+    expect(unregister).toThrow('Cannot unregister an active AI lifecycle participant.');
+
+    const safeService = createService(() => fakeSession(async () => gracefulCleanup));
+    const unregisterSafe = registry.track(safeService);
+    safeService.startExplicit();
+    await safeService.requestTermination('explicit_cancel');
+    expect(unregisterSafe).not.toThrow();
+  });
+
+  it('contains scheduler failure and quarantines when cleanup cannot be proven', async () => {
+    const session = fakeSession(async () => unverifiedCleanup);
+    const service = createService(() => session, () => {
+      throw new Error('scheduler infrastructure detail');
+    });
+
+    expect(service.startExplicit()).toEqual({
+      accepted: false,
+      reason: 'session_start_failed',
+    });
+    await Promise.resolve();
+    expect(session.terminate).toHaveBeenCalledWith('failed');
+    expect(service.read().phase).toBe('quarantined');
+    expect(service.retryExplicit()).toEqual({
+      accepted: false,
+      reason: 'cleanup_unverified',
+    });
   });
 
   it('contains no persistence, Job, renderer, provider or automatic retry dependency', () => {

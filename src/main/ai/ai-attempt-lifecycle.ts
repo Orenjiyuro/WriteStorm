@@ -304,9 +304,22 @@ export class AiAttemptLifecycleService implements AiLifecycleParticipant {
     };
     this.latestSettlement = null;
     this.active = active;
-    active.cancelTimeout = this.scheduleTimeout(() => {
-      void this.requestTermination('timeout');
-    }, this.timeoutMs);
+    try {
+      const cancelTimeout = this.scheduleTimeout(() => {
+        void this.requestTermination('timeout');
+      }, this.timeoutMs);
+      if (typeof cancelTimeout !== 'function') {
+        throw new Error('AI attempt timeout scheduling failed.');
+      }
+      active.cancelTimeout = cancelTimeout;
+    } catch {
+      const disposition = this.#controller.failLifecycle(
+        started.token,
+        'session_start_failed',
+      );
+      void this.beginTermination('failed', disposition);
+      return Object.freeze({ accepted: false, reason: 'session_start_failed' });
+    }
     return started;
   }
 
@@ -371,6 +384,9 @@ export class AiRuntimeLifecycleRegistry {
     this.participants.add(participant);
     if (this.admissionPaused) participant.pauseAdmission();
     return () => {
+      if (participant.isActive()) {
+        throw new Error('Cannot unregister an active AI lifecycle participant.');
+      }
       this.participants.delete(participant);
     };
   }
@@ -388,6 +404,8 @@ export class AiRuntimeLifecycleRegistry {
   }
 
   windowClosed(): Promise<void> {
+    this.admissionPaused = true;
+    for (const participant of this.participants) participant.pauseAdmission();
     return this.terminateActive('window_close');
   }
 

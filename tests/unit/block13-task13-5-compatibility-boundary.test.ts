@@ -41,6 +41,7 @@ describe('Block 13.5 canonical compatibility boundary', () => {
       'forge.config.ts',
       'src/main/main-lifecycle.ts',
       'src/main/main.ts',
+      'src/main/windows/main-window.ts',
       'vite.codex-utility.config.ts',
     ]));
     expect(boundary.layers.probeArtifact.sourceFiles).toEqual(expect.arrayContaining([
@@ -63,6 +64,7 @@ describe('Block 13.5 canonical compatibility boundary', () => {
       'src/main/ai/providers/codex/codex-utility-entry.ts',
       'src/main/main-lifecycle.ts',
       'src/main/main.ts',
+      'src/main/windows/main-window.ts',
     ]));
     const probePaths = fingerprint.layers.probeArtifact.files
       .map((entry) => entry.relativePath);

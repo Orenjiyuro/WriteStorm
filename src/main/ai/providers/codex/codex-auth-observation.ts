@@ -1,8 +1,7 @@
 import {
   type AiCompatibilityAssessment,
   type AiRuntimeObservation,
-  type AiRuntimeObservationReceipt,
-  mintAiRuntimeObservationReceipt,
+  createAiRuntimeObservationMemoryAuthority,
   unknownAiRuntimeObservation,
 } from '../../ai-runtime-observation';
 
@@ -73,9 +72,9 @@ export function parseCodexAuthRuntimeObservation(
 export function mapCodexAuthObservation(input: {
   readonly compatibility: AiCompatibilityAssessment;
   readonly observation: CodexAuthRuntimeObservation | null;
-}): AiRuntimeObservationReceipt {
+}): AiRuntimeObservation {
   if (input.compatibility.state !== 'fresh' || !input.observation) {
-    return mintAiRuntimeObservationReceipt(unknownAiRuntimeObservation());
+    return unknownAiRuntimeObservation();
   }
   const { fingerprint } = input.compatibility;
   const { observation } = input;
@@ -100,10 +99,36 @@ function createObservation(
   authState: AiRuntimeObservation['authState'],
   observedAt: string,
   compatibilityFingerprint: string,
-): AiRuntimeObservationReceipt {
-  return mintAiRuntimeObservationReceipt(
-    Object.freeze({ authState, observedAt, compatibilityFingerprint }),
-  );
+): AiRuntimeObservation {
+  return Object.freeze({ authState, observedAt, compatibilityFingerprint });
+}
+
+export class CodexAuthObservationAuthority {
+  readonly #authority = createAiRuntimeObservationMemoryAuthority();
+  #compatibility: AiCompatibilityAssessment = { state: 'unknown' };
+
+  setCompatibility(assessment: AiCompatibilityAssessment): void {
+    this.#compatibility = assessment.state === 'fresh'
+      ? Object.freeze({ ...assessment })
+      : Object.freeze({ state: assessment.state });
+    this.#authority.memory.setCompatibility(this.#compatibility);
+  }
+
+  acceptActualRuntime(input: unknown): boolean {
+    const observation = parseCodexAuthRuntimeObservation(input);
+    return this.#authority.accept(mapCodexAuthObservation({
+      compatibility: this.#compatibility,
+      observation,
+    }));
+  }
+
+  clear(): void {
+    this.#authority.memory.clear();
+  }
+
+  read(): AiRuntimeObservation {
+    return this.#authority.memory.read();
+  }
 }
 
 function assertObservedAt(value: unknown): asserts value is string {

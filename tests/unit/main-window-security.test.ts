@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { createProductSenderPolicy } from '../../src/main/ipc/product-sender-policy';
 import { createMainWindow } from '../../src/main/windows/main-window';
@@ -95,6 +97,51 @@ describe('main window security lifecycle', () => {
       height: 760,
       show: false,
     });
+  });
+
+  it('reports only a sanitized cleanup failure after the window closes', async () => {
+    let closedListener: () => void = () => undefined;
+    const failures: unknown[] = [];
+    const window = {
+      webContents: {
+        id: 19,
+        getURL: () => 'about:blank',
+        setWindowOpenHandler: () => undefined,
+        on: () => undefined,
+      },
+      loadURL: async () => undefined,
+      on: (_event: 'closed', listener: () => void) => {
+        closedListener = listener;
+      },
+    };
+    await createMainWindow({
+      createWindow: () => window,
+      preloadPath: 'C:\\WriteStorm\\preload.js',
+      appUrl: 'writestorm://app/index.html',
+      allowedExternalOrigins: new Set(),
+      openExternal: async () => undefined,
+      bindSenderPolicy: () => undefined,
+      unbindSenderPolicy: () => undefined,
+      onClosed: async () => {
+        throw new Error('sensitive cleanup detail');
+      },
+      onClosedCleanupFailure: (failure) => failures.push(failure),
+    });
+
+    closedListener();
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(failures).toEqual([{ code: 'MAIN_WINDOW_CLEANUP_FAILED' }]);
+    expect(JSON.stringify(failures)).not.toContain('sensitive cleanup detail');
+  });
+
+  it('wires the sanitized cleanup failure reporter in Main composition', () => {
+    const source = readFileSync(
+      path.resolve(__dirname, '../../src/main/main.ts'),
+      'utf8',
+    );
+    expect(source).toContain('onClosedCleanupFailure: (failure) =>');
+    expect(source).toContain("console.error('WRITESTORM_WINDOW_CLEANUP', failure.code)");
+    expect(source).not.toMatch(/WRITESTORM_WINDOW_CLEANUP[^;]*error\.(?:message|stack|cause)/);
   });
 
   it('requires trusted URL, the bound webContents ID, and the main frame', () => {

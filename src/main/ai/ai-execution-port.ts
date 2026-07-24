@@ -1,3 +1,8 @@
+import {
+  isAiUsageObservation,
+  type AiUsageObservation,
+} from './ai-runtime-diagnostics';
+
 declare const requestBrand: unique symbol;
 declare const eventBrand: unique symbol;
 declare const handleBrand: unique symbol;
@@ -33,6 +38,7 @@ export type AiExecutionEvent =
   | (AiExecutionEventMetadata & {
     readonly kind: 'final';
     readonly content: string;
+    readonly usage: AiUsageObservation;
   })
   | (AiExecutionEventMetadata & {
     readonly kind: 'error';
@@ -52,6 +58,7 @@ export type AiExecutionEventInput =
     readonly sequence: number;
     readonly kind: 'final';
     readonly content: string;
+    readonly usage: AiUsageObservation;
   })
   | (AiAttemptToken & {
     readonly sequence: number;
@@ -76,9 +83,15 @@ export function createAiExecutionEvent(input: AiExecutionEventInput): AiExecutio
   }
 
   const baseKeys = ['attempt', 'generation', 'sequence', 'kind'];
-  if (input.kind === 'partial' || input.kind === 'final') {
+  if (input.kind === 'partial') {
     if (typeof input.content !== 'string'
       || !hasExactKeys(input, [...baseKeys, 'content'])) {
+      throw new AiExecutionEventSchemaError();
+    }
+  } else if (input.kind === 'final') {
+    if (typeof input.content !== 'string'
+      || !isAiUsageObservation(input.usage)
+      || !hasExactKeys(input, [...baseKeys, 'content', 'usage'])) {
       throw new AiExecutionEventSchemaError();
     }
   } else if ((input.kind !== 'progress' && input.kind !== 'error')

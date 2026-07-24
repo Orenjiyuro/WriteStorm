@@ -9,6 +9,7 @@ import {
 import {
   createAiExecutionEvent,
 } from '../../src/main/ai/ai-execution-port';
+import { createAiUsageObservation } from '../../src/main/ai/ai-runtime-diagnostics';
 import {
   createAiStructuredOutputContract,
 } from '../../src/main/ai/ai-structured-output';
@@ -24,6 +25,7 @@ const generousLimits = createAiAttemptResourceLimits({
   maxEventCount: 8,
   maxPartialBytes: 256,
 });
+const unknownUsage = createAiUsageObservation(undefined);
 
 describe('Block 13.8 provider-neutral attempt controller', () => {
   it('projects progress and replace-style partial snapshots only to memory candidates', () => {
@@ -76,12 +78,18 @@ describe('Block 13.8 provider-neutral attempt controller', () => {
   it('admits one locally validated final as a terminal candidate without persistence', () => {
     const controller = createController();
     const token = begin(controller);
+    const reportedUsage = createAiUsageObservation({
+      inputTokens: 10,
+      cachedInputTokens: 4,
+      outputTokens: 3,
+    });
 
     const result = controller.accept(createAiExecutionEvent({
       ...token,
       sequence: 1,
       kind: 'final',
       content: '{"summary":"done"}',
+      usage: reportedUsage,
     }));
 
     expect(result).toMatchObject({
@@ -96,6 +104,13 @@ describe('Block 13.8 provider-neutral attempt controller', () => {
     if (result.disposition !== 'accepted'
       || result.terminalCandidate?.state !== 'succeeded') return;
     expect(result.terminalCandidate.value.data).toEqual({ summary: 'done' });
+    expect(result.terminalCandidate.usage).toEqual({
+      availability: 'reported',
+      inputTokens: 10,
+      cachedInputTokens: 4,
+      outputTokens: 3,
+    });
+    expect(JSON.stringify(result.terminalCandidate.usage)).not.toMatch(/total|cost/i);
     expect(controller.read().phase).toBe('terminal');
   });
 
@@ -113,6 +128,7 @@ describe('Block 13.8 provider-neutral attempt controller', () => {
       sequence: 1,
       kind: 'final',
       content,
+      usage: unknownUsage,
     }))).toMatchObject({
       disposition: 'accepted',
       terminalCandidate: {
@@ -131,6 +147,7 @@ describe('Block 13.8 provider-neutral attempt controller', () => {
       sequence: 1,
       kind: 'final',
       content: '{"summary":"first"}',
+      usage: unknownUsage,
     }));
 
     expect(controller.accept(createAiExecutionEvent({
@@ -138,6 +155,7 @@ describe('Block 13.8 provider-neutral attempt controller', () => {
       sequence: 2,
       kind: 'final',
       content: '{"summary":"second"}',
+      usage: unknownUsage,
     }))).toEqual({ disposition: 'ignored', reason: 'attempt_terminal' });
     expect(controller.accept(createAiExecutionEvent({
       ...token,
@@ -186,6 +204,7 @@ describe('Block 13.8 provider-neutral attempt controller', () => {
       sequence: 1,
       kind: 'final',
       content: '{"summary":"late"}',
+      usage: unknownUsage,
     }))).toEqual({ disposition: 'ignored', reason: 'stale_generation' });
     expect(controller.read()).toMatchObject({
       phase: 'active',

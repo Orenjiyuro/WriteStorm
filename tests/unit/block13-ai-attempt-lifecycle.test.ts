@@ -14,6 +14,7 @@ import {
   type AiTerminationTrigger,
 } from '../../src/main/ai/ai-attempt-lifecycle';
 import { createAiExecutionEvent } from '../../src/main/ai/ai-execution-port';
+import { createAiUsageObservation } from '../../src/main/ai/ai-runtime-diagnostics';
 import { createAiStructuredOutputContract } from '../../src/main/ai/ai-structured-output';
 
 const gracefulCleanup = createAiRuntimeCleanupObservation({
@@ -45,6 +46,7 @@ const unverifiedCleanup = createAiRuntimeCleanupObservation({
   utilityResidualAbsent: false,
   cliResidualAbsent: false,
 });
+const unknownUsage = createAiUsageObservation(undefined);
 
 describe('Block 13.9 application attempt lifecycle', () => {
   it('waits for graceful utility cleanup before publishing explicit cancellation', async () => {
@@ -139,6 +141,7 @@ describe('Block 13.9 application attempt lifecycle', () => {
       sequence: 1,
       kind: 'final',
       content: '{"summary":"done"}',
+      usage: unknownUsage,
     }));
     let settled = false;
     void settling.then(() => {
@@ -177,6 +180,7 @@ describe('Block 13.9 application attempt lifecycle', () => {
       sequence: 1,
       kind: 'final',
       content: '{"summary":"late"}',
+      usage: unknownUsage,
     }))).resolves.toEqual({
       disposition: { disposition: 'ignored', reason: 'stale_generation' },
       cleanup: null,

@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "authority": "block13-task13-10-release-limitations-v1",
+  "verdict": "Conditional Go — Windows feasibility verified; macOS packaged runtime deferred-by-user.",
+  "platforms": {
+    "windows": {
+      "feasibility": "verified",
+      "productPackagedRuntime": "not_verified",
+      "cleanMachine": "unverified",
+      "signing": "unverified",
+      "defender": "unverified"
+    },
+    "macos": {
+      "productPackagedRuntime": "deferred_by_user",
+      "signing": "unverified",
+      "notarization": "unverified"
+    }
+  },
+  "environments": {
+    "proxy": "unverified",
+    "enterpriseCertificates": "unverified",
+    "firewall": "unverified",
+    "offline": "unverified"
+  },
+  "telemetry": {
+    "applicationRemoteUpload": "disabled_by_default",
+    "sdkTelemetry": "unverified"
+  },
+  "distribution": {
+    "sdkCliLicensesAndNotices": "unverified"
+  }
+}

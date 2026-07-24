@@ -54,6 +54,11 @@ describe('shared domain errors', () => {
       'JOB_ERROR',
       'EXPORT_ERROR',
       'TYPE_LIBRARY_ERROR',
+      'AI_AUTH_ERROR',
+      'AI_RATE_LIMITED',
+      'AI_SCHEMA_INVALID',
+      'AI_NETWORK_UNAVAILABLE',
+      'AI_RUNTIME_UNAVAILABLE',
       'INTERNAL_ERROR',
     ]);
   });

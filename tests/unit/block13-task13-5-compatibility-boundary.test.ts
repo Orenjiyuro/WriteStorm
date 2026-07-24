@@ -59,7 +59,9 @@ describe('Block 13.5 canonical compatibility boundary', () => {
       .map((entry) => entry.relativePath);
     expect(productionPaths).toEqual(expect.arrayContaining([
       'src/main/ai/ai-execution-port.ts',
+      'src/main/ai/ai-runtime-diagnostics.ts',
       'src/main/ai/providers/codex/codex-provider-adapter.ts',
+      'src/main/ai/providers/codex/codex-runtime-diagnostics.ts',
       'src/main/ai/providers/codex/codex-utility-transport.ts',
       'src/main/ai/providers/codex/codex-utility-entry.ts',
       'src/main/main-lifecycle.ts',

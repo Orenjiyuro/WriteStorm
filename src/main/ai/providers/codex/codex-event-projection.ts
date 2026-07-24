@@ -6,6 +6,7 @@ import {
   type AiExecutionEventInput,
 } from '../../ai-execution-port';
 import { AI_ATTEMPT_RESOURCE_CEILINGS } from '../../ai-attempt-controller';
+import { CodexRuntimeDiagnosticAuthority } from './codex-runtime-diagnostics';
 
 export type CodexEventProjectionRejection =
   | 'event_too_large'
@@ -31,6 +32,7 @@ export class CodexStreamEventProjector {
   private totalRawBytes = 0;
   private rawEventCount = 0;
   private completedAgentText: string | null = null;
+  private readonly diagnostics = new CodexRuntimeDiagnosticAuthority();
 
   constructor(input: {
     readonly token: AiAttemptToken;
@@ -103,11 +105,12 @@ export class CodexStreamEventProjector {
       case 'turn.started':
         return createAiExecutionEvent({ ...metadata, kind: 'progress' });
       case 'turn.completed':
-        if (!isPlainRecord(raw.usage) || this.completedAgentText === null) malformed();
+        if (this.completedAgentText === null) malformed();
         return createAiExecutionEvent({
           ...metadata,
           kind: 'final',
           content: this.completedAgentText,
+          usage: this.diagnostics.observeUsage(raw.usage),
         });
       case 'turn.failed':
         if (!isPlainRecord(raw.error) || typeof raw.error.message !== 'string') malformed();

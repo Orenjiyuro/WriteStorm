@@ -3,6 +3,7 @@ import {
   type AiAttemptToken,
   type AiExecutionEvent,
 } from './ai-execution-port';
+import type { AiUsageObservation } from './ai-runtime-diagnostics';
 import {
   type AiStructuredOutputContract,
   type AiStructuredOutputRejection,
@@ -49,6 +50,7 @@ export type AiTerminalStateCandidate =
     readonly sequence: number;
     readonly state: 'succeeded';
     readonly value: AiStructuredOutputValue;
+    readonly usage: AiUsageObservation;
   }
   | {
     readonly kind: 'terminal_state_candidate';
@@ -229,6 +231,7 @@ export class AiAttemptController {
         sequence: event.sequence,
         state: 'succeeded',
         value: validation.value,
+        usage: event.usage,
       }));
     }
 

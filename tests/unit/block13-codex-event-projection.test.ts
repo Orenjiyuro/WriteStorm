@@ -57,11 +57,17 @@ describe('Block 13.8 Codex-private event projection', () => {
     }))).toMatchObject({ sequence: 2, kind: 'partial' });
     expect(projector.project(JSON.stringify({
       type: 'turn.completed',
-      usage: { input_tokens: 1, output_tokens: 2 },
+      usage: { input_tokens: 1, cached_input_tokens: 0, output_tokens: 2 },
     }))).toMatchObject({
       sequence: 3,
       kind: 'final',
       content: '{"summary":"done"}',
+      usage: {
+        availability: 'reported',
+        inputTokens: 1,
+        cachedInputTokens: 0,
+        outputTokens: 2,
+      },
     });
   });
 
@@ -132,7 +138,7 @@ describe('Block 13.8 Codex-private event projection', () => {
   it('rejects turn completion without a completed agent message', () => {
     expect(() => createProjector().project(JSON.stringify({
       type: 'turn.completed',
-      usage: { input_tokens: 1, output_tokens: 2 },
+      usage: { input_tokens: 1, cached_input_tokens: 0, output_tokens: 2 },
     }))).toThrowError(expect.objectContaining({ classification: 'malformed_event' }));
   });
 });

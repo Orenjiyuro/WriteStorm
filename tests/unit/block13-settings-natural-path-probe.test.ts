@@ -41,6 +41,25 @@ describe('Block 13.12 packaged Settings natural-path probe boundary', () => {
     );
   });
 
+  it('closes the native product window before waiting for clean app shutdown', () => {
+    const runner = readFileSync(runnerPath, 'utf8');
+
+    const nativeCloseIndex = runner.indexOf(
+      'await page.evaluate(() => window.close())',
+    );
+    const exitWaitIndex = runner.indexOf(
+      'const appExit = await withTimeout(exited.promise, 15_000)',
+    );
+    const cdpCloseIndex = runner.indexOf(
+      'await browser.close().catch(() => undefined)',
+    );
+
+    expect(nativeCloseIndex).toBeGreaterThan(-1);
+    expect(exitWaitIndex).toBeGreaterThan(nativeCloseIndex);
+    expect(cdpCloseIndex).toBeGreaterThan(exitWaitIndex);
+    expect(runner).not.toContain('await page.close()');
+  });
+
   it('disables Chromium background networking before the product app becomes ready', () => {
     const main = readFileSync(
       path.join(rootDir, 'src/main/main.ts'),

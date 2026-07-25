@@ -185,10 +185,10 @@ try {
     throw new Error('Task 13.12 visible result or cleanup boundary was not admitted.');
   }
 
-  await page.close();
+  await page.evaluate(() => window.close());
+  const appExit = await withTimeout(exited.promise, 15_000);
   await browser.close().catch(() => undefined);
   browser = undefined;
-  const appExit = await withTimeout(exited.promise, 15_000);
   if (appExit.code !== 0 || appExit.signal !== null) {
     throw new Error('Task 13.12 product app did not exit cleanly.');
   }

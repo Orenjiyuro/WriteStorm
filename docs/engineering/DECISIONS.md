@@ -1574,3 +1574,19 @@ Rules:
 - Default regression tests remain deterministic and offline. Real SDK/auth/network probes remain explicit, separately authorized commands and never become part of `npm run check`.
 - V1 registers only the Codex adapter. No direct product `codex exec`, app-server, GUI automation, API-key auth, local-model or alternate-provider fallback is admitted.
 - `config/block13-release-limitations-v1.json` remains normative. macOS packaged runtime is deferred; clean-machine, signing/notarization, Defender, proxy, enterprise certificates, firewall, offline behavior, SDK telemetry and SDK/CLI license/notice boundaries remain unverified.
+
+## D117: Block 13 Review Remediation Makes Artifact Admission Exact
+
+Decision: The platform-limited feasibility Gate remains unchanged, but Block 13 completion is reopened until a current Windows product artifact and no-global-Git artifact are separately recertified against the remediated production/probe boundaries.
+
+Rules:
+
+- The temporary Block 6A implementation is removed from `src/main/codex-feasibility`. Its still-required certification fixture lives only under `tests/certification/block6a/runtime`, remains probe-only and is excluded from the product source/build graph. Product code cannot import either the deleted path or the retained fixture.
+- Forge runtime packaging is conditional by platform. Windows x64 alone bundles the pinned Codex runtime and utility. macOS can load the ordinary non-AI application configuration, while Codex runtime compatibility remains deferred/blocked; macOS does not inherit Windows evidence.
+- Product sample preview and module analysis no longer claim that the Codex Gate or spike failed. Their active blocker is the unadmitted Block 17 production AI Job/prompt runtime. Historical D065/D068 wording remains historical rather than being rewritten.
+- Source-fingerprint equality is necessary but insufficient for compatibility freshness. Ordinary builds embed stale compatibility. An explicit certification build may embed the current source fingerprint, and only a successful packaged probe may write the external versioned attestation.
+- At startup, packaged runtime rehashes the exact application executable, `app.asar` and pinned Codex executable and compares all bytes, sizes, platform, architecture and source fingerprint with the attestation. Missing, malformed or mismatched attestation fails closed as stale and auth/runtime observation remains unknown.
+- The probe result directory is atomically created beneath the canonical OS temp root. Existing paths, links, junctions, reparse substitutions, containment drift and directory-identity changes are rejected before an exclusive result write.
+- The D115 product and no-global-Git records remain immutable historical evidence for their exact artifacts. D117 production-protocol and probe-artifact drift makes them stale for the current candidate. A real SDK/auth/network recertification remains an explicit, separately authorized action and is never part of default regression.
+- `config/block13-release-limitations-v1.json` records the Windows packaged runtime as historically verified with current recertification required. Clean-machine, signing/notarization, Defender, proxy, enterprise certificates, firewall, offline behavior, telemetry and macOS remain unverified or deferred.
+- No dependency, SDK version, IPC namespace, Job, checkpoint, SQLite write, renderer generation action, fallback provider, direct CLI/app-server path, automatic retry or business AI workflow is added by this remediation.

@@ -47,7 +47,7 @@
     },
     "probeArtifact": {
       "sourceDirectories": [
-        "src/main/codex-feasibility"
+        "tests/certification/block6a/runtime"
       ],
       "sourceFiles": [
         "config/block13-task13-11-product-artifact-v1.json",

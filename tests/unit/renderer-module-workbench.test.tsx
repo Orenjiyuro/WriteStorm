@@ -86,8 +86,9 @@ describe('AnalysisModuleWorkbench', () => {
     expect(markup).toContain('aria-describedby="analysis-action-analysis-reason"');
     expect(markup).toContain('aria-describedby="analysis-action-rerun-reason"');
     expect(markup).toContain('aria-describedby="analysis-action-diff-reason"');
-    expect(markup).toContain('Codex SDK compatibility spike has not passed');
+    expect(markup).toContain('Block 17 production AI Job and prompt runtime are not admitted');
     expect(markup).toContain('AI Job runtime is not admitted');
+    expect(markup).not.toContain('Codex SDK compatibility spike has not passed');
     expect(markup).toContain('No rerun candidate exists');
     expect(ANALYSIS_MODULE_DISABLED_ACTIONS.map(({ key }) => key))
       .toEqual(['analysis', 'rerun', 'diff']);

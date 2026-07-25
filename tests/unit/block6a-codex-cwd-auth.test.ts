@@ -3,12 +3,12 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   classifyCodexFailure,
-} from '../../src/main/codex-feasibility/utility-entry';
-import { buildCodexCliEnvironment } from '../../src/main/codex-feasibility/environment';
+} from '../certification/block6a/runtime/utility-entry';
+import { buildCodexCliEnvironment } from '../certification/block6a/runtime/environment';
 import {
   isCodexFeasibilityRequest,
   isCodexFeasibilityResponse,
-} from '../../src/main/codex-feasibility/protocol';
+} from '../certification/block6a/runtime/protocol';
 
 const rootDir = path.resolve(__dirname, '../..');
 
@@ -147,7 +147,7 @@ describe('Block 6A.5 cwd, Git, environment and auth boundary', () => {
     }
 
     const utilitySource = readFileSync(
-      path.join(rootDir, 'src/main/codex-feasibility/utility-entry.ts'),
+      path.join(rootDir, 'tests/certification/block6a/runtime/utility-entry.ts'),
       'utf8',
     );
     expect(utilitySource).not.toMatch(/not inside a trusted directory|not logged in|unauthorized/);
@@ -155,7 +155,7 @@ describe('Block 6A.5 cwd, Git, environment and auth boundary', () => {
 
   it('freezes the current-auth non-Git behavioral differential without message parsing', () => {
     const source = readFileSync(
-      path.join(rootDir, 'src/main/codex-feasibility/probe-main.ts'),
+      path.join(rootDir, 'tests/certification/block6a/runtime/probe-main.ts'),
       'utf8',
     );
     expect(source).toContain("scenario: 'current-auth-non-git-check'");
@@ -184,12 +184,12 @@ describe('Block 6A.5 cwd, Git, environment and auth boundary', () => {
   });
 
   it('keeps the no-window Electron probe isolated and free of a committed synthetic prompt', () => {
-    const probeMainPath = path.join(rootDir, 'src/main/codex-feasibility/probe-main.ts');
+    const probeMainPath = path.join(rootDir, 'tests/certification/block6a/runtime/probe-main.ts');
     expect(existsSync(probeMainPath)).toBe(true);
     if (!existsSync(probeMainPath)) return;
     const source = readFileSync(probeMainPath, 'utf8');
     const utilitySource = readFileSync(
-      path.join(rootDir, 'src/main/codex-feasibility/utility-entry.ts'),
+      path.join(rootDir, 'tests/certification/block6a/runtime/utility-entry.ts'),
       'utf8',
     );
 

@@ -164,10 +164,10 @@ async function buildProbeEntries(outDir) {
       sourcemap: false,
       lib: {
         entry: {
-          'utility-entry': path.join(root, 'src/main/codex-feasibility/utility-entry.ts'),
-          'probe-main': path.join(root, 'src/main/codex-feasibility/probe-main.ts'),
-          'output-schema-probe-main': path.join(root, 'src/main/codex-feasibility/output-schema-probe-main.ts'),
-          'lifecycle-probe-main': path.join(root, 'src/main/codex-feasibility/lifecycle-probe-main.ts'),
+          'utility-entry': path.join(root, 'tests/certification/block6a/runtime/utility-entry.ts'),
+          'probe-main': path.join(root, 'tests/certification/block6a/runtime/probe-main.ts'),
+          'output-schema-probe-main': path.join(root, 'tests/certification/block6a/runtime/output-schema-probe-main.ts'),
+          'lifecycle-probe-main': path.join(root, 'tests/certification/block6a/runtime/lifecycle-probe-main.ts'),
         },
         formats: ['cjs'],
       },

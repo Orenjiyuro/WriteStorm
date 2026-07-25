@@ -45,6 +45,11 @@ export function createTask1311ProductArtifactRecord(
   artifactRoot: string,
   boundary: Task1311ProductArtifactBoundary,
 ): Task1311ProductArtifactRecord;
+export function assertTask1311CertificationBuildArtifact(
+  artifactRoot: string,
+  boundary: Task1311ProductArtifactBoundary,
+  compatibilityFingerprint: string,
+): void;
 export function compactTask1311CompatibilityFingerprint(fingerprint: {
   readonly boundaryId: string;
   readonly gitHead?: string;
@@ -64,3 +69,22 @@ export function compactTask1311CompatibilityFingerprint(fingerprint: {
   };
   readonly sha256: string;
 }): Task1311CompactCompatibilityFingerprint;
+
+export const task1311RuntimeAttestationFile:
+  'writestorm-ai-runtime-attestation-v1.json';
+
+export function createTask1311RuntimeAttestation(
+  compatibilityFingerprint: Task1311CompactCompatibilityFingerprint,
+  artifact: Task1311ProductArtifactRecord,
+): {
+  readonly schemaVersion: 1;
+  readonly authority: 'block13-runtime-artifact-attestation-v1';
+  readonly platform: 'win32';
+  readonly architecture: 'x64';
+  readonly compatibilityFingerprint: string;
+  readonly artifact: {
+    readonly boundaryId: string;
+    readonly files: Task1311ProductArtifactRecord['files'];
+    readonly sha256: string;
+  };
+};

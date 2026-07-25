@@ -1,13 +1,13 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { CODEX_FEASIBILITY_OPERATIONS } from '../../src/main/codex-feasibility/operations';
+import { CODEX_FEASIBILITY_OPERATIONS } from '../certification/block6a/runtime/operations';
 import {
   CodexFeasibilitySessionStateError,
   CodexFeasibilitySessionSupervisor,
-} from '../../src/main/codex-feasibility/session-supervisor';
-import type { CodexFeasibilityResponse } from '../../src/main/codex-feasibility/protocol';
-import { BLOCK6A_FEASIBILITY_MANIFEST } from '../../src/main/codex-feasibility/manifest';
+} from '../certification/block6a/runtime/session-supervisor';
+import type { CodexFeasibilityResponse } from '../certification/block6a/runtime/protocol';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from '../certification/block6a/runtime/manifest';
 
 const rootDir = path.resolve(__dirname, '../..');
 
@@ -184,7 +184,7 @@ describe('Block 6A remediation R3b session supervisor', () => {
 
   it('replaces per-method settled and phase state without absorbing termination policy', () => {
     const source = readFileSync(
-      path.join(rootDir, 'src/main/codex-feasibility/runner.ts'),
+      path.join(rootDir, 'tests/certification/block6a/runtime/runner.ts'),
       'utf8',
     );
     expect(source).toContain('CodexFeasibilitySessionSupervisor');

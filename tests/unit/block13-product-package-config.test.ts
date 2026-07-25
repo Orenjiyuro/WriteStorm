@@ -2,8 +2,10 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  findCodexProductRuntimePackage,
   resolveCodexProductRuntimePackage,
 } from '../../config/codex-product-runtime-package';
+import { createForgeConfig } from '../../forge.config';
 
 const rootDir = path.resolve(__dirname, '../..');
 
@@ -23,12 +25,21 @@ describe('Block 13.11 product package runtime configuration', () => {
     });
   });
 
+  it('loads the non-AI product Forge configuration on deferred platforms', () => {
+    expect(findCodexProductRuntimePackage('darwin', 'arm64')).toBeNull();
+    expect(findCodexProductRuntimePackage('darwin', 'x64')).toBeNull();
+    expect(() => createForgeConfig('darwin', 'arm64')).not.toThrow();
+    const macos = createForgeConfig('darwin', 'arm64');
+    expect(JSON.stringify(macos.packagerConfig)).not.toContain('@openai/codex');
+    expect(JSON.stringify(macos.packagerConfig)).not.toContain('codex.exe');
+  });
+
   it('uses the real product Main and shared product package resolver', () => {
     const source = readFileSync(path.join(rootDir, 'forge.config.ts'), 'utf8');
 
     expect(source).toContain("entry: 'src/main/main.ts'");
-    expect(source).toContain('resolveCodexProductRuntimePackage');
-    expect(source).toContain('codexRuntime.allowedPaths');
+    expect(source).toContain('findCodexProductRuntimePackage');
+    expect(source).toContain('codexRuntime?.allowedPaths');
     expect(source).toContain('unpackDir: codexRuntime.unpackDirectory');
     expect(source).not.toMatch(/certification-main|forge\.block6a|codex-feasibility\/utility-entry/);
   });

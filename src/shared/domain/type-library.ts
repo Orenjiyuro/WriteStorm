@@ -54,7 +54,6 @@ export const PROMPT_SAMPLE_GATE_STATUSES = ['not_run', 'blocked', 'failed', 'pas
 export type PromptSampleGateStatus = (typeof PROMPT_SAMPLE_GATE_STATUSES)[number];
 
 export const PROMPT_SAMPLE_PREVIEW_BLOCKER_CODES = [
-  'codex_sdk_gate_required',
   'prompt_template_instance_unavailable',
   'sample_preview_runtime_not_admitted',
 ] as const;

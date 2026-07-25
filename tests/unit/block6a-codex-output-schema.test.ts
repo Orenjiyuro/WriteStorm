@@ -6,15 +6,15 @@ import { build } from 'vite';
 import {
   isCodexFeasibilityRequest,
   isCodexFeasibilityResponse,
-} from '../../src/main/codex-feasibility/protocol';
-import { validateMinimalStructuredOutput } from '../../src/main/codex-feasibility/structured-output';
+} from '../certification/block6a/runtime/protocol';
+import { validateMinimalStructuredOutput } from '../certification/block6a/runtime/structured-output';
 import {
   isPinnedSdkLocalOutputSchemaGuardProbe,
   resolveInstalledCodexSdkVersion,
   resolvePackageManifestPath,
   resolveUtilityModuleAnchor,
-} from '../../src/main/codex-feasibility/utility-entry';
-import { BLOCK6A_FEASIBILITY_MANIFEST } from '../../src/main/codex-feasibility/manifest';
+} from '../certification/block6a/runtime/utility-entry';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from '../certification/block6a/runtime/manifest';
 
 const rootDir = path.resolve(__dirname, '../..');
 
@@ -74,7 +74,7 @@ describe('Block 6A.6 minimal outputSchema boundary', () => {
     expect(isPinnedSdkLocalOutputSchemaGuardProbe('invalid-schema', [], 'future-version')).toBe(false);
 
     const utilitySource = readFileSync(
-      path.join(rootDir, 'src/main/codex-feasibility/utility-entry.ts'),
+      path.join(rootDir, 'tests/certification/block6a/runtime/utility-entry.ts'),
       'utf8',
     );
     expect(utilitySource).not.toContain('outputSchema must be a plain JSON object');
@@ -93,7 +93,7 @@ describe('Block 6A.6 minimal outputSchema boundary', () => {
           minify: false,
           sourcemap: false,
           lib: {
-            entry: path.join(rootDir, 'src/main/codex-feasibility/utility-entry.ts'),
+            entry: path.join(rootDir, 'tests/certification/block6a/runtime/utility-entry.ts'),
             formats: ['cjs'],
             fileName: () => 'utility-entry.cjs',
           },
@@ -190,7 +190,7 @@ describe('Block 6A.6 minimal outputSchema boundary', () => {
 
   it('keeps the real probe prompt out of committed source and evidence', () => {
     const source = readFileSync(
-      path.join(rootDir, 'src/main/codex-feasibility/output-schema-probe-main.ts'),
+      path.join(rootDir, 'tests/certification/block6a/runtime/output-schema-probe-main.ts'),
       'utf8',
     );
     expect(source).not.toContain('WRITESTORM_PROBE_OK');

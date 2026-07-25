@@ -24,10 +24,18 @@ export function resolveCodexProductRuntimePackage(
   platform: NodeJS.Platform,
   architecture: string,
 ): CodexProductRuntimePackage {
-  const key = `${platform}-${architecture}` as keyof typeof PRODUCT_RUNTIME_PACKAGES;
-  const runtimePackage = PRODUCT_RUNTIME_PACKAGES[key];
+  const runtimePackage = findCodexProductRuntimePackage(platform, architecture);
   if (!runtimePackage) {
     throw new Error(`Unsupported Codex product runtime target: ${platform}-${architecture}`);
   }
   return runtimePackage;
+}
+
+export function findCodexProductRuntimePackage(
+  platform: NodeJS.Platform,
+  architecture: string,
+): CodexProductRuntimePackage | null {
+  const key = `${platform}-${architecture}` as keyof typeof PRODUCT_RUNTIME_PACKAGES;
+  const runtimePackage = PRODUCT_RUNTIME_PACKAGES[key];
+  return runtimePackage ?? null;
 }

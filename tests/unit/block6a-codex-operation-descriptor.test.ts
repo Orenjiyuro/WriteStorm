@@ -5,12 +5,12 @@ import {
   CODEX_FEASIBILITY_OPERATIONS,
   createCodexFeasibilityOperationRequest,
   isCodexFeasibilityOperationResponse,
-} from '../../src/main/codex-feasibility/operations';
+} from '../certification/block6a/runtime/operations';
 import {
   isCodexFeasibilityRequest,
   isCodexFeasibilityResponse,
-} from '../../src/main/codex-feasibility/protocol';
-import { BLOCK6A_FEASIBILITY_MANIFEST } from '../../src/main/codex-feasibility/manifest';
+} from '../certification/block6a/runtime/protocol';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from '../certification/block6a/runtime/manifest';
 
 const rootDir = path.resolve(__dirname, '../..');
 
@@ -145,11 +145,11 @@ describe('Block 6A remediation R3a operation descriptor', () => {
 
   it('keeps the runner on descriptors without changing supervision ownership', () => {
     const source = readFileSync(
-      path.join(rootDir, 'src/main/codex-feasibility/runner.ts'),
+      path.join(rootDir, 'tests/certification/block6a/runtime/runner.ts'),
       'utf8',
     );
     const utilitySource = readFileSync(
-      path.join(rootDir, 'src/main/codex-feasibility/utility-entry.ts'),
+      path.join(rootDir, 'tests/certification/block6a/runtime/utility-entry.ts'),
       'utf8',
     );
     expect(source).toContain('CODEX_FEASIBILITY_OPERATIONS');

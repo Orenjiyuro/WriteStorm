@@ -6,7 +6,7 @@ import {
   admitBlock6aProbeResults,
   evaluateBlock6aProbeResults,
 } from '../../scripts/block6a-probe-admission.mjs';
-import { BLOCK6A_FEASIBILITY_MANIFEST } from '../../src/main/codex-feasibility/manifest';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from '../certification/block6a/runtime/manifest';
 
 const versions = {
   electron: '43.0.0',

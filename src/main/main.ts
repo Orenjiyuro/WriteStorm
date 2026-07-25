@@ -61,7 +61,14 @@ import { TypeLibraryService } from './type-library/type-library-service';
 import { AiRuntimeLifecycleRegistry } from './ai/ai-attempt-lifecycle';
 import { runOptionalCodexProductPackagedProbe } from './ai/providers/codex/codex-product-packaged-probe';
 import { AiConnectionCheckService } from './ai/ai-connection-check-service';
-import { readAiRuntimeCompatibility } from './ai/ai-runtime-compatibility';
+import {
+  readAiBuildCompatibilityAssessment,
+  readAiRuntimeCompatibility,
+} from './ai/ai-runtime-compatibility';
+import {
+  verifyAiRuntimeArtifactAttestation,
+  type AiArtifactCompatibilityAssessment,
+} from './ai/ai-runtime-artifact-attestation';
 import { CodexAuthObservationAuthority } from './ai/providers/codex/codex-auth-observation';
 import {
   CodexConnectionCheckAttemptController,
@@ -147,11 +154,16 @@ const codexConnectionAttempts = new CodexConnectionCheckAttemptController({
 });
 aiRuntimeLifecycle.track(codexConnectionAttempts);
 const codexAuthObservation = new CodexAuthObservationAuthority();
+const aiBuildCompatibility = readAiBuildCompatibilityAssessment();
+let aiArtifactCompatibility: AiArtifactCompatibilityAssessment =
+  Object.freeze({ state: 'unverified' });
 const aiConnectionCheckService = new AiConnectionCheckService({
   assessCompatibility: () => readAiRuntimeCompatibility({
     isPackaged: app.isPackaged,
     platform: process.platform,
     architecture: process.arch,
+    buildAssessment: aiBuildCompatibility,
+    artifactAssessment: aiArtifactCompatibility,
   }),
   auth: codexAuthObservation,
   attempts: codexConnectionAttempts,
@@ -445,6 +457,16 @@ function registerInternalIpc(): void {
 }
 
 app.whenReady().then(async () => {
+  if (app.isPackaged
+    && process.platform === 'win32'
+    && process.arch === 'x64'
+    && aiBuildCompatibility.state === 'fresh') {
+    aiArtifactCompatibility = await verifyAiRuntimeArtifactAttestation({
+      executablePath: process.execPath,
+      resourcesPath: process.resourcesPath,
+      compatibilityFingerprint: aiBuildCompatibility.fingerprint,
+    });
+  }
   const productProbeHandled = await runOptionalCodexProductPackagedProbe({
     env: process.env,
     isPackaged: app.isPackaged,

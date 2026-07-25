@@ -4,7 +4,9 @@ import path from 'node:path';
 import { createPackage } from '@electron/asar';
 import { describe, expect, it } from 'vitest';
 import {
+  assertTask1311CertificationBuildArtifact,
   compactTask1311CompatibilityFingerprint,
+  createTask1311RuntimeAttestation,
   createTask1311ProductArtifactRecord,
   loadTask1311ProductArtifactBoundary,
 } from '../../scripts/task13-11-product-artifact.mjs';
@@ -42,7 +44,11 @@ describe('Block 13.11 final product artifact boundary', () => {
     mkdirSync(artifact, { recursive: true });
     writeFileSync(path.join(artifact, 'writestorm.exe'), 'product');
     writeFileSync(codexExecutable, 'codex');
-    writeFileSync(path.join(asarSource, '.vite', 'build', 'main.js'), 'product-main');
+    const fingerprint = '9'.repeat(64);
+    writeFileSync(
+      path.join(asarSource, '.vite', 'build', 'main.js'),
+      `product-main block13-task13-certification-build-v1:${fingerprint}`,
+    );
     writeFileSync(
       path.join(asarSource, '.vite', 'build', 'codex-utility-entry.js'),
       'product-utility',
@@ -68,6 +74,16 @@ describe('Block 13.11 final product artifact boundary', () => {
       ]);
       expect(JSON.stringify(record)).not.toContain(artifact);
       expect(record.sha256).toMatch(/^[0-9a-f]{64}$/);
+      expect(() => assertTask1311CertificationBuildArtifact(
+        artifact,
+        loadTask1311ProductArtifactBoundary(rootDir),
+        fingerprint,
+      )).not.toThrow();
+      expect(() => assertTask1311CertificationBuildArtifact(
+        artifact,
+        loadTask1311ProductArtifactBoundary(rootDir),
+        '8'.repeat(64),
+      )).toThrow('not an admitted certification build');
     } finally {
       rmSync(temporary, { recursive: true, force: true });
     }
@@ -96,5 +112,40 @@ describe('Block 13.11 final product artifact boundary', () => {
       sha256: '4'.repeat(64),
     });
     expect(JSON.stringify(compact)).not.toContain('secret');
+  });
+
+  it('creates a strict external attestation without hashing itself', () => {
+    const compatibility = {
+      boundaryId: 'block13-task13-5-compatibility-v1',
+      gitHead: 'a'.repeat(40),
+      layers: {
+        supplyChain: '1'.repeat(64),
+        productionProtocol: '2'.repeat(64),
+        probeArtifact: '3'.repeat(64),
+      },
+      sha256: '4'.repeat(64),
+    };
+    const files = [
+      { id: 'writestorm_executable', size: 1, sha256: '5'.repeat(64) },
+      { id: 'app_asar', size: 2, sha256: '6'.repeat(64) },
+      { id: 'codex_executable', size: 3, sha256: '7'.repeat(64) },
+    ];
+    expect(createTask1311RuntimeAttestation(compatibility, {
+      boundaryId: 'block13-task13-11-product-artifact-v1',
+      files,
+      asarEntries: [],
+      sha256: '8'.repeat(64),
+    })).toEqual({
+      schemaVersion: 1,
+      authority: 'block13-runtime-artifact-attestation-v1',
+      platform: 'win32',
+      architecture: 'x64',
+      compatibilityFingerprint: compatibility.sha256,
+      artifact: {
+        boundaryId: 'block13-task13-11-product-artifact-v1',
+        files,
+        sha256: '8'.repeat(64),
+      },
+    });
   });
 });

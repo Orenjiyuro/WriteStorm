@@ -131,7 +131,7 @@ export function isAllowedBlock6aEvidenceOnlyPath(filePath) {
 }
 
 function collectRuntimeBoundaryPaths(repositoryRoot) {
-  const codexSourceRoot = path.join(repositoryRoot, 'src/main/codex-feasibility');
+  const codexSourceRoot = path.join(repositoryRoot, 'tests/certification/block6a/runtime');
   const codexSources = collectFiles(codexSourceRoot)
     .map((filePath) => normalizePath(path.relative(repositoryRoot, filePath)));
   const viteConfigs = readdirSync(repositoryRoot)

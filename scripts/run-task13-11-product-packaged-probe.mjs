@@ -9,9 +9,12 @@ import {
   loadTask135CompatibilityBoundary,
 } from './task13-5-compatibility-boundary.mjs';
 import {
+  assertTask1311CertificationBuildArtifact,
   compactTask1311CompatibilityFingerprint,
+  createTask1311RuntimeAttestation,
   createTask1311ProductArtifactRecord,
   loadTask1311ProductArtifactBoundary,
+  task1311RuntimeAttestationFile,
 } from './task13-11-product-artifact.mjs';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -35,6 +38,25 @@ const resultRoot = path.join(
 );
 const productResultPath = path.join(resultRoot, 'result.json');
 const evidencePath = path.join(resultRoot, 'evidence.json');
+const compatibilityBoundary = loadTask135CompatibilityBoundary(repositoryRoot);
+const compatibility = compactTask1311CompatibilityFingerprint(
+  createTask135CompatibilityFingerprint(
+    repositoryRoot,
+    compatibilityBoundary,
+    gitHead,
+  ),
+);
+const productArtifactBoundary =
+  loadTask1311ProductArtifactBoundary(repositoryRoot);
+assertTask1311CertificationBuildArtifact(
+  artifactRoot,
+  productArtifactBoundary,
+  compatibility.sha256,
+);
+const artifact = createTask1311ProductArtifactRecord(
+  artifactRoot,
+  productArtifactBoundary,
+);
 const launched = spawnSync(executablePath, [], {
   cwd: os.tmpdir(),
   env: {
@@ -55,18 +77,6 @@ if (launched.error || launched.status !== 0) {
 
 const productResult = JSON.parse(readFileSync(productResultPath, 'utf8'));
 assertAdmittedProductResult(productResult);
-const compatibilityBoundary = loadTask135CompatibilityBoundary(repositoryRoot);
-const compatibility = compactTask1311CompatibilityFingerprint(
-  createTask135CompatibilityFingerprint(
-    repositoryRoot,
-    compatibilityBoundary,
-    gitHead,
-  ),
-);
-const artifact = createTask1311ProductArtifactRecord(
-  artifactRoot,
-  loadTask1311ProductArtifactBoundary(repositoryRoot),
-);
 const evidence = {
   schemaVersion: 1,
   task: '13.11',
@@ -88,6 +98,15 @@ writeFileSync(evidencePath, `${JSON.stringify(evidence, null, 2)}\n`, {
   encoding: 'utf8',
   flag: 'wx',
 });
+const runtimeAttestation = createTask1311RuntimeAttestation(compatibility, artifact);
+writeFileSync(
+  path.join(artifactRoot, 'resources', task1311RuntimeAttestationFile),
+  `${JSON.stringify(runtimeAttestation, null, 2)}\n`,
+  {
+    encoding: 'utf8',
+    flag: 'wx',
+  },
+);
 process.stdout.write(`${evidencePath}\n`);
 
 function assertAdmittedProductResult(result) {

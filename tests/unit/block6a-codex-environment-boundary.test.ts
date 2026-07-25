@@ -7,8 +7,8 @@ import {
   CODEX_SDK_0_144_6_ENVIRONMENT_OVERLAY,
   CODEX_UTILITY_ENVIRONMENT_KEYS,
   createCodexUtilityEnvironment,
-} from '../../src/main/codex-feasibility/environment';
-import { BLOCK6A_FEASIBILITY_MANIFEST } from '../../src/main/codex-feasibility/manifest';
+} from '../certification/block6a/runtime/environment';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from '../certification/block6a/runtime/manifest';
 
 const rootDir = path.resolve(__dirname, '../..');
 
@@ -116,7 +116,7 @@ describe('Block 6A remediation R2 environment boundary', () => {
       .toEqual(['PATH']);
 
     const utilitySource = readFileSync(
-      path.join(rootDir, 'src/main/codex-feasibility/utility-entry.ts'),
+      path.join(rootDir, 'tests/certification/block6a/runtime/utility-entry.ts'),
       'utf8',
     );
     expect(utilitySource).not.toMatch(/\bapiKey\s*:/);
@@ -128,10 +128,10 @@ describe('Block 6A remediation R2 environment boundary', () => {
 
   it('requires every probe producer to use the shared minimal utility policy', () => {
     for (const relativePath of [
-      'src/main/codex-feasibility/probe-main.ts',
-      'src/main/codex-feasibility/output-schema-probe-main.ts',
-      'src/main/codex-feasibility/lifecycle-probe-main.ts',
-      'src/main/codex-feasibility/packaged-probe.ts',
+      'tests/certification/block6a/runtime/probe-main.ts',
+      'tests/certification/block6a/runtime/output-schema-probe-main.ts',
+      'tests/certification/block6a/runtime/lifecycle-probe-main.ts',
+      'tests/certification/block6a/runtime/packaged-probe.ts',
     ]) {
       const source = readFileSync(path.join(rootDir, relativePath), 'utf8');
       expect(source).toContain('createCodexUtilityEnvironment');

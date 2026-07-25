@@ -5,6 +5,8 @@ import { extractFile } from '@electron/asar';
 
 const manifestRelativePath =
   'config/block13-task13-11-product-artifact-v1.json';
+export const task1311RuntimeAttestationFile =
+  'writestorm-ai-runtime-attestation-v1.json';
 
 export function loadTask1311ProductArtifactBoundary(repositoryRoot) {
   const manifest = JSON.parse(readFileSync(
@@ -44,6 +46,32 @@ export function createTask1311ProductArtifactRecord(artifactRoot, boundary) {
   };
 }
 
+export function assertTask1311CertificationBuildArtifact(
+  artifactRoot,
+  boundary,
+  compatibilityFingerprint,
+) {
+  if (!/^[0-9a-f]{64}$/.test(compatibilityFingerprint)) {
+    throw new Error('Task 13.11 certification fingerprint is invalid.');
+  }
+  const descriptor = boundary.asarEntries.find(
+    ({ id }) => id === 'product_main_bundle',
+  );
+  if (!descriptor) {
+    throw new Error('Task 13.11 product Main boundary is missing.');
+  }
+  const archive = resolveInside(artifactRoot, descriptor.archiveRelativePath);
+  const mainBundle = extractFile(
+    archive,
+    descriptor.entryPath.split('/').join(path.sep),
+  ).toString('utf8');
+  const marker =
+    `block13-task13-certification-build-v1:${compatibilityFingerprint}`;
+  if (!mainBundle.includes(marker)) {
+    throw new Error('Task 13.11 artifact is not an admitted certification build.');
+  }
+}
+
 export function compactTask1311CompatibilityFingerprint(fingerprint) {
   return {
     boundaryId: fingerprint.boundaryId,
@@ -54,6 +82,32 @@ export function compactTask1311CompatibilityFingerprint(fingerprint) {
       probeArtifact: fingerprint.layers.probeArtifact.sha256,
     },
     sha256: fingerprint.sha256,
+  };
+}
+
+export function createTask1311RuntimeAttestation(
+  compatibilityFingerprint,
+  artifact,
+) {
+  if (!/^[0-9a-f]{64}$/.test(compatibilityFingerprint?.sha256)
+    || artifact?.boundaryId !== 'block13-task13-11-product-artifact-v1'
+    || !Array.isArray(artifact.files)
+    || artifact.files.map(({ id }) => id).join(',')
+      !== 'writestorm_executable,app_asar,codex_executable'
+    || !/^[0-9a-f]{64}$/.test(artifact.sha256)) {
+    throw new Error('Task 13.11 runtime attestation input is invalid.');
+  }
+  return {
+    schemaVersion: 1,
+    authority: 'block13-runtime-artifact-attestation-v1',
+    platform: 'win32',
+    architecture: 'x64',
+    compatibilityFingerprint: compatibilityFingerprint.sha256,
+    artifact: {
+      boundaryId: artifact.boundaryId,
+      files: artifact.files,
+      sha256: artifact.sha256,
+    },
   };
 }
 

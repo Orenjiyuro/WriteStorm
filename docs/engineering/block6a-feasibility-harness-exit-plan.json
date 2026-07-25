@@ -1,6 +1,7 @@
 {
-  "schemaVersion": 1,
-  "status": "planning_only_no_task13_authority",
+  "schemaVersion": 2,
+  "status": "task13_source_exit_complete",
+  "retainedCertificationRoot": "tests/certification/block6a/runtime",
   "productionTargets": {
     "aiExecutionPort": "src/main/ai/ai-execution-port.ts",
     "codexProviderAdapter": "src/main/ai/providers/codex/codex-provider-adapter.ts",

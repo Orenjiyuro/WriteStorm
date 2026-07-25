@@ -19,7 +19,7 @@ const evidence = JSON.parse(readFileSync(
 ));
 
 describe('Block 13.11 Windows product packaged evidence', () => {
-  it('binds the current production boundary without compatibility drift', () => {
+  it('retains its exact historical boundary while current drift fails closed', () => {
     const current = compactTask1311CompatibilityFingerprint(
       createTask135CompatibilityFingerprint(
         rootDir,
@@ -27,7 +27,16 @@ describe('Block 13.11 Windows product packaged evidence', () => {
         evidence.compatibilityFingerprint.gitHead,
       ),
     );
-    expect(current).toEqual(evidence.compatibilityFingerprint);
+    expect(current.layers.supplyChain).toBe(
+      evidence.compatibilityFingerprint.layers.supplyChain,
+    );
+    expect(current.layers.productionProtocol).not.toBe(
+      evidence.compatibilityFingerprint.layers.productionProtocol,
+    );
+    expect(current.layers.probeArtifact).not.toBe(
+      evidence.compatibilityFingerprint.layers.probeArtifact,
+    );
+    expect(current.sha256).not.toBe(evidence.compatibilityFingerprint.sha256);
     expect(evidence.compatibilityFingerprint.gitHead).toBe(
       'f4e6adc2d106946de39563da1da4ed986c4caed8',
     );

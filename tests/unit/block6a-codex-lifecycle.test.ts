@@ -8,11 +8,11 @@ import {
   WindowsOwnedProcessGuard,
   WindowsOwnedProcessTracker,
   type WindowsProcessSnapshot,
-} from '../../src/main/codex-feasibility/lifecycle';
+} from '../certification/block6a/runtime/lifecycle';
 import {
   isCodexFeasibilityRequest,
   isCodexFeasibilityResponse,
-} from '../../src/main/codex-feasibility/protocol';
+} from '../certification/block6a/runtime/protocol';
 
 const rootDir = path.resolve(__dirname, '../..');
 
@@ -312,7 +312,7 @@ describe('Block 6A.7 lifecycle and owned-process boundary', () => {
 
   it('keeps window-close and app-quit as hidden, distinct initial triggers', () => {
     const source = readFileSync(
-      path.join(rootDir, 'src/main/codex-feasibility/lifecycle-probe-main.ts'),
+      path.join(rootDir, 'tests/certification/block6a/runtime/lifecycle-probe-main.ts'),
       'utf8',
     );
     expect(source).toContain('show: false');

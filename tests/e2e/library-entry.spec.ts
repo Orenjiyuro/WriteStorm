@@ -110,7 +110,8 @@ test('creates and opens a local library from the desktop entry', async () => {
     await expect(page.getByText(
       'A template version cannot be published until its sample preview status is passed.',
     )).toBeVisible();
-    await expect(page.getByText('codex_sdk_gate_required', { exact: true })).toBeVisible();
+    await expect(page.getByText('prompt_template_instance_unavailable', { exact: true }))
+      .toBeVisible();
     await expect(page.getByText('sample_preview_runtime_not_admitted', { exact: true }))
       .toBeVisible();
     await expect(page.getByRole('heading', { name: 'Publication controls' })).toBeVisible();

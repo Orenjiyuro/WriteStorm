@@ -179,7 +179,7 @@ No analysis-configuration migration, table, repository, service, IPC, preload, r
 
 Status: complete as a natural-path blocked shell.
 
-The minimal top-level Settings route exposes Templates & schemas after a Library is open. Its sample-preview card shows `status = blocked`, a native disabled “Run sample preview” action, and the exact blocker codes `codex_sdk_gate_required`, `prompt_template_instance_unavailable`, and `sample_preview_runtime_not_admitted`. This is a product route rather than Diagnostics readout and it performs no query on entry.
+The minimal top-level Settings route exposes Templates & schemas after a Library is open. Its sample-preview card shows `status = blocked`, a native disabled “Run sample preview” action, and the exact active blocker codes `prompt_template_instance_unavailable` and `sample_preview_runtime_not_admitted`. The former `codex_sdk_gate_required` code is historical and is not an active product blocker after the Windows conditional Gate was accepted. The remaining runtime blocker belongs to Block 17 production Job/prompt admission. This is a product route rather than Diagnostics readout and it performs no query on entry.
 
 The same card states the publication hard gate: a template version cannot be published until its sample preview status is `passed`. This statement does not create a publish action or state transition; Task 12.11 owns that constrained shell. The preview component accepts no action callback and calls neither preload nor IPC.
 

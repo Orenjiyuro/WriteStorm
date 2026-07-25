@@ -59,7 +59,8 @@ describe('Block 12 Task 12.10 Prompt sample preview route', () => {
     expect(markup).toContain('href="#/settings"');
     expect(markup).toContain('aria-current="page"');
     expect(markup).toContain('<h1 id="settings-title">Settings</h1>');
-    expect(markup).toContain('Codex SDK gate');
+    expect(markup).toContain('Integration gate');
+    expect(markup).toContain('Conditional Go');
     expect(markup).not.toContain('No library open');
   });
 

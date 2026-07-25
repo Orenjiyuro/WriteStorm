@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
-import { CodexUtilityProtocolTerminationSupervisor } from '../../src/main/codex-feasibility/utility-protocol-termination';
+import { CodexUtilityProtocolTerminationSupervisor } from '../certification/block6a/runtime/utility-protocol-termination';
 
 const rootDir = path.resolve(__dirname, '../..');
 
@@ -66,7 +66,7 @@ describe('Block 6A malformed utility protocol termination', () => {
 
   it('routes malformed utility messages through the supervisor instead of direct exit', () => {
     const utilityEntry = readFileSync(
-      path.join(rootDir, 'src/main/codex-feasibility/utility-entry.ts'),
+      path.join(rootDir, 'tests/certification/block6a/runtime/utility-entry.ts'),
       'utf8',
     );
 

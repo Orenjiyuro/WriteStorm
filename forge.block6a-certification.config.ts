@@ -45,7 +45,7 @@ const config: ForgeConfig = {
     new VitePlugin({
       build: [
         {
-          entry: 'src/main/codex-feasibility/certification-main.ts',
+          entry: 'tests/certification/block6a/runtime/certification-main.ts',
           config: 'vite.block6a-certification-main.config.ts',
         },
         {
@@ -63,7 +63,7 @@ const config: ForgeConfig = {
           target: 'main',
         },
         {
-          entry: 'src/main/codex-feasibility/utility-entry.ts',
+          entry: 'tests/certification/block6a/runtime/utility-entry.ts',
           config: 'vite.codex-feasibility.config.ts',
           target: 'main',
         },

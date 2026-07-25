@@ -36,13 +36,9 @@ const scenarioResult = (
 describe('Block 13.11 product packaged probe coordinator', () => {
   it('uses three sequential isolated utility sessions and emits sanitized evidence', async () => {
     const runScenario = vi.fn(async (scenario) => scenarioResult(scenario));
-    const writeResult = vi.fn();
 
     const result = await executeCodexProductPackagedProbe({
-      resultPath:
-        'C:\\Temp\\writestorm-task13-11-product\\123e4567-e89b-42d3-a456-426614174000\\result.json',
       runScenario,
-      writeResult,
       versions: {
         electron: '43.0.0',
         nodeRuntime: '24.17.0',
@@ -59,7 +55,6 @@ describe('Block 13.11 product packaged probe coordinator', () => {
     ]);
     expect(result.classification).toBe('windows_product_packaged_runtime_verified');
     expect(result.scenarios.map((scenario) => scenario.sessionOrdinal)).toEqual([1, 2, 3]);
-    expect(writeResult).toHaveBeenCalledWith(expect.any(String), result);
     expect(JSON.stringify(result)).not.toMatch(
       /prompt|response|rawError|stack|cause|workingDirectory|pathValue|credential|providerId|pid/i,
     );
@@ -67,15 +62,12 @@ describe('Block 13.11 product packaged probe coordinator', () => {
 
   it('fails closed when any scenario lacks cleanup or the expected lifecycle outcome', async () => {
     const result = await executeCodexProductPackagedProbe({
-      resultPath:
-        'C:\\Temp\\writestorm-task13-11-product\\123e4567-e89b-42d3-a456-426614174000\\result.json',
       runScenario: async (scenario) => ({
         ...scenarioResult(scenario),
         ...(scenario === 'timeout'
           ? { assertions: { ...scenarioResult(scenario).assertions, cliResidualAbsent: false } }
           : {}),
       }),
-      writeResult: () => undefined,
       versions: {
         electron: '43.0.0',
         nodeRuntime: '24.17.0',

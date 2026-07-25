@@ -4,16 +4,16 @@ import { describe, expect, it } from 'vitest';
 import {
   isCodexFeasibilityRequest,
   isCodexFeasibilityResponse,
-} from '../../src/main/codex-feasibility/protocol';
+} from '../certification/block6a/runtime/protocol';
 import { PRODUCT_IPC_CHANNELS } from '../../src/shared/contracts';
 import {
   isInsideProjectPlatformPackage,
   resolvePackagedCodexPath,
-} from '../../src/main/codex-feasibility/utility-entry';
+} from '../certification/block6a/runtime/utility-entry';
 import { findRestrictedModuleLoads } from '../../scripts/block6a-source-security-guard.mjs';
 
 const rootDir = path.resolve(__dirname, '../..');
-const utilityEntry = path.join(rootDir, 'src/main/codex-feasibility/utility-entry.ts');
+const utilityEntry = path.join(rootDir, 'tests/certification/block6a/runtime/utility-entry.ts');
 const productionUtilityEntry = path.join(
   rootDir,
   'src/main/ai/providers/codex/codex-utility-entry.ts',
@@ -111,7 +111,10 @@ describe('Block 6A.4 Codex utility boundary', () => {
   });
 
   it('allows the SDK import only in the dedicated feasibility and production utility entries', () => {
-    const sdkImporters = sourceFiles(path.join(rootDir, 'src')).filter((filePath) => {
+    const sdkImporters = [
+      ...sourceFiles(path.join(rootDir, 'src')),
+      ...sourceFiles(path.join(rootDir, 'tests/certification/block6a/runtime')),
+    ].filter((filePath) => {
       return importSpecifiers(readFileSync(filePath, 'utf8')).some((specifier) => (
         specifier === '@openai/codex-sdk' || specifier.startsWith('@openai/codex-sdk/')
       ));
@@ -190,7 +193,7 @@ describe('Block 6A.4 Codex utility boundary', () => {
     expect(utilityViteConfig).toContain("'@openai/codex'");
     expect(productForgeConfig).not.toContain('codex-feasibility');
     expect(productForgeConfig).not.toContain('@openai/codex');
-    expect(forgeConfig).toContain("entry: 'src/main/codex-feasibility/utility-entry.ts'");
+    expect(forgeConfig).toContain("entry: 'tests/certification/block6a/runtime/utility-entry.ts'");
     expect(forgeConfig).toContain("config: 'vite.codex-feasibility.config.ts'");
     expect(forgeConfig).toContain("'/node_modules/@openai/codex-sdk'");
     expect(forgeConfig).toContain("'/node_modules/@openai/codex'");

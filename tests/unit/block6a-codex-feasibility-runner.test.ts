@@ -8,9 +8,9 @@ import {
   sendSessionMessage,
   type CodexFeasibilityUtilityHandle,
   type ForkCodexFeasibilityUtility,
-} from '../../src/main/codex-feasibility/runner';
-import type { CodexFeasibilityRequest } from '../../src/main/codex-feasibility/protocol';
-import { BLOCK6A_FEASIBILITY_MANIFEST } from '../../src/main/codex-feasibility/manifest';
+} from '../certification/block6a/runtime/runner';
+import type { CodexFeasibilityRequest } from '../certification/block6a/runtime/protocol';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from '../certification/block6a/runtime/manifest';
 
 class FakeCodexUtility extends EventEmitter implements CodexFeasibilityUtilityHandle {
   private currentPid: number | undefined = 64004;
@@ -87,11 +87,11 @@ describe('Block 6A.4 Codex feasibility utility runner', () => {
   it('centralizes the only utility kill behind ownership proof and forbids process-name termination', () => {
     const rootDir = path.resolve(__dirname, '../..');
     const runnerSource = readFileSync(
-      path.join(rootDir, 'src/main/codex-feasibility/runner.ts'),
+      path.join(rootDir, 'tests/certification/block6a/runtime/runner.ts'),
       'utf8',
     );
     const terminationSource = readFileSync(
-      path.join(rootDir, 'src/main/codex-feasibility/termination-supervisor.ts'),
+      path.join(rootDir, 'tests/certification/block6a/runtime/termination-supervisor.ts'),
       'utf8',
     );
 
@@ -106,7 +106,7 @@ describe('Block 6A.4 Codex feasibility utility runner', () => {
   it('uses one typed utility-session orchestration for every feasibility operation', () => {
     const rootDir = path.resolve(__dirname, '../..');
     const runnerSource = readFileSync(
-      path.join(rootDir, 'src/main/codex-feasibility/runner.ts'),
+      path.join(rootDir, 'tests/certification/block6a/runtime/runner.ts'),
       'utf8',
     );
 

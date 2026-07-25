@@ -116,7 +116,7 @@ export const rendererText = {
     blockedStatus: 'Blocked',
     runAction: 'Run sample preview',
     disabledReason:
-      'Unavailable: the Codex SDK gate has not passed, no production PromptTemplate instance exists, and sample preview runtime is not admitted before Block 17.',
+      'Unavailable: no production PromptTemplate instance exists, and the Block 17 sample-preview Job and prompt runtime are not admitted.',
     blockerListLabel: 'Sample preview blockers',
     publicationGateTitle: 'Publication hard gate',
     publicationGateDescription:
@@ -374,7 +374,7 @@ export const rendererText = {
       rerunModule: 'Rerun module',
       viewRerunDiff: 'View rerun diff',
       analysisDisabledReason:
-        'Unavailable: the Codex SDK compatibility spike has not passed, so no AI analysis runtime is admitted.',
+        'Unavailable: Block 17 production AI Job and prompt runtime are not admitted, so analysis cannot run.',
       rerunDisabledReason:
         'Unavailable: the AI Job runtime is not admitted, so this module cannot be rerun.',
       diffDisabledReason:

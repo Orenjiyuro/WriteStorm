@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { isAbsolute, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { BLOCK6A_FEASIBILITY_MANIFEST } from '../../src/main/codex-feasibility/manifest';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from '../certification/block6a/runtime/manifest';
 
 const sdkManifestPath = 'node_modules/@openai/codex-sdk/package.json';
 const sdkTypesPath = 'node_modules/@openai/codex-sdk/dist/index.d.ts';

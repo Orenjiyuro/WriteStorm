@@ -7,8 +7,8 @@ import {
   classifyCodexTurnRuntimeFailureOrigin,
   resolveCodexFeasibilityTurnDeadlineMs,
   settleCodexTurnWithinDeadline,
-} from '../../src/main/codex-feasibility/turn-deadline';
-import { BLOCK6A_FEASIBILITY_MANIFEST } from '../../src/main/codex-feasibility/manifest';
+} from '../certification/block6a/runtime/turn-deadline';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from '../certification/block6a/runtime/manifest';
 
 describe('Block 6A R8a SDK turn deadline boundary', () => {
   afterEach(() => vi.useRealTimers());
@@ -74,15 +74,15 @@ describe('Block 6A R8a SDK turn deadline boundary', () => {
     const rootDir = path.resolve(__dirname, '../..');
     const utilitySource = readFileSync(path.join(
       rootDir,
-      'src/main/codex-feasibility/utility-entry.ts',
+      'tests/certification/block6a/runtime/utility-entry.ts',
     ), 'utf8');
     const capabilitySource = readFileSync(path.join(
       rootDir,
-      'src/main/codex-feasibility/probe-main.ts',
+      'tests/certification/block6a/runtime/probe-main.ts',
     ), 'utf8');
     const outputSchemaSource = readFileSync(path.join(
       rootDir,
-      'src/main/codex-feasibility/output-schema-probe-main.ts',
+      'tests/certification/block6a/runtime/output-schema-probe-main.ts',
     ), 'utf8');
 
     expect(utilitySource.match(/settleCodexTurnWithinDeadline\(/g)).toHaveLength(2);

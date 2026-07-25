@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { BLOCK6A_FEASIBILITY_MANIFEST } from '../../src/main/codex-feasibility/manifest';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from '../certification/block6a/runtime/manifest';
 
 const productDesignPath = 'docs/product/write-storm-product-design.md';
 const technicalDesignPath = 'docs/engineering/TECHNICAL_DESIGN.md';
@@ -713,7 +713,7 @@ describe('Block 6A Codex SDK feasibility authority', () => {
 
     expect(context).toContain('V1-BLOCK-6A-CODEX-SDK-FEASIBILITY.md');
     expect(context).toContain(
-      'The admitted wording is `Conditional Go — Windows feasibility verified; macOS packaged runtime deferred-by-user.`',
+      'The admitted wording remains `Conditional Go — Windows feasibility verified; macOS packaged runtime deferred-by-user.`',
     );
     expect(context).not.toContain('Task 6A.1 establishes `docs/engineering/V1-BLOCK-6A-CODEX-SDK-FEASIBILITY.md` as the current Codex feasibility authority with verdict `pending`');
     expect(activeContext).not.toMatch(/no SDK dependency is installed|no probe has run|no Go\/No-Go decision/i);

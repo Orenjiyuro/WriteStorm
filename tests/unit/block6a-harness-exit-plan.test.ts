@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -9,8 +9,9 @@ const planPath = path.join(
 );
 
 type HarnessExitPlan = {
-  readonly schemaVersion: 1;
-  readonly status: 'planning_only_no_task13_authority';
+  readonly schemaVersion: 2;
+  readonly status: 'task13_source_exit_complete';
+  readonly retainedCertificationRoot: 'tests/certification/block6a/runtime';
   readonly productionTargets: {
     readonly aiExecutionPort: string;
     readonly codexProviderAdapter: string;
@@ -28,23 +29,27 @@ type HarnessExitPlan = {
 describe('Block 6A feasibility harness exit plan', () => {
   const plan = JSON.parse(readFileSync(planPath, 'utf8')) as HarnessExitPlan;
 
-  it('classifies every current feasibility source exactly once', () => {
-    const sourceRoot = path.join(rootDir, 'src/main/codex-feasibility');
-    const currentSources = readdirSync(sourceRoot)
+  it('removes the expired feasibility tree from product source', () => {
+    expect(existsSync(path.join(rootDir, 'src/main/codex-feasibility'))).toBe(false);
+    const certificationRoot = path.join(rootDir, plan.retainedCertificationRoot);
+    const retainedSources = readdirSync(certificationRoot)
       .filter((name) => name.endsWith('.ts'))
-      .map((name) => `src/main/codex-feasibility/${name}`)
+      .map((name) => `${plan.retainedCertificationRoot}/${name}`)
       .sort();
     const extracted = [...plan.extractThenDelete].sort();
     const deleted = [...plan.deleteWithoutPromotion].sort();
 
     expect(new Set([...extracted, ...deleted]).size).toBe(extracted.length + deleted.length);
-    expect([...extracted, ...deleted].sort()).toEqual(currentSources);
+    expect(retainedSources.map((entry) => path.basename(entry))).toEqual(
+      [...extracted, ...deleted].map((entry) => path.basename(entry)).sort(),
+    );
   });
 
   it('permits only low-level boundary semantics to be independently extracted', () => {
     expect(plan).toMatchObject({
-      schemaVersion: 1,
-      status: 'planning_only_no_task13_authority',
+      schemaVersion: 2,
+      status: 'task13_source_exit_complete',
+      retainedCertificationRoot: 'tests/certification/block6a/runtime',
       productionTargets: {
         aiExecutionPort: 'src/main/ai/ai-execution-port.ts',
         codexProviderAdapter: 'src/main/ai/providers/codex/codex-provider-adapter.ts',

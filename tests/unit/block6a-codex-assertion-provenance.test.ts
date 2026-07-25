@@ -6,7 +6,7 @@ import {
   BLOCK6A_R6_PROVENANCE_EVIDENCE_ID,
   areBlock6aAssertionGroupsTrue,
   createBlock6aAssertion,
-} from '../../src/main/codex-feasibility/assertion-provenance';
+} from '../certification/block6a/runtime/assertion-provenance';
 
 const rootDir = path.resolve(__dirname, '../..');
 
@@ -57,7 +57,7 @@ describe('Block 6A R6 per-assertion provenance', () => {
       'packaged-probe.ts',
     ]) {
       const source = readFileSync(
-        path.join(rootDir, 'src/main/codex-feasibility', file),
+        path.join(rootDir, 'tests/certification/block6a/runtime', file),
         'utf8',
       );
       expect(source).toContain('createBlock6aAssertion');
@@ -66,7 +66,7 @@ describe('Block 6A R6 per-assertion provenance', () => {
 
   it('keeps lifecycle classification on assertion leaf values', () => {
     const source = readFileSync(
-      path.join(rootDir, 'src/main/codex-feasibility/lifecycle-probe-main.ts'),
+      path.join(rootDir, 'tests/certification/block6a/runtime/lifecycle-probe-main.ts'),
       'utf8',
     );
 

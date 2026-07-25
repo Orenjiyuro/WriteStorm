@@ -1,8 +1,17 @@
-import { readFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+} from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import {
   evaluateCodexProductPackagedProbeGate,
+  prepareCodexProductProbeResultPath,
   runOptionalCodexProductPackagedProbe,
 } from '../../src/main/ai/providers/codex/codex-product-packaged-probe';
 
@@ -45,7 +54,7 @@ describe('Block 13.11 product packaged probe gate', () => {
     expect(exitApp).not.toHaveBeenCalled();
   });
 
-  it('requires packaged Windows x64 and a UUID while deriving the only output path', () => {
+  it('requires packaged Windows x64 and a UUID before preparing output', () => {
     expect(evaluateCodexProductPackagedProbeGate({
       trigger: '1',
       runId,
@@ -56,7 +65,7 @@ describe('Block 13.11 product packaged probe gate', () => {
     })).toEqual({
       accepted: true,
       reason: 'accepted',
-      resultPath: `C:\\Temp\\writestorm-task13-11-product\\${runId}\\result.json`,
+      runId,
     });
 
     for (const candidate of [
@@ -70,6 +79,26 @@ describe('Block 13.11 product packaged probe gate', () => {
         temporaryDirectory: 'C:\\Temp',
         ...candidate,
       }).accepted).toBe(false);
+    }
+  });
+
+  it('rejects a pre-created junction or symlink before writing probe output', () => {
+    expect(typeof prepareCodexProductProbeResultPath).toBe('function');
+    const root = mkdtempSync(path.join(os.tmpdir(), 'writestorm-probe-output-'));
+    const outside = mkdtempSync(path.join(os.tmpdir(), 'writestorm-probe-outside-'));
+    const base = path.join(root, 'writestorm-task13-11-product');
+    const runRoot = path.join(base, runId);
+    mkdirSync(base);
+    symlinkSync(outside, runRoot, process.platform === 'win32' ? 'junction' : 'dir');
+    try {
+      expect(() => prepareCodexProductProbeResultPath({
+        temporaryDirectory: root,
+        runId,
+      })).toThrow();
+      expect(existsSync(path.join(outside, 'result.json'))).toBe(false);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+      rmSync(outside, { recursive: true, force: true });
     }
   });
 

@@ -6,7 +6,7 @@ const rootDir = path.resolve(__dirname, '../..');
 
 describe('Block 6A.8a packaged Codex SDK probe boundary', () => {
   it('behaviorally rejects development, wrong-target, arbitrary-result, and unapproved synthetic input', async () => {
-    const probeModule = await import('../../src/main/codex-feasibility/packaged-probe') as Record<string, unknown>;
+    const probeModule = await import('../certification/block6a/runtime/packaged-probe') as Record<string, unknown>;
     expect(probeModule.evaluatePackagedProbeGate).toBeTypeOf('function');
     const evaluate = probeModule.evaluatePackagedProbeGate as (input: unknown) => { accepted: boolean };
     const base = {
@@ -30,11 +30,11 @@ describe('Block 6A.8a packaged Codex SDK probe boundary', () => {
   it('keeps the no-window packaged-only startup gate outside the product build graph', () => {
     const mainSource = readFileSync(path.join(rootDir, 'src/main/main.ts'), 'utf8');
     const certificationMainSource = readFileSync(
-      path.join(rootDir, 'src/main/codex-feasibility/certification-main.ts'),
+      path.join(rootDir, 'tests/certification/block6a/runtime/certification-main.ts'),
       'utf8',
     );
     const probeSource = readFileSync(
-      path.join(rootDir, 'src/main/codex-feasibility/packaged-probe.ts'),
+      path.join(rootDir, 'tests/certification/block6a/runtime/packaged-probe.ts'),
       'utf8',
     );
     const productForgeConfig = readFileSync(path.join(rootDir, 'forge.config.ts'), 'utf8');
@@ -49,8 +49,8 @@ describe('Block 6A.8a packaged Codex SDK probe boundary', () => {
     expect(productForgeConfig).not.toContain('@openai/codex');
     expect(certificationMainSource).toContain('runOptionalPackagedCodexProbe');
     expect(certificationMainSource).toContain('process.exit(33)');
-    expect(certificationForgeConfig).toContain("entry: 'src/main/codex-feasibility/certification-main.ts'");
-    expect(certificationForgeConfig).toContain("entry: 'src/main/codex-feasibility/utility-entry.ts'");
+    expect(certificationForgeConfig).toContain("entry: 'tests/certification/block6a/runtime/certification-main.ts'");
+    expect(certificationForgeConfig).toContain("entry: 'tests/certification/block6a/runtime/utility-entry.ts'");
     expect(certificationForgeConfig).toContain("'/node_modules/@openai/codex-sdk'");
     expect(probeSource).toContain('evaluatePackagedProbeGate');
     expect(probeSource).toContain('runOutputSchemaProbe');
@@ -93,7 +93,7 @@ describe('Block 6A.8a packaged Codex SDK probe boundary', () => {
 
   it('keeps prompt, schema, credentials and raw process data outside the packaged result contract', () => {
     const probeSource = readFileSync(
-      path.join(rootDir, 'src/main/codex-feasibility/packaged-probe.ts'),
+      path.join(rootDir, 'tests/certification/block6a/runtime/packaged-probe.ts'),
       'utf8',
     );
 

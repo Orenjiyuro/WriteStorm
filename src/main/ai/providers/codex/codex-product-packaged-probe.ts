@@ -1,4 +1,11 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  realpathSync,
+  writeFileSync,
+} from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import type { AiRuntimeCleanupObservation } from '../../ai-attempt-lifecycle';
 import type { AiAttemptToken } from '../../ai-execution-port';
@@ -29,8 +36,19 @@ export type CodexProductProbeGateResult =
   | {
     readonly accepted: true;
     readonly reason: 'accepted';
-    readonly resultPath: string;
+    readonly runId: string;
   };
+
+const preparedOutputTargetBrand: unique symbol = Symbol('codexProductProbeOutputTarget');
+export type CodexProductProbeOutputTarget = Readonly<{
+  readonly [preparedOutputTargetBrand]: true;
+  readonly resultPath: string;
+  readonly temporaryRoot: string;
+  readonly baseDirectory: string;
+  readonly runDirectory: string;
+  readonly device: number;
+  readonly inode: number;
+}>;
 
 export type CodexProductPackagedScenarioResult = {
   readonly scenario: CodexProductProbeScenario;
@@ -95,25 +113,15 @@ export function evaluateCodexProductPackagedProbeGate(input: {
   return {
     accepted: true,
     reason: 'accepted',
-    resultPath: path.join(
-      input.temporaryDirectory,
-      'writestorm-task13-11-product',
-      input.runId,
-      'result.json',
-    ),
+    runId: input.runId,
   };
 }
 
 export async function executeCodexProductPackagedProbe(input: {
-  readonly resultPath: string;
   readonly runScenario: (
     scenario: CodexProductProbeScenario,
     sessionOrdinal: number,
   ) => Promise<CodexProductPackagedScenarioResult>;
-  readonly writeResult?: (
-    resultPath: string,
-    result: CodexProductPackagedProbeResult,
-  ) => void | Promise<void>;
   readonly versions: CodexProductPackagedProbeResult['versions'];
 }): Promise<CodexProductPackagedProbeResult> {
   const scenarios: CodexProductPackagedScenarioResult[] = [];
@@ -132,7 +140,6 @@ export async function executeCodexProductPackagedProbe(input: {
     versions: input.versions,
     scenarios,
   };
-  await (input.writeResult ?? writeSanitizedResult)(input.resultPath, result);
   return result;
 }
 
@@ -159,6 +166,16 @@ export async function runOptionalCodexProductPackagedProbe(input: {
     temporaryDirectory: input.temporaryDirectory,
   });
   if (!gate.accepted) return false;
+  let outputTarget: CodexProductProbeOutputTarget;
+  try {
+    outputTarget = prepareCodexProductProbeResultPath({
+      temporaryDirectory: input.temporaryDirectory,
+      runId: gate.runId,
+    });
+  } catch {
+    input.exitApp(1);
+    return true;
+  }
 
   const launcher = new CodexUtilityLauncher({
     mainBundleDirectory: input.mainBundleDirectory,
@@ -166,7 +183,6 @@ export async function runOptionalCodexProductPackagedProbe(input: {
   });
   const cliExecutablePath = resolvePackagedCodexExecutablePath(input.resourcesPath);
   const result = await executeCodexProductPackagedProbe({
-    resultPath: gate.resultPath,
     runScenario: async (scenario, ordinal) => {
       try {
         return await runCodexProductPackagedScenario({
@@ -188,6 +204,12 @@ export async function runOptionalCodexProductPackagedProbe(input: {
       platformPackage: '0.144.6-win32-x64',
     },
   });
+  try {
+    writeSanitizedResult(outputTarget, result);
+  } catch {
+    input.exitApp(1);
+    return true;
+  }
   input.exitApp(
     result.classification === 'windows_product_packaged_runtime_verified' ? 0 : 1,
   );
@@ -363,14 +385,101 @@ function isPassingScenario(result: CodexProductPackagedScenarioResult): boolean 
 }
 
 function writeSanitizedResult(
-  resultPath: string,
+  outputTarget: CodexProductProbeOutputTarget,
   result: CodexProductPackagedProbeResult,
 ): void {
-  mkdirSync(path.dirname(resultPath), { recursive: true });
-  writeFileSync(resultPath, `${JSON.stringify(result, null, 2)}\n`, {
+  assertOwnedRunDirectory(outputTarget);
+  writeFileSync(outputTarget.resultPath, `${JSON.stringify(result, null, 2)}\n`, {
     encoding: 'utf8',
     flag: 'wx',
   });
+}
+
+export function prepareCodexProductProbeResultPath(input: {
+  readonly temporaryDirectory: string;
+  readonly runId: string;
+}): CodexProductProbeOutputTarget {
+  if (!isUuidV4(input.runId)) throw new Error('Invalid product probe run identifier.');
+  const systemTemporaryRoot = canonicalDirectory(os.tmpdir());
+  const temporaryRoot = canonicalDirectory(input.temporaryDirectory);
+  if (!isInsideOrEqual(systemTemporaryRoot, temporaryRoot)) {
+    throw new Error('Product probe output root is outside OS temporary storage.');
+  }
+
+  const baseDirectory = path.join(temporaryRoot, 'writestorm-task13-11-product');
+  if (!existsSync(baseDirectory)) mkdirSync(baseDirectory);
+  assertPlainCanonicalDirectory(baseDirectory, temporaryRoot);
+
+  const runDirectory = path.join(baseDirectory, input.runId);
+  mkdirSync(runDirectory);
+  const identity = assertPlainCanonicalDirectory(runDirectory, temporaryRoot);
+  return Object.freeze({
+    [preparedOutputTargetBrand]: true as const,
+    resultPath: path.join(runDirectory, 'result.json'),
+    temporaryRoot,
+    baseDirectory,
+    runDirectory,
+    device: identity.dev,
+    inode: identity.ino,
+  });
+}
+
+function assertOwnedRunDirectory(target: CodexProductProbeOutputTarget): void {
+  assertPlainCanonicalDirectory(target.baseDirectory, target.temporaryRoot);
+  const identity = assertPlainCanonicalDirectory(
+    target.runDirectory,
+    target.temporaryRoot,
+  );
+  if (identity.dev !== target.device || identity.ino !== target.inode) {
+    throw new Error('Product probe output directory identity changed.');
+  }
+  if (existsSync(target.resultPath)) {
+    throw new Error('Product probe output already exists.');
+  }
+}
+
+function canonicalDirectory(directory: string): string {
+  if (!path.isAbsolute(directory)) {
+    throw new Error('Product probe output root must be absolute.');
+  }
+  const lexical = path.resolve(directory);
+  const entry = lstatSync(lexical);
+  if (!entry.isDirectory() || entry.isSymbolicLink()) {
+    throw new Error('Product probe output root must be a plain directory.');
+  }
+  const canonical = realpathSync.native(lexical);
+  if (!samePath(lexical, canonical)) {
+    throw new Error('Product probe output root traverses a link.');
+  }
+  return canonical;
+}
+
+function assertPlainCanonicalDirectory(
+  directory: string,
+  temporaryRoot: string,
+): { readonly dev: number; readonly ino: number } {
+  const lexical = path.resolve(directory);
+  const entry = lstatSync(lexical);
+  if (!entry.isDirectory() || entry.isSymbolicLink()) {
+    throw new Error('Product probe output path is not a plain directory.');
+  }
+  const canonical = realpathSync.native(lexical);
+  if (!samePath(lexical, canonical)
+    || !isInsideOrEqual(temporaryRoot, canonical)) {
+    throw new Error('Product probe output path escaped OS temporary storage.');
+  }
+  return { dev: entry.dev, ino: entry.ino };
+}
+
+function isInsideOrEqual(root: string, candidate: string): boolean {
+  const relative = path.relative(root, candidate);
+  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+}
+
+function samePath(first: string, second: string): boolean {
+  return process.platform === 'win32'
+    ? first.toLowerCase() === second.toLowerCase()
+    : first === second;
 }
 
 function failedScenario(

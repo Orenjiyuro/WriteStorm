@@ -43,8 +43,8 @@ const noGitEvidence = readJson<{
   artifact: { sha256: string };
 }>('docs/engineering/evidence/block13-task13-5-windows-no-global-git-packaged.json');
 
-describe('Block 13.13 final integration note', () => {
-  it('closes the block under the exact versioned platform-limited Gate', () => {
+describe('Block 13.13 integration note', () => {
+  it('keeps the exact versioned platform-limited Gate while recertification is pending', () => {
     expect(gate).toMatchObject({
       feasibility: 'windows_passed',
       platform: 'macos_deferred',
@@ -53,11 +53,16 @@ describe('Block 13.13 final integration note', () => {
     expect(context).toContain(gate.verdictText);
     expect(status).toContain(gate.verdictText);
     expect(decisions).toContain(gate.verdictText);
-    expect(status).toContain('Status: Complete under the platform-limited conditional gate');
-    expect(status).toContain('| 13.13 | PASS for integration note and consistency gate |');
+    expect(status).toContain(
+      'Status: Remediation implemented; current Windows packaged recertification required',
+    );
+    expect(status).toContain('| 13.13 | REOPENED; RECERTIFICATION REQUIRED |');
     expect(context).toContain('Tasks 13.3–13.13');
     expect(decisions).toContain(
       '## D116: Block 13 Closes Under the Versioned Windows Conditional Gate',
+    );
+    expect(decisions).toContain(
+      '## D117: Block 13 Review Remediation Makes Artifact Admission Exact',
     );
   });
 
@@ -84,7 +89,7 @@ describe('Block 13.13 final integration note', () => {
     expect(status).toContain('resolved registry source, integrity and dependency tree');
   });
 
-  it('binds the integration conclusion to both current Windows evidence records', () => {
+  it('retains both immutable Windows evidence records as historical evidence', () => {
     expect(productEvidence.compatibilityFingerprint.gitHead).toBe(
       noGitEvidence.gitHeadAtRun,
     );
@@ -127,7 +132,7 @@ describe('Block 13.13 final integration note', () => {
     expect(limitations).toMatchObject({
       platforms: {
         windows: {
-          productPackagedRuntime: 'verified_on_development_machine',
+          productPackagedRuntime: 'historical_verified_current_recertification_required',
           cleanMachine: 'unverified',
           signing: 'unverified',
           defender: 'unverified',

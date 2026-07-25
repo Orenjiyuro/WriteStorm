@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   BLOCK6A_FEASIBILITY_MANIFEST,
   BLOCK6A_FEASIBILITY_MANIFEST_RELATIVE_PATH,
-} from '../../src/main/codex-feasibility/manifest';
+} from '../certification/block6a/runtime/manifest';
 
 const rootDir = path.resolve(__dirname, '../..');
 
@@ -64,7 +64,7 @@ describe('Block 6A versioned feasibility manifest', () => {
       ...runtimeIds,
     ];
     const operationalFiles = [
-      ...sourceFiles(path.join(rootDir, 'src/main/codex-feasibility')),
+      ...sourceFiles(path.join(rootDir, 'tests/certification/block6a/runtime')),
       ...sourceFiles(path.join(rootDir, 'scripts')).filter((file) => (
         /(?:block6a|run-block6a|certify-block6a|package-block6a|verify-block6a)/.test(
           path.basename(file),

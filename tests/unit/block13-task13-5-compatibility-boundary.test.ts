@@ -27,7 +27,7 @@ describe('Block 13.5 canonical compatibility boundary', () => {
           sourceDirectories: ['src/main/ai'],
         },
         probeArtifact: {
-          sourceDirectories: ['src/main/codex-feasibility'],
+          sourceDirectories: ['tests/certification/block6a/runtime'],
         },
       },
     });
@@ -90,10 +90,10 @@ describe('Block 13.5 canonical compatibility boundary', () => {
     const probePaths = fingerprint.layers.probeArtifact.files
       .map((entry) => entry.relativePath);
     expect(probePaths).toEqual(expect.arrayContaining([
-      'src/main/codex-feasibility/certification-main.ts',
-      'src/main/codex-feasibility/environment.ts',
-      'src/main/codex-feasibility/lifecycle.ts',
-      'src/main/codex-feasibility/manifest.ts',
+      'tests/certification/block6a/runtime/certification-main.ts',
+      'tests/certification/block6a/runtime/environment.ts',
+      'tests/certification/block6a/runtime/lifecycle.ts',
+      'tests/certification/block6a/runtime/manifest.ts',
     ]));
     expect(new Set(productionPaths).size).toBe(productionPaths.length);
     expect(new Set(probePaths).size).toBe(probePaths.length);
@@ -175,7 +175,7 @@ describe('Block 13.5 canonical compatibility boundary', () => {
     }
   });
 
-  it('keeps the recertified packaged evidence fresh for the current boundary', () => {
+  it('fails the historical packaged evidence closed after remediation drift', () => {
     const boundary = loadTask135CompatibilityBoundary(rootDir);
     const evidence = JSON.parse(readFileSync(
       path.join(
@@ -193,12 +193,12 @@ describe('Block 13.5 canonical compatibility boundary', () => {
       current,
       evidence.compatibilityFingerprint,
     )).toEqual({
-      status: 'fresh',
-      staleLayers: [],
+      status: 'stale',
+      staleLayers: ['productionProtocol', 'probeArtifact'],
       layers: {
         supplyChain: 'fresh',
-        productionProtocol: 'fresh',
-        probeArtifact: 'fresh',
+        productionProtocol: 'stale',
+        probeArtifact: 'stale',
       },
     });
     expect(evidence.artifact.sha256).toMatch(/^[0-9a-f]{64}$/);

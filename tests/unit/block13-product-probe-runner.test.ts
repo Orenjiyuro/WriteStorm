@@ -19,6 +19,16 @@ describe('Block 13.11 explicit real product probe runner', () => {
     expect(runner).toContain("WRITESTORM_TASK13_11_PRODUCT_PROBE: '1'");
     expect(runner).toContain('WRITESTORM_TASK13_11_RUN_ID: runId');
     expect(runner).toContain("cwd: os.tmpdir()");
+    expect(runner).toContain('createTask1311RuntimeAttestation');
+    expect(runner).toContain('task1311RuntimeAttestationFile');
+    expect(runner).toContain('assertTask1311CertificationBuildArtifact');
+    expect(runner.indexOf('assertTask1311CertificationBuildArtifact(')).toBeLessThan(
+      runner.indexOf('const launched = spawnSync('),
+    );
+    expect(runner.indexOf('assertAdmittedProductResult(productResult)')).toBeLessThan(
+      runner.indexOf('const runtimeAttestation ='),
+    );
+    expect(runner).toContain("flag: 'wx'");
     expect(runner).not.toMatch(/OPENAI_API_KEY|CODEX_API_KEY|CODEX_ACCESS_TOKEN/);
     expect(runner).not.toMatch(/Library|SQLite|SYNTHETIC_INPUT|RESULT_PATH/);
   });

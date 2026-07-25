@@ -116,10 +116,12 @@ describe('Block 9 durable engineering status', () => {
       expect(document).toContain('Run analysis');
       expect(document).toContain('Rerun module');
       expect(document).toContain('View rerun diff');
-      expect(document).toContain('Codex SDK compatibility spike');
       expect(document).toContain('AI Job runtime');
       expect(document).toContain('rerun candidate');
     }
+    expect(decisions).toContain('Codex SDK compatibility spike');
+    expect(context).toContain('superseded by Block 13');
+    expect(context).toContain('Block 17 production AI Job/prompt runtime');
     expect(decisions).toContain('D030: Honest Disabled AI Action Shell');
   });
 

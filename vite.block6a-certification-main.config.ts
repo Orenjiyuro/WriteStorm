@@ -4,7 +4,7 @@ export default defineConfig({
   build: {
     lib: {
       entry: {
-        main: 'src/main/codex-feasibility/certification-main.ts',
+        main: 'tests/certification/block6a/runtime/certification-main.ts',
       },
       fileName: () => '[name].js',
       formats: ['cjs'],

@@ -16,7 +16,7 @@ describe('Block 13.10 release limitation matrix', () => {
       platforms: {
         windows: {
           feasibility: 'verified',
-          productPackagedRuntime: 'verified_on_development_machine',
+          productPackagedRuntime: 'historical_verified_current_recertification_required',
           cleanMachine: 'unverified',
           signing: 'unverified',
           defender: 'unverified',

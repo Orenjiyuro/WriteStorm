@@ -5,9 +5,8 @@ import {
 } from '../../src/shared/domain';
 
 describe('Block 12 Task 12.10 Prompt sample preview policy', () => {
-  it('blocks execution before the Codex gate and Block 17 runtime', () => {
+  it('blocks execution only on the still-unadmitted Block 17 owners', () => {
     expect(PROMPT_SAMPLE_PREVIEW_BLOCKER_CODES).toEqual([
-      'codex_sdk_gate_required',
       'prompt_template_instance_unavailable',
       'sample_preview_runtime_not_admitted',
     ]);

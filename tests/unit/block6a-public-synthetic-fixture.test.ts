@@ -6,7 +6,7 @@ import {
   BLOCK6A_PUBLIC_FIXTURE_RELATIVE_PATH,
   loadBlock6aPublicSyntheticFixture,
 } from '../../scripts/block6a-public-synthetic-fixture.mjs';
-import { BLOCK6A_FEASIBILITY_MANIFEST } from '../../src/main/codex-feasibility/manifest';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from '../certification/block6a/runtime/manifest';
 
 const rootDir = path.resolve(__dirname, '../..');
 const temporaryDirectories: string[] = [];

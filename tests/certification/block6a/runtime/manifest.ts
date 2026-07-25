@@ -1,4 +1,4 @@
-import manifest from '../../../config/block6a-feasibility-manifest-v1.json';
+import manifest from '../../../../config/block6a-feasibility-manifest-v1.json';
 
 export const BLOCK6A_FEASIBILITY_MANIFEST_RELATIVE_PATH =
   'config/block6a-feasibility-manifest-v1.json';

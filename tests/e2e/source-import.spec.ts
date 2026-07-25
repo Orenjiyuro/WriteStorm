@@ -223,7 +223,7 @@ async function expectFrozenAnalysisWorkbench(page: Page): Promise<void> {
   await expect(detail.getByRole('button', { name: 'Rerun module' })).toBeDisabled();
   await expect(detail.getByRole('button', { name: 'View rerun diff' })).toBeDisabled();
   await expect(detail.getByText(
-    'Unavailable: the Codex SDK compatibility spike has not passed, so no AI analysis runtime is admitted.',
+    'Unavailable: Block 17 production AI Job and prompt runtime are not admitted, so analysis cannot run.',
     { exact: true },
   )).toBeVisible();
   await expect(detail.getByText(

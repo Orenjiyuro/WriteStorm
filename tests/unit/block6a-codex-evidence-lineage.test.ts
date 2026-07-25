@@ -5,7 +5,7 @@ import {
   evaluateBlock6aEvidenceLineage,
   isAllowedBlock6aEvidenceOnlyPath,
 } from '../../scripts/block6a-evidence-lineage.mjs';
-import { BLOCK6A_FEASIBILITY_MANIFEST } from '../../src/main/codex-feasibility/manifest';
+import { BLOCK6A_FEASIBILITY_MANIFEST } from '../certification/block6a/runtime/manifest';
 
 const hashA = 'a'.repeat(64);
 const hashB = 'b'.repeat(64);
@@ -62,7 +62,7 @@ describe('Block 6A R7 evidence lineage binding', () => {
     }],
     ['runtime changed after run', {
       ...current,
-      changedPaths: ['src/main/codex-feasibility/runner.ts'],
+      changedPaths: ['tests/certification/block6a/runtime/runner.ts'],
     }],
   ])('rejects %s', (_label, candidate) => {
     expect(() => evaluateBlock6aEvidenceLineage(lineage, candidate)).toThrow(
@@ -81,7 +81,7 @@ describe('Block 6A R7 evidence lineage binding', () => {
       'tests/unit/block6a-codex-evidence-lineage.test.ts',
     )).toBe(true);
     expect(isAllowedBlock6aEvidenceOnlyPath(
-      'src/main/codex-feasibility/runner.ts',
+      'tests/certification/block6a/runtime/runner.ts',
     )).toBe(false);
     expect(isAllowedBlock6aEvidenceOnlyPath('package-lock.json')).toBe(false);
   });

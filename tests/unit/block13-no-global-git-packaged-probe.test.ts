@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { isCodexFeasibilityRequest } from '../../src/main/codex-feasibility/protocol';
-import { evaluateTask13NoGitPackagedProbeGate } from '../../src/main/codex-feasibility/task13-no-git-packaged-probe';
+import { isCodexFeasibilityRequest } from '../certification/block6a/runtime/protocol';
+import { evaluateTask13NoGitPackagedProbeGate } from '../certification/block6a/runtime/task13-no-git-packaged-probe';
 
 const rootDir = path.resolve(__dirname, '../..');
 
@@ -37,7 +37,7 @@ describe('Block 13.5 packaged no-global-Git probe', () => {
 
   it('keeps the probe explicit, sanitized and outside product services', () => {
     const probe = readFileSync(
-      path.join(rootDir, 'src/main/codex-feasibility/task13-no-git-packaged-probe.ts'),
+      path.join(rootDir, 'tests/certification/block6a/runtime/task13-no-git-packaged-probe.ts'),
       'utf8',
     );
     const runner = readFileSync(

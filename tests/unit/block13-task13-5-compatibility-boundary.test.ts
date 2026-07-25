@@ -175,7 +175,7 @@ describe('Block 13.5 canonical compatibility boundary', () => {
     }
   });
 
-  it('fails the historical packaged evidence closed after remediation drift', () => {
+  it('matches the refreshed packaged evidence to all three current layers', () => {
     const boundary = loadTask135CompatibilityBoundary(rootDir);
     const evidence = JSON.parse(readFileSync(
       path.join(
@@ -193,12 +193,12 @@ describe('Block 13.5 canonical compatibility boundary', () => {
       current,
       evidence.compatibilityFingerprint,
     )).toEqual({
-      status: 'stale',
-      staleLayers: ['productionProtocol', 'probeArtifact'],
+      status: 'fresh',
+      staleLayers: [],
       layers: {
         supplyChain: 'fresh',
-        productionProtocol: 'stale',
-        probeArtifact: 'stale',
+        productionProtocol: 'fresh',
+        probeArtifact: 'fresh',
       },
     });
     expect(evidence.artifact.sha256).toMatch(/^[0-9a-f]{64}$/);

@@ -1,14 +1,16 @@
 import { createHash } from 'node:crypto';
 import {
+  createReadStream,
   mkdirSync,
   mkdtempSync,
+  promises as fsPromises,
   readFileSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   AI_RUNTIME_ATTESTATION_FILE,
   verifyAiRuntimeArtifactAttestation,
@@ -77,6 +79,53 @@ describe('Block 13 packaged artifact attestation', () => {
     } finally {
       rmSync(fixture.root, { recursive: true, force: true });
     }
+  });
+
+  it('uses the explicitly injected unpatched file system', async () => {
+    const fixture = createArtifactFixture();
+    try {
+      writeAttestation(fixture);
+      const fileSystem = {
+        readFile: vi.fn((
+          filePath: string,
+          encoding: 'utf8',
+        ) => fsPromises.readFile(filePath, encoding)),
+        lstat: vi.fn((filePath: string) => fsPromises.lstat(filePath)),
+        createReadStream: vi.fn((filePath: string) => createReadStream(filePath)),
+      };
+
+      await expect(verifyAiRuntimeArtifactAttestation({
+        executablePath: fixture.executablePath,
+        resourcesPath: fixture.resourcesPath,
+        compatibilityFingerprint,
+        fileSystem,
+      })).resolves.toEqual({
+        state: 'verified',
+        compatibilityFingerprint,
+      });
+      expect(fileSystem.readFile).toHaveBeenCalled();
+      expect(fileSystem.lstat).toHaveBeenCalledTimes(3);
+      expect(fileSystem.createReadStream).toHaveBeenCalledTimes(3);
+    } finally {
+      rmSync(fixture.root, { recursive: true, force: true });
+    }
+  });
+
+  it('uses Electron original-fs at the packaged Main composition boundary', () => {
+    const mainSource = readFileSync(
+      path.resolve(__dirname, '../../src/main/main.ts'),
+      'utf8',
+    );
+    const mainViteSource = readFileSync(
+      path.resolve(__dirname, '../../vite.main.config.ts'),
+      'utf8',
+    );
+
+    expect(mainSource).toContain("import * as originalFs from 'original-fs'");
+    expect(mainSource).toContain('fileSystem: originalArtifactFileSystem');
+    expect(mainViteSource).toMatch(
+      /external:\s*\[[^\]]*['"]original-fs['"][^\]]*\]/,
+    );
   });
 });
 

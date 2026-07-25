@@ -1,5 +1,9 @@
 import { createHash } from 'node:crypto';
-import { createReadStream } from 'node:fs';
+import {
+  createReadStream,
+  type ReadStream,
+  type Stats,
+} from 'node:fs';
 import { lstat, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
@@ -14,6 +18,18 @@ export type AiArtifactCompatibilityAssessment =
     compatibilityFingerprint: string;
   }>
   | Readonly<{ state: 'unverified' }>;
+
+export type AiRuntimeArtifactFileSystem = Readonly<{
+  readFile(filePath: string, encoding: 'utf8'): Promise<string>;
+  lstat(filePath: string): Promise<Stats>;
+  createReadStream(filePath: string): ReadStream;
+}>;
+
+const nodeArtifactFileSystem: AiRuntimeArtifactFileSystem = Object.freeze({
+  readFile: (filePath, encoding) => readFile(filePath, encoding),
+  lstat: (filePath) => lstat(filePath),
+  createReadStream: (filePath) => createReadStream(filePath),
+});
 
 const sha256Schema = z.string().regex(/^[0-9a-f]{64}$/);
 const artifactFileSchema = z.object({
@@ -42,12 +58,14 @@ export async function verifyAiRuntimeArtifactAttestation(input: {
   readonly executablePath: string;
   readonly resourcesPath: string;
   readonly compatibilityFingerprint: string;
+  readonly fileSystem?: AiRuntimeArtifactFileSystem;
 }): Promise<AiArtifactCompatibilityAssessment> {
   if (!/^[0-9a-f]{64}$/.test(input.compatibilityFingerprint)) {
     return unverified();
   }
   try {
-    const raw = await readFile(
+    const fileSystem = input.fileSystem ?? nodeArtifactFileSystem;
+    const raw = await fileSystem.readFile(
       path.join(input.resourcesPath, AI_RUNTIME_ATTESTATION_FILE),
       'utf8',
     );
@@ -76,7 +94,11 @@ export async function verifyAiRuntimeArtifactAttestation(input: {
       codex_executable: resolvePackagedCodexExecutablePath(input.resourcesPath),
     } as const;
     for (const expected of parsed.data.artifact.files) {
-      if (!await matchesFile(actualPaths[expected.id], expected)) return unverified();
+      if (!await matchesFile(
+        actualPaths[expected.id],
+        expected,
+        fileSystem,
+      )) return unverified();
     }
     return Object.freeze({
       state: 'verified',
@@ -103,20 +125,24 @@ function hashArtifactReceipt(
 async function matchesFile(
   filePath: string,
   expected: { readonly size: number; readonly sha256: string },
+  fileSystem: AiRuntimeArtifactFileSystem,
 ): Promise<boolean> {
-  const metadata = await lstat(filePath);
+  const metadata = await fileSystem.lstat(filePath);
   if (!metadata.isFile()
     || metadata.isSymbolicLink()
     || metadata.size !== expected.size) {
     return false;
   }
-  return await hashFile(filePath) === expected.sha256;
+  return await hashFile(filePath, fileSystem) === expected.sha256;
 }
 
-async function hashFile(filePath: string): Promise<string> {
+async function hashFile(
+  filePath: string,
+  fileSystem: AiRuntimeArtifactFileSystem,
+): Promise<string> {
   const digest = createHash('sha256');
   await new Promise<void>((resolve, reject) => {
-    const stream = createReadStream(filePath);
+    const stream = fileSystem.createReadStream(filePath);
     stream.on('data', (chunk) => digest.update(chunk));
     stream.on('error', reject);
     stream.on('end', resolve);

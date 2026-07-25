@@ -11,6 +11,7 @@ import {
 } from 'electron';
 import os from 'node:os';
 import path from 'node:path';
+import * as originalFs from 'original-fs';
 import {
   createContentSecurityPolicy,
   isTrustedSenderUrl,
@@ -68,6 +69,7 @@ import {
 import {
   verifyAiRuntimeArtifactAttestation,
   type AiArtifactCompatibilityAssessment,
+  type AiRuntimeArtifactFileSystem,
 } from './ai/ai-runtime-artifact-attestation';
 import { CodexAuthObservationAuthority } from './ai/providers/codex/codex-auth-observation';
 import {
@@ -90,6 +92,11 @@ const appProtocol = 'writestorm';
 const appProtocolHost = 'app';
 const productSenderPolicy = createProductSenderPolicy(MAIN_WINDOW_VITE_DEV_SERVER_URL);
 const structureDetectionTimeoutMs = 30_000;
+const originalArtifactFileSystem: AiRuntimeArtifactFileSystem = Object.freeze({
+  readFile: (filePath, encoding) => originalFs.promises.readFile(filePath, encoding),
+  lstat: (filePath) => originalFs.promises.lstat(filePath),
+  createReadStream: (filePath) => originalFs.createReadStream(filePath),
+});
 
 // Chromium may otherwise open background service connections before any user action.
 // Product networking remains explicit and is initiated only by approved application flows.
@@ -474,6 +481,7 @@ app.whenReady().then(async () => {
       executablePath: process.execPath,
       resourcesPath: process.resourcesPath,
       compatibilityFingerprint: aiBuildCompatibility.fingerprint,
+      fileSystem: originalArtifactFileSystem,
     });
   }
   const productProbeHandled = await runOptionalCodexProductPackagedProbe({

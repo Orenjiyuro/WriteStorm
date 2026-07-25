@@ -4,7 +4,7 @@ import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
 const rootDir = path.resolve(__dirname, '../..');
-const mainAiRoot = path.join(rootDir, 'src/main/ai');
+const mainRoot = path.join(rootDir, 'src/main');
 const canonicalRelativePath = 'src/main/ai/ai-compatibility-assessment.ts';
 const canonicalPath = path.join(rootDir, canonicalRelativePath);
 
@@ -17,7 +17,7 @@ describe('Block 13 canonical compatibility assessment boundary', () => {
       || ts.isExportDeclaration(statement)
     ))).toBe(false);
 
-    const declarations = productionTypeScriptFiles(mainAiRoot).filter((filePath) => (
+    const declarations = productionTypeScriptFiles(mainRoot).filter((filePath) => (
       /\b(?:type|interface)\s+AiCompatibilityAssessment\b/.test(
         readFileSync(filePath, 'utf8'),
       )
@@ -26,18 +26,23 @@ describe('Block 13 canonical compatibility assessment boundary', () => {
   });
 
   it('keeps runtime evaluation, observation and connection service pointed at the leaf', () => {
-    for (const relativePath of [
-      'src/main/ai/ai-runtime-compatibility.ts',
-      'src/main/ai/ai-runtime-observation.ts',
-      'src/main/ai/ai-connection-check-service.ts',
-    ]) {
+    const consumers = new Map([
+      ['src/main/ai/ai-runtime-compatibility.ts', './ai-compatibility-assessment'],
+      ['src/main/ai/ai-runtime-observation.ts', './ai-compatibility-assessment'],
+      ['src/main/ai/ai-connection-check-service.ts', './ai-compatibility-assessment'],
+      [
+        'src/main/ai/providers/codex/codex-auth-observation.ts',
+        '../../ai-compatibility-assessment',
+      ],
+    ]);
+    for (const [relativePath, canonicalImport] of consumers) {
       const source = parseSource(path.join(rootDir, relativePath));
       const imports = source.statements
         .filter(ts.isImportDeclaration)
         .map((statement) => statement.moduleSpecifier)
         .filter(ts.isStringLiteral)
         .map((specifier) => specifier.text);
-      expect(imports, relativePath).toContain('./ai-compatibility-assessment');
+      expect(imports, relativePath).toContain(canonicalImport);
     }
   });
 });

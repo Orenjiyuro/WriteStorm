@@ -1,7 +1,7 @@
 # V1 Block 13 Status
 
-Date: 2026-07-24
-Status: In progress through Task 13.12
+Date: 2026-07-25
+Status: Complete under the platform-limited conditional gate
 
 Current verdict: `Conditional Go — Windows feasibility verified; macOS packaged runtime deferred-by-user.`
 
@@ -19,6 +19,7 @@ Current verdict: `Conditional Go — Windows feasibility verified; macOS package
 | 13.10 | PASS for diagnostic contract boundary | Five stable provider-neutral AI `DomainError` codes require authoritative observations; unknown SDK failures remain `AI_RUNTIME_UNAVAILABLE`. Usage is exactly `reported` or `unknown`, and missing/invalid fields never become zero, total or cost. The bounded Main-memory diagnostic log accepts only closed records and has no disk, network, console or remote-telemetry side effect. The versioned release matrix keeps product packaged runtime, clean-machine, signing/notarization, Defender, network environments, telemetry and redistribution limitations explicit. |
 | 13.11 | PASS for current Windows development-machine artifact | Explicit evidence at runtime HEAD `f4e6adc2d106946de39563da1da4ed986c4caed8` passed real isolated success, cancel and timeout sessions using the product Forge config, Main, launcher and utility. Each session proved cleanup and absent owned utility/CLI residuals. |
 | 13.12 | IMPLEMENTED; COMPATIBILITY FRESH, OBSERVATION UNKNOWN | Settings exposes only the explicit `ai:check-connection` action and separately displays the Gate projected from `config/block13-ai-gate-v1.json`, fresh build compatibility and ephemeral runtime/auth observation. The strict empty request carries no business fields. Main clears prior observation only after an attempt is admitted, preserves it on rejected admission, delegates attempt/generation to the Task 13.8/13.9 controller, ignores invalidated late results and keeps all AI actions disabled. Restart and default packaged E2E leave observation unknown and do not invoke the real channel. |
+| 13.13 | PASS for integration note and consistency gate | This final integration note binds the exact Gate, supply-chain source, current Windows evidence, expiration rules, remaining limitations and prohibited fallback/scope. Its consistency test is deterministic and offline. |
 
 No Task 13 code creates a production AI Job, checkpoint, AnalysisModuleInstance, SQLite migration or renderer AI action. No result is resumable. No fallback provider or direct product `codex exec`/app-server/GUI automation path exists.
 
@@ -47,3 +48,38 @@ That development-machine probe does not verify clean-machine behavior, signing, 
 Task 13.12 adds one exact product channel. `ai:check-connection` accepts only `{}` and returns only provider-neutral Gate, compatibility and runtime/auth state plus `observedAt`; `ai:run`, `ai:generate`, `codex:*`, provider invocation and raw invoke remain rejected. Settings never invokes it on startup, route render, Library open or navigation. The button uses no Library, SQLite, source text, manuscript, user prompt or arbitrary path. A newly admitted attempt immediately hides the old observation; rejected concurrent, paused or quarantined admission preserves it. Renderer unmount and Main Library/window invalidation reject late writeback. Observation stays in Main memory, restart begins unknown, fingerprint drift clears it, and no TTL or automatic refresh exists.
 
 The latest separately authorized product and no-global-Git probes both bind HEAD `f4e6adc2d106946de39563da1da4ed986c4caed8` and compatibility fingerprint `c70e0d116d0bcada33c381701faee7a90b6e28570eeff8be82020f50c10807d1`. Product success/cancel/timeout and all 17 no-global-Git assertions passed. Default tests remain offline and a product restart still begins with no application auth observation. macOS remains deferred.
+
+## Task 13.13 Integration note
+
+### Final integration verdict
+
+The only active conclusion is `Conditional Go — Windows feasibility verified; macOS packaged runtime deferred-by-user.` The versioned Gate tuple is `feasibility=windows_passed`, `platform=macos_deferred`, and `overallVerdict=conditional_go`, sourced from `config/block13-ai-gate-v1.json`. Completion of Block 13 means the bounded integration gate and explicit Settings connection-check shell are implemented for the current Windows development-machine evidence. It does not make the application authenticated: compatibility is fresh, while the application auth/runtime observation starts and remains `unknown` until the user explicitly runs the check.
+
+### Sources and versions
+
+- `docs/engineering/V1-BLOCK-6A-CODEX-SDK-FEASIBILITY.md` and its committed R8b bundle manifest are the feasibility source; `config/block13-ai-gate-v1.json` is the application Gate projection.
+- `package.json` and `package-lock.json` are the installed supply-chain authority. They pin `@openai/codex-sdk` `0.144.6`, resolve `@openai/codex` `0.144.6`, and select the Windows platform package `0.144.6-win32-x64`. The lock nodes are authoritative for the resolved registry source, integrity and dependency tree; none of the three OpenAI packages declares an install lifecycle script.
+- The supported application toolchain boundary is Node `>=22.12.0`, Electron `43.0.0`, Electron Forge `7.11.2`, and Vite `8.1.3`. A dependency or toolchain update is a compatibility event, not an implicit upgrade of this conclusion.
+- `config/block13-release-limitations-v1.json` is the exact continuing limitation matrix. Historical task plans and decisions remain records of their own checkpoints; D104–D116 and this status are the active Block 13 authority.
+
+### Current evidence ledger
+
+- Block 6A R8b certification `b6a-834ba0b6-57d262ae` is the feasibility authority. Its immutable Windows artifact SHA-256 is `4b06acd811473831369cc60d4b012bd2eca2c2805c005fa49ca11c50dc631966`.
+- `docs/engineering/evidence/block13-task13-11-windows-product-packaged-001.json` binds runtime HEAD `f4e6adc2d106946de39563da1da4ed986c4caed8`, compatibility fingerprint `c70e0d116d0bcada33c381701faee7a90b6e28570eeff8be82020f50c10807d1`, and product artifact SHA-256 `cdb6047852d7c1f10564b07d4aef32e109031bf992ffaf4e65baf036fa35af6d`. The real Windows development-machine product artifact passed isolated success, cancel and timeout scenarios with cleanup and no owned residual process.
+- `docs/engineering/evidence/block13-task13-5-windows-no-global-git-packaged.json`, evidence id `block13-task13-5-windows-no-global-git-packaged-001`, binds the same runtime HEAD and compatibility fingerprint plus certification artifact SHA-256 `cc0681bf7d6c76c82c0482be7025eca6f81f29e5ea2253269aabf8d36f5877c4`. All 17 assertions passed, including a structured turn while Git was unavailable to the outer process and utility PATH.
+- Tasks 13.3–13.10 are admitted only for the sealed protocol, utility, validation, in-memory state/lifecycle and diagnostic boundaries recorded in the task matrix above. Their offline fixtures are contract witnesses, not additional live provider observations. Task 13.12 is implemented with compatibility fresh and observation unknown.
+
+### Expiration rules
+
+- Compatibility is a three-layer fingerprint. Drift in `supplyChain`, `productionProtocol`, or `probeArtifact` makes the prior evidence stale/blocked until the required focused and packaged recertification is separately authorized and accepted.
+- Critical drift includes the SDK, CLI, platform binary, lockfile integrity, Node, Electron, Forge/Vite, utility protocol, Gate projection, packaging boundary or evidence artifact. A non-packaged runtime or a platform/architecture other than the certified Windows x64 boundary cannot reuse this evidence.
+- Fingerprint drift immediately invalidates the prior auth/runtime observation. Application restart and each newly admitted attempt begin from `unknown`; an old authenticated observation cannot make stale compatibility usable.
+- Default regression remains offline. Real SDK/auth/network probes remain separate, explicit and separately authorized; they are never part of `npm run check`.
+
+### Deferred and unverified boundaries
+
+macOS packaged runtime remains deferred-by-user. Windows clean-machine behavior, signing and Defender remain unverified; macOS signing and notarization remain unverified. Proxy, enterprise certificates, firewall, offline behavior, SDK telemetry, and SDK/CLI licenses and notices remain unverified. The development-machine records cannot answer those release-environment questions. Expired, permission-denied, login-required, generic auth-failure, rate-limit and network classifications also remain unverified as live Codex capabilities unless a future reliable, reproducible structured observation establishes them.
+
+### Prohibited scope
+
+Block 13 admits no direct product `codex exec`, app-server, GUI automation, API-key auth, local-model provider, alternate-provider fallback, dynamic provider registry or automatic retry. It creates no production AI Job, JobCheckpoint, AnalysisModuleInstance, SQLite write or migration, durable checkpoint, resumable result, renderer generation action or real manuscript-analysis workflow. Codex remains the only registered V1 adapter, and every real AI action stays disabled for later explicitly authorized work.

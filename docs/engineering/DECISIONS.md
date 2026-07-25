@@ -1558,3 +1558,19 @@ Rules:
 - Default unit, integration and packaged E2E remain offline. Before the explicit action, packaged E2E renders compatibility/auth as unknown and must not click `ai:check-connection`; injected transport tests own deterministic interaction coverage. The fresh compatibility result is exposed only by the explicit check response.
 - No package or lockfile changed. No Job, checkpoint, AnalysisModuleInstance, SQLite write, retry, fallback or business AI workflow is admitted.
 - This is Windows development-machine evidence only. Clean-machine, signing, notarization, Defender, proxy, enterprise certificates, firewall, offline, telemetry and macOS remain unverified or deferred.
+
+## D116: Block 13 Closes Under the Versioned Windows Conditional Gate
+
+Decision: Block 13 closes only under the exact versioned projection `Conditional Go — Windows feasibility verified; macOS packaged runtime deferred-by-user.` Completion admits the bounded integration gate and explicit Settings connection-check shell; it does not admit a production AI workflow, a broader platform conclusion or release readiness.
+
+Rules:
+
+- `config/block13-ai-gate-v1.json` remains the single application Gate projection. The current tuple is `windows_passed / macos_deferred / conditional_go`; the feasibility source remains the accepted Block 6A R8b bundle.
+- D115 and the two committed Task 13 Windows evidence records are the latest runtime authority. Both bind runtime HEAD `f4e6adc2d106946de39563da1da4ed986c4caed8` and compatibility fingerprint `c70e0d116d0bcada33c381701faee7a90b6e28570eeff8be82020f50c10807d1`. Later documentation and evidence-normalization commits do not misrepresent their probe runtime HEAD.
+- The product artifact record `cdb6047852d7c1f10564b07d4aef32e109031bf992ffaf4e65baf036fa35af6d` and no-global-Git artifact record `cc0681bf7d6c76c82c0482be7025eca6f81f29e5ea2253269aabf8d36f5877c4` are Windows development-machine evidence only.
+- Task 13.12 completion means the explicit connection-check shell is implemented, compatibility is fresh and application observation is unknown. It does not mean authenticated, permanently connected or action-ready.
+- The active D104–D116 and `V1-BLOCK-13-STATUS.md` boundaries supersede the master plan's historical Task 13 Job/checkpoint/resume wording without rewriting that protected historical plan. Block 13 creates only in-memory candidates and no production AI Job, persistence or resumable result.
+- Drift in any canonical `supplyChain`, `productionProtocol` or `probeArtifact` input makes compatibility stale/blocked. SDK/CLI/platform, integrity, Node/Electron/Forge/Vite, utility protocol, Gate, packaging or evidence-artifact drift requires the appropriate separately authorized recertification. Fingerprint drift invalidates any prior auth/runtime observation.
+- Default regression tests remain deterministic and offline. Real SDK/auth/network probes remain explicit, separately authorized commands and never become part of `npm run check`.
+- V1 registers only the Codex adapter. No direct product `codex exec`, app-server, GUI automation, API-key auth, local-model or alternate-provider fallback is admitted.
+- `config/block13-release-limitations-v1.json` remains normative. macOS packaged runtime is deferred; clean-machine, signing/notarization, Defender, proxy, enterprise certificates, firewall, offline behavior, SDK telemetry and SDK/CLI license/notice boundaries remain unverified.

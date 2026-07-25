@@ -354,7 +354,7 @@ function readWindowsObservation(input) {
     '}',
     '$ai = @($items | Where-Object {',
     '  $created = if ($_.CreationDate) { ([DateTimeOffset]$_.CreationDate).ToUnixTimeMilliseconds() } else { 0 }',
-    '  $created -ge $startedAt -and (',
+    '  [int]$_.ProcessId -ne $PID -and $created -ge $startedAt -and (',
     '    ([string]$_.ExecutablePath -ieq $codexPath) -or',
     "    ([string]$_.CommandLine -match 'codex-utility-entry')",
     '  )',

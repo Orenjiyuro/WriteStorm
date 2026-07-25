@@ -53,6 +53,7 @@ describe('main window security lifecycle', () => {
         nodeIntegration: false,
         contextIsolation: true,
         sandbox: true,
+        spellcheck: false,
       },
     });
     expect(options).not.toHaveProperty('x');

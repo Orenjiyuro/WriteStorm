@@ -90,6 +90,15 @@ const appProtocol = 'writestorm';
 const appProtocolHost = 'app';
 const productSenderPolicy = createProductSenderPolicy(MAIN_WINDOW_VITE_DEV_SERVER_URL);
 const structureDetectionTimeoutMs = 30_000;
+
+// Chromium may otherwise open background service connections before any user action.
+// Product networking remains explicit and is initiated only by approved application flows.
+app.commandLine.appendSwitch('disable-background-networking');
+app.on('session-created', (createdSession) => {
+  createdSession.setSpellCheckerDictionaryDownloadURL('writestorm://app/spellcheck-disabled/');
+  createdSession.setSpellCheckerEnabled(false);
+});
+
 const libraryService = new LibraryService({ appVersion: app.getVersion() });
 const structurePerformanceRecorder = createOptionalStructurePerformanceRecorder(process.env);
 const structureWorkerRunner = createElectronStructureWorkerRunner(__dirname, {

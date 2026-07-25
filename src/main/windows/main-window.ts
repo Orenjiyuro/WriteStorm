@@ -30,6 +30,7 @@ export type MainWindowDependencies<TWindow extends MainWindowLike> = {
       contextIsolation: true;
       nodeIntegration: false;
       sandbox: true;
+      spellcheck: false;
     };
   }) => TWindow;
   readonly initialBounds?: {
@@ -69,6 +70,7 @@ export async function createMainWindow<TWindow extends MainWindowLike>(
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      spellcheck: false,
     },
   });
 

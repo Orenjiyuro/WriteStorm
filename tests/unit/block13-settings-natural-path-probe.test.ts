@@ -41,6 +41,42 @@ describe('Block 13.12 packaged Settings natural-path probe boundary', () => {
     );
   });
 
+  it('disables Chromium background networking before the product app becomes ready', () => {
+    const main = readFileSync(
+      path.join(rootDir, 'src/main/main.ts'),
+      'utf8',
+    );
+
+    const switchIndex = main.indexOf(
+      "app.commandLine.appendSwitch('disable-background-networking')",
+    );
+    const readyIndex = main.indexOf('app.whenReady()');
+    expect(switchIndex).toBeGreaterThan(-1);
+    expect(readyIndex).toBeGreaterThan(switchIndex);
+  });
+
+  it('disables each session spellchecker at session creation before app readiness', () => {
+    const main = readFileSync(
+      path.join(rootDir, 'src/main/main.ts'),
+      'utf8',
+    );
+
+    const sessionCreatedIndex = main.indexOf(
+      "app.on('session-created', (createdSession) => {",
+    );
+    const disableIndex = main.indexOf(
+      'createdSession.setSpellCheckerEnabled(false)',
+    );
+    const redirectIndex = main.indexOf(
+      "createdSession.setSpellCheckerDictionaryDownloadURL('writestorm://app/spellcheck-disabled/')",
+    );
+    const readyIndex = main.indexOf('app.whenReady()');
+    expect(sessionCreatedIndex).toBeGreaterThan(-1);
+    expect(redirectIndex).toBeGreaterThan(sessionCreatedIndex);
+    expect(disableIndex).toBeGreaterThan(redirectIndex);
+    expect(readyIndex).toBeGreaterThan(disableIndex);
+  });
+
   it('requires an exact explicit gate and records only bounded assertions in OS temp', () => {
     const runner = readFileSync(runnerPath, 'utf8');
 
@@ -51,6 +87,9 @@ describe('Block 13.12 packaged Settings natural-path probe boundary', () => {
     expect(runner).toContain("os.tmpdir()");
     expect(runner).toContain('preClickExternalConnectionAbsent');
     expect(runner).toContain('preClickAiProcessesAbsent');
+    expect(runner).toContain(
+      '[int]$_.ProcessId -ne $PID -and',
+    );
     expect(runner).toContain("preClickCompatibility !== 'Unknown'");
     expect(runner).toContain("postClickCompatibility !== 'Fresh'");
     expect(runner).toContain('visibleAuthenticated');

@@ -67,6 +67,7 @@ describe('Block 13.5 canonical compatibility boundary', () => {
       'vite.codex-feasibility.config.ts',
       'scripts/run-task13-5-no-git-packaged-probe.mjs',
       'scripts/run-task13-11-product-packaged-probe.mjs',
+      'scripts/run-task13-12-settings-natural-path-probe.mjs',
       'scripts/task13-11-product-artifact.d.mts',
       'scripts/task13-11-product-artifact.mjs',
       'scripts/task13-5-compatibility-boundary.mjs',
@@ -175,7 +176,7 @@ describe('Block 13.5 canonical compatibility boundary', () => {
     }
   });
 
-  it('matches the refreshed packaged evidence to all three current layers', () => {
+  it('fails prior evidence closed after the natural-path probe boundary changes', () => {
     const boundary = loadTask135CompatibilityBoundary(rootDir);
     const evidence = JSON.parse(readFileSync(
       path.join(
@@ -193,12 +194,12 @@ describe('Block 13.5 canonical compatibility boundary', () => {
       current,
       evidence.compatibilityFingerprint,
     )).toEqual({
-      status: 'fresh',
-      staleLayers: [],
+      status: 'stale',
+      staleLayers: ['supplyChain', 'productionProtocol', 'probeArtifact'],
       layers: {
-        supplyChain: 'fresh',
-        productionProtocol: 'fresh',
-        probeArtifact: 'fresh',
+        supplyChain: 'stale',
+        productionProtocol: 'stale',
+        probeArtifact: 'stale',
       },
     });
     expect(evidence.artifact.sha256).toMatch(/^[0-9a-f]{64}$/);

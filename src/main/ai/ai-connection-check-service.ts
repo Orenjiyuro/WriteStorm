@@ -4,9 +4,7 @@ import type {
   AiGateStateDto,
 } from '../../shared/contracts';
 import { AI_GATE_STATE } from '../../shared/contracts';
-export type AiCompatibilityAssessment =
-  | Readonly<{ state: 'fresh'; fingerprint: string }>
-  | Readonly<{ state: 'stale' | 'blocked' | 'unknown' }>;
+import type { AiCompatibilityAssessment } from './ai-compatibility-assessment';
 
 type AiRuntimeObservation = Readonly<{
   authState:

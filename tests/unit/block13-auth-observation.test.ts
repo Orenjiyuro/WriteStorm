@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   AI_RUNTIME_AUTH_STATES,
-  type AiCompatibilityAssessment,
 } from '../../src/main/ai/ai-runtime-observation';
+import type {
+  AiCompatibilityAssessment,
+} from '../../src/main/ai/ai-compatibility-assessment';
 import {
   CodexAuthObservationAuthority,
   mapCodexAuthObservation,

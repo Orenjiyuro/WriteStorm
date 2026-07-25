@@ -21,7 +21,8 @@
     "package:codex-certification": "node scripts/package-block6a-certification.mjs",
     "test:verification:block6a-certification": "node scripts/verify-block6a-certification-package.mjs",
     "probe:codex:packaged": "npm run certify:codex:windows",
-    "certify:codex:windows": "node scripts/certify-block6a-windows.mjs"
+    "certify:codex:windows": "node scripts/certify-block6a-windows.mjs",
+    "probe:task13:settings-natural-path": "node scripts/run-task13-12-settings-natural-path-probe.mjs"
   },
   "engines": {
     "node": ">=22.12.0"

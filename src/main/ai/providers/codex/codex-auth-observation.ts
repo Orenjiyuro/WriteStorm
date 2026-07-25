@@ -1,9 +1,9 @@
 import {
-  type AiCompatibilityAssessment,
   type AiRuntimeObservation,
   createAiRuntimeObservationMemoryAuthority,
   unknownAiRuntimeObservation,
 } from '../../ai-runtime-observation';
+import type { AiCompatibilityAssessment } from '../../ai-compatibility-assessment';
 
 export const CODEX_AUTH_PROBE_CLASSIFICATIONS = [
   'authenticated',

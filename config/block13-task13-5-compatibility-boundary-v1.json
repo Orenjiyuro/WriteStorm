@@ -59,6 +59,7 @@
         "scripts/package-block6a-certification.mjs",
         "scripts/run-task13-5-no-git-packaged-probe.mjs",
         "scripts/run-task13-11-product-packaged-probe.mjs",
+        "scripts/run-task13-12-settings-natural-path-probe.mjs",
         "scripts/task13-11-product-artifact.d.mts",
         "scripts/task13-11-product-artifact.mjs",
         "scripts/task13-5-compatibility-boundary.d.mts",

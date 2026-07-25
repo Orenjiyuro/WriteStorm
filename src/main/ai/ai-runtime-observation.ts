@@ -1,3 +1,5 @@
+import type { AiCompatibilityAssessment } from './ai-compatibility-assessment';
+
 export const AI_RUNTIME_AUTH_STATES = [
   'authenticated',
   'auth_required',
@@ -8,15 +10,6 @@ export const AI_RUNTIME_AUTH_STATES = [
 ] as const;
 
 export type AiRuntimeAuthState = typeof AI_RUNTIME_AUTH_STATES[number];
-
-export type AiCompatibilityAssessment =
-  | {
-    readonly state: 'fresh';
-    readonly fingerprint: string;
-  }
-  | {
-    readonly state: 'stale' | 'blocked' | 'unknown';
-  };
 
 export type AiRuntimeObservation = {
   readonly authState: AiRuntimeAuthState;

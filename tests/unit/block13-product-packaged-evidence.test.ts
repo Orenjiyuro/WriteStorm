@@ -19,7 +19,7 @@ const evidence = JSON.parse(readFileSync(
 ));
 
 describe('Block 13.11 Windows product packaged evidence', () => {
-  it('binds the current recertification evidence to all three fresh layers', () => {
+  it('retains the exact historical evidence while all current layers fail closed', () => {
     const current = compactTask1311CompatibilityFingerprint(
       createTask135CompatibilityFingerprint(
         rootDir,
@@ -27,16 +27,16 @@ describe('Block 13.11 Windows product packaged evidence', () => {
         evidence.compatibilityFingerprint.gitHead,
       ),
     );
-    expect(current.layers.supplyChain).toBe(
+    expect(current.layers.supplyChain).not.toBe(
       evidence.compatibilityFingerprint.layers.supplyChain,
     );
-    expect(current.layers.productionProtocol).toBe(
+    expect(current.layers.productionProtocol).not.toBe(
       evidence.compatibilityFingerprint.layers.productionProtocol,
     );
-    expect(current.layers.probeArtifact).toBe(
+    expect(current.layers.probeArtifact).not.toBe(
       evidence.compatibilityFingerprint.layers.probeArtifact,
     );
-    expect(current.sha256).toBe(evidence.compatibilityFingerprint.sha256);
+    expect(current.sha256).not.toBe(evidence.compatibilityFingerprint.sha256);
     expect(evidence.compatibilityFingerprint.gitHead).toBe(
       'df7e9d20d1e2e24e04aafa62464092a39c3a8121',
     );

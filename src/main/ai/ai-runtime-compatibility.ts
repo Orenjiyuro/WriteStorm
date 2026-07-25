@@ -1,4 +1,4 @@
-import type { AiCompatibilityAssessment } from './ai-connection-check-service';
+import type { AiCompatibilityAssessment } from './ai-compatibility-assessment';
 import type {
   AiArtifactCompatibilityAssessment,
 } from './ai-runtime-artifact-attestation';

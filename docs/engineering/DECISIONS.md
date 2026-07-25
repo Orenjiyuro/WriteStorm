@@ -1620,3 +1620,21 @@ Rules:
 - A fresh certified artifact does not create an application auth observation. Restart and Settings remain `unknown` until the explicit user-triggered connection check succeeds; ordinary builds remain stale.
 - No package or lockfile changed. Default regression remains offline. No IPC, UI, Job, checkpoint, AnalysisModuleInstance, SQLite write, retry, fallback or business AI workflow is added.
 - This is Windows development-machine evidence only. Clean-machine, signing, notarization, Defender, proxy, enterprise certificates, firewall, offline behavior, telemetry and macOS remain unverified or deferred. The active verdict remains exactly `Conditional Go — Windows feasibility verified; macOS packaged runtime deferred-by-user.`
+
+## D120: Settings Natural-Path Certification Is Explicit and Reopens Freshness
+
+Decision: Task 13.12 adds an independently invoked packaged Settings natural-path runner and one Main-owned compatibility assessment leaf. This closes the architectural and evidence-plan gaps without treating offline implementation as live runtime proof.
+
+Rules:
+
+- `src/main/ai/ai-compatibility-assessment.ts` is the sole Main declaration of `AiCompatibilityAssessment`. It has no imports or re-export forwarding. Runtime evaluation, observation memory, the connection-check service and Codex auth authority depend on it; the evaluator does not depend on the application service.
+- `npm run probe:task13:settings-natural-path` is outside `npm run check` and fails unless `WRITESTORM_TASK13_12_SETTINGS_NATURAL_PATH_PROBE=1`. The explicit gate is consumed only by the external runner and is removed from the product child environment.
+- The runner accepts only a clean Windows x64 certification artifact whose embedded source fingerprint and external exact-byte receipt match the current product artifact. It starts normal product Main; it does not enable the Task 13.11 one-time branch or add another Main bypass.
+- The runner opens the visible Settings route and clicks the visible `Check connection` button. It never directly invokes preload, IPC, `AiConnectionCheckService`, the Codex runtime or utility.
+- Before the click, the runner requires visible fresh compatibility, unknown runtime and no observation, then samples the product process tree for external TCP connections and AI utility/CLI processes. Only the post-click path may initiate the fixed connection-check turn.
+- The product utility continues to own the fixed `WS13` input and strict single-field schema. No Library is open, and the runner supplies no Library, SQLite, source, book, user-input or arbitrary-path data.
+- Admission requires a visible authenticated result, canonical visible `observedAt`, no AI utility/CLI process after the result, clean product exit and no started artifact-tree residual. Evidence is bounded and written by exclusive creation beneath the canonical OS temp root.
+- Static tests and default packaged E2E remain offline and prove the runner is not part of `npm run check`. They do not substitute for the separately authorized real run.
+- Adding the package command changes `supplyChain`; the Main leaf changes `productionProtocol`; and the runner plus canonical boundary change `probeArtifact`. All D119 evidence is therefore historical for the current candidate until product, no-global-Git and Settings natural-path probes are rerun against one exact clean HEAD and reviewed.
+- No current real SDK/auth/network probe ran under D120. No dependency version, lockfile, IPC, UI behavior, Job, checkpoint, AnalysisModuleInstance, SQLite write, retry, fallback or business AI workflow is added.
+- macOS remains deferred-by-user. Clean-machine, signing, notarization, Defender, proxy, enterprise certificates, firewall, offline behavior and telemetry remain unverified.

@@ -95,7 +95,7 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
     expect(Object.values(evidence.assertions)).not.toContain(false);
   });
 
-  it('retains internally valid hashes and matches the current three-layer boundary', () => {
+  it('retains internally valid historical hashes while all current layers fail closed', () => {
     expect(evidence.compatibilityFingerprint.gitHead).toBe(evidence.gitHeadAtRun);
     for (const [layerName, layer] of Object.entries(
       evidence.compatibilityFingerprint.layers,
@@ -145,12 +145,12 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
       current,
       evidence.compatibilityFingerprint,
     )).toEqual({
-      status: 'fresh',
-      staleLayers: [],
+      status: 'stale',
+      staleLayers: ['supplyChain', 'productionProtocol', 'probeArtifact'],
       layers: {
-        supplyChain: 'fresh',
-        productionProtocol: 'fresh',
-        probeArtifact: 'fresh',
+        supplyChain: 'stale',
+        productionProtocol: 'stale',
+        probeArtifact: 'stale',
       },
     });
   });

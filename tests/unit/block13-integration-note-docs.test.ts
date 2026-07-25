@@ -45,7 +45,7 @@ const noGitEvidence = readJson<{
 }>('docs/engineering/evidence/block13-task13-5-windows-no-global-git-packaged.json');
 
 describe('Block 13.13 integration note', () => {
-  it('keeps the exact versioned platform-limited Gate while evidence acceptance is pending', () => {
+  it('keeps the exact versioned platform-limited Gate while recertification is pending', () => {
     expect(gate).toMatchObject({
       feasibility: 'windows_passed',
       platform: 'macos_deferred',
@@ -55,9 +55,9 @@ describe('Block 13.13 integration note', () => {
     expect(status).toContain(gate.verdictText);
     expect(decisions).toContain(gate.verdictText);
     expect(status).toContain(
-      'Status: Current Windows recertification evidence produced; total-thread acceptance required',
+      'Status: Settings natural-path probe implemented; current Windows recertification required',
     );
-    expect(status).toContain('| 13.13 | REOPENED; EVIDENCE ACCEPTANCE REQUIRED |');
+    expect(status).toContain('| 13.13 | REOPENED; RECERTIFICATION REQUIRED |');
     expect(context).toContain('Tasks 13.3–13.13');
     expect(decisions).toContain(
       '## D116: Block 13 Closes Under the Versioned Windows Conditional Gate',
@@ -71,9 +71,12 @@ describe('Block 13.13 integration note', () => {
     expect(decisions).toContain(
       '## D119: Current Windows Recertification Evidence Awaits Total-Thread Acceptance',
     );
+    expect(decisions).toContain(
+      '## D120: Settings Natural-Path Certification Is Explicit and Reopens Freshness',
+    );
     expect(technicalDesign).toContain(productEvidence.compatibilityFingerprint.gitHead);
     expect(technicalDesign).toContain(productEvidence.compatibilityFingerprint.sha256);
-    expect(technicalDesign).toContain('await total-thread provenance acceptance');
+    expect(technicalDesign).toContain('cannot authorize the current candidate');
   });
 
   it('records the pinned supply-chain source without changing dependencies', () => {
@@ -142,7 +145,7 @@ describe('Block 13.13 integration note', () => {
     expect(limitations).toMatchObject({
       platforms: {
         windows: {
-          productPackagedRuntime: 'current_recertification_evidence_pending_acceptance',
+          productPackagedRuntime: 'historical_verified_current_recertification_required',
           cleanMachine: 'unverified',
           signing: 'unverified',
           defender: 'unverified',

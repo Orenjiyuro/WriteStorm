@@ -74,7 +74,7 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
       evidenceId: 'block13-task13-5-windows-no-global-git-packaged-001',
       task: '13.5',
       classification: 'windows_packaged_no_global_git_verified',
-      gitHeadAtRun: '2538722f7df36084b29500185a14eced33064386',
+      gitHeadAtRun: 'f4e6adc2d106946de39563da1da4ed986c4caed8',
       versions: {
         electron: '43.0.0',
         codexSdk: '0.144.6',
@@ -95,7 +95,7 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
     expect(Object.values(evidence.assertions)).not.toContain(false);
   });
 
-  it('retains valid supply-chain hashes while failing changed product layers closed', () => {
+  it('retains valid source hashes and a fresh three-layer compatibility boundary', () => {
     expect(evidence.compatibilityFingerprint.gitHead).toBe(evidence.gitHeadAtRun);
     for (const [layerName, layer] of Object.entries(
       evidence.compatibilityFingerprint.layers,
@@ -104,9 +104,7 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
         const currentHash = createHash('sha256')
           .update(normalizeSourceBytes(readFileSync(path.join(rootDir, entry.relativePath))))
           .digest('hex');
-        if (layerName === 'supplyChain') {
-          expect(currentHash, entry.relativePath).toBe(entry.sha256);
-        }
+        expect(currentHash, entry.relativePath).toBe(entry.sha256);
       }
       const layerHash = createHash('sha256')
         .update(JSON.stringify({ layerName, files: layer.files }))
@@ -139,6 +137,9 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
       expect(artifactEntry.sha256).toMatch(/^[0-9a-f]{64}$/);
     }
     expect(evidence.artifact.sha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(evidence.artifact.sha256).toBe(
+      'cc0681bf7d6c76c82c0482be7025eca6f81f29e5ea2253269aabf8d36f5877c4',
+    );
 
     const current = createTask135CompatibilityFingerprint(
       rootDir,
@@ -149,12 +150,12 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
       current,
       evidence.compatibilityFingerprint,
     )).toEqual({
-      status: 'stale',
-      staleLayers: ['productionProtocol', 'probeArtifact'],
+      status: 'fresh',
+      staleLayers: [],
       layers: {
         supplyChain: 'fresh',
-        productionProtocol: 'stale',
-        probeArtifact: 'stale',
+        productionProtocol: 'fresh',
+        probeArtifact: 'fresh',
       },
     });
   });

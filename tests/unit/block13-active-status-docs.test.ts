@@ -16,15 +16,15 @@ describe('Block 13 active status authority', () => {
   it('records the exact platform-limited verdict and current task boundary', () => {
     expect(context).toContain(verdict);
     expect(status).toContain(verdict);
-    expect(status).toContain('| 13.5 | REVALIDATION REQUIRED |');
+    expect(status).toContain('| 13.5 | PASS for current Windows boundary |');
     expect(status).toContain('| 13.6 | PASS for boundary |');
     expect(status).toContain('| 13.7 | PASS for contract |');
     expect(status).toContain('| 13.8 | PASS for pure in-memory boundary |');
     expect(status).toContain('| 13.9 | PASS for lifecycle/cleanup boundary |');
     expect(status).toContain('| 13.10 | PASS for diagnostic contract boundary |');
-    expect(status).toContain('| 13.11 | REVALIDATION REQUIRED |');
+    expect(status).toContain('| 13.11 | PASS for current Windows development-machine artifact |');
     expect(status).toContain(
-      '| 13.12 | IMPLEMENTED; RUNTIME BLOCKED BY STALE COMPATIBILITY |',
+      '| 13.12 | IMPLEMENTED; COMPATIBILITY FRESH, OBSERVATION UNKNOWN |',
     );
   });
 
@@ -57,6 +57,9 @@ describe('Block 13 active status authority', () => {
     expect(decisions).toContain(
       '## D114: Gate Projection and Runtime Cleanup Boundaries Fail Closed from One Authority',
     );
+    expect(decisions).toContain(
+      '## D115: Current Windows Runtime and No-Global-Git Boundaries Are Recertified Together',
+    );
     expect(decisions).toContain('26d548e03dfbe71e1f62081998e9942a2dfaa94c');
   });
 
@@ -65,7 +68,9 @@ describe('Block 13 active status authority', () => {
     expect(status).toContain('`auth_failed → unknown`');
     expect(status).toContain('`unverified → unknown`');
     expect(status).toContain('`auth_expired` and `permission_denied` remain unverified');
-    expect(status).toContain('application observation remains `unknown`');
+    expect(status).toContain(
+      'application observation nevertheless remains `unknown` until the user explicitly checks',
+    );
   });
 
   it('records strict structured output without promoting runtime execution', () => {
@@ -125,8 +130,8 @@ describe('Block 13 active status authority', () => {
     expect(status).toContain('`ai:check-connection` accepts only `{}`');
     expect(status).toContain('never invokes it on startup, route render, Library open or navigation');
     expect(status).toContain('rejected concurrent, paused or quarantined admission preserves it');
-    expect(status).toContain('No new SDK/auth/network probe ran in Task 13.12');
-    expect(status).toContain('Task 13.12 makes both packaged records stale again');
+    expect(status).toContain('Product success/cancel/timeout and all 17 no-global-Git assertions passed');
+    expect(status).toContain('Default tests remain offline');
     expect(status).toContain('config/block13-ai-gate-v1.json');
   });
 });

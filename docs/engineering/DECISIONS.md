@@ -1543,3 +1543,18 @@ Rules:
 - `kill() === false` is an immediate unverified force-cleanup result. An accepted kill has its own bounded exit wait; a missing exit releases listeners and pending lifecycle operations before residual scanning continues.
 - Default regression tests use LF-normalized historical evidence hashes and current Settings/API expectations. They remain offline and do not substitute for the separately authorized Windows product/no-global-Git probes.
 - The current Windows packaged records remain stale after these production-boundary changes. No SDK/auth/network probe is authorized or executed by this remediation; macOS remains deferred-by-user.
+
+## D115: Current Windows Runtime and No-Global-Git Boundaries Are Recertified Together
+
+Decision: Separately authorized probes at clean runtime HEAD `f4e6adc2d106946de39563da1da4ed986c4caed8` refresh both current Windows evidence records under one compatibility fingerprint without widening the platform or product scope.
+
+Rules:
+
+- The shared compatibility fingerprint is `c70e0d116d0bcada33c381701faee7a90b6e28570eeff8be82020f50c10807d1`; supply chain, production protocol and probe artifact layers are all fresh.
+- The real product Forge artifact passed isolated success, explicit-cancel and timeout sessions. Its content record is `cdb6047852d7c1f10564b07d4aef32e109031bf992ffaf4e65baf036fa35af6d`.
+- The separate certification artifact removed Git directories from PATH, proved outer and utility `where git`/`Get-Command git` failure, completed the fixed structured turn and passed all 17 cleanup/residual assertions. Its content record is `cc0681bf7d6c76c82c0482be7025eca6f81f29e5ea2253269aabf8d36f5877c4`.
+- Both records contain only bounded assertions, versions, fingerprints and artifact hashes. They retain no prompt, response body, credential, environment value, raw error, path value or process identifier.
+- A fresh compatibility projection is not an application auth observation. Restart remains `unknown`; only the explicit Settings action may create a temporary observation.
+- Default unit, integration and packaged E2E remain offline. Before the explicit action, packaged E2E renders compatibility/auth as unknown and must not click `ai:check-connection`; injected transport tests own deterministic interaction coverage. The fresh compatibility result is exposed only by the explicit check response.
+- No package or lockfile changed. No Job, checkpoint, AnalysisModuleInstance, SQLite write, retry, fallback or business AI workflow is admitted.
+- This is Windows development-machine evidence only. Clean-machine, signing, notarization, Defender, proxy, enterprise certificates, firewall, offline, telemetry and macOS remain unverified or deferred.

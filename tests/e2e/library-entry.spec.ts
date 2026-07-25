@@ -84,14 +84,14 @@ test('creates and opens a local library from the desktop entry', async () => {
     await expect(aiStatus).toContainText('Windows Passed');
     await expect(aiStatus).toContainText('macOS deferred');
     await expect(aiStatus).toContainText('Conditional Go');
-    await expect(aiStatus).toContainText('SDK compatibility');
-    await expect(aiStatus).toContainText('Unknown');
+    await expect(
+      aiStatus.locator('.ai-connection-state > div').filter({ hasText: 'SDK compatibility' }),
+    ).toContainText('Unknown');
+    await expect(
+      aiStatus.locator('.ai-connection-state > div').filter({ hasText: 'Runtime authentication' }),
+    ).toContainText('Unknown');
     await expect(aiStatus).toContainText('Not observed');
-    await page.getByRole('button', { name: 'Check connection' }).click();
-    await expect(aiStatus).toContainText('Stale');
-    await expect(aiStatus).toContainText('Runtime authentication');
-    await expect(aiStatus).toContainText('Unknown');
-    await expect(aiStatus).toContainText('Not observed');
+    await expect(page.getByRole('button', { name: 'Check connection' })).toBeEnabled();
     await expect(page.getByRole('heading', { name: 'Local observability' })).toBeVisible();
     await expect(page.getByText('Local only', { exact: true })).toBeVisible();
     await expect(page.getByText('Crash reports', { exact: true })).toBeVisible();

@@ -1,3 +1,5 @@
+import { readFileSync, readdirSync } from 'node:fs';
+import path from 'node:path';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -21,6 +23,7 @@ const checkedData = {
     observedAt: '2026-07-24T12:00:00.000Z',
   },
 };
+const rootDir = path.resolve(__dirname, '../..');
 
 describe('Block 13.12 Settings explicit connection check', () => {
   it('renders unknown without invoking runtime during route render', () => {
@@ -80,6 +83,20 @@ describe('Block 13.12 Settings explicit connection check', () => {
       pending: true,
       data: { runtime: { authState: 'unknown' } },
     });
+  });
+
+  it('keeps default packaged E2E offline even when compatibility is fresh', () => {
+    const e2eRoot = path.join(rootDir, 'tests/e2e');
+    const defaultE2e = readdirSync(e2eRoot, { withFileTypes: true })
+      .filter((entry) => entry.isFile() && entry.name.endsWith('.spec.ts'))
+      .map((entry) => readFileSync(path.join(e2eRoot, entry.name), 'utf8'))
+      .join('\n');
+
+    expect(defaultE2e).not.toMatch(
+      /getByRole\(\s*['"]button['"]\s*,\s*\{\s*name:\s*['"]Check connection['"]\s*\}\s*\)\.click\(/,
+    );
+    expect(defaultE2e).not.toMatch(/\.ai\.checkConnection\s*\(/);
+    expect(defaultE2e).not.toContain('ai:check-connection');
   });
 });
 

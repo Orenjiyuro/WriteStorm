@@ -1,7 +1,10 @@
 import {
+  closeSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   mkdtempSync,
+  openSync,
   readFileSync,
   rmSync,
   symlinkSync,
@@ -100,6 +103,32 @@ describe('Block 13.11 product packaged probe gate', () => {
       rmSync(root, { recursive: true, force: true });
       rmSync(outside, { recursive: true, force: true });
     }
+  });
+
+  it('pre-opens the exclusive result file and writes through its stable handle', () => {
+    const root = mkdtempSync(path.join(os.tmpdir(), 'writestorm-probe-handle-'));
+    const target = prepareCodexProductProbeResultPath({
+      temporaryDirectory: root,
+      runId,
+    });
+    try {
+      expect(lstatSync(target.resultPath).size).toBe(0);
+      expect(() => openSync(target.resultPath, 'wx')).toThrow();
+    } finally {
+      closeSync(target.resultFileDescriptor);
+      rmSync(root, { recursive: true, force: true });
+    }
+
+    const source = readFileSync(
+      path.join(rootDir, 'src/main/ai/providers/codex/codex-product-packaged-probe.ts'),
+      'utf8',
+    );
+    expect(source).toContain("openSync(resultPath, 'wx', 0o600)");
+    expect(source).toMatch(/writeFileSync\(\s*outputTarget\.resultFileDescriptor/);
+    expect(source).toContain('fstatSync(target.resultFileDescriptor)');
+    expect(source).toContain('fsyncSync(outputTarget.resultFileDescriptor)');
+    expect(source).toContain('closeSync(outputTarget.resultFileDescriptor)');
+    expect(source).toContain('assertPublishedResultFile(outputTarget)');
   });
 
   it('rejects arbitrary paths, inputs and malformed run identifiers by construction', () => {

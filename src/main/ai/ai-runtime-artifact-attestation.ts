@@ -64,6 +64,12 @@ export async function verifyAiRuntimeArtifactAttestation(input: {
     if (parsed.data.artifact.files.some((entry, index) => entry.id !== expectedIds[index])) {
       return unverified();
     }
+    if (hashArtifactReceipt(
+      parsed.data.artifact.boundaryId,
+      parsed.data.artifact.files,
+    ) !== parsed.data.artifact.sha256) {
+      return unverified();
+    }
     const actualPaths = {
       writestorm_executable: input.executablePath,
       app_asar: path.join(input.resourcesPath, 'app.asar'),
@@ -79,6 +85,19 @@ export async function verifyAiRuntimeArtifactAttestation(input: {
   } catch {
     return unverified();
   }
+}
+
+function hashArtifactReceipt(
+  boundaryId: string,
+  files: readonly {
+    readonly id: string;
+    readonly size: number;
+    readonly sha256: string;
+  }[],
+): string {
+  return createHash('sha256')
+    .update(JSON.stringify({ boundaryId, files }))
+    .digest('hex');
 }
 
 async function matchesFile(

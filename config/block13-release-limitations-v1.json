@@ -27,6 +27,7 @@
     "sdkTelemetry": "unverified"
   },
   "distribution": {
-    "sdkCliLicensesAndNotices": "unverified"
+    "sdkCliLicensesAndNotices": "unverified",
+    "artifactReceiptProvenance": "workflow_only_not_cryptographically_verified"
   }
 }

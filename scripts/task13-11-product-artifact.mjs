@@ -97,6 +97,10 @@ export function createTask1311RuntimeAttestation(
     || !/^[0-9a-f]{64}$/.test(artifact.sha256)) {
     throw new Error('Task 13.11 runtime attestation input is invalid.');
   }
+  const receiptSha256 = hash(Buffer.from(JSON.stringify({
+    boundaryId: artifact.boundaryId,
+    files: artifact.files,
+  })));
   return {
     schemaVersion: 1,
     authority: 'block13-runtime-artifact-attestation-v1',
@@ -106,7 +110,7 @@ export function createTask1311RuntimeAttestation(
     artifact: {
       boundaryId: artifact.boundaryId,
       files: artifact.files,
-      sha256: artifact.sha256,
+      sha256: receiptSha256,
     },
   };
 }

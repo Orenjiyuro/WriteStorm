@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -130,6 +131,12 @@ describe('Block 13.11 final product artifact boundary', () => {
       { id: 'app_asar', size: 2, sha256: '6'.repeat(64) },
       { id: 'codex_executable', size: 3, sha256: '7'.repeat(64) },
     ];
+    const receiptSha256 = createHash('sha256')
+      .update(JSON.stringify({
+        boundaryId: 'block13-task13-11-product-artifact-v1',
+        files,
+      }))
+      .digest('hex');
     expect(createTask1311RuntimeAttestation(compatibility, {
       boundaryId: 'block13-task13-11-product-artifact-v1',
       files,
@@ -144,7 +151,7 @@ describe('Block 13.11 final product artifact boundary', () => {
       artifact: {
         boundaryId: 'block13-task13-11-product-artifact-v1',
         files,
-        sha256: '8'.repeat(64),
+        sha256: receiptSha256,
       },
     });
   });

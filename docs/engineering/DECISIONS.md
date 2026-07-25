@@ -1590,3 +1590,16 @@ Rules:
 - The D115 product and no-global-Git records remain immutable historical evidence for their exact artifacts. D117 production-protocol and probe-artifact drift makes them stale for the current candidate. A real SDK/auth/network recertification remains an explicit, separately authorized action and is never part of default regression.
 - `config/block13-release-limitations-v1.json` records the Windows packaged runtime as historically verified with current recertification required. Clean-machine, signing/notarization, Defender, proxy, enterprise certificates, firewall, offline behavior, telemetry and macOS remain unverified or deferred.
 - No dependency, SDK version, IPC namespace, Job, checkpoint, SQLite write, renderer generation action, fallback provider, direct CLI/app-server path, automatic retry or business AI workflow is added by this remediation.
+
+## D118: Artifact Receipts Prove Byte Equality, Not Probe Provenance
+
+Decision: Runtime artifact admission verifies exact bytes and fails closed, while proof that the real packaged probe passed remains an external reviewed-evidence decision. The unsigned local receipt is not represented as a signature or unforgeable provenance record.
+
+Rules:
+
+- The receipt aggregate SHA-256 is recomputed from its exact boundary id and ordered executable/ASAR/Codex file declarations. An arbitrary or altered aggregate is rejected before file admission.
+- Runtime independently streams and hashes all three declared files. A matching receipt proves only that the currently loaded bytes equal its declaration.
+- The authorized runner creates the receipt after its own admitted result, but a process with write access to the installation can recompute and replace an unsigned receipt. Until a signing/notarization authority exists, runtime cannot cryptographically prove who created it or whether a probe ran.
+- Main-thread review of the versioned probe evidence, artifact record, commit and compatibility fingerprint remains the certification-provenance authority. Runtime receipt matching never closes Block 13 by itself.
+- Probe output `result.json` is opened once with exclusive creation and owner-only permissions before execution. Final bytes are written and flushed through that stable handle; directory and file identities are checked before and after publication. A path swap cannot redirect those bytes, though a same-privilege attacker can still tamper or deny service.
+- `config/block13-release-limitations-v1.json` records this workflow-only, non-cryptographic provenance boundary. Signing, notarization and clean-machine verification remain unverified.

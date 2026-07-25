@@ -30,6 +30,14 @@ describe('Block 13 packaged artifact attestation', () => {
         compatibilityFingerprint,
       });
 
+      writeAttestation(fixture, compatibilityFingerprint, 'c'.repeat(64));
+      await expect(verifyAiRuntimeArtifactAttestation({
+        executablePath: fixture.executablePath,
+        resourcesPath: fixture.resourcesPath,
+        compatibilityFingerprint,
+      })).resolves.toEqual({ state: 'unverified' });
+
+      writeAttestation(fixture);
       writeFileSync(fixture.appAsarPath, 'new uncertified app artifact');
       await expect(verifyAiRuntimeArtifactAttestation({
         executablePath: fixture.executablePath,
@@ -104,6 +112,7 @@ function createArtifactFixture(): {
 function writeAttestation(
   fixture: ReturnType<typeof createArtifactFixture>,
   fingerprint = compatibilityFingerprint,
+  aggregateOverride?: string,
 ): void {
   const files = [
     ['writestorm_executable', fixture.executablePath],
@@ -117,6 +126,12 @@ function writeAttestation(
       sha256: createHash('sha256').update(bytes).digest('hex'),
     };
   });
+  const aggregate = createHash('sha256')
+    .update(JSON.stringify({
+      boundaryId: 'block13-task13-11-product-artifact-v1',
+      files,
+    }))
+    .digest('hex');
   writeFileSync(
     path.join(fixture.resourcesPath, AI_RUNTIME_ATTESTATION_FILE),
     `${JSON.stringify({
@@ -128,7 +143,7 @@ function writeAttestation(
       artifact: {
         boundaryId: 'block13-task13-11-product-artifact-v1',
         files,
-        sha256: 'c'.repeat(64),
+        sha256: aggregateOverride ?? aggregate,
       },
     })}\n`,
   );

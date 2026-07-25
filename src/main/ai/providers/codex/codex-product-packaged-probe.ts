@@ -1,7 +1,11 @@
 import {
+  closeSync,
   existsSync,
+  fstatSync,
+  fsyncSync,
   lstatSync,
   mkdirSync,
+  openSync,
   realpathSync,
   writeFileSync,
 } from 'node:fs';
@@ -40,9 +44,12 @@ export type CodexProductProbeGateResult =
   };
 
 const preparedOutputTargetBrand: unique symbol = Symbol('codexProductProbeOutputTarget');
-export type CodexProductProbeOutputTarget = Readonly<{
+type CodexProductProbeOutputTarget = Readonly<{
   readonly [preparedOutputTargetBrand]: true;
   readonly resultPath: string;
+  readonly resultFileDescriptor: number;
+  readonly resultDevice: number;
+  readonly resultInode: number;
   readonly temporaryRoot: string;
   readonly baseDirectory: string;
   readonly runDirectory: string;
@@ -182,28 +189,35 @@ export async function runOptionalCodexProductPackagedProbe(input: {
     fork: input.fork,
   });
   const cliExecutablePath = resolvePackagedCodexExecutablePath(input.resourcesPath);
-  const result = await executeCodexProductPackagedProbe({
-    runScenario: async (scenario, ordinal) => {
-      try {
-        return await runCodexProductPackagedScenario({
-          scenario,
-          sessionOrdinal: ordinal,
-          launcher,
-          utilityExecutablePath: input.executablePath,
-          cliExecutablePath,
-        });
-      } catch {
-        return failedScenario(scenario, ordinal);
-      }
-    },
-    versions: {
-      electron: input.electronVersion,
-      nodeRuntime: input.nodeRuntimeVersion,
-      codexSdk: '0.144.6',
-      codexCli: '0.144.6',
-      platformPackage: '0.144.6-win32-x64',
-    },
-  });
+  let result: CodexProductPackagedProbeResult;
+  try {
+    result = await executeCodexProductPackagedProbe({
+      runScenario: async (scenario, ordinal) => {
+        try {
+          return await runCodexProductPackagedScenario({
+            scenario,
+            sessionOrdinal: ordinal,
+            launcher,
+            utilityExecutablePath: input.executablePath,
+            cliExecutablePath,
+          });
+        } catch {
+          return failedScenario(scenario, ordinal);
+        }
+      },
+      versions: {
+        electron: input.electronVersion,
+        nodeRuntime: input.nodeRuntimeVersion,
+        codexSdk: '0.144.6',
+        codexCli: '0.144.6',
+        platformPackage: '0.144.6-win32-x64',
+      },
+    });
+  } catch {
+    closePreparedResultFile(outputTarget);
+    input.exitApp(1);
+    return true;
+  }
   try {
     writeSanitizedResult(outputTarget, result);
   } catch {
@@ -388,11 +402,21 @@ function writeSanitizedResult(
   outputTarget: CodexProductProbeOutputTarget,
   result: CodexProductPackagedProbeResult,
 ): void {
-  assertOwnedRunDirectory(outputTarget);
-  writeFileSync(outputTarget.resultPath, `${JSON.stringify(result, null, 2)}\n`, {
-    encoding: 'utf8',
-    flag: 'wx',
-  });
+  let completed = false;
+  try {
+    assertOwnedRunDirectory(outputTarget);
+    assertOpenResultFile(outputTarget);
+    writeFileSync(
+      outputTarget.resultFileDescriptor,
+      `${JSON.stringify(result, null, 2)}\n`,
+      { encoding: 'utf8' },
+    );
+    fsyncSync(outputTarget.resultFileDescriptor);
+    completed = true;
+  } finally {
+    closeSync(outputTarget.resultFileDescriptor);
+  }
+  if (completed) assertPublishedResultFile(outputTarget);
 }
 
 export function prepareCodexProductProbeResultPath(input: {
@@ -413,15 +437,40 @@ export function prepareCodexProductProbeResultPath(input: {
   const runDirectory = path.join(baseDirectory, input.runId);
   mkdirSync(runDirectory);
   const identity = assertPlainCanonicalDirectory(runDirectory, temporaryRoot);
+  const resultPath = path.join(runDirectory, 'result.json');
+  const resultFileDescriptor = openSync(resultPath, 'wx', 0o600);
+  let resultIdentity: ReturnType<typeof fstatSync>;
+  try {
+    resultIdentity = fstatSync(resultFileDescriptor);
+    if (!resultIdentity.isFile()) {
+      throw new Error('Product probe output is not a regular file.');
+    }
+  } catch (error) {
+    closePreparedResultFile({ resultFileDescriptor });
+    throw error;
+  }
   return Object.freeze({
     [preparedOutputTargetBrand]: true as const,
-    resultPath: path.join(runDirectory, 'result.json'),
+    resultPath,
+    resultFileDescriptor,
+    resultDevice: resultIdentity.dev,
+    resultInode: resultIdentity.ino,
     temporaryRoot,
     baseDirectory,
     runDirectory,
     device: identity.dev,
     inode: identity.ino,
   });
+}
+
+function closePreparedResultFile(
+  target: Pick<CodexProductProbeOutputTarget, 'resultFileDescriptor'>,
+): void {
+  try {
+    closeSync(target.resultFileDescriptor);
+  } catch {
+    // Closing is best-effort on a failed, unpublished certification result.
+  }
 }
 
 function assertOwnedRunDirectory(target: CodexProductProbeOutputTarget): void {
@@ -433,8 +482,25 @@ function assertOwnedRunDirectory(target: CodexProductProbeOutputTarget): void {
   if (identity.dev !== target.device || identity.ino !== target.inode) {
     throw new Error('Product probe output directory identity changed.');
   }
-  if (existsSync(target.resultPath)) {
-    throw new Error('Product probe output already exists.');
+  assertPublishedResultFile(target);
+}
+
+function assertOpenResultFile(target: CodexProductProbeOutputTarget): void {
+  const identity = fstatSync(target.resultFileDescriptor);
+  if (!identity.isFile()
+    || identity.dev !== target.resultDevice
+    || identity.ino !== target.resultInode) {
+    throw new Error('Product probe output file identity changed.');
+  }
+}
+
+function assertPublishedResultFile(target: CodexProductProbeOutputTarget): void {
+  const identity = lstatSync(target.resultPath);
+  if (!identity.isFile()
+    || identity.isSymbolicLink()
+    || identity.dev !== target.resultDevice
+    || identity.ino !== target.resultInode) {
+    throw new Error('Product probe output path identity changed.');
   }
 }
 

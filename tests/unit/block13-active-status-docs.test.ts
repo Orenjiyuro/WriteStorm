@@ -63,6 +63,9 @@ describe('Block 13 active status authority', () => {
     expect(decisions).toContain(
       '## D117: Block 13 Review Remediation Makes Artifact Admission Exact',
     );
+    expect(decisions).toContain(
+      '## D118: Artifact Receipts Prove Byte Equality, Not Probe Provenance',
+    );
     expect(decisions).toContain('26d548e03dfbe71e1f62081998e9942a2dfaa94c');
   });
 
@@ -125,6 +128,8 @@ describe('Block 13 active status authority', () => {
     expect(status).toContain('does not write a file, log to console, upload telemetry or expose IPC');
     expect(status).toContain('clean-machine');
     expect(status).toContain('SDK/CLI licenses/notices');
+    expect(status).toContain('not a cryptographic proof of probe provenance');
+    expect(status).toContain('pre-opened exclusive file handle');
   });
 
   it('records the explicit Task 13.12 channel without promoting stale runtime evidence', () => {

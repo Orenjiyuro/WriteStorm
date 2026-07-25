@@ -64,6 +64,9 @@ describe('Block 13.13 integration note', () => {
     expect(decisions).toContain(
       '## D117: Block 13 Review Remediation Makes Artifact Admission Exact',
     );
+    expect(decisions).toContain(
+      '## D118: Artifact Receipts Prove Byte Equality, Not Probe Provenance',
+    );
   });
 
   it('records the pinned supply-chain source without changing dependencies', () => {
@@ -154,6 +157,7 @@ describe('Block 13.13 integration note', () => {
       },
       distribution: {
         sdkCliLicensesAndNotices: 'unverified',
+        artifactReceiptProvenance: 'workflow_only_not_cryptographically_verified',
       },
     });
     for (const term of [

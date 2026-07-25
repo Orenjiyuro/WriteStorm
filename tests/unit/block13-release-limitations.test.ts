@@ -39,6 +39,7 @@ describe('Block 13.10 release limitation matrix', () => {
       },
       distribution: {
         sdkCliLicensesAndNotices: 'unverified',
+        artifactReceiptProvenance: 'workflow_only_not_cryptographically_verified',
       },
     });
   });

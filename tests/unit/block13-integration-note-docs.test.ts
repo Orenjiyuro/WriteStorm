@@ -11,6 +11,7 @@ const readJson = <T>(relativePath: string): T =>
 const context = readText('docs/engineering/CONTEXT.md');
 const decisions = readText('docs/engineering/DECISIONS.md');
 const status = readText('docs/engineering/V1-BLOCK-13-STATUS.md');
+const technicalDesign = readText('docs/engineering/TECHNICAL_DESIGN.md');
 const packageJson = readJson<{
   dependencies: Record<string, string>;
   engines: { node: string };
@@ -44,7 +45,7 @@ const noGitEvidence = readJson<{
 }>('docs/engineering/evidence/block13-task13-5-windows-no-global-git-packaged.json');
 
 describe('Block 13.13 integration note', () => {
-  it('keeps the exact versioned platform-limited Gate while recertification is pending', () => {
+  it('keeps the exact versioned platform-limited Gate while evidence acceptance is pending', () => {
     expect(gate).toMatchObject({
       feasibility: 'windows_passed',
       platform: 'macos_deferred',
@@ -54,9 +55,9 @@ describe('Block 13.13 integration note', () => {
     expect(status).toContain(gate.verdictText);
     expect(decisions).toContain(gate.verdictText);
     expect(status).toContain(
-      'Status: Remediation implemented; current Windows packaged recertification required',
+      'Status: Current Windows recertification evidence produced; total-thread acceptance required',
     );
-    expect(status).toContain('| 13.13 | REOPENED; RECERTIFICATION REQUIRED |');
+    expect(status).toContain('| 13.13 | REOPENED; EVIDENCE ACCEPTANCE REQUIRED |');
     expect(context).toContain('Tasks 13.3–13.13');
     expect(decisions).toContain(
       '## D116: Block 13 Closes Under the Versioned Windows Conditional Gate',
@@ -67,6 +68,12 @@ describe('Block 13.13 integration note', () => {
     expect(decisions).toContain(
       '## D118: Artifact Receipts Prove Byte Equality, Not Probe Provenance',
     );
+    expect(decisions).toContain(
+      '## D119: Current Windows Recertification Evidence Awaits Total-Thread Acceptance',
+    );
+    expect(technicalDesign).toContain(productEvidence.compatibilityFingerprint.gitHead);
+    expect(technicalDesign).toContain(productEvidence.compatibilityFingerprint.sha256);
+    expect(technicalDesign).toContain('await total-thread provenance acceptance');
   });
 
   it('records the pinned supply-chain source without changing dependencies', () => {
@@ -92,7 +99,7 @@ describe('Block 13.13 integration note', () => {
     expect(status).toContain('resolved registry source, integrity and dependency tree');
   });
 
-  it('retains both immutable Windows evidence records as historical evidence', () => {
+  it('records both current Windows recertification evidence records without self-accepting them', () => {
     expect(productEvidence.compatibilityFingerprint.gitHead).toBe(
       noGitEvidence.gitHeadAtRun,
     );
@@ -135,7 +142,7 @@ describe('Block 13.13 integration note', () => {
     expect(limitations).toMatchObject({
       platforms: {
         windows: {
-          productPackagedRuntime: 'historical_verified_current_recertification_required',
+          productPackagedRuntime: 'current_recertification_evidence_pending_acceptance',
           cleanMachine: 'unverified',
           signing: 'unverified',
           defender: 'unverified',

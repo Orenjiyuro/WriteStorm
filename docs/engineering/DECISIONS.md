@@ -1603,3 +1603,20 @@ Rules:
 - Main-thread review of the versioned probe evidence, artifact record, commit and compatibility fingerprint remains the certification-provenance authority. Runtime receipt matching never closes Block 13 by itself.
 - Probe output `result.json` is opened once with exclusive creation and owner-only permissions before execution. Final bytes are written and flushed through that stable handle; directory and file identities are checked before and after publication. A path swap cannot redirect those bytes, though a same-privilege attacker can still tamper or deny service.
 - `config/block13-release-limitations-v1.json` records this workflow-only, non-cryptographic provenance boundary. Signing, notarization and clean-machine verification remain unverified.
+
+## D119: Current Windows Recertification Evidence Awaits Total-Thread Acceptance
+
+Decision: The separately authorized Windows product and no-global-Git probes produced current evidence at clean runtime HEAD `df7e9d20d1e2e24e04aafa62464092a39c3a8121`, but this implementation thread does not self-accept probe provenance or close Block 13.
+
+Rules:
+
+- Both records bind compatibility fingerprint `c288a454be6e4546c321b16ec3fa6c6ac8a6f8be644fd8551d6f5ca566c374d8`; the `supplyChain`, `productionProtocol` and `probeArtifact` layers match the runtime source boundary.
+- The real product Forge artifact passed isolated success, explicit-cancel and timeout sessions with cleanup acknowledgement, ownership observation, completed residual scans and no owned utility or CLI residual. Its product artifact record is `08226c6ceeee9431a0ffc7b444ca00064796b671733bcbb2934ea2b4578b2541`.
+- The product runtime receipt binds the exact executable, `app.asar` and Codex executable through aggregate declaration hash `ee0d01780feca0ca44cd5d68caa09c5792bd7407a44b9f16755d2f7f8e8606ff`. D118 still applies: this proves byte equality, not who ran or passed the probe.
+- The independent certification artifact removed Git directories from PATH, proved outer and utility `where git`/`Get-Command git` failure, completed the fixed structured turn and passed all 17 assertions. Its artifact record is `4440893bdaf4298bd6b088a59c0e04faae69f42c13e43faa446e60b487b70e12`.
+- The first attempted no-global-Git command mistakenly targeted the product artifact and timed out without a result because the probe-only entry is deliberately excluded from product Main. That attempt is not evidence. The admitted run used the isolated certification artifact and does not restore the 6A runner to product code.
+- The committed evidence contains only bounded assertions, versions, fingerprints and artifact hashes. It retains no prompt, response body, credential, environment value, raw error, path value or process identifier.
+- `config/block13-release-limitations-v1.json` records current recertification evidence as pending total-thread acceptance. Block 13 stays reopened until that review accepts the runtime commit, evidence records, artifact hashes and compatibility fingerprint.
+- A fresh certified artifact does not create an application auth observation. Restart and Settings remain `unknown` until the explicit user-triggered connection check succeeds; ordinary builds remain stale.
+- No package or lockfile changed. Default regression remains offline. No IPC, UI, Job, checkpoint, AnalysisModuleInstance, SQLite write, retry, fallback or business AI workflow is added.
+- This is Windows development-machine evidence only. Clean-machine, signing, notarization, Defender, proxy, enterprise certificates, firewall, offline behavior, telemetry and macOS remain unverified or deferred. The active verdict remains exactly `Conditional Go — Windows feasibility verified; macOS packaged runtime deferred-by-user.`

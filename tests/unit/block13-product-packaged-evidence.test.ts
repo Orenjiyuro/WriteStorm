@@ -19,7 +19,7 @@ const evidence = JSON.parse(readFileSync(
 ));
 
 describe('Block 13.11 Windows product packaged evidence', () => {
-  it('retains its exact historical boundary while current drift fails closed', () => {
+  it('binds the current recertification evidence to all three fresh layers', () => {
     const current = compactTask1311CompatibilityFingerprint(
       createTask135CompatibilityFingerprint(
         rootDir,
@@ -30,15 +30,15 @@ describe('Block 13.11 Windows product packaged evidence', () => {
     expect(current.layers.supplyChain).toBe(
       evidence.compatibilityFingerprint.layers.supplyChain,
     );
-    expect(current.layers.productionProtocol).not.toBe(
+    expect(current.layers.productionProtocol).toBe(
       evidence.compatibilityFingerprint.layers.productionProtocol,
     );
-    expect(current.layers.probeArtifact).not.toBe(
+    expect(current.layers.probeArtifact).toBe(
       evidence.compatibilityFingerprint.layers.probeArtifact,
     );
-    expect(current.sha256).not.toBe(evidence.compatibilityFingerprint.sha256);
+    expect(current.sha256).toBe(evidence.compatibilityFingerprint.sha256);
     expect(evidence.compatibilityFingerprint.gitHead).toBe(
-      'f4e6adc2d106946de39563da1da4ed986c4caed8',
+      'df7e9d20d1e2e24e04aafa62464092a39c3a8121',
     );
     expect(JSON.stringify(evidence.compatibilityFingerprint)).not.toMatch(
       /relativePath|src\/|scripts\/|config\//,
@@ -90,7 +90,7 @@ describe('Block 13.11 Windows product packaged evidence', () => {
     });
     expect(evidence.artifact.sha256).toMatch(/^[0-9a-f]{64}$/);
     expect(evidence.artifact.sha256).toBe(
-      'cdb6047852d7c1f10564b07d4aef32e109031bf992ffaf4e65baf036fa35af6d',
+      '08226c6ceeee9431a0ffc7b444ca00064796b671733bcbb2934ea2b4578b2541',
     );
     expect(JSON.stringify(evidence)).not.toMatch(
       /prompt|response|rawError|stack|cause|workingDirectory|pathValue|credential|providerId|pid/i,

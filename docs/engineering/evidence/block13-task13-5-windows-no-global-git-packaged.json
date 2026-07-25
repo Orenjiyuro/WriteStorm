@@ -3,10 +3,10 @@
   "evidenceId": "block13-task13-5-windows-no-global-git-packaged-001",
   "task": "13.5",
   "source": "packaged_sdk",
-  "recordedAt": "2026-07-25T01:48:41.674Z",
+  "recordedAt": "2026-07-25T07:10:01.032Z",
   "commandName": "writestorm-task13-5-no-global-git-packaged-probe",
   "classification": "windows_packaged_no_global_git_verified",
-  "gitHeadAtRun": "f4e6adc2d106946de39563da1da4ed986c4caed8",
+  "gitHeadAtRun": "df7e9d20d1e2e24e04aafa62464092a39c3a8121",
   "versions": {
     "electron": "43.0.0",
     "nodeRuntime": "24.17.0",
@@ -50,13 +50,13 @@
         "id": "writestorm_executable",
         "relativePath": "writestorm.exe",
         "size": 235706368,
-        "sha256": "4aae6ac5f2580ae4a484b255ab06fa44d77e361e6f380712cd9f21e82dd646c2"
+        "sha256": "4ccb5ff0b500e0e53550eb6733d0425b4c5916c7a47fb382690dfe4d6e077ec9"
       },
       {
         "id": "app_asar",
         "relativePath": "resources/app.asar",
-        "size": 71042230,
-        "sha256": "113ce285b8951231586f1e0df98932c52b5c09aad6efc8271ae93f69d0cf76b4"
+        "size": 71050663,
+        "sha256": "9956697aed53b67fb3ab442cab36a45554838ca78962dbf0d8c86c6eb92e9762"
       },
       {
         "id": "codex_executable",
@@ -88,11 +88,11 @@
         "sha256": "dbdd5bc7f4f5fb6f8db199fd845a34219e3a14229654f868af4d04b944eeb09b"
       }
     ],
-    "sha256": "cc0681bf7d6c76c82c0482be7025eca6f81f29e5ea2253269aabf8d36f5877c4"
+    "sha256": "4440893bdaf4298bd6b088a59c0e04faae69f42c13e43faa446e60b487b70e12"
   },
   "compatibilityFingerprint": {
     "boundaryId": "block13-task13-5-compatibility-v1",
-    "gitHead": "f4e6adc2d106946de39563da1da4ed986c4caed8",
+    "gitHead": "df7e9d20d1e2e24e04aafa62464092a39c3a8121",
     "layers": {
       "supplyChain": {
         "files": [
@@ -123,7 +123,7 @@
           },
           {
             "relativePath": "config/codex-product-runtime-package.ts",
-            "sha256": "320ff9af0f499de5460170c7a8f146a113c761eb8d6a3abe42694686c447c618"
+            "sha256": "9137e152f657d472f73151b80df5542e5e03900cfe8de6a323658cea4460a537"
           },
           {
             "relativePath": "config/codex-utility-vite-config.ts",
@@ -131,7 +131,7 @@
           },
           {
             "relativePath": "forge.config.ts",
-            "sha256": "e9bafe1b30e0582583e87fe6ed7abfe97a932f064be71f60f11b6e40ae513e98"
+            "sha256": "19b84d45102d15cfbf52d365096315180571b1a509415540aa595db22cebcd9f"
           },
           {
             "relativePath": "scripts/smoke-block13-production-utility.mjs",
@@ -154,8 +154,12 @@
             "sha256": "7bcaf4a9491ffdcdee3f9ab532b7b943b114d386c2137da9d5bd1c83e846244e"
           },
           {
+            "relativePath": "src/main/ai/ai-runtime-artifact-attestation.ts",
+            "sha256": "1c03188ed94bf26b9cf9cc6ecf08800a68bc8ec7b844355d9682227093ab21cf"
+          },
+          {
             "relativePath": "src/main/ai/ai-runtime-compatibility.ts",
-            "sha256": "91308112102c6e912eaf04816dc0d137844c5fed9e1b29dba9a676fd1f489671"
+            "sha256": "b32d43fed66bb2d77fda152ed095eb50f136e2fe53eb80ad2f163bc1499848e5"
           },
           {
             "relativePath": "src/main/ai/ai-runtime-diagnostics.ts",
@@ -199,7 +203,7 @@
           },
           {
             "relativePath": "src/main/ai/providers/codex/codex-product-packaged-probe.ts",
-            "sha256": "e67a611732ed3f61dab69c45573d4425765aa6d6e69a163c7077e5d3b9891fc7"
+            "sha256": "899ee302fc4ab0cb03466da5367eba49bb79219bba590d2147514ea42b767bd4"
           },
           {
             "relativePath": "src/main/ai/providers/codex/codex-product-probe-fixture.ts",
@@ -275,7 +279,7 @@
           },
           {
             "relativePath": "src/main/main.ts",
-            "sha256": "2e832d130165489a20871991410c9e78c4a6b9f101a330ddb9018eb335afba84"
+            "sha256": "d46bbfdb865f758aa28412c12c786bf1dbe423596e0e59a085146e05c6f242b6"
           },
           {
             "relativePath": "src/main/windows/main-window.ts",
@@ -299,7 +303,7 @@
           },
           {
             "relativePath": "src/renderer/i18n.ts",
-            "sha256": "ae266a4d88391a242f4fda9ca70a3fbd838716d90c16f5d95a93e0b841a63cc4"
+            "sha256": "c7aea2ca898a4e948c31fe9f8b7fd2a579d8d6eddaac2ef4a4f22c47545dd4ae"
           },
           {
             "relativePath": "src/renderer/routes/SettingsRoute.tsx",
@@ -343,7 +347,7 @@
           },
           {
             "relativePath": "vite.main.config.ts",
-            "sha256": "0c646fc54a23b4bddf4843107322be2be1b3fd78db5167104fd3472bfb505e58"
+            "sha256": "788c79aedd5d566d6f501a953e413658e43f46fa844a3d7b2ba650d5758b6bab"
           },
           {
             "relativePath": "vite.preload.config.ts",
@@ -354,7 +358,7 @@
             "sha256": "fb7c1ab8d2ff106e91022162fcf2cfb2098ffe0cad088ac3d96e9ec32de55d02"
           }
         ],
-        "sha256": "f9660c094d19da8cc0a23f17838c42125150f83cae0a315d1fa84657cd8b0985"
+        "sha256": "abd5722b05557c9b0e95651cb4f08e59dd213b4b63d278e00db082a57e9ca9f7"
       },
       "probeArtifact": {
         "files": [
@@ -364,7 +368,7 @@
           },
           {
             "relativePath": "config/block13-task13-5-compatibility-boundary-v1.json",
-            "sha256": "970ca2033681ba13dc6aedf4bb6c16f111440e14e57d12e1a977037d097d0839"
+            "sha256": "d789e3c982d20fa98bb7c2006f499e8f9a2271c1b566d5a100a0011e98c847c5"
           },
           {
             "relativePath": "fixtures/block6a/codex-sdk-feasibility-v1.json",
@@ -372,7 +376,7 @@
           },
           {
             "relativePath": "forge.block6a-certification.config.ts",
-            "sha256": "ab2e748f206b46504d34ee11c6fe8f2b73bd53615093887f5573ef36ecfbab02"
+            "sha256": "a6912a0fb9838cea082b7c338987eea05248b1accecee532a1e00d8d42386365"
           },
           {
             "relativePath": "scripts/block6a-feasibility-manifest.mjs",
@@ -388,7 +392,7 @@
           },
           {
             "relativePath": "scripts/run-task13-11-product-packaged-probe.mjs",
-            "sha256": "78879ac3b677b612ec68887b77c00a3ac2ca7a436fdbfb14e401915d9564eaa8"
+            "sha256": "a99038baae92d8f86dd5afda5211ef32df8d7e1a2777c82eb8349092cb8f8e36"
           },
           {
             "relativePath": "scripts/run-task13-5-no-git-packaged-probe.mjs",
@@ -396,11 +400,11 @@
           },
           {
             "relativePath": "scripts/task13-11-product-artifact.d.mts",
-            "sha256": "3fd824f20cb3669ef4f3354e1fb6266fc546726f67d44b2427dcbf64fdc7d8f6"
+            "sha256": "63854b84c7e6a504b4f333d6e123ebe3cc943a0911151194158cd043e02bed2b"
           },
           {
             "relativePath": "scripts/task13-11-product-artifact.mjs",
-            "sha256": "2fa0bd83ffae630892ee866712ec9bf71c342433aedd28ccf21f5f382b900509"
+            "sha256": "e62230f69e43ef08b1857b58c132a91b3559dc5837dac6f87e2b9dfc531dc057"
           },
           {
             "relativePath": "scripts/task13-5-compatibility-boundary.d.mts",
@@ -415,94 +419,94 @@
             "sha256": "e26f9b4290b325243085f97519393386c2cba442ef51de6c0e0e60e0732e4317"
           },
           {
-            "relativePath": "src/main/codex-feasibility/assertion-provenance.ts",
+            "relativePath": "tests/certification/block6a/runtime/assertion-provenance.ts",
             "sha256": "c3bf87513083c9c51bea2ca4444d52c4f0e8ed3d61293ca06709b4541f740b75"
           },
           {
-            "relativePath": "src/main/codex-feasibility/certification-main.ts",
+            "relativePath": "tests/certification/block6a/runtime/certification-main.ts",
             "sha256": "0a153840ea23c24d9384b48c7fc6fbe2ee8ea657f49ea86d1e1159c93e450bf1"
           },
           {
-            "relativePath": "src/main/codex-feasibility/environment.ts",
+            "relativePath": "tests/certification/block6a/runtime/environment.ts",
             "sha256": "5be947e6511a46f28cc11463995b1c3811b900b84af12b5c80c21618de19568c"
           },
           {
-            "relativePath": "src/main/codex-feasibility/lifecycle-probe-main.ts",
+            "relativePath": "tests/certification/block6a/runtime/lifecycle-probe-main.ts",
             "sha256": "1706398789f9d4dacb1785192c8a5d70453141014dc1a05267a87064c6a15a9e"
           },
           {
-            "relativePath": "src/main/codex-feasibility/lifecycle.ts",
+            "relativePath": "tests/certification/block6a/runtime/lifecycle.ts",
             "sha256": "af2f7a45b71ef416acab25717c00675e24f0e3e28147b3eeabcbe1301aeafcb7"
           },
           {
-            "relativePath": "src/main/codex-feasibility/manifest.ts",
-            "sha256": "2681c7dc9fd5d207a8ed1559906d81ea76d08123893dfa1ff5827502ccff9907"
+            "relativePath": "tests/certification/block6a/runtime/manifest.ts",
+            "sha256": "13b472629f1ad9cb71930d15c327451f51531086d27dfd9a1fc1bcac1f119b4a"
           },
           {
-            "relativePath": "src/main/codex-feasibility/operations.ts",
+            "relativePath": "tests/certification/block6a/runtime/operations.ts",
             "sha256": "0648dcd770da3da2e5c8df8eb031b1d2c6edceb465d4c1c765d8547866337a5a"
           },
           {
-            "relativePath": "src/main/codex-feasibility/output-schema-probe-main.ts",
+            "relativePath": "tests/certification/block6a/runtime/output-schema-probe-main.ts",
             "sha256": "2bc1618205a34135c2e6b0bc3bf31a3f8ee118a0ed10a6dd454de80f0097d990"
           },
           {
-            "relativePath": "src/main/codex-feasibility/packaged-probe.ts",
+            "relativePath": "tests/certification/block6a/runtime/packaged-probe.ts",
             "sha256": "bf0513ab3f37d26bd80cc2c86ee7c6c3a22ef7a6e1a3917073863848da8ff123"
           },
           {
-            "relativePath": "src/main/codex-feasibility/probe-main.ts",
+            "relativePath": "tests/certification/block6a/runtime/probe-main.ts",
             "sha256": "50e80a18276dd2262057d0abe07fc15fee1c7969336a2a41ff61de5539f5e137"
           },
           {
-            "relativePath": "src/main/codex-feasibility/protocol.ts",
+            "relativePath": "tests/certification/block6a/runtime/protocol.ts",
             "sha256": "53b2652ac47f8c59f804299e8754d769395f9b3496f690b56b29febe0aeb3144"
           },
           {
-            "relativePath": "src/main/codex-feasibility/runner.ts",
+            "relativePath": "tests/certification/block6a/runtime/runner.ts",
             "sha256": "0578679e4619e1ff23afecdcdb9deb751dc829ebe315e12fea87847a50ed0225"
           },
           {
-            "relativePath": "src/main/codex-feasibility/session-supervisor.ts",
+            "relativePath": "tests/certification/block6a/runtime/session-supervisor.ts",
             "sha256": "96ed108110093f6fd71201161091f487ffcdadb5500249455a055540121e10f5"
           },
           {
-            "relativePath": "src/main/codex-feasibility/structured-output.ts",
+            "relativePath": "tests/certification/block6a/runtime/structured-output.ts",
             "sha256": "3fad2b516442707f55fdfd537a8f79610aeb85ac4054dbd4e65ae66ec687fc05"
           },
           {
-            "relativePath": "src/main/codex-feasibility/task13-no-git-packaged-probe.ts",
+            "relativePath": "tests/certification/block6a/runtime/task13-no-git-packaged-probe.ts",
             "sha256": "fee447f404d321b66e31d8e8549370fd385794062b6a4052450cb569201e303b"
           },
           {
-            "relativePath": "src/main/codex-feasibility/termination-supervisor.ts",
+            "relativePath": "tests/certification/block6a/runtime/termination-supervisor.ts",
             "sha256": "2d7c648ed0f2500490b469f625b1816e87aebf4d98e12a26619b5efdf9fa849f"
           },
           {
-            "relativePath": "src/main/codex-feasibility/turn-deadline.ts",
+            "relativePath": "tests/certification/block6a/runtime/turn-deadline.ts",
             "sha256": "4d35c0fb723a78130a30564bc9aee2037dd8df3338b0b22eae275edf1f6a4437"
           },
           {
-            "relativePath": "src/main/codex-feasibility/utility-entry.ts",
+            "relativePath": "tests/certification/block6a/runtime/utility-entry.ts",
             "sha256": "ecaaa21891c24e931f84e89ef9296c209ff8ff2ff2fe9b5a1a869bd58389d2c7"
           },
           {
-            "relativePath": "src/main/codex-feasibility/utility-protocol-termination.ts",
+            "relativePath": "tests/certification/block6a/runtime/utility-protocol-termination.ts",
             "sha256": "d98e1842e361bd0afcfd54f6e487ef5da7b84a49e45bb034f45822a315a7c709"
           },
           {
             "relativePath": "vite.block6a-certification-main.config.ts",
-            "sha256": "580b6b95193262377d23af2b2a8049ef09b64f19d2c0c8fe121f09894767f2fd"
+            "sha256": "38d8edfa76dd4fcad298cac5caa3025cc565edda45e39991568f2b9f081fd569"
           },
           {
             "relativePath": "vite.codex-feasibility.config.ts",
             "sha256": "0551a1906e5c9fec68311088153304411881d6781c395e42e9ddae55293e1f83"
           }
         ],
-        "sha256": "0003a894bd206bd05911985abaf1c493492c4f6aa377257a3395551cf89d2bda"
+        "sha256": "7938792dda377aea19e3909e20dfa44b865bb3d830852e68152ed4282645b938"
       }
     },
-    "sha256": "c70e0d116d0bcada33c381701faee7a90b6e28570eeff8be82020f50c10807d1"
+    "sha256": "c288a454be6e4546c321b16ec3fa6c6ac8a6f8be644fd8551d6f5ca566c374d8"
   },
   "invocation": {
     "command": "node scripts/run-task13-5-no-git-packaged-probe.mjs --artifact-root <artifact> --evidence-output <evidence>",

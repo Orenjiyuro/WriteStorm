@@ -150,7 +150,7 @@ try {
   const preClickAiProcessesAbsent = preClickSamples.every(
     (sample) => sample.aiProcessObserved === false,
   );
-  if (preClickCompatibility !== 'Fresh'
+  if (preClickCompatibility !== 'Unknown'
     || preClickRuntime !== 'Unknown'
     || preClickObservedAt !== 'Not observed'
     || !preClickExternalConnectionAbsent
@@ -160,6 +160,8 @@ try {
 
   await page.getByRole('button', { name: 'Check connection' }).click();
   await waitForDefinitionValue(page, 'Runtime authentication', 'Authenticated', 90_000);
+  const postClickCompatibility =
+    await readDefinitionValue(page, 'SDK compatibility');
   const observedAt = await readDefinitionValue(page, 'Observed at');
   const visibleObservedAt = isCanonicalTimestamp(observedAt);
   const visibleAuthenticated =
@@ -176,7 +178,10 @@ try {
   });
   const postResultAiProcessesAbsent =
     postResultObservation.aiProcessObserved === false;
-  if (!visibleAuthenticated || !visibleObservedAt || !postResultAiProcessesAbsent) {
+  if (postClickCompatibility !== 'Fresh'
+    || !visibleAuthenticated
+    || !visibleObservedAt
+    || !postResultAiProcessesAbsent) {
     throw new Error('Task 13.12 visible result or cleanup boundary was not admitted.');
   }
 
@@ -219,11 +224,12 @@ try {
       noLibraryOpenBeforeClick: true,
       settingsLinkClicked: true,
       connectionButtonClicked: true,
-      preClickCompatibilityFresh: true,
+      preClickCompatibilityUnknown: true,
       preClickRuntimeUnknown: true,
       preClickObservedAtAbsent: true,
       preClickExternalConnectionAbsent,
       preClickAiProcessesAbsent,
+      postClickCompatibilityFresh: true,
       visibleAuthenticated,
       visibleObservedAt,
       postResultAiProcessesAbsent,

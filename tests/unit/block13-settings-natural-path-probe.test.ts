@@ -51,6 +51,8 @@ describe('Block 13.12 packaged Settings natural-path probe boundary', () => {
     expect(runner).toContain("os.tmpdir()");
     expect(runner).toContain('preClickExternalConnectionAbsent');
     expect(runner).toContain('preClickAiProcessesAbsent');
+    expect(runner).toContain("preClickCompatibility !== 'Unknown'");
+    expect(runner).toContain("postClickCompatibility !== 'Fresh'");
     expect(runner).toContain('visibleAuthenticated');
     expect(runner).toContain('visibleObservedAt');
     expect(runner).toContain('noLibraryOpenBeforeClick');

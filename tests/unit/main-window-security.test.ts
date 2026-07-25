@@ -64,6 +64,42 @@ describe('main window security lifecycle', () => {
     expect(calls.slice(-2)).toEqual(['unbind-sender-policy', 'cleanup-window-imports']);
   });
 
+  it('does not read destroyed webContents from the closed event', async () => {
+    let closedListener: () => void = () => undefined;
+    let destroyed = false;
+    const unboundIds: number[] = [];
+    const webContents = {
+      id: 27,
+      getURL: () => 'about:blank',
+      setWindowOpenHandler: () => undefined,
+      on: () => undefined,
+    };
+    const window = {
+      get webContents() {
+        if (destroyed) throw new TypeError('Object has been destroyed');
+        return webContents;
+      },
+      loadURL: async () => undefined,
+      on: (_event: 'closed', listener: () => void) => {
+        closedListener = listener;
+      },
+    };
+
+    await createMainWindow({
+      createWindow: () => window,
+      preloadPath: 'C:\\WriteStorm\\preload.js',
+      appUrl: 'writestorm://app/index.html',
+      allowedExternalOrigins: new Set(),
+      openExternal: async () => undefined,
+      bindSenderPolicy: () => undefined,
+      unbindSenderPolicy: (webContentsId) => unboundIds.push(webContentsId),
+    });
+
+    destroyed = true;
+    expect(() => closedListener()).not.toThrow();
+    expect(unboundIds).toEqual([27]);
+  });
+
   it('passes test bounds at construction and keeps the window hidden for main-process verification', async () => {
     let options: unknown;
     const window = {

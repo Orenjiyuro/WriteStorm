@@ -85,9 +85,10 @@ export async function createMainWindow<TWindow extends MainWindowLike>(
       event.preventDefault();
     }
   });
-  dependencies.bindSenderPolicy(window.webContents.id);
+  const webContentsId = window.webContents.id;
+  dependencies.bindSenderPolicy(webContentsId);
   window.on('closed', () => {
-    dependencies.unbindSenderPolicy(window.webContents.id);
+    dependencies.unbindSenderPolicy(webContentsId);
     void runClosedCleanup(
       dependencies.onClosed,
       dependencies.onClosedCleanupFailure,

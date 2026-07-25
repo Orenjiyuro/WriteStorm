@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "block13-task13-12-windows-settings-natural-path-001",
+  "task": "13.12",
+  "source": "packaged_settings_ui",
+  "recordedAt": "2026-07-25T12:39:57.670Z",
+  "classification": "windows_settings_natural_path_verified",
+  "gitHeadAtRun": "4e3f642fb10bb83b8df25ad613fb9de9e7c9c856",
+  "compatibilityFingerprint": {
+    "boundaryId": "block13-task13-5-compatibility-v1",
+    "gitHead": "4e3f642fb10bb83b8df25ad613fb9de9e7c9c856",
+    "layers": {
+      "supplyChain": "2f4b0239bb1cc02bd1234fc345bb67b431b0a380e39a559c68665ff02d7908cf",
+      "productionProtocol": "dfddb389779abe0ffc44806a968f66e709eae484100b9bd111ef3ae94f899f37",
+      "probeArtifact": "1dcb118b7e85789ed6e2f2066dd33bb259194a73734be3d89b53852953f0586d"
+    },
+    "sha256": "60686dea87505dbf45845daf4657c1738e455b43d4258e71617fe698c9c56e92"
+  },
+  "artifact": {
+    "boundaryId": "block13-task13-11-product-artifact-v1",
+    "sha256": "9aac98aa1964fcb43a64fab14b3897358c6ea5978e1dca7ffaa02933246d0023"
+  },
+  "assertions": {
+    "packagedWindowsX64": true,
+    "normalProductMain": true,
+    "noLibraryOpenBeforeClick": true,
+    "settingsLinkClicked": true,
+    "connectionButtonClicked": true,
+    "preClickCompatibilityUnknown": true,
+    "preClickRuntimeUnknown": true,
+    "preClickObservedAtAbsent": true,
+    "preClickExternalConnectionAbsent": true,
+    "preClickAiProcessesAbsent": true,
+    "postClickCompatibilityFresh": true,
+    "visibleAuthenticated": true,
+    "visibleObservedAt": true,
+    "postResultAiProcessesAbsent": true,
+    "appExitClean": true,
+    "appTreeResidualAbsent": true
+  },
+  "observation": {
+    "authState": "authenticated",
+    "observedAt": "2026-07-25T12:39:53.807Z"
+  },
+  "limitations": [
+    "Fixed product connection-check fixture only; no Library was open.",
+    "Windows x64 development-machine artifact only.",
+    "macOS, clean-machine, signing, Defender, proxy, enterprise certificate, firewall, offline and telemetry boundaries remain unverified or deferred."
+  ]
+}

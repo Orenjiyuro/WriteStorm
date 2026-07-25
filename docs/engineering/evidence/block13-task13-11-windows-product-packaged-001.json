@@ -96,13 +96,13 @@
   ],
   "compatibilityFingerprint": {
     "boundaryId": "block13-task13-5-compatibility-v1",
-    "gitHead": "df7e9d20d1e2e24e04aafa62464092a39c3a8121",
+    "gitHead": "4e3f642fb10bb83b8df25ad613fb9de9e7c9c856",
     "layers": {
-      "supplyChain": "712591a66eee703ec7097fbfdefe8122ff607267fcd3c221a1dbb93be6e6c458",
-      "productionProtocol": "abd5722b05557c9b0e95651cb4f08e59dd213b4b63d278e00db082a57e9ca9f7",
-      "probeArtifact": "7938792dda377aea19e3909e20dfa44b865bb3d830852e68152ed4282645b938"
+      "supplyChain": "2f4b0239bb1cc02bd1234fc345bb67b431b0a380e39a559c68665ff02d7908cf",
+      "productionProtocol": "dfddb389779abe0ffc44806a968f66e709eae484100b9bd111ef3ae94f899f37",
+      "probeArtifact": "1dcb118b7e85789ed6e2f2066dd33bb259194a73734be3d89b53852953f0586d"
     },
-    "sha256": "c288a454be6e4546c321b16ec3fa6c6ac8a6f8be644fd8551d6f5ca566c374d8"
+    "sha256": "60686dea87505dbf45845daf4657c1738e455b43d4258e71617fe698c9c56e92"
   },
   "artifact": {
     "boundaryId": "block13-task13-11-product-artifact-v1",
@@ -110,12 +110,12 @@
       {
         "id": "writestorm_executable",
         "size": 235706368,
-        "sha256": "230f60155fb758c44c19c0424e42630f65a5d60b1ecfc6abb3e0ef03edb09290"
+        "sha256": "59f4881c5ec257db00388eaa0e7cd2399f47a4eb4bc62defee1e999682f68be2"
       },
       {
         "id": "app_asar",
-        "size": 71336482,
-        "sha256": "5de59f99acf085d496d9cac15b994f931025c22fdcc797f823a039a577dead71"
+        "size": 71345328,
+        "sha256": "612a3f52194dd7e13d1cb5eadade6f254a628ff8e6528b9a872944cc86bc084c"
       },
       {
         "id": "codex_executable",
@@ -126,8 +126,8 @@
     "asarEntries": [
       {
         "id": "product_main_bundle",
-        "size": 476865,
-        "sha256": "9af97e544bbc27f04bae182d72f20a761c23ad6fccf4bf13c93f616d5daacde6"
+        "size": 477415,
+        "sha256": "44119b1ba4797466669b03cc2820a6062ab1015d651dac5df60601eb42745c54"
       },
       {
         "id": "product_codex_utility_bundle",
@@ -150,6 +150,6 @@
         "sha256": "8e55431148bb2ffc633a7aff1870ee213627f56357138fa0cb86d8a2e42f7106"
       }
     ],
-    "sha256": "08226c6ceeee9431a0ffc7b444ca00064796b671733bcbb2934ea2b4578b2541"
+    "sha256": "9aac98aa1964fcb43a64fab14b3897358c6ea5978e1dca7ffaa02933246d0023"
   }
 }

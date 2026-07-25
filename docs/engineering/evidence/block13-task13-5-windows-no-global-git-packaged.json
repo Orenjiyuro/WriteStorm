@@ -3,10 +3,10 @@
   "evidenceId": "block13-task13-5-windows-no-global-git-packaged-001",
   "task": "13.5",
   "source": "packaged_sdk",
-  "recordedAt": "2026-07-25T07:10:01.032Z",
+  "recordedAt": "2026-07-25T12:39:10.286Z",
   "commandName": "writestorm-task13-5-no-global-git-packaged-probe",
   "classification": "windows_packaged_no_global_git_verified",
-  "gitHeadAtRun": "df7e9d20d1e2e24e04aafa62464092a39c3a8121",
+  "gitHeadAtRun": "4e3f642fb10bb83b8df25ad613fb9de9e7c9c856",
   "versions": {
     "electron": "43.0.0",
     "nodeRuntime": "24.17.0",
@@ -50,13 +50,13 @@
         "id": "writestorm_executable",
         "relativePath": "writestorm.exe",
         "size": 235706368,
-        "sha256": "4ccb5ff0b500e0e53550eb6733d0425b4c5916c7a47fb382690dfe4d6e077ec9"
+        "sha256": "9eae91c92625eefdcd0bc69b7e4a89a5435d8d7b83e6819196b14ae8c2ec21e4"
       },
       {
         "id": "app_asar",
         "relativePath": "resources/app.asar",
-        "size": 71050663,
-        "sha256": "9956697aed53b67fb3ab442cab36a45554838ca78962dbf0d8c86c6eb92e9762"
+        "size": 71041868,
+        "sha256": "618a493aeeebf983bee74a6959e3ae903ced3b81abc0a28350384a57db35538d"
       },
       {
         "id": "codex_executable",
@@ -84,15 +84,15 @@
         "id": "packaged_package_manifest",
         "archiveRelativePath": "resources/app.asar",
         "entryPath": "package.json",
-        "size": 1883,
-        "sha256": "dbdd5bc7f4f5fb6f8db199fd845a34219e3a14229654f868af4d04b944eeb09b"
+        "size": 1987,
+        "sha256": "3867900c18c7f7b00d6ed02b0fa8307b35132d10065635ef818c38e092d6c117"
       }
     ],
-    "sha256": "4440893bdaf4298bd6b088a59c0e04faae69f42c13e43faa446e60b487b70e12"
+    "sha256": "608a99d5a0d9300475fbf027b8f24ccc0463033d56ebf9f5db082dc22a2ec4b7"
   },
   "compatibilityFingerprint": {
     "boundaryId": "block13-task13-5-compatibility-v1",
-    "gitHead": "df7e9d20d1e2e24e04aafa62464092a39c3a8121",
+    "gitHead": "4e3f642fb10bb83b8df25ad613fb9de9e7c9c856",
     "layers": {
       "supplyChain": {
         "files": [
@@ -106,10 +106,10 @@
           },
           {
             "relativePath": "package.json",
-            "sha256": "dbdd5bc7f4f5fb6f8db199fd845a34219e3a14229654f868af4d04b944eeb09b"
+            "sha256": "3867900c18c7f7b00d6ed02b0fa8307b35132d10065635ef818c38e092d6c117"
           }
         ],
-        "sha256": "712591a66eee703ec7097fbfdefe8122ff607267fcd3c221a1dbb93be6e6c458"
+        "sha256": "2f4b0239bb1cc02bd1234fc345bb67b431b0a380e39a559c68665ff02d7908cf"
       },
       "productionProtocol": {
         "files": [
@@ -146,8 +146,12 @@
             "sha256": "fe678d2dc1e6e292ab064547e8df0e89614874e0c3898b68854dc863ad3b5918"
           },
           {
+            "relativePath": "src/main/ai/ai-compatibility-assessment.ts",
+            "sha256": "cb0d7286efe7727bd0bdda19356fb4334a5787ef4ef9a839ee7b9507654ec8d7"
+          },
+          {
             "relativePath": "src/main/ai/ai-connection-check-service.ts",
-            "sha256": "e29a544c2fa21042a5409d424febd98c94eb013e3cf81e3144cecd601ce7a819"
+            "sha256": "3a5b8898b14b58e772401c7ad86b1c9708300a25a3124bb09e1d070b8f4ab3b4"
           },
           {
             "relativePath": "src/main/ai/ai-execution-port.ts",
@@ -155,11 +159,11 @@
           },
           {
             "relativePath": "src/main/ai/ai-runtime-artifact-attestation.ts",
-            "sha256": "1c03188ed94bf26b9cf9cc6ecf08800a68bc8ec7b844355d9682227093ab21cf"
+            "sha256": "9d2b0206fd05e28e6adb23e65ab08a75e594a58937f6250cc7d9266d88e5dd6d"
           },
           {
             "relativePath": "src/main/ai/ai-runtime-compatibility.ts",
-            "sha256": "b32d43fed66bb2d77fda152ed095eb50f136e2fe53eb80ad2f163bc1499848e5"
+            "sha256": "db45429fcd4865a330d4074bd5772ae87b94c916735a0908a5673055d5dde1f2"
           },
           {
             "relativePath": "src/main/ai/ai-runtime-diagnostics.ts",
@@ -167,7 +171,7 @@
           },
           {
             "relativePath": "src/main/ai/ai-runtime-observation.ts",
-            "sha256": "3017cd554fa93a21537d201ff1be241980f969149a331922f9b1d0027736f97c"
+            "sha256": "34c8389f8d1de6b5994997a32e238e98a9279801e747065b921f77651ec065ad"
           },
           {
             "relativePath": "src/main/ai/ai-structured-output.ts",
@@ -175,7 +179,7 @@
           },
           {
             "relativePath": "src/main/ai/providers/codex/codex-auth-observation.ts",
-            "sha256": "fe1ff7fea8e146ffb2d4696507c2cf9d7aba7d5ce6901e61c776674c8f27c0d3"
+            "sha256": "9407b62aa83c517ceb7ed679f120225f72487f5196a2ba8b1297585fed44443a"
           },
           {
             "relativePath": "src/main/ai/providers/codex/codex-connection-check-attempt-controller.ts",
@@ -279,11 +283,11 @@
           },
           {
             "relativePath": "src/main/main.ts",
-            "sha256": "d46bbfdb865f758aa28412c12c786bf1dbe423596e0e59a085146e05c6f242b6"
+            "sha256": "c09dcbe7b1bc59f1bb2c1dbecab7ac9d88bb7046b64ad9b442aaa6ce772c446d"
           },
           {
             "relativePath": "src/main/windows/main-window.ts",
-            "sha256": "596c3affd1a769244d5eee53d13b057783c36323c18ae3ed9d48d76e43acdf10"
+            "sha256": "81a914ac92401d1bc4d7dde69cc272d1dc0c8c0ae29ad1503208aa4865790e4a"
           },
           {
             "relativePath": "src/preload/writestorm-api.ts",
@@ -347,7 +351,7 @@
           },
           {
             "relativePath": "vite.main.config.ts",
-            "sha256": "788c79aedd5d566d6f501a953e413658e43f46fa844a3d7b2ba650d5758b6bab"
+            "sha256": "fb9814fda35acc4f6b5211593cc3a17577754c419f6f44f31dcd2d5ab060ad6b"
           },
           {
             "relativePath": "vite.preload.config.ts",
@@ -358,7 +362,7 @@
             "sha256": "fb7c1ab8d2ff106e91022162fcf2cfb2098ffe0cad088ac3d96e9ec32de55d02"
           }
         ],
-        "sha256": "abd5722b05557c9b0e95651cb4f08e59dd213b4b63d278e00db082a57e9ca9f7"
+        "sha256": "dfddb389779abe0ffc44806a968f66e709eae484100b9bd111ef3ae94f899f37"
       },
       "probeArtifact": {
         "files": [
@@ -368,7 +372,7 @@
           },
           {
             "relativePath": "config/block13-task13-5-compatibility-boundary-v1.json",
-            "sha256": "d789e3c982d20fa98bb7c2006f499e8f9a2271c1b566d5a100a0011e98c847c5"
+            "sha256": "734c9eb01ad9c654120dee7df954ad5a70e285b716ca5b543419798b8dc66530"
           },
           {
             "relativePath": "fixtures/block6a/codex-sdk-feasibility-v1.json",
@@ -393,6 +397,10 @@
           {
             "relativePath": "scripts/run-task13-11-product-packaged-probe.mjs",
             "sha256": "a99038baae92d8f86dd5afda5211ef32df8d7e1a2777c82eb8349092cb8f8e36"
+          },
+          {
+            "relativePath": "scripts/run-task13-12-settings-natural-path-probe.mjs",
+            "sha256": "0ee55bcb3067e4ed44d43199670004b2b3f86c450e4f02dfa14a13eee4603695"
           },
           {
             "relativePath": "scripts/run-task13-5-no-git-packaged-probe.mjs",
@@ -503,10 +511,10 @@
             "sha256": "0551a1906e5c9fec68311088153304411881d6781c395e42e9ddae55293e1f83"
           }
         ],
-        "sha256": "7938792dda377aea19e3909e20dfa44b865bb3d830852e68152ed4282645b938"
+        "sha256": "1dcb118b7e85789ed6e2f2066dd33bb259194a73734be3d89b53852953f0586d"
       }
     },
-    "sha256": "c288a454be6e4546c321b16ec3fa6c6ac8a6f8be644fd8551d6f5ca566c374d8"
+    "sha256": "60686dea87505dbf45845daf4657c1738e455b43d4258e71617fe698c9c56e92"
   },
   "invocation": {
     "command": "node scripts/run-task13-5-no-git-packaged-probe.mjs --artifact-root <artifact> --evidence-output <evidence>",

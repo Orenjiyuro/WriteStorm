@@ -43,9 +43,16 @@ const noGitEvidence = readJson<{
   compatibilityFingerprint: { sha256: string };
   artifact: { sha256: string };
 }>('docs/engineering/evidence/block13-task13-5-windows-no-global-git-packaged.json');
+const settingsEvidence = readJson<{
+  gitHeadAtRun: string;
+  compatibilityFingerprint: { sha256: string };
+  artifact: { sha256: string };
+  assertions: Record<string, boolean>;
+  observation: { authState: string; observedAt: string };
+}>('docs/engineering/evidence/block13-task13-12-windows-settings-natural-path-001.json');
 
 describe('Block 13.13 integration note', () => {
-  it('keeps the exact versioned platform-limited Gate while recertification is pending', () => {
+  it('keeps the exact versioned platform-limited Gate while review is pending', () => {
     expect(gate).toMatchObject({
       feasibility: 'windows_passed',
       platform: 'macos_deferred',
@@ -55,9 +62,11 @@ describe('Block 13.13 integration note', () => {
     expect(status).toContain(gate.verdictText);
     expect(decisions).toContain(gate.verdictText);
     expect(status).toContain(
-      'Status: Settings natural-path probe implemented; current Windows recertification required',
+      'Status: Three current Windows recertification records produced; total-thread acceptance pending',
     );
-    expect(status).toContain('| 13.13 | REOPENED; RECERTIFICATION REQUIRED |');
+    expect(status).toContain(
+      '| 13.13 | EVIDENCE COMPLETE; TOTAL-THREAD ACCEPTANCE PENDING |',
+    );
     expect(context).toContain('Tasks 13.3–13.13');
     expect(decisions).toContain(
       '## D116: Block 13 Closes Under the Versioned Windows Conditional Gate',
@@ -74,9 +83,14 @@ describe('Block 13.13 integration note', () => {
     expect(decisions).toContain(
       '## D120: Settings Natural-Path Certification Is Explicit and Reopens Freshness',
     );
+    expect(decisions).toContain(
+      '## D121: Three Current Windows Records Share One Runtime Boundary',
+    );
     expect(technicalDesign).toContain(productEvidence.compatibilityFingerprint.gitHead);
     expect(technicalDesign).toContain(productEvidence.compatibilityFingerprint.sha256);
-    expect(technicalDesign).toContain('cannot authorize the current candidate');
+    expect(technicalDesign).toContain(
+      'Main-thread acceptance of separately authorized product, no-global-Git and Settings natural-path evidence',
+    );
   });
 
   it('records the pinned supply-chain source without changing dependencies', () => {
@@ -102,12 +116,22 @@ describe('Block 13.13 integration note', () => {
     expect(status).toContain('resolved registry source, integrity and dependency tree');
   });
 
-  it('records both current Windows recertification evidence records without self-accepting them', () => {
+  it('records all three current Windows evidence records without self-accepting them', () => {
     expect(productEvidence.compatibilityFingerprint.gitHead).toBe(
       noGitEvidence.gitHeadAtRun,
     );
     expect(productEvidence.compatibilityFingerprint.sha256).toBe(
       noGitEvidence.compatibilityFingerprint.sha256,
+    );
+    expect(settingsEvidence.gitHeadAtRun).toBe(noGitEvidence.gitHeadAtRun);
+    expect(settingsEvidence.compatibilityFingerprint.sha256).toBe(
+      noGitEvidence.compatibilityFingerprint.sha256,
+    );
+    expect(settingsEvidence.artifact.sha256).toBe(productEvidence.artifact.sha256);
+    expect(Object.values(settingsEvidence.assertions).every((value) => value)).toBe(true);
+    expect(settingsEvidence.observation.authState).toBe('authenticated');
+    expect(new Date(settingsEvidence.observation.observedAt).toISOString()).toBe(
+      settingsEvidence.observation.observedAt,
     );
     for (const value of [
       noGitEvidence.evidenceId,
@@ -117,6 +141,7 @@ describe('Block 13.13 integration note', () => {
       noGitEvidence.artifact.sha256,
       'docs/engineering/evidence/block13-task13-11-windows-product-packaged-001.json',
       'docs/engineering/evidence/block13-task13-5-windows-no-global-git-packaged.json',
+      'docs/engineering/evidence/block13-task13-12-windows-settings-natural-path-001.json',
     ]) {
       expect(status).toContain(value);
     }
@@ -145,7 +170,7 @@ describe('Block 13.13 integration note', () => {
     expect(limitations).toMatchObject({
       platforms: {
         windows: {
-          productPackagedRuntime: 'historical_verified_current_recertification_required',
+          productPackagedRuntime: 'current_evidence_pending_total_thread_acceptance',
           cleanMachine: 'unverified',
           signing: 'unverified',
           defender: 'unverified',

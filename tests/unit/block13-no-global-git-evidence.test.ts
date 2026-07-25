@@ -74,7 +74,7 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
       evidenceId: 'block13-task13-5-windows-no-global-git-packaged-001',
       task: '13.5',
       classification: 'windows_packaged_no_global_git_verified',
-      gitHeadAtRun: 'df7e9d20d1e2e24e04aafa62464092a39c3a8121',
+      gitHeadAtRun: '4e3f642fb10bb83b8df25ad613fb9de9e7c9c856',
       versions: {
         electron: '43.0.0',
         codexSdk: '0.144.6',
@@ -95,7 +95,7 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
     expect(Object.values(evidence.assertions)).not.toContain(false);
   });
 
-  it('retains internally valid historical hashes while all current layers fail closed', () => {
+  it('retains internally valid current hashes while all current layers are fresh', () => {
     expect(evidence.compatibilityFingerprint.gitHead).toBe(evidence.gitHeadAtRun);
     for (const [layerName, layer] of Object.entries(
       evidence.compatibilityFingerprint.layers,
@@ -133,7 +133,7 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
     }
     expect(evidence.artifact.sha256).toMatch(/^[0-9a-f]{64}$/);
     expect(evidence.artifact.sha256).toBe(
-      '4440893bdaf4298bd6b088a59c0e04faae69f42c13e43faa446e60b487b70e12',
+      '608a99d5a0d9300475fbf027b8f24ccc0463033d56ebf9f5db082dc22a2ec4b7',
     );
 
     const current = createTask135CompatibilityFingerprint(
@@ -145,12 +145,12 @@ describe('Block 13.5 packaged no-global-Git evidence', () => {
       current,
       evidence.compatibilityFingerprint,
     )).toEqual({
-      status: 'stale',
-      staleLayers: ['supplyChain', 'productionProtocol', 'probeArtifact'],
+      status: 'fresh',
+      staleLayers: [],
       layers: {
-        supplyChain: 'stale',
-        productionProtocol: 'stale',
-        probeArtifact: 'stale',
+        supplyChain: 'fresh',
+        productionProtocol: 'fresh',
+        probeArtifact: 'fresh',
       },
     });
   });

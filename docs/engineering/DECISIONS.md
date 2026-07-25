@@ -1638,3 +1638,21 @@ Rules:
 - Adding the package command changes `supplyChain`; the Main leaf changes `productionProtocol`; and the runner plus canonical boundary change `probeArtifact`. All D119 evidence is therefore historical for the current candidate until product, no-global-Git and Settings natural-path probes are rerun against one exact clean HEAD and reviewed.
 - No current real SDK/auth/network probe ran under D120. No dependency version, lockfile, IPC, UI behavior, Job, checkpoint, AnalysisModuleInstance, SQLite write, retry, fallback or business AI workflow is added.
 - macOS remains deferred-by-user. Clean-machine, signing, notarization, Defender, proxy, enterprise certificates, firewall, offline behavior and telemetry remain unverified.
+
+## D121: Three Current Windows Records Share One Runtime Boundary
+
+Decision: The separately authorized product, no-global-Git and Settings natural-path probes produced one coherent Windows development-machine evidence set at clean runtime HEAD `4e3f642fb10bb83b8df25ad613fb9de9e7c9c856`. This implementation thread records the results but does not self-accept their provenance or broaden the conditional platform verdict.
+
+Rules:
+
+- All three records bind compatibility fingerprint `60686dea87505dbf45845daf4657c1738e455b43d4258e71617fe698c9c56e92`; their `supplyChain`, `productionProtocol` and `probeArtifact` layers match the runtime source boundary.
+- The real product Forge artifact passed isolated success, explicit-cancel and timeout sessions with acknowledged cleanup, completed residual scans and no owned utility or CLI residual. Its product artifact record is `9aac98aa1964fcb43a64fab14b3897358c6ea5978e1dca7ffaa02933246d0023`.
+- The runtime receipt binds the exact executable, `app.asar` and Codex executable through aggregate declaration hash `7c2afa3589cc5a8371fad88f93e2a6c0ec296bb7a86f308250f9a1aa1ba43e28`. D118 still applies: this proves byte equality, not who ran or passed the probe.
+- The independent certification artifact proved Git unavailable to both outer and utility environments, completed the fixed structured turn and passed all 17 assertions. Its artifact record is `608a99d5a0d9300475fbf027b8f24ccc0463033d56ebf9f5db082dc22a2ec4b7`.
+- The normal packaged product opened Settings through the visible navigation entry and clicked the visible connection button. Before the click it displayed unknown compatibility/runtime observation and produced no external connection or AI process; afterward it displayed fresh compatibility, authenticated runtime and canonical `observedAt`. All 16 assertions passed, including clean exit and no artifact-tree residual.
+- The Settings observation is application memory only. Its recorded authenticated result is evidence that the explicit action succeeded at that time; application restart begins from `unknown`, no TTL or background refresh is invented, and fingerprint drift invalidates reuse.
+- The committed records contain only bounded assertions, versions, fingerprints, artifact hashes and the provider-neutral observation. They retain no prompt, response body, raw error, credential, environment value, arbitrary path or process identifier.
+- Default regression remains offline. The real probes remain separate explicit commands and are not added to `npm run check`.
+- `config/block13-release-limitations-v1.json` records current Windows development-machine evidence as pending total-thread acceptance. Clean-machine, signing/notarization, Defender, proxy, enterprise certificates, firewall, offline behavior, telemetry and macOS remain unverified or deferred.
+- No package or lockfile changed. No AI Job, checkpoint, AnalysisModuleInstance, SQLite write, automatic retry, fallback, alternate provider or business AI workflow is admitted.
+- The active conclusion remains exactly `Conditional Go — Windows feasibility verified; macOS packaged runtime deferred-by-user.` It is not Full Go, cross-platform compatibility, AI readiness or release readiness.

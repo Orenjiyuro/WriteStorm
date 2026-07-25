@@ -9,6 +9,27 @@ const status = readFileSync(
   'utf8',
 );
 const decisions = readFileSync(path.join(rootDir, 'docs/engineering/DECISIONS.md'), 'utf8');
+const productEvidence = JSON.parse(readFileSync(
+  path.join(
+    rootDir,
+    'docs/engineering/evidence/block13-task13-11-windows-product-packaged-001.json',
+  ),
+  'utf8',
+));
+const noGitEvidence = JSON.parse(readFileSync(
+  path.join(
+    rootDir,
+    'docs/engineering/evidence/block13-task13-5-windows-no-global-git-packaged.json',
+  ),
+  'utf8',
+));
+const settingsEvidence = JSON.parse(readFileSync(
+  path.join(
+    rootDir,
+    'docs/engineering/evidence/block13-task13-12-windows-settings-natural-path-001.json',
+  ),
+  'utf8',
+));
 const verdict =
   'Conditional Go — Windows feasibility verified; macOS packaged runtime deferred-by-user.';
 
@@ -16,17 +37,17 @@ describe('Block 13 active status authority', () => {
   it('records the exact platform-limited verdict and current task boundary', () => {
     expect(context).toContain(verdict);
     expect(status).toContain(verdict);
-    expect(status).toContain('| 13.5 | HISTORICAL PASS; CURRENT EVIDENCE STALE |');
+    expect(status).toContain('| 13.5 | RECERTIFIED; REVIEW PENDING |');
     expect(status).toContain('| 13.6 | PASS for boundary |');
     expect(status).toContain('| 13.7 | PASS for contract |');
     expect(status).toContain('| 13.8 | PASS for pure in-memory boundary |');
     expect(status).toContain('| 13.9 | PASS for lifecycle/cleanup boundary |');
     expect(status).toContain('| 13.10 | PASS for diagnostic contract boundary |');
-    expect(status).toContain('| 13.11 | HISTORICAL PASS; CURRENT EVIDENCE STALE |');
+    expect(status).toContain('| 13.11 | RECERTIFIED; REVIEW PENDING |');
+    expect(status).toContain('| 13.12 | RECERTIFIED; REVIEW PENDING |');
     expect(status).toContain(
-      '| 13.12 | IMPLEMENTED; COMPATIBILITY STALE, OBSERVATION UNKNOWN; NATURAL PROBE NOT RUN |',
+      '| 13.13 | EVIDENCE COMPLETE; TOTAL-THREAD ACCEPTANCE PENDING |',
     );
-    expect(status).toContain('| 13.13 | REOPENED; RECERTIFICATION REQUIRED |');
   });
 
   it('preserves historical decisions and appends the remediation decision', () => {
@@ -73,6 +94,9 @@ describe('Block 13 active status authority', () => {
     expect(decisions).toContain(
       '## D120: Settings Natural-Path Certification Is Explicit and Reopens Freshness',
     );
+    expect(decisions).toContain(
+      '## D121: Three Current Windows Records Share One Runtime Boundary',
+    );
     expect(decisions).toContain('26d548e03dfbe71e1f62081998e9942a2dfaa94c');
   });
 
@@ -81,7 +105,7 @@ describe('Block 13 active status authority', () => {
     expect(status).toContain('`auth_failed → unknown`');
     expect(status).toContain('`unverified → unknown`');
     expect(status).toContain('`auth_expired` and `permission_denied` remain unverified');
-    expect(status).toContain('application observation is `unknown`');
+    expect(status).toContain('application restart returns to `unknown`');
   });
 
   it('records strict structured output without promoting runtime execution', () => {
@@ -139,16 +163,36 @@ describe('Block 13 active status authority', () => {
     expect(status).toContain('pre-opened exclusive file handle');
   });
 
-  it('records the explicit Task 13.12 channel without promoting stale evidence', () => {
+  it('records the explicit Task 13.12 channel and current bounded evidence', () => {
     expect(status).toContain('`ai:check-connection` accepts only `{}`');
     expect(status).toContain('never invokes it on startup, route render, Library open or navigation');
     expect(status).toContain('rejected concurrent, paused or quarantined admission preserves it');
     expect(status).toContain(
-      'Product success/cancel/timeout and all 17 no-global-Git assertions passed',
+      'Product success/cancel/timeout, all 17 no-global-Git assertions and all 16 Settings assertions passed',
     );
     expect(status).toContain('Default tests remain offline');
     expect(status).toContain('config/block13-ai-gate-v1.json');
     expect(status).toContain('probe:task13:settings-natural-path');
-    expect(status).toContain('No real run has occurred');
+    expect(status).toContain(
+      'block13-task13-12-windows-settings-natural-path-001.json',
+    );
+    expect(status).not.toContain('No real run has occurred');
+  });
+
+  it('binds all three current records to one runtime HEAD and fingerprint', () => {
+    const runtimeHead = '4e3f642fb10bb83b8df25ad613fb9de9e7c9c856';
+    const fingerprint =
+      '60686dea87505dbf45845daf4657c1738e455b43d4258e71617fe698c9c56e92';
+
+    expect(productEvidence.compatibilityFingerprint.gitHead).toBe(runtimeHead);
+    expect(noGitEvidence.compatibilityFingerprint.gitHead).toBe(runtimeHead);
+    expect(settingsEvidence.gitHeadAtRun).toBe(runtimeHead);
+    expect(productEvidence.compatibilityFingerprint.sha256).toBe(fingerprint);
+    expect(noGitEvidence.compatibilityFingerprint.sha256).toBe(fingerprint);
+    expect(settingsEvidence.compatibilityFingerprint.sha256).toBe(fingerprint);
+    expect(settingsEvidence.artifact.sha256).toBe(productEvidence.artifact.sha256);
+    expect(Object.values(noGitEvidence.assertions).every((value) => value === true)).toBe(true);
+    expect(Object.values(settingsEvidence.assertions).every((value) => value === true)).toBe(true);
+    expect(settingsEvidence.observation.authState).toBe('authenticated');
   });
 });

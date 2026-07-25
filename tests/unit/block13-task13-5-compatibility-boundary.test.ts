@@ -176,7 +176,7 @@ describe('Block 13.5 canonical compatibility boundary', () => {
     }
   });
 
-  it('fails prior evidence closed after the natural-path probe boundary changes', () => {
+  it('accepts current evidence after the authorized three-probe recertification', () => {
     const boundary = loadTask135CompatibilityBoundary(rootDir);
     const evidence = JSON.parse(readFileSync(
       path.join(
@@ -194,14 +194,16 @@ describe('Block 13.5 canonical compatibility boundary', () => {
       current,
       evidence.compatibilityFingerprint,
     )).toEqual({
-      status: 'stale',
-      staleLayers: ['supplyChain', 'productionProtocol', 'probeArtifact'],
+      status: 'fresh',
+      staleLayers: [],
       layers: {
-        supplyChain: 'stale',
-        productionProtocol: 'stale',
-        probeArtifact: 'stale',
+        supplyChain: 'fresh',
+        productionProtocol: 'fresh',
+        probeArtifact: 'fresh',
       },
     });
-    expect(evidence.artifact.sha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(evidence.artifact.sha256).toBe(
+      '608a99d5a0d9300475fbf027b8f24ccc0463033d56ebf9f5db082dc22a2ec4b7',
+    );
   });
 });

@@ -19,7 +19,7 @@ const evidence = JSON.parse(readFileSync(
 ));
 
 describe('Block 13.11 Windows product packaged evidence', () => {
-  it('retains the exact historical evidence while all current layers fail closed', () => {
+  it('retains the exact current evidence while all current layers are fresh', () => {
     const current = compactTask1311CompatibilityFingerprint(
       createTask135CompatibilityFingerprint(
         rootDir,
@@ -27,18 +27,18 @@ describe('Block 13.11 Windows product packaged evidence', () => {
         evidence.compatibilityFingerprint.gitHead,
       ),
     );
-    expect(current.layers.supplyChain).not.toBe(
+    expect(current.layers.supplyChain).toBe(
       evidence.compatibilityFingerprint.layers.supplyChain,
     );
-    expect(current.layers.productionProtocol).not.toBe(
+    expect(current.layers.productionProtocol).toBe(
       evidence.compatibilityFingerprint.layers.productionProtocol,
     );
-    expect(current.layers.probeArtifact).not.toBe(
+    expect(current.layers.probeArtifact).toBe(
       evidence.compatibilityFingerprint.layers.probeArtifact,
     );
-    expect(current.sha256).not.toBe(evidence.compatibilityFingerprint.sha256);
+    expect(current.sha256).toBe(evidence.compatibilityFingerprint.sha256);
     expect(evidence.compatibilityFingerprint.gitHead).toBe(
-      'df7e9d20d1e2e24e04aafa62464092a39c3a8121',
+      '4e3f642fb10bb83b8df25ad613fb9de9e7c9c856',
     );
     expect(JSON.stringify(evidence.compatibilityFingerprint)).not.toMatch(
       /relativePath|src\/|scripts\/|config\//,
@@ -90,7 +90,7 @@ describe('Block 13.11 Windows product packaged evidence', () => {
     });
     expect(evidence.artifact.sha256).toMatch(/^[0-9a-f]{64}$/);
     expect(evidence.artifact.sha256).toBe(
-      '08226c6ceeee9431a0ffc7b444ca00064796b671733bcbb2934ea2b4578b2541',
+      '9aac98aa1964fcb43a64fab14b3897358c6ea5978e1dca7ffaa02933246d0023',
     );
     expect(JSON.stringify(evidence)).not.toMatch(
       /prompt|response|rawError|stack|cause|workingDirectory|pathValue|credential|providerId|pid/i,

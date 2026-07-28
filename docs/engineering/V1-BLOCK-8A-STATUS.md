@@ -1,12 +1,19 @@
-# WriteStorm V1 Block 8A Status
+# WriteStorm V1 Block 8A Historical Detection-Slice Status
 
 ## Status scope
 
-This file is the authoritative implementation record for Block 8A Detection engine. It does not approve or report completion of Block 8B Review and freeze or Block 8C Invalidation hook.
+Document class: **HISTORICAL 8A DETECTION EVIDENCE / SUPERSEDED FOR WHOLE-BLOCK STATUS**
+
+This file is the authoritative historical record for the reset-era Block 8A detection slice only.
+`V1-BLOCK-8-STATUS.md` is the current whole-Block authority and records the later implementation of 8B
+review/freeze and the 8C invalidation hook.
 
 Task 19 reattached Block 8A to the reset foundation: structure workspace is migration 002; detection repositories use the Library session/UoW, JobService owns transitions, the packaged worker remains the execution boundary, and product IPC is sender-guarded. The original 19 pure detection/fixture hashes remained unchanged. Task 20 refreshes Windows performance and complete-gate evidence; it does not expand this scope to 8B or 8C.
 
-Task 20 fresh Windows recertification passed the structure worker probe and performance recorder within the full 7/7 packaged Electron suite. The refreshed 50 KiB/1 MiB/5 MiB measurements are recorded in `V1-BLOCK-8-PERFORMANCE-BASELINE.md`. macOS performance remains not recorded; Block 8B/8C remain incomplete.
+Task 20 fresh Windows recertification passed the structure worker probe and performance recorder within
+the full 7/7 packaged Electron suite. The refreshed 50 KiB/1 MiB/5 MiB measurements are recorded in
+`V1-BLOCK-8-PERFORMANCE-BASELINE.md`. At that checkpoint macOS performance was not recorded and Block
+8B/8C were incomplete; `V1-BLOCK-8-STATUS.md` supersedes the latter completion claim.
 
 The master-plan boundary remains:
 
@@ -14,7 +21,10 @@ The master-plan boundary remains:
 - **8B Review and freeze:** Tasks 8.11, 8.14, 8.15, and 8.17; draft editing, get/update workflows, freeze/unfreeze, product controls, and the real user journey.
 - **8C Invalidation hook:** Task 8.16; downstream stale/needs_rebuild interfaces without a real downstream rerun.
 
-6A/Codex SDK feasibility remains unexecuted and unrecorded. Block 8A uses local deterministic parsing only. Nothing in this status is a Codex SDK Go decision or authorization for AI prompts/runtime, evidence extraction, module bodies, or downstream reruns.
+At the 8A checkpoint, 6A/Codex SDK feasibility was unexecuted and unrecorded. Block 8A itself still
+uses local deterministic parsing only. Nothing in this historical status is a Codex SDK Go decision or
+authorization for AI prompts/runtime, evidence extraction, module bodies or downstream reruns; later
+feasibility status is recorded separately.
 
 ## Numbering reconciliation
 
@@ -45,13 +55,14 @@ Master Task 8.10 means Validation. Internal `8A-10` means the performance-record
 | 8.6 | Complete for deterministic V1 rules | Chinese/Japanese/English numbered and Markdown headings produce nodes, offsets, raw heading text, and confidence. |
 | 8.7 | Complete for deterministic candidate signals | Separator, blank-line, subheading, length-window, transition and chapter-window evidence can influence candidate boundaries; insufficient evidence returns `no_reliable_story_ranges`. |
 | 8.8 | Complete | Low confidence requires review, unusable results do not enter ordinary candidate success, and no reliable chapter produces a stable failure. |
-| 8.9 | Candidate side only | Task 8.9 candidate persistence and stage-separation foundation is complete; draft/frozen repository and service transactions remain 8B work. |
+| 8.9 | Candidate side only at the 8A checkpoint | Task 8.9 candidate persistence and stage-separation foundation was complete; draft/frozen repository and service transactions were then deferred to 8B. |
 | 8.10 | Complete | Pure validation covers hierarchy, offsets, heading slices, source hash/staleness, range overlap, covered chapters, and confidence constraints. |
 | 8.12 | Complete | Fixture package covers ordinary, cross-chapter, multilingual, low-confidence and unusable cases. |
 | 8.13 | Complete as an observation baseline | Six exact-size packaged fixtures record time/memory and prove the 5 MiB renderer event loop remains responsive. Absolute values are not stable limits yet. |
 | 8.18 | Complete for the approved matrix | Chinese chapter/volume, Japanese 話/章, English Chapter/Part, Markdown ATX/Setext, strict fences, and full-/half-width numbering are covered. |
 
-Task 8.9 must not be reported as a complete candidate/draft/frozen user lifecycle. Tests can seed draft/frozen rows to prove schema separation, but no real draft/frozen repository/service transaction is implemented in 8A.
+This 8A checkpoint must not be reported as having completed the candidate/draft/frozen user lifecycle.
+Later 8B implementation and evidence are recorded in `V1-BLOCK-8-STATUS.md`.
 
 ## Hard gates passed
 
@@ -70,7 +81,10 @@ Task 8.9 must not be reported as a complete candidate/draft/frozen user lifecycl
 
 The performance button is an event-loop probe, not a product Detect structure button. It proves the 8A technical non-blocking gate: the packaged renderer can animate and dispatch a button event while the real preload `structure:detect` request and background Job execute.
 
-It does not prove discoverability, product loading/Job presentation, retry UX, or repeat-operation behavior of a real Generate structure candidate control. Those controls and the import -> candidate -> correct/confirm -> freeze journey belong to 8B; Task 8.17 remains 8B work.
+At the 8A checkpoint this probe did not prove discoverability, product loading/Job presentation, retry
+UX or repeat-operation behavior of a real Generate structure candidate control. Those controls and the
+import -> candidate -> correct/confirm -> freeze journey were deferred to 8B and are now recorded in
+`V1-BLOCK-8-STATUS.md`.
 
 ## Persistence boundary
 
@@ -78,16 +92,19 @@ It does not prove discoverability, product loading/Job presentation, retry UX, o
 - Candidate replacement does not overwrite current draft or frozen records.
 - Schema can represent candidate/draft/frozen and enforce one current set per book/stage.
 - Only candidate repository/service transactions are implemented in 8A.
-- Draft creation, draft revision commands, frozen edition transactions, unfreeze cloning, and ScopeRef use of frozen IDs remain 8B.
+- Draft creation, draft revision commands, frozen edition transactions, unfreeze cloning and ScopeRef
+  use of frozen IDs were outside the 8A slice and later implemented under 8B.
 
-## Known limitations
+## Historical Slice Limitations
 
 - Story-range output is a deterministic heuristic suggestion and may return `needs_manual_review` or `no_reliable_story_ranges`; no narrative-arc AI inference exists.
-- Structure detection has no product review UI in 8A.
+- The 8A slice had no product review UI; later Block 8 work added it.
 - Performance numbers currently represent one packaged Windows x64 observation. The 10-second and 512-MiB lines are observation-only advisories, not regression failure thresholds.
 - Worker performance telemetry is internal protocol v2 data; it is not product IPC and is not persisted as structure truth.
 - macOS packaged performance evidence has not been recorded in this workspace.
-- No 8C downstream invalidation implementation or real rerun exists.
+- The 8A slice had no 8C downstream invalidation implementation. The later synchronous DB-only
+  invalidation hook is recorded in `V1-BLOCK-8-STATUS.md`; a real downstream rerun remains outside Block
+  8.
 
 ## Reproduction
 

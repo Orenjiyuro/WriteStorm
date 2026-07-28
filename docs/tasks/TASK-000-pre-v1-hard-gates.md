@@ -1,12 +1,19 @@
 # TASK-000: Pre-V1 Hard Gates
 
-> **For agentic workers:** This is a gate task, not an implementation task. The desktop stack and primary store are now decided, but real AI implementation must not start until the Codex SDK gate has a recorded decision.
+Document class: **HISTORICAL PRE-V1 GATE PLAN / SUPERSEDED**
+
+**Current status:** Superseded as an active task. Its individual decisions and evidence now live in
+`docs/engineering/DECISIONS.md`, the active current-state section of `docs/engineering/CONTEXT.md`,
+current Block status records and executable code/tests. This file must not be used to decide present
+implementation or completion state.
+
+> **Historical worker instruction:** This was a gate task, not an implementation task. It is retained to
+> explain the pre-V1 questions that led to later decisions.
 
 **Goal:** Close the product and feasibility gates that must be decided before WriteStorm V1 can ship AI-backed breakdown features.
 
-**Source of truth:** `docs/product/write-storm-product-design.md`, `docs/product/FLOWS.md`, `docs/vibecoding-workflow.md`, and the voided audit documents.
-
-**Current status:** Open.
+**Historical input set:** `docs/product/write-storm-product-design.md`, `docs/product/FLOWS.md` and
+`docs/vibecoding-workflow.md`. Files under `docs/voided/` are never a source of truth.
 
 ---
 

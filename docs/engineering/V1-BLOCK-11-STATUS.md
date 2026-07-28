@@ -115,7 +115,7 @@ The fresh Windows certification on 2026-07-16 is:
 | SQLite no-write gate | `tests/integration/exports/export-status-service.test.ts` | Passed: authoritative module gate, business-table snapshots, `total_changes()`, zero export Jobs, directory-tree hashes, and Markdown/JSON hashes. |
 | Typed IPC and security gate | `tests/unit/main-export-ipc.test.ts`, `tests/unit/export-security-boundary.test.ts` | Passed: only `exports:get-status`, extra path rejection, narrow read dependencies, and no sensitive-source access. |
 | Natural packaged blocked smoke | `tests/e2e/source-import.spec.ts` | Passed through real Library creation/import/opened Book: target states, blockers, disabled controls, non-Job status summary, and zero export Jobs. |
-| Full packaged suite | Playwright through `npm run check` | Passed 13/13. Secondary-display placement is test infrastructure evidence and not a product acceptance blocker. |
+| Full packaged suite | Playwright through `npm run check` | Passed 13/13. Secondary-display placement is required local development-test infrastructure and is not loaded by the installed product. |
 | Diff hygiene | `git diff --check` and scoped status review | Passed with no migration, dependency, protected master-plan, generated artifact, or unrelated product feature change. |
 
 ## Explicit exclusions and remaining boundaries

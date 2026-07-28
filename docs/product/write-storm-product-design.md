@@ -1,20 +1,39 @@
 # WriteStorm 产品设计方案草案
 
-日期：2026-07-05  
-阶段：产品边界与已确认技术约束  
+日期：2026-07-05
+阶段：产品边界与已确认技术约束
 状态：草案；用于后续工程技术方案和实现计划
 
 ## 1. 文档目的
 
 本文档沉淀当前已经确认的产品设计边界和关键技术约束，把核心产品对象、三大域边界、V1 范围、AI 拆解流程、证据机制、技法库规则、本地资料库策略和已确认技术方向统一成一份可引用的本地方案。
 
-本文档记录已确认的技术方向，但不替代工程技术设计、实现计划或 UI 高保真视觉方案，也不把未来原创能力写成 V1 已验收能力。
+本文档记录已确认的产品方向，但不替代工程技术设计、实现计划或 UI 高保真视觉方案，也不把未来原创能力写成 V1 已验收能力。当前已实现能力与真实入口验收以
+`docs/engineering/CONTEXT.md` 和 `docs/product/FLOWS.md` 为准。
 
 本文档是当前产品设计事实源。
 
-## V1 foundation recertification boundary
+Block 14 的当前模块本体、领域语义与系统生产质量方向以 D122–D132、
+`docs/engineering/V1-BLOCK-14-G0-CROSS-EXAMINATION-RECORD.md` 和
+`docs/engineering/V1-BLOCK-14-INFERENCE-GOVERNANCE-PLAN.md` 为准。故事情节的 Q1–Q47
+完整裁决另见
+`docs/engineering/V1-BLOCK-14-STORY-PLOT-CROSS-EXAMINATION-RECORD.md`；实现基线影响见
+`docs/engineering/V1-BLOCK-14-G1-IMPLEMENTATION-BASELINE-IMPACT-ASSESSMENT.md`；REV3.2 系统生产
+质量门禁的唯一详细记录是
+`docs/engineering/V1-BLOCK-14-SYSTEM-PRODUCTION-QUALITY-GATE.md`，当前状态为
+`BLOCK14_NOT_FROZEN / QUALITY_UNPROVEN`。本文档中被明确标记为
+旧实现基线的内容只用于 14-G1 影响识别，不得覆盖获批本体或作为 deep Schema、Prompt
+和实现依据。
 
-The recertified foundation provides the real desktop path to create/open a Library, import txt/md source material, reopen persisted Books, and start deterministic structure detection through a packaged utility process. SQLite is the fact source; copied source bytes use `source/{sourceTextId}/{originalFileName}`. This does not claim Block 8B review/freeze, Block 8C invalidation, Codex/AI execution, macOS packaging, or release makers are complete.
+## Historical V1 foundation recertification boundary
+
+The recertified foundation provided the real desktop path to create/open a Library, import txt/md source
+material, reopen persisted Books, and start deterministic structure detection through a packaged utility
+process. Later Block 8 work subsequently added structure review/correction/freeze/unfreeze plus its
+synchronous DB-only invalidation seam. Current user-visible behavior is maintained in `FLOWS.md`; this
+historical evidence boundary does not claim a real downstream rerun, production Codex/AI analysis,
+macOS packaging, release makers, or release readiness. SQLite is the fact source; copied source bytes
+use `source/{sourceTextId}/{originalFileName}`.
 
 ## 2. 产品定位
 
@@ -38,7 +57,7 @@ WriteStorm 是一款面向 Windows 11 和 macOS 的本地优先桌面写作者�
 ## 4. 产品原则
 
 1. 本地优先：资料库、源文件、分析结果和导出包默认保存在用户本机。
-2. 审查优先：AI 生成对象默认待审查，用户确认后才进入完成资产。
+2. 审查优先：AI 生成内容默认无权威下游资格；是否必须人工审查按风险和消费者规则决定，只有满足对应审查与来源资格的资产才能进入该消费者的权威集合。
 3. 来源可追溯：关键结论、技法、约束和引用必须能回到来源和证据。
 4. 域边界清晰：拆解书架、融合技法库、原创书架是三个不同域，不互相替代。
 5. V1 聚焦闭环：第一版优先做通拆解书架闭环，不提前实现完整原创系统。
@@ -195,22 +214,24 @@ WriteStorm 的长期多供应商方向包括独立接入 OpenAI/Codex、Claude�
 | `BreakdownBook` | 拆解书架 | 一本被导入并拆解的书或资料项目。 |
 | `OriginalBook` | 原创书架 | 未来原创小说项目，V1 仅占位。 |
 | `SourceText` | 拆解书架 | 导入的源文本副本和编码、hash、分段信息。 |
+| `CoverageSliceRevision` | 拆解书架 | 绑定 SourceText edition 与 coverage-plan revision 的无缺口 core 覆盖记录；可带重叠 halo，但不拥有文学事实，也不是 AI 调用边界。 |
 | `StructureNode` | 拆解书架 | 全书、卷、章节等标题层级节点；不承载可跨章节的故事段。 |
 | `StorySegmentRange` | 拆解书架 | 可跨章节的故事段范围层，指向源文本区间和覆盖的章节节点，是 scope，不是标题树子节点。 |
-| `AnalysisModule` | 拆解书架 | 结构分段、情节大纲与因果、叙事结构/信息释放/节奏、人物系统、世界设定、文风、技法等分析维度定义。 |
-| `AnalysisModuleInstance` | 拆解书架 | `AnalysisModule + scope` 的具体分析实例，承载正文、状态、证据、重跑、diff、导出和版本。 |
+| `AnalysisModule` | 拆解书架 | 14-G0 批准七个核心模块：故事情节、叙述调度、人物塑造、关系动力、世界设定、语言文体、主题意蕴。旧 canonical keys、顺序和 seed 仅为待 14-G1 处理的兼容基线。 |
+| `AnalysisModuleInstance` | 拆解书架 | `AnalysisModule + scope` 的运行、输入版本、状态、引用清单和 scope 综合容器；它不因 scope 不同而复制 canonical 事实。 |
 | `EvidenceAnchor` | 拆解书架 | 结论对应的稳定证据锚点。 |
+| `InferenceReviewRecord` | 拆解书架 | 重要解释的有限审查记录，将有证据的观察、竞争解释、当前判断、反证/推翻条件、适用范围和下游依赖收束为一个可修订单元。它首先是语义与产品契约，不表示每条事实都要成为独立数据库对象。 |
 | `DomainEntity` | 拆解书架 | 人物、事件、地点、设定、伏笔等一等对象。 |
 | `RelationLink` | 拆解书架 | 对象、证据、章节、模块、技法之间的轻量关系。 |
 | `Perspective` | 拆解书架 | 跨模块专题视角，只派生和组织已有事实，不成为新事实源。 |
-| `WorkTechniqueObservation` | 拆解书架 | 本书技法观察，解释该作品具体如何使用某种写法。 |
-| `ReusableTechniqueCandidate` | 拆解书架 | 从本书技法观察中抽象出的可复用候选，需去除本书专有表达、角色和设定。 |
+| `WorkTechniqueObservation` | Block 16 技法域 | 本书技法观察，引用七模块的稳定来源结论并解释该作品具体如何使用某种写法。 |
+| `ReusableTechniqueCandidate` | Block 16 技法域 | 从本书技法观察中抽象出的可复用候选，需去除本书专有表达、角色和设定。 |
 | `TechniqueEntry` | 融合技法库 | 未来由已采纳候选生成的独立条目；Block 12 无生产对象或持久化。 |
 | `SourceSnapshot` | 融合技法库/原创引用 | 未来跨域引用时保存的不可变只读来源快照；Block 12 只展示契约，不展示虚构实例。 |
 | `Topic` | 融合技法库 | 技法库主题页和整理维度。 |
 | `ProblemSolutionPattern` | 拆解/原创桥接 | 桥段级引用的安全抽象形态。 |
 | `PromptTemplate` | 全局/拆解 | AI 拆解模板和输出 schema 的版本化定义。 |
-| `AIConstraint` | 拆解/未来原创 | AI 可用的创作约束摘要，默认待审查。 |
+| `AIConstraint` | 约束治理/未来原创 | 模块外约束治理域拥有的正式约束，包含候选来源、适用范围、强度、冲突、审查和版本；七个核心模块不直接拥有。 |
 | `Job` | 全局 | AI 任务、导入任务、修复任务、导出任务。 |
 | `Revision` | 全局 | 模块、模板、对象、条目的版本记录。 |
 | `ConnectorConfig` | 全局 | AI 连接器的非敏感配置和引用。 |
@@ -231,12 +252,12 @@ WriteStorm 的长期多供应商方向包括独立接入 OpenAI/Codex、Claude�
 - `paused_failed`：任务失败、API/SDK 限制或用户暂停。
 - `pending_review`：AI 结果已生成，等待用户审查。
 - `pending_sync`：模块或结构改动导致局部资产待同步。
-- `completed`：用户确认完成，可进入稳定资产。
+- `completed`：现有兼容状态；后续完成产品语义必须投影为 `AnalysisCoverageComplete` 与 `AuthorityReviewComplete`，不能用一个状态统一放行所有下游。
 - `needs_rebuild`：源文本、结构或模板版本变化导致需要重建。
 
 ### 8.2 AI 生成资产状态
 
-所有 AI 生成对象、本书技法观察、可复用技法候选、关系链接、AI 约束默认都是待审查资产。只有用户确认后的对象才进入完成书籍、候选汇总和未来原创生成上下文。
+AI 生成内容默认不进入权威下游集合。结构化不等于全部必审：具体必审范围由风险分层和真实消费者资格决定；未审资产不得自动获得权威资格，`unresolved` 也不得因覆盖处置完成而自动供下游使用。
 
 通用状态：
 
@@ -244,7 +265,7 @@ WriteStorm 的长期多供应商方向包括独立接入 OpenAI/Codex、Claude�
 
 ### 8.3 分析模块实例状态
 
-`AnalysisModuleInstance` 是用户真正审查、重跑、导出和对比的单位。
+`AnalysisModuleInstance` 是模块加 Scope 的运行、正文修订、状态投影、引用与综合容器，也是用户发起审查、重跑、导出和对比的外部边界；内部资产仍由各自领域所有者管理。
 
 通用状态：
 
@@ -254,8 +275,8 @@ WriteStorm 的长期多供应商方向包括独立接入 OpenAI/Codex、Claude�
 
 - `AnalysisModule` 只是模块定义，不能直接保存某本书某个范围的分析结果。
 - 每个实例绑定一个 `scope`，scope 可以是 `book`、`volume`、`chapter` 或 `story_segment_range`。
-- 模块正文、证据、结构化资产、重跑候选版本和导出状态都归实例所有。
-- 结构、原文、模板或上游确认资产变化时，只标记受影响实例为 `stale` 或 `needs_rebuild`。
+- 模块正文 revision 和真正的 Scope 综合归实例；证据与 canonical 结构化资产不因 Scope 不同复制，实例只保存稳定引用。
+- 结构、原文、模板或上游资产变化时，优先定位受影响结论、必要原文范围和真实依赖闭包，再投影实例级 `stale` 或 `needs_rebuild` 状态。
 - 专题视角不是 `AnalysisModuleInstance`，来源实例变化后只标记可刷新。
 
 ### 8.4 本书技法观察到技法条目
@@ -312,9 +333,9 @@ WriteStorm 的长期多供应商方向包括独立接入 OpenAI/Codex、Claude�
 6. 应用自动识别章节、卷和候选故事段。
 7. 用户校正结构。
 8. 用户启动拆解任务。
-9. 应用执行三段式长篇拆解管线。
+9. 应用执行长篇拆解管线；结构准备、候选发现、身份消歧、领域分析和跨模块综合是就绪波次，不预先锁定 AI 调用次数。
 10. 用户查看模块化拆解文档。
-11. 用户审查对象、关系、证据、本书技法观察、可复用技法候选和 AI 约束。
+11. 用户分别审查七模块资产、证据与推断记录、Block 16 技法资产和约束治理域资产。
 12. 用户编辑模块正文或重跑指定模块。
 13. 重跑结果以候选版本呈现，用户通过 diff 接受或拒绝。
 14. 用户标记书籍完成。
@@ -322,7 +343,8 @@ WriteStorm 的长期多供应商方向包括独立接入 OpenAI/Codex、Claude�
 
 ## 10. 长篇 AI 拆解管线
 
-长篇小说不能一次性喂给 AI。V1 使用固定三段式管线：
+长篇小说需要分范围读取与综合。以下三段描述产品就绪阶段，不规定 Block 17 必须使用三次
+调用、一次联合扫描或固定全文重读策略。
 
 ### 10.1 结构识别
 
@@ -340,37 +362,39 @@ WriteStorm 的长期多供应商方向包括独立接入 OpenAI/Codex、Claude�
 - 结构置信度。
 - 待用户校正项。
 
-### 10.2 分层/分段分析
+### 10.2 共享覆盖、候选路由与分层分析
 
 目标：
 
-- 按章节、故事段、卷逐层生成剧情简介和成立机制说明。
-- 识别角色、事件、设定、伏笔、冲突、状态变化、人物/关系影响、信息/局势变化、读者期待和节奏。
-- 提取局部本书技法观察。
-- 生成局部证据锚点。
+- 使用绑定 source edition 与 coverage-plan revision 的 `CoverageSliceRevision` core 无缺口、无重叠地证明正文覆盖；实际扫描可携带重叠 halo。
+- Chapter、Story segment、Volume 和 Book 只提供结构投影、上下文与综合范围，不固定 AI 调用边界；Block 17 决定合批、拆分和上下文复用。
+- 识别人物与集体身份、故事事件、关系互动、世界实体与规则说法、叙述呈现、语言观察及意义候选。
+- 把候选路由到唯一领域所有者，完成必要的身份合并、拆分和消歧。
+- 只把达到正式资产资格的候选升级为领域资产；潜在技法只能提交给 Block 16。
+- 生成可定位证据锚点，并保留尚不能确认的证据不足或 unresolved 结果。
 
 输出：
 
-- chapter scope summary and mechanism。
-- story segment scope summary and mechanism。
-- volume scope summary and mechanism。
-- 局部对象和关系。
-- 局部本书技法观察。
+- chapter、story segment 和 volume 的运行记录、引用清单及合法 scope 综合。
+- 跨 scope 使用稳定身份的领域资产和结论，不按运行范围复制事实。
+- 路由到对应所有者的候选及待消歧项。
+- 提交给 Block 16 的技法发现候选；核心模块不直接创建正式技法资产。
 
 ### 10.3 全书综合归纳
 
 目标：
 
-- 汇总全书层的结构、情节大纲与因果、人物系统、设定规则、叙事信息释放、文风语言和写作技法观察。
-- 把局部观察、候选和证据归并成全书层结论。
+- 在冻结结构范围上综合故事情节、叙述调度、人物塑造、关系动力、世界设定、语言文体和主题意蕴。
+- 引用跨 scope 稳定资产形成全书层综合，不复制局部事实或静默覆盖已确认资产。
 - 生成面向人类阅读和 AI 可理解的拆解文档。
 
 输出：
 
 - 全书模块化文档。
 - 全书对象索引。
-- 全书本书技法观察和可复用技法候选。
-- 可审查 AI 约束摘要。
+- 七模块全书综合，以及 checked-empty、not-applicable、insufficient-evidence 或 unresolved 的诚实处置。
+- Block 16 独立生成并审查的技法观察和可复用候选。
+- 约束治理域拥有、`AI 约束摘要`只读展示的有效约束。
 
 ## 11. 分析文档结构与模块合同
 
@@ -379,7 +403,8 @@ WriteStorm 的长期多供应商方向包括独立接入 OpenAI/Codex、Claude�
 - 每个模块使用统一审查外壳：状态、证据、重跑、diff、导出、审查入口一致。
 - 模块主体布局按内容自定义：长文、表格、关系图、时间线、卡片、树状下钻都可以按模块需要使用。
 - Markdown 源编辑只允许编辑模块正文。
-- 证据、标签、对象链接、状态、AI 约束、本书技法观察和可复用技法候选必须通过结构化控件编辑。
+- 证据、领域资产、对象链接、推断记录和审查状态通过所属域的结构化控件处理。
+- 正式技法资产和 AIConstraint 分别进入 Block 16 与模块外约束治理域；核心模块页面只能引用或提交候选。
 
 ### 11.1 模块资格与 scope 轴
 
@@ -391,214 +416,102 @@ WriteStorm 的长期多供应商方向包括独立接入 OpenAI/Codex、Claude�
 - 必须有独立重跑价值。
 - 独立证据、独立展示、独立导出是辅助判断。
 
-V1 使用“模块 x scope 轴”模型：
+V1 使用“模块所有权 + scope 运行/展示/综合轴”模型：
 
-- 模块是分析维度。
-- `book / volume / chapter / story_segment_range` 是同一模块下的分析实例范围。
-- `AnalysisModuleInstance` 是 `模块 + scope` 的实际产物。
+- 模块是领域事实和解释的唯一所有者。
+- `book / volume / chapter / story_segment_range` 是结构投影、上下文、用户请求、展示和综合范围，不是事实文件夹或默认 AI 调用边界。
+- `AnalysisModuleInstance` 是 `模块 + scope` 的运行记录、输入版本、状态、资产引用清单和本范围综合容器。
+- 同一事件、人物、关系、规则或语言观察跨 scope 保持一个稳定身份；高层 scope 只能引用它形成新的综合解释。
 - `story_segment_range` 是源文本范围层，可以跨章节；它不是 `StructureNode` 标题树的子节点。
 - 章节摘要、故事段概要、卷级概要、全书大纲不是彼此无关的顶层模块。
-- 同一模块可按 scope 下钻，也可在 book 层形成综合结论。
+- 大 scope 运行不得静默覆盖小 scope 已确认事实，只能引用、提出修订或创建真正的高层综合。
 
-顶层模块在前台可以并列展示，但产品合同分三类：
+产品合同分三层：
 
-- 结构/输入类：`作品结构与分段`。
-- 普通分析类：`情节大纲与因果`、`叙事结构、信息释放与节奏`、`人物系统与关系`、`世界设定与规则`、`文风语言与表达`、`写作技法与可复用原则`。
-- 汇总/系统类：`AI 约束摘要`，作为二级系统页，不是普通顶层分析模块。
+- 前置结构/scope 层：Book、卷、章、故事段和文本范围；不是 AnalysisModule。
+- 核心分析层：故事情节、叙述调度、人物塑造、关系动力、世界设定、语言文体、主题意蕴。
+- 下游域：Block 15 专题视角、Block 16 技法资产、模块外约束治理及只读 `AI 约束摘要`；均不是额外核心模块。
 
 类型差异不生成完全不同的模块表，而是作为类型关注点覆盖到稳定模块中。
 
+14-G0 已冻结上述本体与单写者方向。D131 关闭端点与所有权窄补丁后的故事情节领域语义，但生产配置保持开放；当前
+领域语义进度为 `1 / 7`。其他六模块及所有共享命题、Evidence、审查、历史和物理 payload
+Schema 仍未冻结。现行 shared contract、migration seed 和工作台壳仍是旧模块兼容基线；
+14-G1 已完成影响盘点，但未取得实现准入。
+
 ### 11.2 顶层模块
 
-V1 顶层模块锁定为：
+14-G0 批准：
 
-- `作品结构与分段`
-- `情节大纲与因果`
-- `叙事结构、信息释放与节奏`
-- `人物系统与关系`
-- `世界设定与规则`
-- `文风语言与表达`
-- `写作技法与可复用原则`
+- `故事情节`
+- `叙述调度`
+- `人物塑造`
+- `关系动力`
+- `世界设定`
+- `语言文体`
+- `主题意蕴`
 
-不再作为顶层模块的内容：
+卷、章、故事段和文本范围退出模块本体，只作为前置结构与 scope。专题视角、技法提炼、约束治理和 `AI 约束摘要` 均为下游域；摘要只是只读组合页。
 
-- `分层概要与大纲` 并入 `情节大纲与因果`。
-- `事件情节与因果` 合并为 `情节大纲与因果`。
-- `情绪/读者体验` 不做顶层，作为情节成立机制维度。
-- `主题母题与价值冲突` 不做顶层，并入情节和人物，也可由专题视角引用。
-- `AI 约束摘要` 为二级系统页。
+#### 11.2.1 故事情节（D131：领域语义关闭、生产配置开放）
 
-### 11.3 作品结构与分段
+故事情节回答“故事世界中发生了哪些值得追踪的变化，这些变化怎样连接并形成持续发展”。
+规范资产为 `StoryEvent`、`EventRelation`、`Plotline` 和 `PlotlineRelationClaim`；
+Scope 投影非权威，`StandardStoryRecap` 是有来源的派生回顾。人物、关系和世界持续状态仍由
+对应模块单写。
 
-定位：前置结构层，不是普通分析模块。基础标题层级由导入解析得到；AI 主要建议 `StorySegmentRange`；用户校正故事段范围。
+当前状态为 `DOMAIN_SEMANTICS_CLOSED / PRODUCTION_CONFIGURATION_OPEN`。完整准入、
+EventRelation端点、Plotline生命周期、Recap空结果、Evidence、ContentFocus、fixture及
+Q1–Q47争议台账只以
+`docs/engineering/V1-BLOCK-14-STORY-PLOT-CROSS-EXAMINATION-RECORD.md` 为准；本产品设计不
+维护第二套详细规范，也不授权Schema、Prompt或实现。
 
-合同规则：
+以下 11.3–11.9 只保留旧实现基线到 D124/D131 权威的撤销映射，不再保留可能被误用为活动
+规格的旧关注面。其他六模块仍需逐项审查“看什么、怎样分析、证据与反证规则”，在此之前
+不得派发共享 deep Schema、Prompt 或 Block 17 实现。
 
-- 标题层级固定为 `book / volume / chapter`。
-- `story_segment_range` 是覆盖源文本区间的范围层，可跨章节，也可落在章节内段落边界，不做字符级人工切割。
-- `story_segment_range` 记录起止锚点、覆盖章节、功能标签、起止原因、核心冲突/转折和置信度。
-- 章节/卷识别失败时提供“规则调整 + 手动标记”。
-- 结构确认后进入冻结状态；修改需显式解冻并触发局部失效。
-- 结构变更只局部失效受影响 scope 的概要、事件、证据、关系、技法和派生视角。
-- AI 建议故事段时修改的是 `StorySegmentRange` 候选，不改写标题树。
-- 全量拆解前必须用户确认并冻结结构。
+### 11.3 旧：作品结构与分段（已撤销模块身份）
 
-### 11.4 情节大纲与因果
+已撤销其 AnalysisModule 身份。活动合同只保留 Book、卷、章、故事段、标题、顺序、包含关系、
+原文范围、edition 和冻结状态。结构层不保存分段理由、功能标签、冲突、转折、聚焦或意义
+解释；这些结论由七模块各自单写。
 
-第一目标：看懂情节为什么成立。
+### 11.4 旧：情节大纲与因果（已撤销）
 
-模块名保持 `情节大纲与因果`。它仍然包含剧情简介/分层概要，但不能止步于简介。每个 `book / volume / story_segment_range / chapter` scope 先展示剧情简介，再紧跟成立机制说明。
+旧模块已由 `故事情节` 与 `叙述调度` 的明确边界覆盖。D131 将故事情节收束为
+StoryEvent、EventRelation、Plotline 和 PlotlineRelationClaim 四类规范资产，以及非权威
+Scope 投影和派生 StandardStoryRecap；叙述调度单写文本呈现顺序与信息操作。剧情简介和
+分层概要只是引用底层资产的综合表达，不是第二事实源。
 
-成立机制维度固定为：
+### 11.5 旧：人物系统与关系（已拆分）
 
-- 状态变化。
-- 冲突推进。
-- 人物/关系影响。
-- 信息/局势变化。
-- 转折/后果。
-- 读者期待。
-- 全书结构作用。
+旧合并模块已拆为 `人物塑造` 与 `关系动力`。人物塑造单写人物身份、个人目标、阶段状态和
+人物发展解释；关系动力单写有方向、可不对称的关系事实、状态、阶段及多方动力。口癖、
+词汇、句法和语气模式由语言文体单写，人物页只能组合展示并保存人物塑造解释。
 
-默认视图：
+### 11.6 旧：叙事结构、信息释放与节奏（已收窄）
 
-- 全书机制总览。
-- 标题层级与故事段范围 scope 下钻。
-- 双序时间线。
-- 关键证据折叠。
+旧模块更名并收窄为 `叙述调度`。它只拥有叙述呈现实例、叙述者/层级/聚焦、呈现顺序、
+时长/频率、场景/概述/停顿/省略和信息的明示、遮蔽、延迟、重复、修正与揭示。情节推进
+归故事情节，语言节奏归语言文体，真实读者效果需要接受数据。
 
-合同规则：
+### 11.7 旧：世界设定与规则（已扩展）
 
-- 情绪/阅读驱动力作为机制维度，在关键冲突链和转折处标注期待、压抑、爽点、释放、悬念等，不做独立顶层模块。
-- 双序时间线服务“解释错位与因果”，保存叙事出现顺序和故事内发生顺序，允许相对/未知时间，不做完整日历系统。
-- 大纲模块记录“情节如何影响人物/关系”，但完整人物弧线事实源归人物模块，通过链接引用。
-- 用户可编辑模块正文，也可通过控件确认/修正关键情节点、因果和时间线标注。
-- 内部 `Event` 数据模型不在产品合同层锁字段；后续由该模块输出倒推出实现。
+旧模块扩展为 `世界设定`。它分析空间、物质条件、资源、阶层、职业、制度、文化环境、
+世界实体及公共规则，不局限于超自然硬规则，也不为每个名词建立百科。人物对规则的信念
+归人物塑造；事件中的使用与结果归故事情节；象征意义归主题意蕴。
 
-### 11.5 人物系统与关系
+### 11.8 旧：文风语言与表达（已更名）
 
-第一目标：看懂人物如何成立。人物档案是模块内的角色级索引入口，不是人物模块的全部。
+旧模块更名为 `语言文体`，直接对象是有语言、版本和原作/译本身份的当前文本。它单写
+语言形式、局部观察、模式与 scope 综合；统计只用于发现线索，比较性判断必须说明基准，
+单次突出表达只能支持局部观察。正式技法资产归 Block 16，真实读者效果需要接受数据。
 
-人物模块至少包含：
+### 11.9 旧：写作技法与可复用原则（已移出核心模块）
 
-- 角色档案索引。
-- 关系动力视图。
-- 人物弧线/成长轨迹视图。
-- 角色声音摘要。
-
-人物档案承载：
-
-- 基础识别。
-- 外貌呈现。
-- 人设标签。
-- 叙事心理与动机。
-- 能力/等级/状态变化。
-- 人物弧线。
-- 角色声音摘要。
-
-展示原则：
-
-- 机制优先。
-- 百科折叠。
-- 变化可追踪。
-
-合同规则：
-
-- 非主角按叙事权重分层：核心角色完整分析，重要配角中等分析，功能性角色轻量处理。
-- 关系网络分析关系动力和变化，不只是关系表。
-- 角色声音/对话画像归人物模块，聚焦身份化表达：口癖、语气、词汇、话语权、对不同对象的说话变化。
-- 文风模块可引用角色声音，但不双写。
-- 外貌只记录原文明确或可证据支持的外貌、气质、辨识特征，并区分事实描述和读者印象。
-- 人设标签后续由标签库和定义提供；AI 按定义匹配并提供证据，用户确认后贴到角色档案。本轮不枚举标签库。
-- 技能、等级、数值、面板默认作为角色状态/成长轨迹展示；只有原文把数值/等级/面板作为主要内容时才结构化展示，不强造数值系统。
-- 能力体系规则归世界设定；角色拥有与成长归人物；具体使用造成的后果归情节；抽象写法归可复用技法候选；各模块通过关系链接引用，不重复保存同一事实源。
-- 用户可编辑正文，可确认、合并、改名人物，修正关系、别名、叙事权重和对话画像。
-
-### 11.6 叙事结构、信息释放与节奏
-
-第一目标：看懂讲述策略。该模块不回答“发生了什么”，而回答作者怎样安排读者知道什么、什么时候知道、以什么速度推进。
-
-核心问题：
-
-- 读者何时知道什么。
-- 哪些信息被延迟、遮蔽或误导。
-- 章节如何制造钩子。
-- 推进和停顿如何分布。
-
-合同规则：
-
-- 悬念/伏笔在叙事模块记录机制，专题视角负责串成长链。
-- 节奏分析聚焦推进密度与停顿：事件密度、信息释放密度、章节钩子、场景推进/停顿、高潮前后速度变化。
-- 默认先看信息释放总览，再下钻章节钩子和节奏分布。
-- 用户可编辑正文，可确认/修正信息释放点、误导点、章节钩子、节奏段落和相关证据。
-
-### 11.7 世界设定与规则
-
-第一目标：看懂规则如何服务故事。所有类型都显示该模块；弱设定作品输出轻量摘要，不强行做隐性规则深挖。
-
-主产物不是设定大全，而是：
-
-- 规则实体。
-- 展开时间线。
-- 故事作用。
-- 证据链。
-- 可复用技法线索。
-
-归属规则：
-
-- 能力体系、规则边界、获得方式、限制和代价主归属世界设定。
-- 某角色拥有和使用能力主归属人物。
-- 某次能力造成的情节结果主归属情节。
-- 由此抽象出的写法主归属可复用技法候选。
-- 各模块通过关系链接引用，不重复保存同一事实源。
-
-默认视图：规则实体总览，再进入展开时间线和故事作用。
-
-用户可编辑正文，可确认/合并/修正规则实体、限制代价、展开节点、故事作用和证据。
-
-### 11.8 文风语言与表达
-
-第一目标：看懂表达如何产生效果。
-
-主产物：
-
-- 文风画像。
-- 语言样本证据。
-- 场景/角色声线差异。
-- 节奏与修辞模式。
-- 阅读效果解释。
-- 可复用技法候选。
-
-边界：
-
-- 不输出“漂亮句子摘抄大全”。
-- 不把原句当可复用资产。
-- 整体语言策略归文风模块。
-- 角色说话方式归人物模块。
-- 具体对话造成的情节/关系变化归情节或人物。
-- 抽象写法进入可复用技法候选。
-
-默认视图：文风画像总览，再下钻样本证据、场景差异和角色声线引用。
-
-用户可编辑正文，可确认/修正文风画像、样本证据、阅读效果解释和可复用技法候选来源。
-
-### 11.9 写作技法与可复用原则
-
-第一目标：形成可审查的技法资产，不直接教学，也不发布 AI 门禁。
-
-拆解书内技法分两层：
-
-- `WorkTechniqueObservation`：本书技法观察，解释这个作品具体怎么做。
-- `ReusableTechniqueCandidate`：可复用候选，已经去除本书专有表达、角色、设定，带适用范围、限制和证据链。
-
-合同规则：
-
-- 本书技法观察来自全模块。
-- AI 可以建议抽象，但必须用户确认后才升级为可复用候选。
-- 只有 `ReusableTechniqueCandidate` 才有资格进入未来融合技法库采纳事务；当前采纳入口禁用。
-- 默认先看本书技法观察，并按创作维度分类：情节、人物、设定、叙事、文风、读者驱动等。
-- 可复用候选跟原本书观察放一起，显示抽象版、适用限制、来源和升级状态。
-- 用户可编辑正文，可确认/修改本书观察，升级/拒绝/修正可复用候选和适用限制。
-- 不在拆解书里直接编辑融合技法库条目。
+已退出核心 AnalysisModule。Block 16 是正式技法观察、跨模块/跨 Scope 机制综合、可复用
+候选、正面/负面/条件性评价及采纳流程的唯一所有者。七模块只提供稳定来源结论或提交
+技法发现候选；尚未提炼技法不得阻止基础分析完成。
 
 ### 11.10 专题视角
 
@@ -615,7 +528,7 @@ V1 内置五个视角：
 2. `人物关系动力 / 身份互动`
    - 主目标：看关系如何变化。
    - 副产物：识别身份互动写法线索。
-   - 关系事实归人物模块，视角串变化链，技巧线索进入技法模块。
+   - 关系事实归关系动力，人物身份与个人状态归人物塑造；视角只串联变化链，技巧线索提交 Block 16。
    - 链路项包含身份/权力差异、触发事件、互动方式、关系变化、证据和技法线索。
 
 3. `设定展开 / 规则兑现`
@@ -623,13 +536,13 @@ V1 内置五个视角：
    - 状态：暗示、引入、解释、验证、挑战、扩展、兑现、违例/代价、遗留问题。
 
 4. `节奏 / 情绪 / 阅读驱动力`
-   - 第一目标：解释为什么好读。
-   - 主要组合情节、叙事、文风，必要时引用人物/设定。
-   - 可产出技法线索，但必须进入技法模块统一审查。
+   - 第一目标：组合故事情节、叙述调度、人物塑造、世界设定和语言文体的来源结论，展示可能的阅读机制。
+   - 没有接受数据时只能展示效果假说，不能确认真实读者一定产生某种感受。
+   - 可产出技法线索，但必须进入 Block 16 统一审查。
 
 5. `可复用技法来源视角`
    - 第一目标：追溯抽象来源。
-   - 技法模块保存观察和候选，来源视角只负责跨模块追溯证据、限制和抽象路径。
+   - Block 16 保存观察和候选，来源视角只负责跨模块追溯证据、限制和抽象路径。
 
 专题视角来源变化后标记可刷新，用户手动刷新派生总结；不自动刷新、不每次打开现算。
 
@@ -639,22 +552,25 @@ V1 内置五个视角：
 
 证据规则：
 
-- 关键结论、候选、关系变化没有证据，不能进入确认资产或可复用候选。
-- 证据不足的结论显示为“待证据补全”，不能确认或进入技法/原创上下文。
-- 证据密度按复杂度动态：事实/定位结论 1 条；解释性结论 2-3 条；跨模块/技法/关系变化 3-5 条。
-- 证据状态：有效、待确认、待重建、断链、被用户排除、低相关。
+- 关键结论、候选和关系变化必须保留可定位证据；缺少必要证据时不能成为 confirmed 权威来源。
+- 证据不足的结论必须明确表示为 insufficient-evidence、needs-evidence 或 unresolved，不能冒充确认结果。
+- 证据充分性按主张类型、覆盖范围、竞争解释和反证判断；14-G0 不冻结通用数量配额，不能以凑够固定摘录条数代替支持链审查。
+- EvidenceAnchor 的具体状态词表留待后续证据与状态机质询；至少必须区分有效、断链、版本/范围不匹配和用户排除。
 - 用户可确认、排除、替换证据，跳转原文，并要求补证据。
 - 关键结论和可复用候选确认前，关键证据必须有效。
 - 用户确认的是证据相关性和结论解释是否接受，不能用主观接受替代缺失证据。
-- 标记书籍完成前，所有用户可见 AI 资产必须处理；后台中间缓存不算。
+- 运行完成、有限关注面已交代、单条结论确认和特定下游可用性必须分开显示。
+- 基础分析完成只要求冻结结构范围和七模块诚实交代有限关注面；Block 15 视角、Block 16 技法和 AI 约束摘要不得反向阻止基础分析完成。
+- 书级进度使用两个语义：`AnalysisCoverageComplete` 表示必要正文覆盖和有限关注面已诚实处置；`AuthorityReviewComplete` 表示当前权威审查集合已明确处置。两者都不能一键授予专题、技法、约束、导出或原创消费者资格。
+- 结构化不等于全部必审；未审资产不得自动进入权威集合。延期只有在该项明确排除出当前权威集合、且依赖它的消费者保持 `partial` 或 `blocked` 时才不阻塞相应里程碑。
 
 重跑规则：
 
-- 重跑生成候选版本，用户看 diff 后接受。
-- 重跑参考源文、当前模块、用户编辑、已确认对象/关系/证据和旧结果。
-- diff 比较模块正文变化、对象/关系/证据/候选状态变化，并突出下游影响。
-- 接受候选版本时，用户已确认/手改资产默认保留；候选对这些资产的改动需逐项确认。
-- 重跑范围为 `模块 + scope`，可选 `book / volume / story_segment_range / chapter`。
+- 重跑生成候选版本或修订建议，用户看 diff 后接受；大 Scope 运行不能静默覆盖小 Scope 的已确认事实。
+- 重跑参考源文、当前模块、用户编辑、已确认资产/关系/证据和旧结果。
+- diff 比较正文、资产引用、候选和审查状态变化，并按真实依赖突出下游影响。
+- 接受候选版本时，用户已确认或手改资产默认保留；改变事实含义必须回到唯一所有者处理。
+- `模块 + scope` 是用户请求和最大容器边界；内部最小重跑目标是受影响结论、必要原文范围及真实依赖闭包。只有证据表明局部覆盖不足时才扩大到 Scope、模块或全书。
 - 专题视角不是事实源，不按普通模块重跑；来源变化后标记可刷新。
 - 重跑失败时当前版本不受影响，已生成的候选部分保留为失败草稿，可继续或丢弃。
 
@@ -685,44 +601,109 @@ TypeLibraryVersion 1 同时提供七个正交 ContentFocus：
 - MainType 与 ContentFocus 是正交组合，不是父子继承或主类型/子类型树。
 - 一本 Book 可保存零或一个 MainType，以及零至三个有序 ContentFocus；顺位只确定 Overlay 组合顺序，不产生覆盖权限。
 - 类型完全由用户主动选择，应用不自动分析或归类。导入时可以不选，但正式分析前必须有一个 MainType，否则返回 `missing_main_type`。
-- MainType 只表达未来方法论 Base 的产品意图，ContentFocus 只表达未来受约束 Overlay 的产品意图；具体七模块方法论、composition conflict 与 Prompt 内容由 Block 14 定义。
+- MainType 只表达未来方法论 Base 的产品意图，ContentFocus 只表达未来受约束 Overlay 的产品意图；模块体系已由 D124 冻结，具体模块方法论、composition conflict 与 Prompt 内容仍由 Block 14 后续门禁定义。
+- Prompt 内容超预算时采用确定性优先级 B：最小 Base 覆盖 -> 证据/身份/所有权/coverage-risk 所需正确性触发 -> 用户排序的本书特别关注 -> 有序 ContentFocus Overlay -> 可选文学深挖。必需内容应拆批或显式延期，不能静默丢弃。
+- 程序化安全与契约校验不占 Prompt 内容预算，但仍计入总运行成本、延迟和失败率硬上限。
 - Book 保存稳定 definition/version identity 和 TypeLibraryVersion；应用不静默默认、升级、rebase 或改写旧书。
+- 用户重申的目标规则是：MainType/ContentFocus 一经确认永久冻结。Block 12 当前仍允许后续 Book metadata CAS 编辑，与该规则冲突；确认时点、既有 Book 兼容和入口迁移必须单独裁决，本轮不静默关闭现有路径。
 - 自定义类型入口在 Block 12 保持禁用。未来用户可以选择已有类型作为基础模本，但身份、持久化、版本、样例和发布生命周期必须另行准入。
+
+### 11.13 有限通用推断治理
+
+WriteStorm 不把“模型能给出解释”视为解释已经可信。模型继续负责开放性的文学理解；产品负责让重要解释显露依据、适用范围、不确定性、竞争解释、反证和可纠正关系。
+
+通用语义链分为四层：
+
+1. **文本事实**：文本明确陈述、叙述或可定位发生的内容。若叙述可靠性本身有争议，事实只能表述为“文本/叙述者声称 X”，不能把 X 静默提升为作品世界的客观真相。
+2. **可观察现象**：对行为重复、措辞分布、事件顺序、信息安排、形式特征等的有证据描述；它说明“看到了什么”，不直接解释原因。
+3. **解释性判断**：对人物动机、需求、冲突性质、情节因果、叙事作用、阅读效果或技法机制等作出的解释。
+4. **派生结论**：综合事实、观察和一个或多个解释形成的模块结论或跨模块可引用判断。
+
+这四层首先是语义层级，不默认对应四类表、四套实体或每条事实一个节点。普通事实和阅读性分析可以留在模块 payload 或 Markdown 正文中。只有满足以下任一条件的解释，才必须进入结构化的 `InferenceReviewRecord`：
+
+- 需要用户确认或纠正；
+- 会被其他模块引用；
+- 会进入专题视角、技法观察/候选、AI 约束或导出；
+- 会影响书籍完成门禁、重跑范围或下游失效；
+- 属于人物心理/需求、非显式因果、叙事效果、文风效果、技法原理等不能从单一文本事实直接读出的关键判断。
+
+一个重要推断审查记录必须足以回答：
+
+- 正在解释什么问题，以及结论适用的 `scope`、人物阶段或文本范围；
+- 模型观察到了哪些事实或现象，它们分别映射到哪些 `EvidenceAnchor`；
+- 存在哪些会实质改变结论或下游结果的重要候选解释；
+- 当前判断是直接事实、强推断、弱推断还是待验证假设；
+- 当前为何暂时采用某个解释，或为何保持 `unresolved`；
+- 存在哪些反证、证据冲突或证据不足；
+- 什么新证据会降低、推翻或重新打开当前判断；
+- 哪些结构化资产依赖该观察、解释或结论。
+
+不要求穷举一切理论上可能的解释。只有在现有证据下仍合理、且选择它会改变结论或下游处理的“重要替代解释”需要保留。证据无法区分多个重要解释时，必须保留多解或 `unresolved`，不能为了输出完整而强行选择唯一答案。
+
+推断强度和用户审查是两个不同轴：
+
+- 推断强度描述文本支持程度，不等于用户是否看过。
+- 用户可以确认“这是一个被正确记录的待验证假设”，但该确认不能把假设升级为事实。
+- 内部 `confirmed + analysis_inference` 在前台和导出中显示为“受支持解释”或“已接受推断”，
+  不显示为“已确认事实”。
+- 存在未解决的强反证时，解释不能成为已确定结论；它只能保留为假设、竞争解释或进入 `needs_evidence`。
+- 低置信、证据不足、证据冲突和存在反证必须可区分，不能压成一个模糊分数。
+- 不使用看似精确但没有校准依据的小数置信度替代证据审查。
+
+下表记录逐模块领域语义状态。故事情节领域语义已经关闭、生产配置仍开放；其余六项仍只是后续拷打入口，不是冻结
+payload：
+
+| 获批模块 | 方法论状态 | 关注面/权威 |
+| --- | --- | --- |
+| 故事情节 | `DOMAIN_SEMANTICS_CLOSED / PRODUCTION_CONFIGURATION_OPEN` | D131 及故事情节 Q1–Q47 记录 |
+| 叙述调度 | `OPEN` | 叙述呈现实例、叙述者/层级/聚焦、顺序/时长/频率、信息操作 |
+| 人物塑造 | `OPEN` | 稳定身份、阶段目标/知识/信念/动机、选择和发展解释 |
+| 关系动力 | `OPEN` | 轻量关系事实、方向性/不对称状态、阶段及多方动力 |
+| 世界设定 | `OPEN` | 环境、资源、制度、规范、公共能力/规则定义、限制和例外 |
+| 语言文体 | `OPEN` | 当前文本版本中的语言形式、局部观察、模式、变化与 scope 综合 |
+| 主题意蕴 | `OPEN` | 主题问题、象征/意义模式、价值冲突、叙事立场和竞争解释 |
+
+用户可以纠正证据、事实/观察、候选解释、当前判断和派生结论。每次纠正保留旧 revision 和纠正原因，不静默改写历史。修改全局推断方法不属于单条资产编辑，必须创建新的 `MethodologyVersion`。
+
+Markdown 正文继续承担阅读和表达作用，但不是结构化推断事实的唯一载体。正文编辑不会自动反向生成或修改观察、解释或结论；需要进入下游的变化必须通过结构化审查动作明确提交。
+
+AI 执行时采用分层组合，而不是把全部方法论、所有模块规则和所有示例塞入每次调用：
+
+1. 短且版本化的通用推断协议；
+2. D124 批准的模块身份，加上 Block 14 后续批准的当前 scope 关注面；
+3. 当前输出 Schema；
+4. 少量与当前失败风险直接相关的示例。
+
+机制或效果假说也遵守单写者：单一领域机制由拥有该机制的模块写入；主题、象征和价值结构
+的意义解释归主题意蕴；跨域机制被综合成正式技法时，其效果假说归 Block 16。同一效果
+命题不得在多个模块和技法资产中复制；暂时无法确定所有者的跨域命题只能保留为带明确
+领域所有者的统一推断审查记录或 unresolved。真实读者接受结果必须另有可定位接受数据。
+
+产品只保存简短的审计理由、证据映射、重要替代解释和推翻条件，不请求或保存模型私有的逐步思维链。
+
+### 11.14 本书特别关注
+
+当前产品缺少首次正式分析前的书级自定义问题入口。MainType、ContentFocus、系统 scope 关注卡、分析后正文编辑和专题视角备注均不能替代它。
+
+规划能力允许用户为一本 Book 填写零至多个自然语言问题，并可选目标模块与 scope。它只追加问题，不改变七模块本体、事实准入、所有权、证据规则、标准故事回顾或 Schema。每项问题允许得到结果、检查后未发现、不适用、证据不足或 `unresolved`，不能为了回答而强造结论。
+
+问题集随首次正式分析配置冻结并进入 Book 分析配置快照。Block 14 冻结追加、路由资格和证据边界；Block 17 将有效问题组合进既有运行，不默认另跑一套全书 AI；Block 18 负责未来持久化、依赖、历史和选择性重跑影响。本节只登记产品与交接边界，不准入 DTO、表、IPC、UI 或运行实现。
 
 ## 12. 证据锚点
 
 证据是可信度硬闸，不是装饰引用。关键结论、候选和关系变化没有证据，不能进入确认资产或可复用候选。
 
-证据密度按结论复杂度动态处理：
+证据充分性取决于主张类型、适用范围、覆盖程度、来源独立性、竞争解释和反证。不能用固定
+摘录条数代替支持链审查，也不能因为凑够数量就确认结论。具体密度和准入规则留待七模块
+深度方法论及通用证据质询。
 
-- 事实/定位结论：至少 1 条证据。
-- 解释性结论：默认 2-3 条代表证据。
-- 跨模块结论、可复用技法候选、关系变化：默认 3-5 条代表证据。
+`EvidenceAnchor` 的逻辑身份至少需要支持源文本与 `sourceTextEdition`、可定位原文范围、
+摘录身份/hash、必要的结构/Scope 引用、来源/生成身份、revision 和健康状态。语言文体
+证据还必须能区分分析语言及原作、正式译本、改写本或 AI 释义身份。最终字段名、可选性和
+Schema 尚未冻结。
 
-`EvidenceAnchor` 字段：
-
-- source text ID。
-- book ID。
-- source range ID。
-- covered structure node IDs。
-- story segment range ID，可为空。
-- character start offset。
-- character end offset。
-- excerpt text。
-- excerpt hash。
-- generating module ID。
-- prompt template version。
-- generation time。
-- anchor status。
-
-证据状态：
-
-- 有效。
-- 待确认。
-- 待重建。
-- 断链。
-- 被用户排除。
-- 低相关。
+状态机的正式词表尚未冻结，但必须能区分有效、断链、edition/range 不匹配、用户排除和
+等待重建；证据相关性、审查状态和结论支持强度不得压成同一个状态。
 
 展示规则：
 
@@ -732,38 +713,28 @@ TypeLibraryVersion 1 同时提供七个正交 ContentFocus：
 - 切换模块时关闭弹窗。
 - 用户可确认、排除、替换证据，跳转原文，并要求补证据。
 - 被排除或低相关证据不能支撑确认资产。
+- `EvidenceAnchor` 只证明文本位置和摘录身份，不自动证明解释成立。解释必须显式说明证据支持的是事实、观察还是解释链中的哪一层。
+- 重要解释必须同时记录支持证据和已知反证；只列支持自身的摘录不构成完整审查。
+- 同一组证据可以支持多个竞争解释。证据不足以区分时必须保留多解或 `unresolved`。
 
 失效规则：
 
-- 原文变化后，旧证据保留摘录和旧位置，但标记需要重建。
-- 章节拆分、合并、故事段范围调整、卷边界变化会局部标记受影响摘要、证据、模块结论和 AI 约束为失效。
-- 证据不足的结论显示为“待证据补全”，不能确认或进入技法/原创上下文。
+- 原文变化后保留旧证据身份和历史定位，重新判断 anchor 是否漂移、断链或仍然有效。
+- 结构或故事段范围变化先识别受影响范围和 anchor，再沿实际结论依赖传播，不默认让整个模块失效。
+- 证据不足的结论明确保持 insufficient-evidence、needs-evidence 或 unresolved，不能确认或进入要求 confirmed 来源的下游。
 
 ## 13. 关系层
 
-V1 使用轻量关系层，不做完整知识图谱。
+V1 使用轻量引用关系，不建立吞并所有事实、解释和下游资产的统一知识图谱。人物、事件、
+关系、世界实体、叙述呈现、语言观察和意义结论仍由七模块各自单写；EvidenceAnchor 和
+InferenceReviewRecord 提供证据/推断引用；正式技法与 AIConstraint 分别留在 Block 16 和
+约束治理域。
 
-一等对象：
+候选、正式资产、推断记录和下游资产拥有不同生命周期，不能统一成“AI 创建后全部待确认”。
+只有领域所有者可以合并、拆分、拒绝、转交或升级候选；合并/拆分保留历史并重新解析实际
+依赖。
 
-- 人物。
-- 事件。
-- 地点。
-- 设定。
-- 关系。
-- 伏笔。
-- 技法。
-- 证据。
-- 结论。
-- AI 约束。
-
-对象生命周期：
-
-- AI 创建后进入待确认。
-- 用户可确认、拒绝、合并、拆分、改名、设置别名。
-- 合并必须保留来源记录。
-- 拆分必须重新分配相关链接。
-
-核心关系类型：
+以下是概念关系，不是已冻结的 RelationLink Schema：
 
 - cites evidence。
 - appears in chapter。
@@ -790,42 +761,54 @@ V1 使用轻量关系层，不做完整知识图谱。
 | --- | --- | --- | --- |
 | 标题层级、章节边界 | `StructureNode` | 引用 scope | 生成结构待处理建议 |
 | 故事段范围 | `StorySegmentRange` | 引用 range scope | 生成范围调整建议 |
-| 事件、因果、状态变化 | `情节大纲与因果` | 引用事件或影响 | 生成情节待处理建议 |
-| 人物身份、别名、关系、弧线 | `人物系统与关系` | 引用人物和关系 | 生成合并/拆分/改名建议 |
-| 信息释放、误导、伏笔机制 | `叙事结构、信息释放与节奏` | 引用机制点 | 生成叙事待处理建议 |
-| 设定规则、限制、代价 | `世界设定与规则` | 引用规则实体 | 生成设定待处理建议 |
-| 整体文风、语言策略 | `文风语言与表达` | 引用样本和风格结论 | 生成文风待处理建议 |
-| 本书技法观察、可复用候选 | `写作技法与可复用原则` | 引用技法资产 | 生成技法待处理建议 |
-| AI 可用约束摘要 | `AI 约束摘要` | 引用约束 | 生成约束待处理建议 |
+| 事件、行动、直接结果、因果/条件连接、情节线 | `故事情节` | 引用事件及其连接 | 向故事情节提交修订建议 |
+| 叙述呈现实例、叙述者/层级/聚焦、信息操作 | `叙述调度` | 引用呈现与信息机制 | 向叙述调度提交修订建议 |
+| 人物身份、别名、个人目标、阶段状态和发展解释 | `人物塑造` | 引用人物身份和状态 | 向人物塑造提交合并/拆分/修订建议 |
+| 轻量关系事实、方向性关系状态、阶段和多方动力 | `关系动力` | 引用关系及其阶段 | 向关系动力提交修订建议 |
+| 地点/组织等世界实体、环境、资源、制度、规则、限制和代价 | `世界设定` | 引用世界实体或规则 | 向世界设定提交修订建议 |
+| 当前文本版本的语言形式、局部观察、模式和 scope 综合 | `语言文体` | 引用语言观察 | 向语言文体提交修订建议 |
+| 主题问题、象征/意义模式、价值冲突和竞争解释 | `主题意蕴` | 引用意义结论 | 向主题意蕴提交修订建议 |
+| 各领域持续状态值 | 对应领域所有者 | 故事情节只引用状态转变并保存事件连接 | 回到状态所有者修正 |
+| 本书技法观察、跨域机制综合和可复用候选 | Block 16 技法域 | 七模块提交来源结论或发现候选 | 回到 Block 16 复核 |
+| AI 可用约束 | 约束治理域内已审查的 `AIConstraint` 及其来源资产 | `AI 约束摘要`只读聚合，不创建或改写约束 | 回到约束治理域生成待处理建议 |
 
 ### 13.2 失效传播规则
 
 | 变化 | 直接失效 | 待复核 | 不自动改写 |
 | --- | --- | --- | --- |
-| 源文本 hash 变化 | 相关 `EvidenceAnchor`、受影响 `AnalysisModuleInstance` | 关系、候选、AI 约束 | 用户已确认资产 |
-| 标题层级变更 | 受影响 scope 实例、证据定位、导出索引 | 专题视角、关系链接 | 未覆盖范围的实例 |
-| `StorySegmentRange` 调整 | 该 range 的模块实例和证据 | 情节、叙事、技法、专题视角 | 标题树 |
-| 人物合并/拆分/改名 | 人物索引和相关关系视图 | 情节影响、技法线索、AI 约束 | 来源证据摘录 |
+| 源文本内容或 edition 变化 | 发生漂移、断链或范围不匹配的 `EvidenceAnchor` | 只复核实际依赖这些锚点的事实、结论和下游资产 | 无依赖的模块结果和用户历史版本 |
+| 标题层级或文本范围变化 | 受影响的 scope 解析、证据定位和运行输入 | 按范围交集与结论依赖复核综合、视角、技法、约束和导出 | 未覆盖范围的资产 |
+| `StorySegmentRange` 调整 | 受影响 range 的运行资格和范围引用 | 只复核引用旧范围的结论 | 原文标题树和范围外资产 |
+| 人物/世界身份合并、拆分或类别纠正 | 对应身份引用的完整性 | 只复核依赖该身份判断的事件、关系和结论 | 单纯显示名称修改及无关资产 |
 | 模板发布新版本 | 后续新任务 | 用户选择重跑的旧实例 | 已发布旧模板版本 |
 | Markdown 正文编辑 | 对应实例正文 revision | 相关结构化资产 | JSON 结构字段 |
 
-## 14. 技法观察、可复用候选与融合技法库
+失效传播分成两套不能混用的机制：
+
+- **配置失效**：TypeLibrary、Methodology、Prompt、Schema 或 composition version 变化，由版本化配置 snapshot diff 推导受影响模块。
+- **语义依赖失效**：用户纠正证据、观察、解释或结论，由实际结构化依赖边推导下游 `stale/needs_review`。它不能借用配置版本算法，也不能由调用方随意声明影响范围。
+
+语义纠正不自动改写下游内容。系统保留原结果和依赖快照，标出人物弧光、关系、情节因果、专题视角、技法观察/候选、AI 约束、完成门禁和导出中受影响的部分，由用户选择复核、重跑或继续保留历史版本。
+
+## 14. Block 16 技法观察、可复用候选与融合技法库
 
 ### 14.1 拆解书内两层技法资产
 
-拆解书内技法资产分两层：
+正式技法资产属于 Block 16，而不是第八个核心分析模块。它们分两层：
 
 1. `WorkTechniqueObservation`：本书技法观察，解释该作品具体怎么做。
 2. `ReusableTechniqueCandidate`：可复用候选，已经去除本书专有表达、角色和设定，带适用范围、限制和证据链。
 
 规则：
 
-- 本书技法观察来自情节、叙事、人物、设定、文风等全模块。
+- 本书技法观察引用七模块中达到来源资格的稳定结论；七模块自身不复制正式技法资产。
+- Block 16 支持跨模块、跨 Scope 的开放式发现，以及正面、负面和条件性技法观察。
 - AI 可以建议抽象，但必须用户确认后才升级为 `ReusableTechniqueCandidate`。
 - 只有 `ReusableTechniqueCandidate` 才有资格进入未来融合技法库采纳事务；当前入口禁用。
-- 技法模块按创作维度组织可复用原则：情节、人物、设定、叙事、文风、读者驱动等。
+- Block 16 可以按创作维度组织可复用原则，但预设分类不能限制未知技法发现。
 - 可复用候选跟原本书观察放一起，显示抽象版、适用限制、来源和升级状态。
-- 技法前台默认展示可复用原则；来源作品观察、证据链和 AI 约束草稿进入二级信息。
+- 技法前台默认展示可复用原则；来源作品观察和证据链进入二级信息。约束候选必须路由到
+  模块外约束治理域，不能由技法资产或页面直接写成正式 AIConstraint。
 - 只有还没有形成可复用候选的条目，才以“待抽象的本书观察”状态展示。
 - 拆解书内不直接编辑融合技法库条目。
 
@@ -973,9 +956,8 @@ library-root/
   manifest.json
   writestorm.sqlite
   source/
-    breakdown-books/
-      {book-id}/
-        original.txt
+    {sourceTextId}/
+      {originalFileName}
   exports/
     {export-id}/
   logs/
@@ -1151,21 +1133,23 @@ flowchart TB
   BreakdownShelf --> AnalysisJob["一键拆解任务"]
   BreakdownShelf --> AnalysisDoc["模块化拆解文档"]
   AnalysisDoc --> Evidence["证据弹窗"]
-  AnalysisDoc --> Entities["人物/事件/设定/伏笔对象"]
-  AnalysisDoc --> Relations["轻量关系层"]
-  AnalysisDoc --> ModuleInstance["AnalysisModuleInstance：模块 + scope"]
-  AnalysisDoc --> StructureModule["作品结构与分段"]
-  AnalysisDoc --> PlotModule["情节大纲与因果"]
-  AnalysisDoc --> NarrativeModule["叙事结构、信息释放与节奏"]
-  AnalysisDoc --> CharacterModule["人物系统与关系"]
-  AnalysisDoc --> SettingModule["世界设定与规则"]
-  AnalysisDoc --> StyleModule["文风语言与表达"]
-  AnalysisDoc --> TechniqueModule["写作技法与可复用原则"]
-  AnalysisDoc --> AISummary["AI 约束摘要：二级系统页"]
+  AnalysisDoc --> Entities["跨 Scope 稳定领域资产"]
+  AnalysisDoc --> ModuleInstance["AnalysisModuleInstance：运行/引用/综合容器"]
+  AnalysisDoc --> StructureView["结构与 Scope：非分析模块"]
+  AnalysisDoc --> PlotModule["故事情节"]
+  AnalysisDoc --> NarrativeModule["叙述调度"]
+  AnalysisDoc --> CharacterModule["人物塑造"]
+  AnalysisDoc --> RelationshipModule["关系动力"]
+  AnalysisDoc --> SettingModule["世界设定"]
+  AnalysisDoc --> StyleModule["语言文体"]
+  AnalysisDoc --> MeaningModule["主题意蕴"]
+  AnalysisDoc --> Perspectives["Block 15 专题视角：派生视图"]
+  AnalysisDoc --> TechniqueDomain["Block 16 技法域"]
+  AnalysisDoc --> AISummary["AI 约束摘要：只读组合页"]
   AnalysisDoc --> Rerun["模块重跑 + diff 接受"]
   AnalysisDoc --> Export["导出/迁移"]
 
-  TechniqueModule --> Observation["WorkTechniqueObservation"]
+  TechniqueDomain --> Observation["WorkTechniqueObservation"]
   Observation --> Candidate["ReusableTechniqueCandidate"]
   Candidate --> Accept["未来原子采纳：当前禁用"]
   Accept --> TechniqueEntry["未来 TechniqueEntry"]
@@ -1173,6 +1157,9 @@ flowchart TB
   TechniqueLibrary --> TopicPage["主题页整理"]
   TechniqueLibrary --> SourceTrace["来源追溯/快照"]
   TechniqueLibrary --> EntryState["草稿/已整理/待合并/弃用"]
+
+  ConstraintGovernance["模块外 AIConstraint 治理域"] --> AISummary
+  TechniqueDomain -. 约束候选 .-> ConstraintGovernance
 
   Settings --> AIConfig["AI 连接器配置"]
   Settings --> Templates["模板与 schema"]
@@ -1184,19 +1171,21 @@ flowchart TB
 
 ## 23. 产品表面清单
 
+下表以当前实现状态为准；未来产品方向必须明确标为“未来/未实现”，不得把目标能力写成已启用动作。
+
 | 入口 | 当前对象 | 可看 | 可做 | 写入/流向 | 守卫状态 |
 | --- | --- | --- | --- | --- | --- |
 | 主界面书架 | 资料库 | 拆解书、原创占位、技法入口 | 进入可用区域 | 无 | 资料库已选择 |
-| 拆解书架 | `BreakdownBook` 列表 | 已导入书、状态、进度 | 导入、打开、继续任务 | 写入 book/job/index | 文件校验 |
-| 结构校正 | `StructureNode` + `StorySegmentRange` | 卷、章节、故事段范围 | 调整标题层级、校正故事段范围 | 写入 structure/range；影响失效规则 | 源文件存在 |
-| 拆解任务 | `Job` | 进度、checkpoint、失败原因 | 启动、暂停、恢复、取消 | 写入 job/modules/evidence | 结构已冻结且 AI Gate 可用 |
-| 拆解文档 | `AnalysisModuleInstance` | 模块正文、证据、对象、关系、专题视角 | 编辑正文、审查、重跑 | 写入 JSON/Markdown/revision | 模板版本绑定 |
-| 证据弹窗 | `EvidenceAnchor` | 原文摘录、位置、状态 | 查看证据 | 不直接写入 | anchor 有效或待重建 |
-| 本书技法观察 | `WorkTechniqueObservation` | 本书技法表现、来源模块、证据 | 确认、拒绝、抽象为候选 | 可升级为 `ReusableTechniqueCandidate` | 用户确认 |
-| 可复用技法候选 | `ReusableTechniqueCandidate` | 抽象原则、适用限制、来源观察、证据链 | 拒绝、修正；采纳入口当前禁用 | 不创建 `TechniqueEntry` | candidate owner 与原子事务未准入 |
+| 拆解书架 | `BreakdownBook` 列表 | 已导入书、状态、进度 | 导入、打开 | 写入 Book/SourceText/Job | 文件校验 |
+| 结构校正 | `StructureNode` + `StorySegmentRange` | 候选、草稿、冻结结构与置信度 | 检测、校正、冻结、解冻为新草稿 | 写入 structure edition；同步调用失效 seam | 源文件与 revision 有效 |
+| Jobs 与恢复 | `Job` | 进度、checkpoint 元数据、失败原因 | 仅在策略和 runtime owner 允许时取消 | 写入 Job 状态 | Resume 与 Keep draft 当前禁用 |
+| 拆解文档 | `AnalysisModuleInstance` 壳 | 模块实例、scope、状态和 readiness | 查看壳 | 无 AI 正文写入 | 真实 AI 生成、正文审查和重跑未实现 |
+| 证据弹窗 | 未来 `EvidenceAnchor` | 当前无真实产品入口 | 无 | 无 | 未实现 |
+| 本书技法观察 | 未来 `WorkTechniqueObservation` | 当前无生产对象 | 无 | 无 | Block 16 未实现 |
+| 可复用技法候选 | 未来 `ReusableTechniqueCandidate` | 当前无生产对象 | 无 | 无 | candidate owner 与原子事务未准入 |
 | 融合技法库 | 无生产对象 | 真实空态、未来来源说明、`SourceSnapshot` 只读契约 | 无；采纳与编辑禁用 | 无 Technique 写入 | TechniqueEntry 持久化仍 blocked/deferred |
 | 原创书架 | 无 | 占位 | 无 | 无 | V1 不可用 |
-| 设置 | 全局配置 | AI、模板、日志、修复 | 配置、验证、清理、修复 | 写入 config/index | 凭据走安全存储 |
+| 设置 | 应用 Gate/compatibility/临时 observation | AI 门禁、连接状态和禁用维护入口 | 显式连接检查 | observation 仅 Main 内存 | 配置、模板、清理、修复和 AI 生成未实现 |
 
 ## 24. 信息架构
 
@@ -1212,13 +1201,19 @@ flowchart TB
   BreakdownBook --> StorySegmentRange["StorySegmentRange"]
   BreakdownBook --> AnalysisModule["AnalysisModule"]
   AnalysisModule --> AnalysisModuleInstance["AnalysisModuleInstance"]
-  BreakdownBook --> DomainEntity["DomainEntity"]
+  AnalysisModule --> CanonicalAsset["跨 Scope CanonicalAsset"]
+  BreakdownBook --> DomainEntity["领域身份与实体"]
   BreakdownBook --> EvidenceAnchor["EvidenceAnchor"]
-  BreakdownBook --> WorkTechniqueObservation["WorkTechniqueObservation"]
-  BreakdownBook --> ReusableTechniqueCandidate["ReusableTechniqueCandidate"]
+  BreakdownBook --> InferenceReviewRecord["InferenceReviewRecord"]
   BreakdownBook --> Perspective["Perspective"]
   BreakdownBook --> Job["Job"]
   BreakdownBook --> Revision["Revision"]
+
+  TechniqueDomain["Block 16 Technique Domain"] --> WorkTechniqueObservation["WorkTechniqueObservation"]
+  TechniqueDomain --> ReusableTechniqueCandidate["ReusableTechniqueCandidate"]
+  WorkTechniqueObservation --> CanonicalAsset
+  ConstraintGovernance["Constraint Governance"] --> AIConstraint["AIConstraint"]
+  AIConstraint --> ConstraintSummary["只读 AI 约束摘要"]
 
   TechniqueLibrary -. future admission .-> TechniqueEntry["Future TechniqueEntry"]
   TechniqueEntry --> SourceSnapshot["Future immutable SourceSnapshot"]
@@ -1235,25 +1230,33 @@ flowchart TB
 
 给定一本 `.txt` 或 `.md` 小说：
 
+以下是 D124 本体层验收方向。七模块的深度产物、证据/反证细则和 payload 验收仍须在后续
+逐模块方法论质询中冻结，当前不构成实现授权。
+
 - 用户可以导入。
 - 应用复制源文件并建立资料库记录。
 - 应用能识别结构，用户能校正。
 - 用户能启动任务。
 - 任务失败或中断后可恢复。
 - 生成模块化拆解文档。
-- `作品结构与分段` 支持 `book / volume / chapter` 标题树和可跨章节的 `story_segment_range` 范围层。
-- `AnalysisModuleInstance` 支持按 `模块 + scope` 审查、重跑、diff 和导出。
-- `情节大纲与因果` 支持按 `book / volume / story_segment_range / chapter` 下钻；每层先展示剧情简介，再展示成立机制。
-- `人物系统与关系` 支持角色档案索引、关系动力视图、人物弧线/成长轨迹视图和角色声音摘要。
-- `世界设定与规则` 支持规则实体总览、展开时间线、故事作用和证据链。
-- `文风语言与表达` 支持文风画像、语言样本证据、场景/角色声线差异和阅读效果解释。
-- `写作技法与可复用原则` 支持本书技法观察和可复用技法候选两层资产。
+- 前置结构层只管理 Book、卷、章、故事段和文本范围，不参与七模块完成计数。
+- 拆解文档提供故事情节、叙述调度、人物塑造、关系动力、世界设定、语言文体和主题意蕴七个核心入口。
+- 同一事件、人物、关系、规则和语言观察跨 chapter/story-segment/volume/Book 视图保持稳定身份。
+- `AnalysisModuleInstance` 只保存运行、输入版本、状态、资产引用和 scope 综合，不复制 canonical 事实。
+- 候选在创建时路由到唯一领域所有者；候选本身不能支持 confirmed 结论。
+- Block 16 独立展示和审查技法观察、跨域机制综合与可复用候选，不充当第八核心模块。
+- 正式 AIConstraint 只在模块外约束治理域写入，`AI 约束摘要`只读组合。
 - V1 内置专题视角支持伏笔/悬念/回收链、人物关系动力/身份互动、设定展开/规则兑现、节奏/情绪/阅读驱动力、可复用技法来源追溯。
 - 关键结论、候选和关系变化带证据锚点；证据不足时不能进入确认资产或可复用候选。
+- 关键解释能区分文本事实、可观察现象、解释性判断和派生结论，并显示适用 scope/人物阶段。
+- 同一现象存在多个重要合理解释时可以保留竞争解释或 `unresolved`，不会把一种可能性静默写成事实。
+- 用户能查看简短审计理由、证据映射、反证和推翻条件，但产品不请求或保存模型私有逐步思维链。
+- 用户纠正关键观察或解释后，依赖它的模块资产、专题视角、技法资产、AI 约束、完成门禁和导出状态进入可见的待复核或 stale 状态。
 - 用户能审查 AI 生成对象、本书技法观察、可复用技法候选、关系和证据。
 - 用户能编辑模块正文。
-- 用户能按 `模块 + scope` 重跑，并通过正文和结构化资产 diff 接受或拒绝候选版本。
-- 用户能标记完成；完成前所有用户可见 AI 资产必须确认、拒绝、排除或合并。
+- 用户能以 `模块 + scope` 发起重跑，并通过正文和结构化资产 diff 接受或拒绝候选版本；系统内部优先只重跑受影响结论、必要原文范围和真实依赖闭包。
+- 运行完成、关注面已交代、单条结论确认和下游可用性分开显示；checked-empty、not-applicable、insufficient-evidence 和 unresolved 不会被伪装成 confirmed。
+- 基础分析完成不依赖专题视角、技法提炼或 AI 约束摘要完成。
 - 用户能导出可读 Markdown 和机器可读包。
 
 ### 25.2 技法库当前边界验收
@@ -1352,6 +1355,18 @@ Block 12 当前验收：
 - 只通过确认资产、快照和引用关系跨域。
 - 原创项目不反写来源资产。
 
+### 27.6 解释冒充事实与推断协议膨胀风险
+
+风险：模型把行为直接等同性格、把时间先后直接等同因果、把语言现象直接等同阅读效果；或为避免该风险而建立无限文学概念规则库、全量知识图和过长 Prompt。
+
+处置：
+
+- 使用有限通用推断协议，只治理重要解释的依据、范围、不确定性、替代解释、反证和纠正关系。
+- Block 14 先审查模块体系；通过门禁后，各获批模块只冻结有限关注面，不穷举文学概念。
+- 只有进入确认、跨模块引用、专题视角、技法候选、AI 约束或导出的解释必须结构化。
+- 通用协议、模块关注面、Schema 和少量针对性示例分层组合。
+- 产品保存审计摘要，不保存模型私有思维链。
+
 ## 28. 工程实施前必须验证的问题
 
 1. Codex SDK 是否能在 Electron main process 或 utility/worker process 中满足 V1 spike 验收。
@@ -1439,6 +1454,15 @@ domains:
     cannot:
       - write_back_to_breakdown_shelf
       - write_back_to_technique_library
+d124_core_modules:
+  - 故事情节
+  - 叙述调度
+  - 人物塑造
+  - 关系动力
+  - 世界设定
+  - 语言文体
+  - 主题意蕴
+canonical_module_keys: pending_14_g1
 v1_required:
   - import_txt_md
   - structure_correction
@@ -1447,12 +1471,12 @@ v1_required:
   - ai_gate_ready
   - long_form_ai_pipeline
   - modular_analysis_doc
-  - plot_outline_and_causality_module
-  - character_system_and_relationship_module
-  - narrative_information_and_rhythm_module
-  - world_rules_module
-  - style_language_module
-  - technique_observation_and_reusable_candidate_module
+  - d124_seven_core_analysis_modules
+  - stable_cross_scope_canonical_assets
+  - owner_routed_candidates
+  - block16_technique_domain
+  - module_external_constraint_governance
+  - readonly_ai_constraint_summary
   - built_in_perspectives
   - evidence_anchors
   - review_gate
@@ -1461,10 +1485,16 @@ v1_required:
   - library_repair
 hard_rules:
   ai_assets_default_pending_review: true
-  json_is_source_of_truth: true
+  sqlite_is_transactional_source_of_truth: true
+  json_is_derived_only: true
   markdown_edits_module_body_only: true
   markdown_body_edits_create_revision_and_review_state: true
   modules_use_scope_axis: true
+  scope_does_not_own_fact_copy: true
+  analysis_module_instance_is_run_reference_synthesis_container: true
+  formal_technique_assets_owned_by_block16: true
+  formal_ai_constraints_owned_by_governance_domain: true
+  foundation_completion_excludes_downstream_domains: true
   story_segment_is_range_scope_not_structure_child: true
   work_technique_observation_before_reusable_candidate: true
   reusable_candidate_required_for_technique_entry: true

@@ -2,148 +2,72 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-describe('Block 6 native-gate documentation', () => {
-  it('records the manifest and SQLite authority boundary in engineering decisions and context', () => {
-    const decisions = readFileSync(path.resolve('docs/engineering/DECISIONS.md'), 'utf8');
-    const context = readFileSync(path.resolve('docs/engineering/CONTEXT.md'), 'utf8');
-    const technicalDesign = readFileSync(
-      path.resolve('docs/engineering/TECHNICAL_DESIGN.md'),
-      'utf8',
-    );
+const contextPath = path.resolve('docs/engineering/CONTEXT.md');
+const decisionsPath = path.resolve('docs/engineering/DECISIONS.md');
+const technicalDesignPath = path.resolve('docs/engineering/TECHNICAL_DESIGN.md');
+const historicalStatusPath = path.resolve('docs/engineering/V1-BLOCK-6-STATUS.md');
+const migrationRegistryPath = path.resolve('src/main/db/migrations/index.ts');
 
-    expect(decisions).toContain('schemaVersionHint');
-    expect(decisions).toContain('schema_migrations');
-    expect(decisions).toContain('SQLite `library` row is the authoritative library identity source');
-    expect(technicalDesign).toContain('schemaVersionHint');
-    expect(technicalDesign).toContain(
-      'SQLite `schema_migrations` is the authoritative schema-version source.',
+describe('Block 6 documentation authority', () => {
+  it('derives current migration facts from the production registry instead of the old checkpoint', () => {
+    const context = readFileSync(contextPath, 'utf8');
+    const activeContext = context.split('## Supplemental Evidence And Accepted Direction')[0];
+    const decisions = readFileSync(decisionsPath, 'utf8');
+    const technicalDesign = readFileSync(technicalDesignPath, 'utf8');
+    const migrationRegistry = readFileSync(migrationRegistryPath, 'utf8');
+
+    expect(decisions).toContain('SQLite is the only transactional main fact source');
+    expect(activeContext).toContain('production migration registry contains migrations 001–007');
+    expect(activeContext).toContain('Migration 001 is');
+    expect(activeContext).toContain('`v1_runtime_baseline`');
+    expect(activeContext).toContain('migrations 003–007');
+    expect(activeContext).not.toContain('001_foundation_schema');
+    expect(technicalDesign).toContain('Admitted tables through migration 007');
+
+    const expectedMigrations = [
+      'V1_RUNTIME_BASELINE_MIGRATION',
+      'STRUCTURE_WORKSPACE_MIGRATION',
+      'ANALYSIS_MODULE_DEFINITIONS_MIGRATION',
+      'ANALYSIS_MODULE_INSTANCES_MIGRATION',
+      'ANALYSIS_MODULE_ASSET_PLACEHOLDERS_MIGRATION',
+      'TYPE_LIBRARY_REGISTRY_MIGRATION',
+      'TYPE_LIBRARY_BOOK_BINDINGS_MIGRATION',
+    ];
+    const registryMatch = migrationRegistry.match(
+      /export const APP_MIGRATIONS = \[([\s\S]*?)] as const satisfies readonly Migration\[\];/,
     );
-    expect(technicalDesign).toContain('SQLite `library` row owns library identity');
-    expect(technicalDesign).toContain('applied migrations must be a contiguous prefix');
-    expect(technicalDesign).toContain('`books.current_source_text_id` references `source_texts.id`');
-    expect(technicalDesign).toContain(
-      'does not create speculative evidence, relation, Technique, perspective, export, Prompt, or snapshot tables',
-    );
-    for (const speculativeTable of [
-      'relation_links',
-      'work_technique_observations',
-      'reusable_technique_candidates',
-      'technique_entries',
-      'source_snapshots',
-      'perspective_views',
-    ]) {
-      expect(technicalDesign).not.toContain(`| \`${speculativeTable}\` |`);
-    }
-    expect(decisions).toContain('## D072: Product And Technical Authority Reflect The Admitted Block 12 Model');
-    expect(technicalDesign).not.toContain(
-      '`manifest.json` stores library identity, schema version, app version and database filename.',
-    );
-    expect(context).toContain('Block 6 native gate');
-    expect(context).toContain('manifestVersion');
-    expect(context).toContain('schemaVersionHint');
-    expect(context).toContain('Task 6.10 path guard is implemented in the main/library layer.');
-    expect(context).toContain('symlink/junction segments that realpath outside the root are rejected');
-    expect(context).toContain('Task 6.11 LibraryService create/open/current is implemented');
-    expect(context).toContain('LibraryService.open refuses a manifest-only library');
-    expect(context).toContain('LibraryService create requires an absent or empty root');
-    expect(context).toContain('Migration runner rejects unknown applied migration ids');
-    expect(context).toContain('Migration runner rejects non-contiguous applied migration histories');
-    expect(context).toContain('LibraryService reads `LibrarySummary` identity from SQLite `library`');
-    expect(context).toContain('LibraryService.open validates source/exports/logs/cache/mirrors');
-    expect(context).toContain('SQLite open failures map to `LIBRARY_ERROR` with `database_open_failed`');
-    expect(context).toContain(
-      '`books.current_source_text_id` is constrained by FK to `source_texts.id`',
-    );
-    expect(context).toContain('Task 6.4 Foundation Schema is implemented');
-    expect(context).toContain(
-      'The unpublished Block 1-7 migration history was replaced by schema epoch 2',
-    );
-    expect(context).toContain(
-      'TechniqueEntry and ReusableTechniqueCandidate remain separate domain objects and must use separate tables when their persistence is admitted',
-    );
-    expect(context).toContain(
-      'none of those speculative tables is currently admitted',
-    );
-    expect(context).toContain(
-      'Perspective views belong in a future `perspective_views` table, never `analysis_module_instances`',
-    );
-    expect(context).toContain('no perspective table is currently admitted');
-    expect(context).toContain('LibraryService failures are mapped to `LIBRARY_ERROR`');
-    expect(context).toContain('renderer requests remain empty and cannot submit arbitrary paths');
-    expect(context).toContain('Task 6.11 authorizes only the LibraryService service/IPC minimum loop.');
-    expect(context).toContain('Task 6.12 desktop entry skeleton is implemented.');
-    expect(context).toContain('The renderer exposes only Create library and Open library entry buttons');
-    expect(context).toContain('WRITESTORM_E2E_LIBRARY_DIALOG_STUB');
-    expect(context).toContain('Task 6.13 SQLite/migration performance baseline is implemented.');
-    expect(context).toContain('small fixture uses 25 probe rows');
-    expect(context).toContain('medium fixture uses 1,000 probe rows');
-    expect(context).not.toContain(
-      'The native gate does not authorize `LibraryService` create/open/current IPC completion',
-    );
-    expect(context).not.toContain(
-      'SQLite, real LibraryService/BookService, import implementation, AI, and full product UI have not started.',
-    );
-    expect(context).not.toContain('Implement library create/open. Not started.');
-    expect(context).toContain(
-      'Windows native gate passed; release maker strategy and macOS packaged SQLite smoke remain blocked/not applicable.',
-    );
-    expect(context).not.toContain(
-      'Block 6 native gate partially implemented and blocked on Windows native rebuild environment.',
-    );
+    expect(registryMatch).not.toBeNull();
+    expect(
+      registryMatch?.[1].split(',').map((entry) => entry.trim()).filter(Boolean),
+    ).toEqual(expectedMigrations);
+
+    expect(migrationRegistry).not.toMatch(/glob|readdir|readDir|dynamic import/i);
   });
 
-  it('records native rebuild, package, make, and macOS smoke status for the approved gate', () => {
-    const statusPath = path.resolve('docs/engineering/V1-BLOCK-6-STATUS.md');
+  it('keeps Block 6 evidence as a dated historical record without presenting schema 2 as current', () => {
+    expect(existsSync(historicalStatusPath)).toBe(true);
+    const status = readFileSync(historicalStatusPath, 'utf8');
 
-    expect(existsSync(statusPath)).toBe(true);
-
-    const status = readFileSync(statusPath, 'utf8');
-
-    expect(status).toContain('better-sqlite3');
-    expect(status).toContain('npm run make');
-    expect(status).toContain('makers: []');
-    expect(status).toContain('macOS packaged SQLite smoke');
-    expect(status).toContain('Visual Studio Build Tools 2026');
-    expect(status).toContain('@electron/node-gyp');
-    expect(status).toContain('2019/2022 support set');
-    expect(status).toContain('Status: Windows native gate verified');
-    expect(status).toContain('Packaged native SQLite smoke: passed');
-    expect(status).toContain('runs a test-only migration');
-    expect(status).toContain('reopened schema version');
-    expect(status).toContain('npm run check`: passed');
-    expect(status).toContain('macOS packaged SQLite smoke: blocked-by-platform');
-    expect(status).toContain('use scheme A');
-    expect(status).toContain('Do not override or upgrade `@electron/rebuild` or node-gyp');
-    expect(status).toContain('Visual Studio Build Tools 2022 version');
-    expect(status).toContain('Task 6.4 Foundation Schema');
-    expect(status).toContain('Historical Task 6.5 speculative content-model migration');
-    expect(status).toContain('tests/integration/db/app-schema.test.ts');
-    expect(status).toContain('schema version 2');
-    expect(status).toContain('books.current_source_text_id` FK');
-    expect(status).toContain('Task 6.11 LibraryService');
-    expect(status).toContain('Opening an existing library requires `writestorm.sqlite`');
-    expect(status).toContain('Creating a library requires an absent or empty root');
-    expect(status).toContain('Migration runner validates applied migration history');
-    expect(status).toContain('Unknown future migrations and id/name mismatches reject open');
-    expect(status).toContain('non-contiguous applied migration histories reject open');
-    expect(status).toContain('Library summaries are read from SQLite `library`, not manifest identity fields');
-    expect(status).toContain('folder contract directories are checked on open');
-    expect(status).toContain('database_open_failed');
-    expect(status).toContain('Expected LibraryService failures map to `LIBRARY_ERROR`');
-    expect(status).toContain('tests/integration/library/library-service.test.ts');
-    expect(status).toContain('Task 6.12 desktop entry skeleton');
-    expect(status).toContain('WRITESTORM_E2E_LIBRARY_DIALOG_STUB');
-    expect(status).toContain('tests/e2e/library-entry.spec.ts');
-    expect(status).toContain('production schema version 2');
-    expect(status).toContain('renderer still cannot submit arbitrary filesystem paths');
-    expect(status).toContain('Task 6.13 SQLite/migration performance baseline');
-    expect(status).toContain('tests/integration/library/library-performance-baseline.test.ts');
-    expect(status).toContain('small fixture: create 25.23 ms');
-    expect(status).toContain('medium fixture: create 25.11 ms');
-    expect(status).toContain('Non-regression limits');
-    expect(status).toContain('release/maker strategy blocked-or-not-applicable');
+    expect(status).toContain('HISTORICAL CHECKPOINT / SUPERSEDED');
+    expect(status).toContain('current production registry contains migrations 001–007');
+    expect(status).toContain('current registry version is 7, not 2');
+    expect(status).toContain('The pre-reset path `src/main/db/migrations/001_foundation_schema.ts` no longer exists');
     expect(status).not.toContain(
-      'Out of scope: source import, book services, foundation schema, content model shell schema',
+      'Task 6.4 Foundation Schema: implemented in production migration `src/main/db/migrations/001_foundation_schema.ts`',
     );
+    expect(status).not.toContain(
+      'schema version 2 is now the current app schema version after running `APP_MIGRATIONS`',
+    );
+
+    for (const datedEvidence of [
+      'Packaged native SQLite smoke: passed',
+      'npm run make',
+      'macOS packaged SQLite smoke',
+      'Task 6.11 LibraryService',
+      'Task 6.12 desktop entry skeleton',
+      'Task 6.13 SQLite/migration performance baseline',
+    ]) {
+      expect(status).toContain(datedEvidence);
+    }
   });
 });

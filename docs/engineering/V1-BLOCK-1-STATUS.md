@@ -1,10 +1,18 @@
-# WriteStorm V1 Block 1 Status
+# WriteStorm V1 Block 1 Historical Status
 
 Date: 2026-07-07
 
-Status: Block 1 scaffold/security/e2e baseline landed, pending total-thread review
+Document class: **HISTORICAL CHECKPOINT / SUPERSEDED FOR CURRENT-STATE USE**
 
-Scope: Block 1 scaffold, security baseline, local verification status, and known blockers. This file does not mark Block 1 complete and does not authorize Block 2.
+Status at the 2026-07-07 checkpoint: Block 1 scaffold/security/e2e baseline landed and was pending
+total-thread review.
+
+Current authority: use the active current-state section in `CONTEXT.md`, current source/tests and later
+Block status records. This file preserves the Block 1 delivery evidence; its pending-review,
+not-implemented and unlock wording must not be used as current repository status.
+
+Scope: historical Block 1 scaffold, security baseline, local verification status, and then-known
+blockers.
 
 ## Scaffold And Versions
 
@@ -44,7 +52,7 @@ Dependency versions from `package.json` and `package-lock.json`:
 | New-window guard | Present | Main process denies new windows through `setWindowOpenHandler`. |
 | `openExternal` allowlist | Present, empty | `shell.openExternal` is gated by `isAllowedExternalUrl`; current allowlist is intentionally empty. |
 | Renderer/shared privileged import guard | Present | Unit tests reject privileged imports from renderer/shared source files. |
-| Native dialog e2e rule | Not yet exercised | Current e2e does not use a web file chooser. Real native dialogs are not implemented yet; future dialog tests must use main-process stubs. |
+| Native dialog e2e rule | Historical checkpoint | At this checkpoint the rule had not been exercised and real native dialogs were not implemented. Later Blocks implement main-process native-dialog paths and test-only main-process stubs; current behavior must be read from current code/tests. |
 
 ## Verification State
 
@@ -71,12 +79,13 @@ Latest accepted results from the implementation thread:
 - Remote CI status: blocked/not configured.
 - Remote CI blocked reason: the V1 total thread has not selected a remote CI provider/workflow or provided a macOS runner policy; macOS packaged smoke also requires a macOS runner before cross-platform CI can be claimed.
 
-## Current Workspace Verification Caveat
+## Historical Mixed-Workspace Verification Caveat
 
 - During the Block 1 maintenance pass on 2026-07-07, targeted Block 1 unit tests passed: `scaffold.test.tsx`, `scaffold-boundaries.test.ts`, `main-security.test.ts`, and `e2e-support.test.ts`.
 - `npm run build` passed and still produced the Windows package.
-- Full `npm run typecheck` and `npm run test:unit` are currently blocked by separate in-progress Block 2 typed IPC/contract tests and type definitions in the working tree.
-- This caveat must not be downgraded into a warning: the mixed working tree is not full-local-CI green until those Block 2 failures are fixed or isolated.
+- At that checkpoint, full `npm run typecheck` and `npm run test:unit` were blocked by separate
+  in-progress Block 2 typed IPC/contract tests and type definitions in the working tree.
+- This records that checkpoint only; it is not a current test verdict.
 
 ## Scaffold Test Maintenance Notes
 
@@ -95,7 +104,7 @@ Latest accepted results from the implementation thread:
 
 ## Release And Update Strategy
 
-- Current distribution status: packaged smoke only. This proves the app can be packaged and launched locally; it does not prove production distribution readiness.
+- Checkpoint distribution status: packaged smoke only. This proved the app could be packaged and launched locally; it did not prove production distribution readiness.
 - Windows signing: blocked, pending certificate, publisher identity, and installer/distribution decision.
 - macOS codesign/notarization: blocked, pending macOS runner plus Apple Developer signing and notarization credentials.
 - Auto-update: disabled/not configured, pending update channel, hosting, signing, rollback, and security policy decisions.
@@ -111,11 +120,12 @@ The previous complete `npm run test:e2e` blocker is resolved:
 - Fix: `forge.config.ts` passes `require('electron/checksums.json')` to `packagerConfig.download.checksums`.
 - Verification: `npm run test:e2e` passed end to end after the fix.
 
-This status update resolves the e2e blocker only. It does not by itself mark Block 1 complete or authorize Block 2.
+At that checkpoint, this status update resolved the e2e blocker only; later Blocks superseded its
+pending-review boundary.
 
-## Unlock Conditions
+## Historical Unlock Conditions
 
-Before Block 1 can be marked complete by the total thread:
+At the Block 1 checkpoint, completion required:
 
 1. Total-thread review must accept the current scaffold, security checklist, and verification evidence.
 2. macOS packaged smoke still needs a macOS runner. Current coverage is Windows smoke plus macOS package path unit tests.

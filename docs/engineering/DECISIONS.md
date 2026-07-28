@@ -509,7 +509,13 @@ Persisted detail validation is semantic, not merely global-schema validation. Ev
 
 The regression gate also requires four race/recovery cases: cancel a restarted orphan structure detection through the natural `Jobs & recovery` panel and then detect again; cancel encoding-required import and reject the old token with `pending_import_not_found`; switch Library while cancellation awaits and prove the next Library is untouched; and insert a cross-type persisted checkpoint and prove `jobs:get` fails closed.
 
-The completion authority is `docs/engineering/V1-BLOCK-10-STATUS.md`. A fresh `npm run check` must pass typecheck, all unit and integration tests, Windows x64 packaging, and the serialized packaged Electron suite through the unified local secondary-display gate. The natural product acceptance path remains the real Library/Breakdown shelf and its `Jobs & recovery` panel; Diagnostics, service-only tests, fixture-only URLs, or IPC calls cannot substitute for that path.
+The completion authority is `docs/engineering/V1-BLOCK-10-STATUS.md`. A fresh `npm run check` must pass
+typecheck, all unit and integration tests, Windows x64 packaging, and the serialized packaged Electron
+suite through the unified local secondary-display gate. That gate is development-test infrastructure:
+it is not loaded by `npm start`, installed builds or ordinary product launches and creates no product
+display requirement. The natural product acceptance path remains the real Library/Breakdown shelf and
+its `Jobs & recovery` panel; Diagnostics, service-only tests, fixture-only URLs, or IPC calls cannot
+substitute for that path.
 
 Block 10 is complete only for the persisted Job/recovery shell. A resumable fixture proves that restart preserves and displays the state, but there is no natural resumable producer. Resume and Keep draft remain disabled, future `analysis_module_instance_analysis` remains contract-only, `export` cannot create a Job, and no background queue, Codex SDK, AI content/runtime, automatic recovery execution, export execution, or migration 006 is authorized.
 
@@ -548,7 +554,7 @@ Rules:
 - The packaged natural-entry smoke starts through the real Library/Breakdown shelf, imports and opens a Book, observes Markdown blocked and machine unavailable states, permanent execution blockers, disabled controls, the non-Job status summary, and zero Export Jobs.
 - Diagnostics, a bypass URL, isolated component rendering, service-only tests, or direct IPC calls cannot substitute for the packaged natural user entry.
 - The completion authority is `docs/engineering/V1-BLOCK-11-STATUS.md`. Final certification at commit `ddde1a1` passed 527 unit tests, 256 integration tests, Windows x64 packaging, and 13 packaged Electron E2E tests.
-- Secondary-display placement is unified E2E infrastructure evidence, not a product acceptance blocker for Export readiness.
+- Secondary-display placement is required local development E2E infrastructure, not an installed-product runtime requirement for Export readiness.
 - Completion authorizes no real export package, filesystem write, directory selector, arbitrary path, migration, Export record, Export Job/checkpoint, Markdown/JSON back-write, Codex SDK, AI content, evidence extraction, future owner table, or Block 12 capability.
 
 ## D045: Technique Persistence Requires A Natural Adoption Producer
@@ -1656,3 +1662,267 @@ Rules:
 - `config/block13-release-limitations-v1.json` records current Windows development-machine evidence as pending total-thread acceptance. Clean-machine, signing/notarization, Defender, proxy, enterprise certificates, firewall, offline behavior, telemetry and macOS remain unverified or deferred.
 - No package or lockfile changed. No AI Job, checkpoint, AnalysisModuleInstance, SQLite write, automatic retry, fallback, alternate provider or business AI workflow is admitted.
 - The active conclusion remains exactly `Conditional Go — Windows feasibility verified; macOS packaged runtime deferred-by-user.` It is not Full Go, cross-platform compatibility, AI readiness or release readiness.
+## D122: Important Literary Interpretations Use A Bounded Review Protocol
+
+Decision: WriteStorm standardizes a finite cross-module inference-review discipline while leaving the open-ended substance of literary interpretation to module methodology and the model. Important interpretations use a structured review record; ordinary facts and reading prose do not become graph nodes or database objects by default.
+
+Rules:
+
+- The shared semantic relationship is `EvidenceAnchor -> textual fact/grounded observation -> material interpretation alternatives -> current assessment or unresolved -> derived conclusion`.
+- These are semantic levels, not a mandate for four table families or one persisted object per fact. No schema or migration is admitted by this decision.
+- An interpretation must be structured only when it is user-reviewable, crosses module boundaries, enters a Perspective, Technique observation/candidate, AI constraint or export, or affects completion/invalidation. Ordinary non-authoritative analysis may remain in Markdown.
+- A bounded inference review record exposes applicability scope/character phase, grounded observations, evidence mapping, material alternatives, ordinal support, a selected assessment or unresolved result, concise audit rationale, counterevidence/conflict facts, disconfirmation conditions and dependency references.
+- The product does not request, store or export the model's private step-by-step chain of thought. Audit rationale is a short user-facing justification, not hidden reasoning.
+- The protocol preserves only material alternatives: an alternative is material when it remains reasonable under current evidence and choosing it would change the conclusion or a downstream result. It does not require exhaustive enumeration.
+- Behavior is not automatically personality; chronology is not automatically causality; a textual form is not automatically a reader effect. Such transitions require an explicit interpretation.
+- Review workflow and epistemic support are separate axes. User acceptance of a correctly represented hypothesis does not convert it into a fact. Unresolved strong counterevidence prevents a settled confirmed conclusion, while the interpretation may remain a hypothesis or competing explanation.
+- Low support, insufficient evidence, conflicting evidence and counterevidence remain distinguishable. The contract must not substitute an uncalibrated decimal confidence score for those facts.
+- The seven modules currently represented by shared contracts, migration seed, renderer workbench and tests are an implementation baseline and candidate interrogation input, not a final product-module decision.
+- Block 14's first product gate cross-examines module count, names, boundaries, fact ownership, dependencies and scope. Only after that gate may it freeze finite focus surfaces and payload schemas for the approved modules; those surfaces must not become encyclopedic definitions of fear, desire, shame, jealousy, theme or every other possible interpretation.
+- If the approved module system differs from the current seven-module baseline, shared contracts, migration seed and downstream migrations, configuration snapshots, workbench gates, compatibility fixtures and existing tests require a separate impact assessment and separately authorized admission task. They may not be changed opportunistically inside the deep-payload-schema task.
+- AI execution composes a short versioned common protocol, one current module/scope focus card, the strict output schema and a small number of targeted examples. It does not concatenate all methodology and examples into every turn.
+- User correction may target evidence, a textual fact/observation, an interpretation candidate, the current assessment or a derived conclusion. Corrections create revisions and preserve history. A per-result edit cannot mutate the global methodology; methodology changes create a new MethodologyVersion.
+- Configuration invalidation and semantic dependency invalidation are separate. TypeLibrary/Methodology/Prompt/Schema/composition changes use the versioned configuration snapshot-diff authority. Evidence/observation/interpretation/conclusion corrections follow actual semantic dependency references. Neither algorithm accepts caller-declared impact.
+- Block 14 owns the common protocol, the module-system gate, post-gate module focus surfaces, schema/fixture rules and freeze gate. Block 17 owns prompt composition and runtime validation. Block 18 owns persistence, review/correction UX, history, diff, semantic stale propagation and completion gates.
+- Block 15 consumes confirmed source assets to build derived Perspective views and cannot become a foundational inference fact source. Block 16 owns Technique observation, abstraction, candidate and adoption semantics and cannot redefine the common inference protocol.
+- `AI 约束摘要` remains a read-only secondary aggregate page. Source modules own confirmed `AIConstraint` assets and their inference provenance.
+
+## D123: Downstream Blocks Have Single-Writer Ownership Boundaries
+
+Decision: Block 14's module-system interrogation also fixes the ownership boundary around Methodology, Perspectives, Technique assets, AI execution, dependency invalidation and the non-module structure layer. These boundaries update planning authority only and admit no implementation.
+
+Rules:
+
+- User-selected prescriptive principles such as “角色推动故事” belong to global or type-specific Methodology configuration. They are not observations, interpretations or conclusions about a source work.
+- Accepted Methodology and formal Technique assets may later derive AI constraints with explicit provenance. This supersedes D122 only where its final rule implied that source-analysis modules were the only possible AIConstraint source. The `AI 约束摘要` remains a read-only aggregate and never becomes a fact writer.
+- Block 15 Perspectives combine stable references to canonical source conclusions. A Perspective cannot create a second Character, Plot, Meaning, World, Narrative, Style or Technique fact merely because it presents a cross-domain chain.
+- Block 16 is the sole owner of formal Technique observations, reusable candidates and Technique entries. Discovery may cross module and scope boundaries and must represent positive, negative and conditional observations. Technique extraction, review and rerun are a separate lifecycle rather than a side effect owned by an analysis module, Perspective or AI pipeline.
+- Block 17 consumes the frozen analysis conclusions, user Methodology and formal Technique assets approved by their owners. It owns execution and orchestration, not source-work facts; Prompt text and schema composition cannot redefine module authority or create a competing writer.
+- Block 18 owns structure-version impact evaluation, conclusion dependency indexing, revision history and selective stale propagation. Source or structure changes first identify changed ranges, affected anchors/conclusions and their dependency closure. They do not invalidate a whole module by default; whole-module invalidation requires evidence that the closure covers it.
+- The structure layer owns only Book, volume, chapter, story-segment and text-range facts. It is not an AnalysisModule. A frozen structure snapshot confirms structural identity and ranges, not a literary interpretation.
+- Existing plans remain historical/current-baseline inputs until separately revised. Block 12 needs a Methodology/AIConstraint provenance clarification; Block 15 needs projection-only task wording; Block 16 needs sole-owner, cross-module/scope and observation-polarity/rerun tasks; Block 17 needs owner-routed writes and Prompt non-authority gates; Block 18 needs dependency-granular invalidation; removing structure from the module inventory requires the separate 14-G1 shared-contract/migration/test compatibility assessment.
+
+## D124: 14-G0 Closes The Core Ontology, Not Block 14
+
+Decision: Block 14 gate 14-G0 is closed with seven core source-analysis modules: `故事情节`, `叙述调度`, `人物塑造`, `关系动力`, `世界设定`, `语言文体`, and `主题意蕴`. This closes the module ontology and cross-domain ownership direction only. Block 14 remains incomplete and has no implementation authorization; 14-G1 compatibility-impact review and seven separate deep-methodology reviews remain mandatory.
+
+Rules:
+
+- Book, volume, chapter, story segment and text range form the prerequisite structure/scope layer and are not AnalysisModules. Block 15 Perspectives, Block 16 Technique assets, module-external constraint governance and the read-only AI-constraint summary are downstream domains, not additional core modules.
+- Old canonical keys, display order, migration 003 seed, module instances, workbench/completion gates, `inputModuleKeys` and the previous seven-module shared contract are compatibility baselines only. Their retirement, redefinition or migration impact belongs to 14-G1 and may not be hidden inside deep Schema work.
+- Scope locates evidence, execution, presentation and conclusion applicability; it does not own a copy of a fact. One event, character, relationship, rule or language observation keeps one stable identity across chapter, story-segment, volume and Book scopes. Higher scopes may create new synthesis interpretations only by referencing the lower-level canonical assets.
+- Content readiness uses four distinct qualifications: scan eligibility, candidate eligibility, formal-asset eligibility and synthesis eligibility. Another core module does not need to be globally complete before scanning may start. Cross-module use and stale propagation follow asset/conclusion dependencies rather than whole-module `inputModuleKeys`.
+- Every candidate is routed at creation to an expected domain owner. A discoverer may submit a cross-domain candidate, but only the owner may merge, split, reject, transfer or promote it. Candidates have no downstream authority. One anchor may support different domain propositions; duplicate same-domain/same-proposition candidates must converge under the owner.
+- “Segment discovery -> identity disambiguation -> domain analysis -> cross-module synthesis” describes readiness waves, not a required number of AI calls or full-text reads. Call topology, batching and context reuse belong exclusively to Block 17.
+- Block 16 is the sole owner of formal Technique observations, abstractions and reusable Technique candidates. Core analysis modules provide stable source conclusions and may submit routed discovery candidates; they do not persist formal Technique assets.
+- Formal AIConstraint ownership moves out of the seven modules into one constraint-governance domain that owns candidates, provenance, applicability, strength, conflict, review and versioning. This supersedes D122's statement that source modules own confirmed AIConstraint assets and narrows D123's derivation wording. Block 14 freezes the constraint contract and source eligibility; Block 16 supplies Technique-source candidates; Block 17 composes valid constraints into runtime input; Block 18 owns persistence, history, review and invalidation. The AI-constraint summary remains read-only and is not an eighth module.
+- Module completion means its finite focus surface was honestly checked, not that literary analysis was exhausted. Confirmed findings, checked-empty, not-applicable, insufficient-evidence and unresolved outcomes may all complete a focus item when represented truthfully; none may be used to skip the check, and only qualified outcomes may satisfy downstream or publication gates.
+- MainType Base and ordered ContentFocus Overlays may alter attention, admission thresholds and method composition only. They cannot add, remove or replace a core module, change canonical fact ownership or let Prompt text redefine the ontology.
+- The approved readiness, ownership and completion semantics still lack module-specific “what to inspect/how to reason” rules, evidence/counterevidence rules and payload contracts. No deep Schema, Prompt or Block 17 implementation may begin on the strength of 14-G0 closure.
+
+## D125: Continuation Context Brief Is A Downstream Projection
+
+Decision: Story Plot cross-examination question 21 is closed. The standard human-facing story review is a short overview plus key development steps, organized by PlotLine and sourced from canonical events and connections. A future `续写上下文简报` is registered as a cross-Block downstream capability for author preparation; it is not an eighth module, a new Story Plot fact/asset, an expansion of Story Plot deep methodology or a Block 14 completion requirement.
+
+Rules:
+
+- The brief combines stable references across approved owners: the current situation, active/unresolved PlotLines, recent key choices, relevant Character/Relationship/World states, outstanding promises or setups, and source locations.
+- The event/connection/PlotLine model remains the machine-level source. The brief is an author-facing projection and compression over those facts and other module conclusions; it does not replace, duplicate or become authoritative over them.
+- Viewing the brief does not trigger AI by default. Typed facts update through a deterministic projection. AI is admitted only for compressed expression and may not invent facts or silently change the deterministic selection.
+- A generated brief records its dependency versions. A material dependency change makes the generated compression stale; opening the view alone does not regenerate it. Regeneration occurs when the user prepares to continue writing or explicitly requests refresh.
+- Block 14 later freezes exact source eligibility, stable-reference requirements and material invalidation conditions. This handoff does not add those rules to the current Story Plot methodology round.
+- Block 17 owns AI-context composition, batching/context reuse and compressed-text generation.
+- Block 18 owns brief persistence, versions, dependency records, selective stale propagation and the user-visible refresh entry.
+- A later Original-writing Block owns the actual continuation workflow. The brief does not admit Original project creation, prose generation or editing in Blocks 14, 17 or 18.
+
+## D126: Book-Specific Focus Questions Are Additive Frozen Configuration
+
+Decision: Block 14 Story Plot question 29-B is withdrawn. MainType examples such as `现代幻想` or `诸天无限` do not impose additional mandatory Story Plot questions; illustrative type copy is not evidence that every Book of that type must answer the example. WriteStorm instead registers an independent `本书特别关注` capability for zero or more user-authored natural-language questions before the first formal analysis.
+
+Rules:
+
+- Each question may optionally target one approved analysis module and one supported scope. Omitting either target leaves routing to the Block 14-approved qualification rules; it does not create a new module or scope kind.
+- A special-focus question only adds a question. It cannot replace or modify the seven-module ontology, canonical fact admission, ownership, evidence/counterevidence policy, standard story review, output Schema or completion semantics.
+- Every question must allow an answer, checked-no-finding, not-applicable, insufficient-evidence or unresolved result. The runtime must not invent an answer merely because the user asked the question.
+- The ordered questions and their routing targets freeze into the Book's analysis-configuration snapshot before first formal analysis. They are configuration inputs, not source-work facts or analysis assets.
+- Block 17 routes and composes each eligible question into the existing analysis work. It does not create a second default full-Book AI pass merely because special-focus questions exist; batching and context reuse remain Block 17 decisions.
+- Block 14 freezes question addition, routing qualification and evidence boundaries. Block 18 owns persistence, dependency records, history and selective rerun impact.
+- The capability is currently unimplemented. MainType, ContentFocus, system scope focus cards, post-analysis Markdown editing and Perspective notes are not substitutes.
+- A separate Block 12 remediation is required because the implemented TypeLibrary binding permits later MainType/ContentFocus metadata CAS edits, while the reaffirmed product rule says a confirmed selection is permanently frozen. The confirmation event, existing-Book compatibility, UI removal/transition, schema/service impact and test migration must be reviewed explicitly; D126 does not mutate or silently disable the current path.
+
+## D127: Story Plot Deep Methodology Closes Without Implementation Admission
+
+Status: Superseded by D128. Retained as the historical pre-review decision.
+
+Decision: The `故事情节` deep-methodology cross-examination is closed as the first of seven module
+reviews. Its authority is
+`docs/engineering/V1-BLOCK-14-STORY-PLOT-CROSS-EXAMINATION-RECORD.md`. This freezes the module's
+bounded literary-analysis semantics and validation inputs, not a shared claim envelope, deep payload
+Schema, review state machine, persistence model, Prompt or implementation.
+
+Rules:
+
+- Story Plot reconstructs and explains story-world change through four canonical asset kinds:
+  `StoryEvent`, `EventRelation`, `Plotline` and `PlotlineRelationClaim`. Deterministic Scope projections
+  are non-authoritative, and `StandardStoryRecap` is a sourced derived asset rather than a second fact
+  store.
+- A StoryEvent has one active occurrence claim and six optional addressable claim groups:
+  participation, story time, spatial placement, direct result, agency and expected outcome. Formal
+  admission requires an evidence-bearing occurrence plus at least one qualified independent plot
+  function. An unresolved occurrence may receive stable identity for conditional evidence merging but
+  never masquerades as an event confirmed to have occurred.
+- EventRelation is an atomic reviewable relation proposition. Joint sources, compatible mechanisms,
+  refinements, rebuttals and mutually exclusive alternatives remain distinct. Confirmed analytic
+  inference retains its inference identity.
+- Plotline identity follows a sustainable development object. Formal admission uses either one strong
+  forward establishment or multiple qualified development records. Event-to-Plotline effect is
+  single-written by `PlotlineDevelopmentRecord`; StoryEvent pages show reverse projections.
+- Plotline current lifecycle projects only `open`, `paused`, `closed` or `unresolved`. Development
+  effects, closure reasons, cross-line literary relationships and technical entity lineage remain
+  separate. `PlotlineRelationClaim` is an independent cross-Plotline domain asset; shared
+  `EntityLineageRecord` owns technical split/merge/supersession history.
+- Story segments remain prerequisite structure ranges. Within each volume they are continuous,
+  non-overlapping, gapless and never cross the volume boundary. Every active story segment, every
+  volume and the Book must address the standard story-review focus; chapters default to deterministic
+  projection and do not trigger AI merely by being viewed.
+- Standard story review uses one V1 default recap per required Scope, with a short overview and
+  structured key developments. Fragments have recap-local component identity for rendering and diff
+  but no ClaimRef, independent review status or fact authority.
+- The seven ContentFocus options add only their approved Story Plot attention questions. They create no
+  special fact type, do not overwrite Base facts and allow checked-empty, not-applicable,
+  insufficient-evidence or unresolved results. MainType adds no universal Story Plot question.
+- Evidence, append-only continuation, current-version coverage, command-independent publication
+  qualification and the small fixture matrix follow the Story Plot record. A caller cannot write
+  `passed`, and a later append does not invalidate an unchanged source prefix.
+- D125 and D126 remain the separate authorities for the downstream continuation-context brief and
+  Book-specific additive focus questions.
+- The former “three canonical roots” and “six StoryEvent claim groups” statements are superseded. The
+  current domain count is four canonical asset kinds plus one derived recap kind, and StoryEvent has
+  seven claim groups including spatial placement.
+- Module deep-methodology progress is `1 / 7`. Narrative Orchestration, Characterization, Relationship
+  Dynamics, World Setting, Language/Style and Theme/Meaning remain open. Story Plot closure does not
+  close Block 14, satisfy 14-G1 or authorize migration, Schema, Prompt, Block 17 runtime, Block 18
+  persistence/UI or real AI.
+
+## D128: Story Plot Domain Semantics Close While Production Configuration Remains Open
+
+Status: Superseded by D129. Retained as the pre-contract-patch decision.
+
+Decision: D127's complete `CLOSED` wording is withdrawn. Block 14 gate 14-G0 remains `CLOSED`.
+Story Plot is now `DOMAIN_SEMANTICS_CLOSED / PRODUCTION_CONFIGURATION_OPEN`: its corrected domain
+semantics may guide the remaining module reviews and later shared contracts, but it has not passed
+external-validity or real long-form production validation. The corrected authority is
+`docs/engineering/V1-BLOCK-14-STORY-PLOT-CROSS-EXAMINATION-RECORD.md`.
+
+Rules:
+
+- Story segment is one user-frozen active product analysis partition. Gapless, non-overlapping,
+  continuous, volume-bounded coverage is an operational navigation/versioning constraint, not a claim
+  that the partition is the work's unique objective literary structure.
+- “Formal event” is replaced by “admitted structured story event.” This is the product's structured
+  persistence threshold, not an exclusive academic definition of event.
+- Q11 is reopened and reclosed. A pure roll-up remains a non-authoritative `EventGroup`. An admitted
+  parent process event may coexist with admitted child events only when it has independently evidenced
+  whole-level goal, process state, result or causal function that no child alone owns. Parent and child
+  connect through an acyclic `part-of` EventRelation, never duplicate claims, review independently and
+  must not be double-counted by projections, statistics or recaps.
+- Internal review status and epistemic identity remain independent. Internally,
+  `confirmed + analysis_inference` means an inference passed the current review gate; user-facing and
+  exported language must still say supported/accepted/unresolved interpretation rather than confirmed
+  fact.
+- Q1–Q47 are an offline method, counterexample and validation library, not a runtime checklist. Story
+  Plot runtime attention is bounded by six questions: trackable change; chooser/actor/affected party and
+  direct result; connections; affected development lines; contradictions/unreliable/unknown material;
+  and minimum sufficient evidence.
+- Agency, expected outcome, risk, fine story time, event hierarchy, fine EventRelation and cross-line
+  relations are conditional analyses. They run only when their trigger changes story understanding or
+  downstream use. Shared governance is defined once; IDs, cycles, single-writer rules and Schema
+  invariants are program checks.
+- `StandardStoryRecap` is synthesized separately after its sources qualify. Ordinary users review
+  coherent cards; claim-level detail expands only for conflict, weak evidence, important downstream
+  impact or explicit correction.
+- The fixture matrix remains useful but Q30 is `PROVISIONAL` until Block 17 has a minimal runnable
+  candidate. Before production Prompt freeze, authorized linear, ensemble and nonlinear/unreliable
+  long-form corpora must compare the six-question contract with direct full-rule input for omissions,
+  duplicates, contradictions, identity drift, cross-volume continuity, recap fidelity, token/time/failure
+  cost and human correction time.
+- Full rules may enter regular Prompt composition only as demonstrated conditional triggers, never as
+  one concatenated default instruction set.
+- Story Plot counts as `1 / 7` only for domain-semantics progress. This does not close Block 14, approve
+  the production configuration, freeze shared Schema/state machines, satisfy implementation admission
+  or authorize real AI.
+
+## D129: Story Plot Contract Patch Closes Domain Semantics While Production Configuration Remains Open
+
+Status: Superseded by D130 after full-record review. Retained as the three-gap patch decision.
+
+Decision: This historical decision patched three post-D128 gaps without opening implementation. It is
+superseded by D130 after full-record review. The detailed semantics and production caveats are maintained
+only in `docs/engineering/V1-BLOCK-14-STORY-PLOT-CROSS-EXAMINATION-RECORD.md`.
+
+## D130: Full-Record Story Plot Review Closes Targeted Domain Patches, Not Production Configuration
+
+Status: Superseded by D131 after the narrow endpoint/ownership review.
+
+Decision: 14-G0 remains `CLOSED`. A full review temporarily placed Story Plot in
+`DOMAIN_SEMANTICS_NEEDS_PATCH`; the targeted patches are now recorded in
+`docs/engineering/V1-BLOCK-14-STORY-PLOT-CROSS-EXAMINATION-RECORD.md`, which is the sole detailed
+domain authority. Story Plot returns to
+`DOMAIN_SEMANTICS_CLOSED / PRODUCTION_CONFIGURATION_OPEN` as progress `1 / 7`.
+
+The patch closes six domain gaps: Story segment single-volume review does not require proof of an
+objectively indivisible structure; Plotline uses text-established or multi-event-supported development
+objects and a non-circular admission basis; Scope dominance uses multiple evidence dimensions;
+meaningful non-occurrence is separated from denial of occurrence; EventRelation has complete relation
+families and endpoint semantics including outcome comparison; and PlotlineLifecycleRecord alone owns
+open/pause/resume/reopen/close changes. StandardStoryRecap is created only when a required Scope has a
+faithfully compressible change chain; otherwise the required recap-focus disposition completes without
+an empty recap asset.
+
+Production configuration remains `OPEN`. Its experiment design, thresholds, blind review, trigger
+selection, fixture completeness and real long-form performance are not closed by this decision. Other
+documents must carry only status, ownership summary and a link to the Story Plot record; they may not
+restate a second detailed normative copy. No shared Schema, Prompt, migration, persistence, UI, Block 17
+runtime, Block 18 workflow or real AI is authorized.
+
+## D131: Story Plot Endpoint and Ownership Patch Re-Closes Domain Semantics
+
+Decision: 14-G0 remains `CLOSED`. A narrow review temporarily returned Story Plot to
+`DOMAIN_SEMANTICS_NEEDS_PATCH`; the four gaps are now corrected in the sole detailed authority,
+`docs/engineering/V1-BLOCK-14-STORY-PLOT-CROSS-EXAMINATION-RECORD.md`. Story Plot returns to
+`DOMAIN_SEMANTICS_CLOSED / PRODUCTION_CONFIGURATION_OPEN`; Q30 remains `PROVISIONAL`.
+
+The patch removes volume-length/story-segment-count as a domain validity heuristic, admits qualified
+domain-state-transition claims as causal and outcome-comparison targets without duplicating state,
+keeps potential-consequence result content inside its owning EventRelation unless routed to an existing
+domain owner, and restricts causal mechanism subtypes to cause/condition/obstacle. The current
+cross-document gate is an executed read-only consistency check; an automatic repository lint remains a
+future engineering task and must not be claimed as implemented.
+
+No shared Schema, Prompt, migration, persistence, UI, Block 17 runtime, Block 18 workflow or real AI is
+authorized. Detailed semantics remain single-sourced in the Story Plot record.
+
+## D132: REV3.2 Confirms The System Production Quality Direction Without Freezing Block 14
+
+Decision: The user confirms REV3.2 as the cross-module production-quality design direction. Its status
+is `USER_CONFIRMED_DIRECTION / REV3.2_CONFIRMED / BLOCK14_NOT_FROZEN / QUALITY_UNPROVEN`. The sole
+detailed authority is
+`docs/engineering/V1-BLOCK-14-SYSTEM-PRODUCTION-QUALITY-GATE.md`.
+
+The direction separates a generic overlapping `TextRange` from versioned, gapless core coverage through
+`CoverageSliceRevision`; separates run/coverage, epistemic and review/authority state axes; and defines
+`AnalysisCoverageComplete` and `AuthorityReviewComplete` without using either milestone to grant global
+downstream authority. Consumer eligibility remains asset- and consumer-specific.
+
+When Prompt content exceeds budget, priority is minimum Base coverage, correctness triggers, user-ordered
+Book-specific focus, ordered ContentFocus Overlays and optional literary deep dives. Programmatic safety
+and contract enforcement do not consume Prompt content budget, but still count toward total cost,
+latency and failure-rate hard limits. Structured does not mean mandatory review: the old requirement
+that every visible AI asset be reviewed before Book completion is withdrawn in favor of risk-tiered
+review and consumer-specific qualification.
+
+No document-only direction, human walkthrough or deterministic fixture proves real-model quality.
+Block 14 may later freeze pure logical contracts/reference algorithms after its staged gate; Block 17
+owns real-AI quality/cost validation and call topology; Block 18 owns the production review queue,
+real-user correction path, persistence and completion UX. This decision authorizes the confirmed
+documentation update only, not code, Schema, migration, Prompt, fixture execution or real AI.

@@ -1,10 +1,21 @@
-# WriteStorm V1 Block 6 Native Gate And Library Entry Status
+# WriteStorm V1 Block 6 Native Gate And Library Entry Historical Status
 
 Date: 2026-07-09
 
-Status: Windows native gate verified; Task 6.4/6.5 production schema migrations verified; Task 6.12 desktop entry skeleton verified; Task 6.13 SQLite/migration performance baseline verified; release maker and macOS smoke still blocked/not applicable
+Document class: **HISTORICAL CHECKPOINT / SUPERSEDED FOR CURRENT SCHEMA AND PRODUCT STATUS**
 
-Scope: historical Block 6 delivery plus the Task 20 recertification override. The unpublished content-model shell migrations were removed; the current runtime baseline is schema epoch 2 with migrations 001/002. LibraryService now probes before writes, backs up pending migrations from a readonly source, validates resulting schema, and publishes session-bound services/UoW. Windows package gates apply; this is not a macOS packaged-smoke or release-maker pass.
+Status at the Block 6/Task 20 checkpoints: Windows native gate, Library entry, SQLite migration baseline and
+Windows packaging evidence were verified within their recorded scope.
+
+Current authority: `src/main/db/migrations/index.ts` and the active current-state section in
+`CONTEXT.md`. The current production registry contains migrations 001–007. References below to
+`001_foundation_schema`, a two-migration registry or production schema version 2 are preserved only as
+superseded checkpoint evidence and must not be used as present facts.
+
+Scope: historical Block 6 delivery plus dated Task 20 recertification evidence. Current LibraryService
+still uses read-only probing/backups before pending migrations, resulting-schema validation and
+session-bound services/UoW. This record is not macOS packaged-smoke, release-maker or release-readiness
+evidence.
 
 ## Authorized Scope
 
@@ -34,21 +45,20 @@ Scope: historical Block 6 delivery plus the Task 20 recertification override. Th
 - Migration runner validates applied migration history before pending migrations run. Unknown future migrations and id/name mismatches reject open instead of allowing an older app to continue on an unknown schema.
 - non-contiguous applied migration histories reject open; applied migration rows must be a contiguous prefix of the static registry.
 
-## App Schema Evidence
+## App Schema Evidence And Current Override
 
-- Task 6.4 Foundation Schema: implemented in production migration `src/main/db/migrations/001_foundation_schema.ts`.
-- Task 6.4 creates `library`, `books`, `source_texts`, `structure_nodes`, `story_segment_ranges`, `jobs`, and `exports`.
-- Historical Task 6.5 speculative content-model migration: superseded and deleted by the global reset; it is not part of the current production registry.
-- Task 6.5 creates `analysis_modules`, `analysis_module_instances`, `evidence_anchors`, `relation_links`, `work_technique_observations`, `reusable_technique_candidates`, `source_snapshots`, `technique_entries`, and `perspective_views`.
-- schema version 2 is now the current app schema version after running `APP_MIGRATIONS`.
-- `tests/integration/db/app-schema.test.ts` introspects tables, columns, and foreign keys for Task 6.4/6.5.
-- `books.current_source_text_id` FK points to `source_texts(id)` so a book cannot reference a nonexistent current source text.
-- `npm run test:integration`: passed on 2026-07-09 after Task 6.4/6.5 review fixes with 4 files / 17 tests.
-- `npm run check`: passed on 2026-07-09 after Task 6.4/6.5; package again reported `Preparing native dependencies: 1 / 1`.
-- TechniqueEntry and ReusableTechniqueCandidate remain separate tables. `technique_entries` point to `source_snapshots` and do not FK to `reusable_technique_candidates`.
-- `perspective_views` is independent from `analysis_module_instances`: it has no `module_id`, no `analysis_module_instance_id`, and no FK to `analysis_module_instances`.
-- `relation_links` and `evidence_anchors` are independent shell tables; perspectives do not own or generate either table.
-- These schema migrations do not implement source import, BookService queries, real analysis, technique-library UI, perspective computation, AI/Codex, or additional IPC channels.
+- The pre-reset path `src/main/db/migrations/001_foundation_schema.ts` no longer exists.
+- The current migration 001 is `001_v1_runtime_baseline`; migration 002 is
+  `002_structure_workspace`.
+- Migrations 003–007 add admitted analysis-module definitions/instances/placeholders and TypeLibrary
+  registry/Book-binding facts. The current registry version is 7, not 2.
+- The historical speculative shell-table migration was deleted by the global reset. Its old table list
+  must not be inferred as current production schema.
+- Current schema admission is verified by the migration registry, runtime-schema validation,
+  migration-owned semantic boundaries and current integration tests—not by frozen wording in this
+  status document.
+- The 2026-07-09 and Task 20 commands below remain dated evidence for the scope they actually exercised;
+  their reported schema version and suite counts are not present-state assertions.
 
 ## Native Rebuild And Packaging Evidence
 
@@ -93,7 +103,8 @@ Scope: historical Block 6 delivery plus the Task 20 recertification override. Th
 
 - Task 6.13 SQLite/migration performance baseline: implemented in `src/main/library/performance-baseline.ts` and verified by `tests/integration/library/library-performance-baseline.test.ts`.
 - Scope: the baseline uses test-only migrations and a `block6_performance_items` probe table. It remains separate from the production Task 6.4/6.5 schema and does not add BookService queries, source import, AI, or renderer behavior.
-- Current Task 20 fixtures use 25 and 1,000 probe rows; both exercise the canonical schema version 2 registry.
+- Task 20 checkpoint fixtures used 25 and 1,000 probe rows against the then-canonical schema version 2
+  registry. Current migrations extend that registry through version 7.
 - Task 20 Windows observation on 2026-07-14: small create/open/migration/query = 78.04/43.86/22.46/1.11 ms; medium = 66.21/43.61/22.07/0.78 ms. Both remained under the existing observation limits. These are local observations, not release promises.
 - Task 20 full Windows recertification passed: typecheck, 87 files / 370 unit tests, 21 files / 133 integration tests, package/build, and 7/7 packaged Electron e2e tests.
 - Summary query: reads only the probe row count and SQLite `schema_migrations` version. This is the authorized substitute until foundation/book summary tables are approved.
@@ -109,7 +120,7 @@ Scope: historical Block 6 delivery plus the Task 20 recertification override. Th
 - `npx playwright test tests/e2e/native-sqlite-probe.spec.ts`: passed on 2026-07-09 and covers the packaged main process loading `better-sqlite3`, running the test-only migration, and reading reopened schema version `1`.
 - `npx playwright test tests/e2e/library-entry.spec.ts`: passed on 2026-07-09 and covers packaged create/open plus production schema version 2 readback from `writestorm.sqlite`.
 
-## Current Blockers And Notes
+## Historical Blockers And Notes
 
 - Historical Windows native rebuild blocker: node-gyp saw `C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools`, reported it as unsupported/unknown, and failed with `Could not find any Visual Studio installation to use`.
 - Additional environment diagnosis before resolution on 2026-07-09: the local install was Visual Studio Build Tools 2026 / VS 18.4.3 at `C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools`; `VC\Tools\MSVC\14.50.35717`, `MSBuild\Current\Bin\MSBuild.exe`, and `VC\Auxiliary\Build\vcvarsall.bat` existed. `cl.exe`, `msbuild.exe`, and `vswhere.exe` were not on the default PATH, but `vswhere.exe` existed under the Visual Studio Installer directory.

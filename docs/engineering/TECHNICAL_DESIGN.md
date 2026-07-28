@@ -1,6 +1,7 @@
 # WriteStorm Technical Design
 
-日期：2026-07-05  
+初稿日期：2026-07-05
+当前事实复核：2026-07-28
 状态：活跃 V1 技术方案；实现 schema 已同步至 migration 007
 范围：拆解工作台优先路线的工程技术方案，不包含 UI 高保真、不包含真实 AI 拆解实现、不包含原创小说项目。
 
@@ -12,14 +13,17 @@ Task 20 recertifies the foundation around schema epoch 2 and migrations 001/002.
 
 Block 12 freezes seven MainType and seven orthogonal ContentFocus options, user-only Book binding, CAS, active-only selectors and Book-pinned historical display metadata. Technique production tables remain unadmitted: there is no candidate producer, atomic adoption transaction, `TechniqueEntry` persistence, repository/service, or mutation IPC in the implemented schema.
 
-首个实现增量仍是 `docs/tasks/TASK-001-breakdown-workbench-foundation.md`：资料库、拆解书架、导入、结构校正、模块实例骨架、job 状态和导出阻塞态。
+`docs/tasks/TASK-001-breakdown-workbench-foundation.md` 只保留为历史首增量记录。当前实现状态以
+`docs/engineering/CONTEXT.md` 的 active current-state section 为准，后续 V1 工作以
+`docs/tasks/TASK-002-v1-work-breakdown-master-plan.md` 及其显式 active overrides 为计划入口。
 
 ## 2. Source Basis
 
 - Product contract: `docs/product/write-storm-product-design.md`
 - Flow contract: `docs/product/FLOWS.md`
-- Gate task: `docs/tasks/TASK-000-pre-v1-hard-gates.md`
-- First increment task: `docs/tasks/TASK-001-breakdown-workbench-foundation.md`
+- Historical pre-V1 gates: `docs/tasks/TASK-000-pre-v1-hard-gates.md`
+- Historical first increment: `docs/tasks/TASK-001-breakdown-workbench-foundation.md`
+- Active V1 work plan: `docs/tasks/TASK-002-v1-work-breakdown-master-plan.md`
 - Electron process/security docs: https://www.electronjs.org/docs/latest/tutorial/process-model and https://www.electronjs.org/docs/latest/tutorial/security
 - Electron IPC docs: https://www.electronjs.org/docs/latest/tutorial/ipc
 - Electron Forge Vite docs: https://www.electronforge.io/config/plugins/vite
@@ -163,6 +167,106 @@ The Codex-private utility owns the fixed input and strict one-field schema, uses
 
 Observation is never written to Library SQLite, Job, checkpoint, export, log or credential storage. Restart begins unknown; fingerprint drift immediately invalidates prior observation; time passage alone does not refresh it, and no TTL is invented. AI generation actions remain disabled. Default unit/integration/UI tests inject transport and remain offline; a real packaged check is never part of `npm run check`.
 
+### Future Block 14–18 inference governance boundary
+
+The production analysis design uses a bounded inference-governance protocol rather than a universal literary ontology or a stored model chain of thought.
+The sole detailed cross-module production-quality authority is
+`docs/engineering/V1-BLOCK-14-SYSTEM-PRODUCTION-QUALITY-GATE.md`, currently
+`USER_CONFIRMED_DIRECTION / REV3.2_CONFIRMED / BLOCK14_NOT_FROZEN / QUALITY_UNPROVEN`.
+
+The common semantic relationship is:
+
+```text
+EvidenceAnchor -> textual fact / grounded observation
+               -> material interpretation alternatives
+               -> current assessment or unresolved
+               -> derived conclusion and downstream dependencies
+```
+
+These are semantic layers first. They do not imply one SQLite row, table or separately addressable object for every fact, observation, interpretation and conclusion. Ordinary textual facts and non-authoritative reading prose may remain inside a module-specific payload or Markdown body. A complete `InferenceReviewRecord` is required only when an interpretation is user-reviewable, crosses module boundaries, participates in a Perspective, Technique candidate, AI constraint or export, or affects completion and invalidation.
+
+The common record contract must carry enough structured information to validate:
+
+- the question/subject and exact Book/scope/text or character-stage applicability;
+- grounded observations and their EvidenceAnchor mapping;
+- material alternative interpretations;
+- an ordinal support classification such as direct, strong inference, weak inference or hypothesis;
+- a selected current assessment or explicit unresolved result;
+- a concise audit rationale, counterevidence/conflict facts and disconfirmation conditions;
+- explicit upstream and downstream dependency references.
+
+This is an audit summary, not private model reasoning. Block 17 must not request, persist or export hidden step-by-step chain-of-thought. Prompt composition is versioned and layered as a short common protocol, the current module/scope focus card, the strict output schema and a small number of targeted examples. It must not concatenate the complete methodology library or all module examples into every SDK turn.
+
+Module-specific payload schemas retain open literary interpretation. The common protocol only governs evidence, scope, uncertainty, alternatives, correction and participation. Gate 14-G0 is closed with seven core modules: Story Plot, Narrative Orchestration, Characterization, Relationship Dynamics, World Setting, Language/Style and Theme/Meaning. D131 closes Story Plot's endpoint/ownership patch as `DOMAIN_SEMANTICS_CLOSED / PRODUCTION_CONFIGURATION_OPEN` and progress `1 / 7`; the other six reviews and all shared evidence/review/deep-payload contracts remain open. Block 17 executes only a fully frozen result through the production Job/prompt/schema pipeline; Block 18 owns persistence, user correction, history, diff, semantic dependency propagation and completion gates.
+
+The seven modules currently present in the shared contract, migration seed, module workbench and tests are a different compatibility baseline, not the approved product ontology. The 14-G1 impact inventory now covers canonical keys/order, migration 003 and downstream migrations, module instances, workspace/completion gates, TypeLibrary/configuration snapshots, `inputModuleKeys`, tests and compatibility fixtures. Its status is `IMPACT_ASSESSMENT_COMPLETE / IMPLEMENTATION_ADMISSION_OPEN`; canonical keys, shared contracts and migration strategy remain undecided, and those changes may not be hidden inside a deep-payload-schema task.
+
+Scope is not an ownership container. Canonical events, characters, relationships, rules and language observations retain stable identities across chapter, story-segment, volume and Book views; a higher scope may add only a reference-based synthesis. Scan, candidate, formal-asset and synthesis eligibility replace whole-module completion prerequisites. Routed candidates remain non-authoritative until resolved by their domain owner.
+
+`TextRange` remains a generic and potentially overlapping interval. Gapless scan accounting uses the
+separate logical `CoverageSliceRevision`, bound to one source edition and coverage-plan revision. Active
+core ranges under one plan are gapless and non-overlapping; optional halo ranges may overlap but earn no
+coverage credit. A slice stores references and run metadata only, owns no literary asset and is not an
+AI-call boundary. Block 17 owns call splitting, batching and context reuse. A coverage-plan change may
+replace slice revisions without changing canonical asset identity.
+
+`AnalysisModuleInstance` owns run/input-version records, module-body revision, asset references, status
+projection and genuine Scope synthesis. Canonical assets and EvidenceAnchors remain with their domain
+owners and do not become instance-owned copies. This is a logical responsibility boundary; physical
+table topology and migration remain open.
+
+Story Plot has four canonical asset kinds: `StoryEvent`, `EventRelation`, `Plotline` and
+`PlotlineRelationClaim`. `PlotlineDevelopmentRecord` single-writes event-to-line meaning;
+`PlotlineLifecycleRecord` alone writes open/pause/resume/reopen/close transitions. Deterministic Scope
+projection is non-authoritative and `StandardStoryRecap` is a sourced derived asset, not a fact store.
+
+All detailed Story Plot semantics—including relation families/endpoints, admission, lifecycle, required
+recap-focus disposition and production experiment design—are single-sourced in
+`docs/engineering/V1-BLOCK-14-STORY-PLOT-CROSS-EXAMINATION-RECORD.md`. This document records only
+architectural ownership and status. These remain logical boundaries, not admitted TypeScript/Zod,
+persistence or IPC shapes.
+
+Block 16 alone owns formal Technique observations, abstractions and reusable candidates. A module-external constraint-governance domain alone owns formal AIConstraint candidates, provenance, applicability, strength, conflicts, review and versions; the summary page is read-only. Block 17 owns call topology, batching and context reuse but cannot redefine these owners through Prompt composition. Block 18 must persist asset/conclusion dependency indexes and propagate stale selectively rather than invalidating an entire module merely because a source or structure version changed.
+
+Module completion proves that a bounded focus surface was checked, not that literary analysis is exhaustive. Checked-empty, not-applicable, insufficient-evidence and unresolved can be honest terminal outcomes, but only qualified results may satisfy downstream or publication gates. MainType Base and ordered ContentFocus Overlays may change attention, thresholds and methods; they cannot alter the seven-module ontology or fact ownership.
+
+A future continuation-context brief is a downstream read model, not an AnalysisModule or Story Plot write model. Its deterministic projection selects stable, versioned references to the current situation, active/unresolved PlotLines, recent key choices, relevant Character/Relationship/World states, outstanding promises/setups and source locations. Merely viewing it performs no AI call. Block 17 may generate only the compressed expression over that projection; the generation records dependency versions. Block 18 persists versions and dependency facts, marks only materially affected generations stale and exposes explicit/pre-continuation refresh. The later Original-writing domain owns continuation actions. Block 14 only freezes source eligibility, reference identity and invalidation conditions.
+
+Book-specific focus questions are a future additive analysis-configuration input. Before first formal analysis, a Book may freeze an ordered zero-or-more question set; each question is natural language with optional approved-module and supported-scope routing. The set changes no domain Schema or ownership and cannot substitute for standard focus cards. Block 17 composes eligible questions into existing analysis batches without a mandatory second full-Book pass. Block 18 owns future persistence, dependency history and selective rerun impact. Exact question DTO/table topology is unadmitted. Separately, the current mutable TypeLibrary binding and later-edit CAS path conflict with the product rule that a confirmed MainType/ContentFocus selection is permanently frozen; that transition requires a dedicated Block 12 compatibility and admission decision.
+
+Run/coverage status, epistemic support and review/authority are three independent axes. Failure, retry,
+deferred, overflow and coverage-risk are runtime meanings; insufficient-evidence, competing and
+unresolved are epistemic meanings; review and consumer admission are authority meanings. No value on one
+axis may silently satisfy another. Internal `confirmed + analysis_inference` means only that an inference
+passed its review gate; renderer and export language must present it as a supported/accepted
+interpretation, never as a confirmed textual fact. User acceptance of a correctly represented
+hypothesis does not convert it into a fact.
+
+Book progress has two semantics: `AnalysisCoverageComplete` for successful required source coverage and
+honest finite-focus disposition, and `AuthorityReviewComplete` for explicit disposition of the current
+authority-review set. Neither is a global downstream-admission flag. Perspective, Technique-source,
+AIConstraint, export and other consumer eligibility is calculated per asset and consumer policy.
+Structured assets are not all mandatory review; unreviewed or unresolved assets gain no authority
+automatically.
+
+Prompt content budget uses priority B: minimum Base coverage, correctness triggers, user-ordered
+Book-specific focus, ordered ContentFocus Overlays, then optional literary deep dives. Programmatic
+safety and contract enforcement stay out of Prompt content budget but remain inside total cost, latency
+and failure-rate hard limits.
+
+Invalidation is split into two algorithms:
+
+- **configuration invalidation** derives impact from immutable TypeLibrary, Methodology, Prompt, Schema and composition snapshot differences under the versioned analysis-configuration diff authority;
+- **semantic dependency invalidation** follows actual dependency references after a user changes evidence, an observation, an interpretation or a conclusion.
+
+Semantic impact may not be caller-declared and may not reuse the configuration diff algorithm. Both paths preserve history and mark downstream assets stale or in need of review; neither silently rewrites confirmed content.
+
+Block 14 may admit only separately authorized pure contracts, reference algorithms and deterministic
+fixtures after the logical baseline closes. It may not bring forward a production Job, SQLite queue,
+persistence topology or review UI. No migration, Evidence/Relation/Inference table, repository, service,
+IPC, renderer editor, real Prompt, SDK analysis turn or AI result persistence is admitted by this design
+correction. Their admission remains with the owning Block 14–18 tasks.
+
 ### Main process
 
 Owns:
@@ -226,9 +330,10 @@ Rules:
 - Uses checkpointed units.
 - Can be cancelled by job id.
 
-## 5. Source Tree Target
+## 5. Historical Initial Source Tree Target
 
-First implementation should create this shape:
+The following scaffold was the initial target before implementation. It is retained only as historical
+planning context and must not be used to infer the current source tree:
 
 ```text
 package.json
@@ -274,9 +379,8 @@ library-root/
   manifest.json
   writestorm.sqlite
   source/
-    breakdown-books/
-      {book-id}/
-        original.txt
+    {sourceTextId}/
+      {originalFileName}
   exports/
     {export-id}/
   logs/
@@ -326,6 +430,8 @@ Admitted tables through migration 007:
 
 Migration 005 adds admitted placeholder columns to `analysis_module_instances`; it does not create speculative evidence, relation, Technique, perspective, export, Prompt, or snapshot tables. Technique production tables remain unadmitted until identity, producer, immutable `SourceSnapshot` capture transaction and real read/write lifecycle are separately approved.
 
+The Block 14 inference-governance design is not an implicit schema admission. Its four semantic levels do not reserve four table families, and `InferenceReviewRecord` remains a product/contract concept until Block 14 freezes its bounded schema and a later table-admission task proves ownership, identity, lifecycle, read/write paths and migration witnesses.
+
 Version fields:
 
 - `source_text_edition`: source content, encoding normalization or source correction.
@@ -363,6 +469,7 @@ Service rules:
 - Services never return raw SQLite rows directly to renderer.
 - Structure detection runs receive a positive per-book `run_sequence` inside the aggregate write transaction. Latest-run, active-run, recovery, and manual-fallback authorization order only by this persisted sequence, never by wall-clock timestamps or UUID text.
 - Structure freeze invokes the synchronous DB-only `StructureEditionChangePort` inside its aggregate transaction. The port emits `needs_rebuild`/`stale`/`needs_refresh` plus a non-persisted future CompletionGate invalidation instruction; it never starts downstream work.
+- Analysis configuration changes and semantic corrections use separate future invalidation ports. Configuration impact is derived from immutable configuration snapshot differences; semantic impact follows stored dependency references from changed evidence/observations/interpretations/conclusions. Neither port may accept a caller-invented affected-module list.
 - Long work emits job progress instead of blocking request IPC.
 - `LibraryService.create` is the only flow allowed to create `writestorm.sqlite`; it requires an absent or empty library root and must not adopt an existing database without a valid create flow.
 - `LibraryService.open` requires both `manifest.json` and `writestorm.sqlite`; it must not recreate a missing database for an existing library.
@@ -401,87 +508,121 @@ Rules:
 
 ## 10. Job and Checkpoint Design
 
-Job states:
+The executable state vocabulary and transition graph are owned by
+`src/shared/domain/job.ts`. The current graph is:
 
 ```text
-queued -> running -> paused -> failed -> resumable -> cancelled -> completed
+queued -> estimating | running | failed | cancelled
+estimating -> waiting_confirmation | running | failed | cancelled
+waiting_confirmation -> running | cancelled
+running -> paused | failed | cancelled | completed
+paused -> running | cancelled
+failed -> resumable
+resumable -> running | cancelled
+cancelled -> terminal
+completed -> terminal
 ```
 
 Checkpoint units:
 
-| Job type | Unit |
-| --- | --- |
-| Import | source copy + metadata |
-| Structure detection | structure draft |
-| Structure freeze | structure edition |
-| Module shell creation | module instance batch |
-| Export | export manifest and blocked reason |
-| Future AI analysis | `AnalysisModuleInstance` batch |
+| Job type | Unit | Current implementation |
+| --- | --- | --- |
+| `source_import` | source copy + metadata | Implemented |
+| `structure_detection` | structure draft | Implemented |
+| `structure_edition` | structure edition | Implemented |
+| `analysis_module_shell_creation` | module instance batch | Implemented |
+| `analysis_module_instance_analysis` | module instance batch | Contract only; not creatable |
+| `export` | export manifest and blocked reason | Contract only; not creatable |
 
 Rules:
 
 - `Job` state is separate from `Book` state and `AnalysisModuleInstance` state.
-- Cancelled imports keep no partial book unless source copy and metadata are valid.
-- Failed jobs keep completed checkpoints and expose recovery actions.
-- First increment may use placeholder jobs but must use the real job state model.
+- Final completion checkpoints are committed through the owner transaction, not through the generic
+  transition API.
+- Source-import and structure-detection runtimes must stop and clean up before cancellation is persisted.
+- Resume remains disabled for implemented Job types. Contract-only AI analysis and export vocabulary
+  does not establish a runtime producer, recovery path or executable product action.
 
-## 11. Codex SDK Gate
+## 11. Codex SDK Gate And Current Runtime Boundary
 
-Codex SDK is the only V1 AI integration target.
+Codex SDK remains the only V1 AI integration target. The detailed feasibility authority is
+`V1-BLOCK-6A-CODEX-SDK-FEASIBILITY.md`; the admitted verdict is
+`Conditional Go — Windows feasibility verified; macOS packaged runtime deferred-by-user`.
 
-Compatibility spike must verify:
+The current implementation includes Block 13 Tasks 13.3–13.13: a bounded Main/utility integration,
+strict structured output and lifecycle primitives, compatibility evidence handling, the import-free
+Main-owned `AiCompatibilityAssessment`, and the explicit natural Settings connection check. That
+boundary does not create a production analysis Job, Prompt pipeline, generated module body, durable
+result, resume path or renderer generation action. Real probes remain separately invoked and default
+regression remains offline.
 
-- TypeScript SDK can be installed and run in the chosen Electron process boundary.
-- Auth/session behavior is understandable to the app and can be surfaced in settings.
-- A sample breakdown prompt can produce a machine-checkable structured result.
-- Calls support app-level timeout and cancellation behavior, either directly or through the process boundary.
-- Errors map to `Job` failures with stable codes.
-- Prompt/response logging follows local log policy and can exclude sensitive source text from export.
-- Packaged Windows 11 and macOS builds can run the chosen SDK path.
+The provider boundary remains fail closed:
 
-If any required item fails, V1 AI work is blocked. Do not switch to `codex exec`, app-server, GUI automation, API Key, local model or other providers without a new product decision.
+- no direct product `codex exec` or app-server fallback;
+- no renderer SDK, process, filesystem, credential or raw provider surface;
+- no fallback to API-key integration, local models or another provider without a new product decision;
+- stale or unaccepted compatibility evidence cannot authorize a product AI action;
+- macOS Codex runtime remains deferred rather than inferred from Windows evidence.
 
-## 12. Test Strategy
+The original pre-V1 compatibility-spike checklist is historical gate rationale, not a current
+implementation TODO. Current evidence acceptance and remaining release limits are recorded in the
+Block 6A and Block 13 authorities.
 
-Required verification layers:
+## 12. Current Verification Strategy
+
+Current verification layers:
 
 - Unit tests for domain mapping, IDs, migration helpers and path guards.
 - Main-process integration tests for SQLite migrations and services.
 - Renderer component tests for empty/error/recovery states.
 - IPC contract tests proving renderer has no direct fs/SQLite/Codex access.
-- E2E tests for fresh start, import, structure freeze, module shell, job recovery and export blocked state.
-- Codex SDK spike tests before any AI feature work.
+- Packaged Electron E2E tests for natural Library/import/structure/module/recovery/export/Settings paths.
+- Verification gates for packaging, native/runtime boundaries and admitted certification artifacts.
+- Separately invoked Codex probes when their exact evidence gate requires a real runtime run.
 
-Initial commands to define in the scaffold:
+Repository commands:
 
 ```powershell
+npm run check:docs
 npm run typecheck
 npm run test:unit
+npm run test:integration
 npm run test:e2e
-npm run build
+npm run test:verification
+npm run check
 ```
 
-The first implementation plan must add the exact commands once the scaffold exists.
+`npm run check` composes the documentation gate, typecheck, unit, integration, packaged Electron E2E
+and verification suites. Local Playwright development tests require the test-only secondary-display
+gate and fail closed without a non-primary display. CI receives no implicit local display target.
+`npm start`, installed builds and ordinary product launches do not load this test policy.
 
-## 13. Implementation Sequence
+## 13. Historical Foundation Delivery Sequence
 
-1. Scaffold Electron Forge + Vite + React + TypeScript with strict TypeScript.
-2. Add Electron security baseline: context isolation on, node integration off, sandboxed renderer, IPC allowlist.
-3. Add shared contracts and domain types.
-4. Add SQLite connection and migration runner.
-5. Implement library create/open.
-6. Implement txt/md import and source metadata.
-7. Implement structure and story range shells.
-8. Implement module instance shell and job state.
-9. Implement export blocked state.
-10. Run Codex SDK spike as a separate gate before AI breakdown.
+The original foundation plan delivered the scaffold, Electron security baseline, shared contracts,
+SQLite/migrations, Library/import paths, deterministic structure workflow, module-instance shells, Job
+shell and read-only export status in successive Blocks. It is retained here only as delivery history;
+none of the following is an active instruction to rebuild the repository:
 
-## 14. Explicit Non-Goals
+1. Electron Forge + Vite + React + strict TypeScript scaffold.
+2. Electron isolation, navigation/window guards and typed IPC allowlist.
+3. Shared contracts and domain vocabulary.
+4. SQLite connection, static migrations and Library lifecycle.
+5. Main-owned txt/md import and immutable source metadata.
+6. Deterministic structure detection/review/freeze/unfreeze.
+7. Analysis-module instance shells and persisted Job/recovery presentation.
+8. Read-only export readiness and truthful disabled product shells.
+9. Separately governed Codex feasibility and bounded Block 13 integration.
+
+Current and future work must be selected from the active `CONTEXT.md` section, accepted decisions and
+the explicit overrides in `TASK-002`; this historical list cannot authorize implementation.
+
+## 14. Current Explicit Boundaries
 
 - No Web app deployment target.
-- No real AI breakdown in the first workbench foundation increment.
+- No production AI breakdown Job, Prompt pipeline or generated module body in the checked-out base.
 - No fallback AI provider.
 - No arbitrary Markdown-to-SQLite structural import.
 - No renderer-side filesystem or SQLite access.
-- No automatic external file watcher in the first increment; external changes are detected by explicit open/health-check/repair flows.
+- No automatic external file watcher; external changes use explicit open/health-check/repair flows.
 - No Technique production table, candidate adoption transaction, `TechniqueEntry` repository/service, or editable Technique detail until the deferred lifecycle is admitted.

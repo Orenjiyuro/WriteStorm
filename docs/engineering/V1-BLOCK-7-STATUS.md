@@ -1,14 +1,22 @@
-# WriteStorm V1 Block 7 Import Gate Status
+# WriteStorm V1 Block 7 Import Gate Historical Status
 
 Date: 2026-07-09
 
-Status: Historical Task 7.0-7.12 import checkpoint retained below; current override includes completed Book/SourceText services and Task 19 Block 8A structure detection. AI and module generation remain unimplemented.
+Document class: **HISTORICAL CHECKPOINT / SUPERSEDED FOR CURRENT-STATE USE**
 
-## Block 7 6A deferral override
+Status at the Task 7 checkpoint: Tasks 7.0–7.12 established the non-AI source-import path under a
+temporary 6A deferral.
 
-6A has not run and has no recorded Go/No-Go. The total thread authorizes Block 7 to proceed only as non-AI Foundation work because Block 6A.8 and the cross-block No-Go strategy allow non-AI Foundation blocks to continue even when AI feasibility is not yet Go.
+Current authority: use the active current-state section in `CONTEXT.md`,
+`V1-BLOCK-6A-CODEX-SDK-FEASIBILITY.md`, `V1-BLOCK-8-STATUS.md` and `V1-BLOCK-13-STATUS.md`. Current code
+has Book/SourceText services, structure detection/review/freeze, analysis-module instance shells and the
+bounded Block 13 integration shell. Production AI module-body generation remains unimplemented.
 
-Block 7 continued only as non-AI Foundation work. AI/Codex/prompt/runtime remain blocked. At this historical checkpoint, structure detection and module generation were blocked; Task 19 later completed Block 8A detection, while module generation remains unimplemented.
+## Historical Block 7 6A Deferral
+
+At this checkpoint, 6A had not run and had no recorded Go/No-Go. The total thread authorized Block 7 to
+proceed only as non-AI Foundation work. AI/Codex/prompt/runtime and structure/module generation were
+blocked at that time. Later feasibility, Block 8 and Block 13 records supersede those status claims.
 
 ## Historical Authorized Scope
 
@@ -30,7 +38,10 @@ Block 7 continued only as non-AI Foundation work. AI/Codex/prompt/runtime remain
 
 ## Task 7.2 Source Import Metadata Schema
 
-Historical note: Task 7 originally used unpublished migration `003_source_import_metadata`. The global reset deleted that migration; its admitted source-import columns and constraints now belong to migration 001, and the current registry reaches version 2 after migration 002.
+Historical note: Task 7 originally used unpublished migration `003_source_import_metadata`. The global
+reset deleted that migration; its admitted source-import columns and constraints moved to migration 001,
+and the reset checkpoint reached version 2 after migration 002. The present registry continues through
+version 7.
 
 Task 20 fresh packaged evidence revalidated the native dialog-stub import path as part of 7/7 Windows Electron e2e tests. Current source import delegates to SourceImportService, persists queued/running/completed Job policy and final checkpoint transactionally, and keeps source paths out of renderer requests. This does not authorize AI or claim macOS packaging.
 
@@ -151,7 +162,7 @@ This does not implement structure detection, AI, module generation, BookService,
 - Task 7.11 wires the minimum import button and `books:import-source` path needed for packaged smoke, plus a minimum `books:list` reopen/open-existing path. It still does not implement structure detection, AI, module generation, BookService, SourceTextService, or full workbench UI.
 - Task 7.12 wires `encoding_required` pending-token retry into `books:import-source` for manual GB18030 imports and adds Unicode/newline corpus coverage. It still does not implement structure detection, AI, module generation, BookService, SourceTextService, or full workbench UI.
 
-## Current Blockers And Notes
+## Historical Checkpoint Notes
 
 - PendingImportStore is implemented as a main-only in-memory helper and is wired into `books:import-source` for manual encoding retry. It resolves tokens by current library root, opaque session ID, and expiry, keeps source paths out of renderer-visible data, and clears the token after a successful retry or library session change.
 - Review remediation after Task 7.12: book, source_text, and completed import job share one SQLite transaction; a failed database write removes the copied source file before returning an error.

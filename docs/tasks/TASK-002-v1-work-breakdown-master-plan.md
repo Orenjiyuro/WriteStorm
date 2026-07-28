@@ -3,6 +3,16 @@
 `status: breakdown_only`
 `implementation_allowed_from_this_document: false`
 
+> **Block 14 权威跳转（2026-07-27）**：本文件中的旧模块定义和旧实现任务仅保留为历史拆解基线，
+> 已被 D122–D132 及当前 Block 14 附录覆盖。进入 Block 14 前必须依次读取
+> [14-G0 本体裁决](../engineering/V1-BLOCK-14-G0-CROSS-EXAMINATION-RECORD.md)、
+> [推断治理计划](../engineering/V1-BLOCK-14-INFERENCE-GOVERNANCE-PLAN.md)、
+> [故事情节方法论](../engineering/V1-BLOCK-14-STORY-PLOT-CROSS-EXAMINATION-RECORD.md)和
+> [14-G1 影响评估](../engineering/V1-BLOCK-14-G1-IMPLEMENTATION-BASELINE-IMPACT-ASSESSMENT.md)，
+> 并读取
+> [REV3.2 系统生产质量门禁](../engineering/V1-BLOCK-14-SYSTEM-PRODUCTION-QUALITY-GATE.md)。
+> 旧 Block 14 任务不得单独授权 deep Schema、Prompt、迁移或实现。
+
 本文档是 WriteStorm V1 的工作颗粒度拆分总入口，用于把后续实现线程拆成可验证的小任务。它不是实施记录，也不是代码变更计划。实现线程必须按前置闸口逐块执行，不能跳过前置块；每个工程大块都应交付一个可从真实桌面入口验证的骨架态、空态、阻塞态或禁用态。
 
 ## 0A. V1 总线程与实现线程门禁
@@ -15,6 +25,11 @@
   2. 当前的工作进度是什么，正要执行什么工作，是否有依据。
   3. 后续预计的工作是什么，可能会有什么困难。
 - 实现线程触及以下事项前必须停下请求总线程或用户授权：写文件、安装依赖、联网读取官方文档或 registry、运行脚手架、创建/切换分支、创建 worktree、执行可能破坏现有工作区的操作、跨出当前授权 Task 范围。
+- 本地开发阶段的 Playwright/真实 Electron 测试统一使用大块 6B 的副屏隔离策略；没有
+  non-primary display 时必须 fail fast，不能静默回落主屏。CI 不自动继承本地副屏默认值，
+  除非其显式请求该目标。该策略只属于测试基础设施：`npm start`、安装包和普通用户启动
+  不加载 Playwright 配置、不要求副屏，也不把测试窗口位置写入产品设置。任何可见窗口
+  验收都不得反复抢占用户焦点或操作不属于本次测试的进程。
 - 受本门禁约束的实现线程，如果无法从项目文档、工作拆分、总线程 prompt 或可见仓库事实中回答以上问题，必须停止实现并报告缺失依据。
 - 本 V1 总线程只输出或审查实现线程 prompt、计划、进度、风险和验收证据，不直接承担具体实现；若需要修改治理文档以维持门禁、进度事实源或线程交接规则，可在本线程执行并说明依据。
 - 进度判断依据优先级：最新用户指令 > 本工作拆分总文档 > 产品设计文档 > 仓库代码和验证证据 > 实现线程自述。
@@ -84,6 +99,7 @@
 5. 专题视角边界契约
 6. 资料库、SQLite、migration、LibraryService
 6A. Codex SDK feasibility gate（早期 Go/No-Go，不生成内容）
+6B. 截图验收副屏窗口隔离（测试基础设施，不改变普通启动）
 7. txt/md 导入
 8. 结构候选生成与校正
 9. `AnalysisModuleInstance` 工作台骨架
@@ -749,6 +765,42 @@ Steps：
 
 ---
 
+# 大块 6B：本地开发测试副屏窗口隔离
+
+目标：为本地开发阶段的真实 Electron/Playwright 测试提供统一、可复用的副屏启动策略，
+使验收窗口稳定出现在副屏，不在主屏反复创建、抢焦点和关闭。它是开发测试工具，不是
+普通用户启动策略。
+
+前置：本地开发 Playwright 需要至少一个 non-primary display；缺失时本地真实窗口测试
+失败关闭。非窗口单元/集成测试及普通产品启动不受此测试环境前置影响。
+
+禁止：改变普通用户启动时的窗口定位策略；持久化测试窗口位置到产品设置；用固定像素坐标假设副屏永远位于主屏右侧；未检测到副屏时静默退回主屏；把窗口移位逻辑复制到每个 e2e spec。
+
+方案锁定：采用测试专用环境开关 + Electron main-process `screen` API。本地
+`playwright.config.ts` 在未显式指定且非 CI 时统一请求 `secondary` display；CI 只在显式
+请求时使用；产品启动不设置该开关。测试模式在 `app.whenReady()` 后枚举 displays，确定性选择非 primary display，将
+窗口尺寸约束并居中于目标 display 的 `workArea`。
+
+## Tasks
+
+- Task 6B.1 启动契约：定义测试专用环境变量、唯一验收启动命令、开启/关闭语义和失败码；文件范围为 `src/main` 的窗口启动契约、`package.json` 或 `tests/e2e` 的统一 launcher、E2E README。验收：普通启动不受影响，截图线程有且只有一个规范命令。
+- Task 6B.2 Display 选择与坐标算法：使用 Electron `screen.getAllDisplays()` 与 `getPrimaryDisplay()`，选择非 primary display；支持负坐标、上下排列、DPI 缩放和副屏 work area 小于默认窗口尺寸。验收：窗口中心点和完整 bounds 均落在目标副屏 `workArea` 内，不使用 `x > 0` 等方向假设。
+- Task 6B.3 本地开发模式无副屏硬失败：本地 Playwright 在没有 non-primary display、目标
+  display 消失或 bounds 无法满足时输出可诊断错误并失败；禁止回落主屏。CI 未显式请求
+  副屏以及普通产品启动不进入该模式。
+- Task 6B.4 窗口生命周期复用：首次创建、关闭后重新创建以及测试重启都走同一个定位函数；窗口不得先显示在主屏再移动到副屏，创建时即传入目标 `x/y/width/height`，并避免验收模式下恢复旧主屏位置。验收：自动观察或事件日志中不存在主屏可见闪现。
+- Task 6B.5 自动断言与测试：为 display 选择/边界算法增加纯函数 unit fixtures，并在真实双屏 Windows 环境运行 Electron smoke，读取目标 display、`BrowserWindow.getBounds()` 和窗口中心所属 display。验证：`npm run typecheck`、相关 unit、规范验收启动命令、双屏 Electron smoke。
+- Task 6B.6 副屏截图门禁：本地截图任务必须先断言副屏命中再采图；截图
+  结束只关闭本次验收进程，不操作用户其他应用。副屏证据必须包含目标 display 非 primary、
+  display workArea、window bounds 和最终截图。
+
+完成门禁：测试专用开关不会进入正常产品行为；本地 Playwright 在单屏时 fail fast，
+在双屏时窗口从首次可见开始完整位于副屏；CI 只有显式请求时进入该模式。
+
+验证：display-selection unit fixtures、single-display failure test、dual-display packaged Electron smoke、真实副屏截图证据。
+
+---
+
 # 大块 7：txt/md 导入
 
 目标：导入 txt/md，复制源文件，记录 metadata 与 `source_text_edition`，为证据失效规则预留。
@@ -968,6 +1020,39 @@ Steps：
 
 验证：spec completeness checklist、schema fixtures、cross-module ownership tests、template version fixtures。
 
+## REV3.2 authoritative override for Tasks 14/17/18
+
+本 override 由 D132 和
+`docs/engineering/V1-BLOCK-14-SYSTEM-PRODUCTION-QUALITY-GATE.md` 授权。上方及后续旧 Task
+文字保留为历史工作分解；冲突时以下规则覆盖旧语义，但不自动授权实现：
+
+| Task | REV3.2 保留/替换关系 |
+| --- | --- |
+| 14.1 | 保留共享规格骨架，但增加覆盖、候选路由、所有权、证据、反证、条件触发和消费者资格；模块不得默认成为全文调用单元。 |
+| 14.2 | 收窄为 shared logical spec；逻辑契约先于 Zod/Schema，`CoverageSliceRevision`、三条状态轴和两个书级语义不得被压进单一 envelope 状态。 |
+| 14.3 | 覆盖“七套深层 Schema 草案”。每模块只定义独有事实/正式资产资格、少量模块或书级完成问题、交接和验证案例；不可验证规则保持 `PROVISIONAL`。 |
+| 14.4 | 保留按主张类型的证据/反证/推翻条件，不设统一摘录数量或用矩阵覆盖率冒充文学质量。 |
+| 14.5 | 覆盖单一审查状态机：运行/覆盖、认识状态、审查/权威三轴正交；完整持久化状态机和队列归 Block 18。 |
+| 14.6 | 保留唯一所有者矩阵；跨域发现只提交非权威候选。Block 16 独占正式 Technique，模块外治理域独占正式 AIConstraint。 |
+| 14.9 | 保留确定性 validation corpus，但分成人工案例走查与经单独授权的纯契约/reference fixture；静态 fixture 不证明真实 AI 质量。 |
+| 14.10 | 覆盖旧冲突优先级：Prompt 内容预算采用 B，依次为最小 Base、正确性触发、本书特别关注、ordered ContentFocus、可选深挖。程序安全不占 Prompt 内容预算，但计入总成本/延迟/失败率上限。 |
+| 14.11 | 保留 sample 输入和失败分类作为规格输入；静态 fixture 不得被称为真实 sample preview，真实 preview 仍归 17.12。 |
+| 14.12 | 覆盖“一次测试即冻结”：人工走查 -> 六模块有限语义 -> shared logical baseline -> 单独授权确定性 fixture -> `BLOCK14_SPEC_FROZEN`；Block 17 实测通过后才可 `PRODUCTION_CONFIGURATION_VALIDATED`。 |
+| 17.6 | 覆盖 module/scope 固定批次。`CoverageSliceRevision` 是覆盖定位单位，不是调用单位；Block 17 决定合批、拆分、上下文复用和真实依赖就绪。 |
+| 17.7 | AI 输出先成为按所有者路由的候选；一次事务不得跨所有者直接写正式 Observation、Technique 或 AIConstraint。 |
+| 17.8 | 覆盖只靠 `jobId/moduleInstanceId/batchKey` 的幂等；身份还必须包含 source edition、coverage plan/slice revision、配置/契约版本、候选去重键和实际依赖快照。 |
+| 18.2 | 证据变化按 canonical asset/结论依赖传播，不以模块实例作为唯一失效粒度。 |
+| 18.5 | `module + scope` 只保留为用户请求和最大容器边界；最小重跑是受影响结论、必要原文范围和真实依赖闭包。 |
+| 18.6 | Diff 必须区分 canonical asset、实例正文/综合、证据锚点、依赖和消费者资格，不能只比较实例聚合结果。 |
+| 18.8 | stale 传播沿实际资产/结论依赖闭包；不得通过旧 `inputModuleKeys` 默认整模块失效。 |
+| 18.9 | 覆盖旧 `Task completed / Book completed` 三层门：正式书级语义为 `AnalysisCoverageComplete` 与 `AuthorityReviewComplete`，消费者资格单独计算。 |
+| 18.10 | 撤销“全部可见 AI 资产必审”。改为风险分层审查与消费者特定资格；未审资产不自动权威，高影响跨模块权威来源使用前必须审查。 |
+| 18.11 | 不再写一个全局 `completed` 事务放行全部消费者；分别记录两个书级里程碑所需事实和对应版本快照。 |
+| 18.12 | 区分 append、source-edition 修订、coverage-plan 修订和延迟回搜；按真实依赖选择性 stale/review，不静默保持旧权威，也不默认整书 needs_rebuild。 |
+
+Block 14 只允许经单独授权的纯契约、reference logic 和确定性 fixture。生产 Job、SQLite
+队列/持久化、审查 UI、真实 AI 调用拓扑和用户纠错入口分别留给 Block 17/18。
+
 ---
 
 # 大块 15：专题视角深度规格
@@ -1075,7 +1160,7 @@ Steps：
 - Task 18.7 Diff 接受/拒绝事务：接受 diff 时按资产类型写入，拒绝保留候选和原因；重复接受幂等，不产生重复 evidence/relation。
 - Task 18.8 Downstream stale propagation：diff 接受后标记依赖模块、专题视角、BookCompletionGate、导出状态、技法候选状态；用户能看到需要重建的范围。
 - Task 18.9 BookCompletionPolicy：区分 `Task completed` 与 `Book completed`；定义 hard gate assets、review assets、deferred assets 三层。验收：低价值建议不阻塞完成，关键证据/结构/source copy 阻塞完成。
-- Task 18.10 ReviewCompletionGate service：扫描用户可见 AI 资产，确认所有模块正文、关键证据、关系、技法观察、可复用候选、AI 约束都已确认、拒绝、排除或合并。验证：blocked/allowed fixture tests。
+- Task 18.10 ReviewCompletionGate service（历史规则，已由 REV3.2 override 撤销）：不再要求全部可见 AI 资产必审。后续实现风险分层审查与消费者特定资格；未审资产不自动进入权威集合，高影响跨模块权威来源在消费者使用前必须审查。验证：不同风险、审查状态和消费者组合的 blocked/partial/allowed fixture tests。
 - Task 18.11 Mark book completed transaction：完成状态写入单事务；存在 blocker 时返回具体 blockers；完成后模板版本、结构版本、源文本版本成为 completion snapshot。
 - Task 18.12 Reopen/needs_rebuild：结构、源文本、模板、证据或 diff 接受后，已完成书籍进入 needs_rebuild 或 pending_review；不得静默保持 completed。
 - Task 18.13 Completion UI：真实桌面入口显示 blockers、deferred items、完成按钮和完成后状态；导出入口引用完成状态。

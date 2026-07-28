@@ -1,12 +1,22 @@
 # TASK-001: Breakdown Workbench Foundation
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `executing-plans` or equivalent task-by-task execution discipline. This task is the first implementation slice for the “拆解工作台优先” route. Do not expand into AI analysis, original novel creation, or full technique-library fusion.
+Document class: **HISTORICAL FIRST-INCREMENT PLAN / SUPERSEDED**
+
+**Current status:** Superseded as an active task. The repository is an implemented Electron application,
+not docs-only. Use `docs/engineering/CONTEXT.md` for current facts,
+`docs/product/FLOWS.md` for current user-visible paths and
+`docs/tasks/TASK-002-v1-work-breakdown-master-plan.md` for later V1 planning.
+
+> **Historical worker instruction:** This task defined the first “Breakdown Workbench first” slice. Its
+> scope and acceptance language are retained as delivery history, not as present capability status.
 
 **Goal:** Build the first usable Breakdown Workbench foundation: local library entry, breakdown shelf, txt/md import, structure review shell, `StorySegmentRange` review shell, `AnalysisModuleInstance` shell, job state shell and basic export entry.
 
 **Architecture:** Product-first vertical slice on Electron + React + TypeScript with SQLite as the main fact source. The app should let a writer reach the breakdown workbench with one imported source text and see stable objects that future Codex SDK analysis can write into. The first slice proves object boundaries and user path before work expands into real AI, Codex SDK auth or full module generation.
 
-**Tech Stack:** Electron Forge + Vite + React + TypeScript, SQLite main store, typed IPC between renderer and privileged main/utility services. Implementation must first read the repo and create an exact scaffold implementation plan because this repository is currently docs-only.
+**Historical tech-stack plan:** Electron Forge + Vite + React + TypeScript, SQLite main store, typed IPC
+between renderer and privileged main/utility services. At the time this plan was authored the repository
+was docs-only; that statement is no longer true.
 
 ---
 

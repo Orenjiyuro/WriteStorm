@@ -728,7 +728,9 @@ describe('Block 6A Codex SDK feasibility authority', () => {
     expect(decisions).toContain('## D097: Post-Certification Remediation Requires Fresh Windows Recertification');
     expect(decisions).toContain('## D098: Atomic Windows Certification Reissues Conditional Go At 834ba0b');
     expect(context).toContain('At the Block 8A checkpoint, 6A feasibility remained unexecuted and unrecorded.');
-    expect(block8aStatus).toContain('6A/Codex SDK feasibility remains unexecuted and unrecorded');
+    expect(block8aStatus).toContain(
+      'At the 8A checkpoint, 6A/Codex SDK feasibility was unexecuted and unrecorded',
+    );
     expect(decisions).toContain('The early Codex feasibility gate remains unexecuted and has no Go decision.');
   });
 

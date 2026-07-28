@@ -11,7 +11,7 @@ Electron stderr is captured and attached to e2e failures so startup, CDP connect
 
 All packaged Electron processes in specs must be created through `spawnPackagedApp` in `electron-app.ts`. Individual specs must not call Node's `spawn` directly. This keeps executable resolution, hardware-acceleration settings, environment isolation, and stderr behavior in one entry point.
 
-## Secondary-display screenshot gate
+## Local development secondary-display gate
 
 The one canonical command for Windows packaged screenshot/display acceptance is:
 
@@ -19,11 +19,19 @@ The one canonical command for Windows packaged screenshot/display acceptance is:
 npm run test:e2e:secondary-display
 ```
 
-Do not launch the executable directly for screenshot acceptance. A screenshot spec must include the `@secondary-display` title tag and use `spawnPackagedAppOnSecondary` when it needs to request the policy explicitly.
+Local development Playwright applies a hard test-only gate:
+`playwright.config.ts` sets `WRITESTORM_E2E_DISPLAY_TARGET=secondary` before specs and launchers run.
+`spawnPackagedApp` propagates that inherited target, so every packaged Electron development test fails
+closed rather than silently opening on the primary display. `npm run test:e2e` runs the complete suite;
+the dedicated command remains available for the tagged placement/screenshot subset.
 
-`playwright.config.ts` applies a hard local-development gate: every local Playwright run sets the main-process test contract `WRITESTORM_E2E_DISPLAY_TARGET=secondary` before any spec or launcher executes. `spawnPackagedApp` propagates that inherited contract, so an individual spec cannot silently lose secondary placement by choosing the ordinary helper. Even a legacy direct child-process launch inherits the contract when it spreads `process.env`.
+An environment with a truthy `CI` value does not receive the local default. CI may still request the
+secondary target explicitly. `npm start`, installed builds and ordinary product launches do not load
+Playwright configuration, retain product window behavior, never require a secondary display and never
+persist the test position to product settings.
 
-An environment with a truthy `CI` value does not receive the local default, so ordinary headless/virtual-display CI remains unchanged; CI can still request secondary placement explicitly. `npm start` and installed/packaged product launches do not load Playwright configuration, retain the existing product window behavior, and never persist the test position to product settings.
+Do not launch the executable directly for screenshot acceptance. A tagged secondary-display spec that
+needs the dedicated command must use `spawnPackagedAppOnSecondary`.
 
 After Electron is ready, main process selection works entirely in Electron DIP coordinates:
 
@@ -42,7 +50,10 @@ Main process writes a `WRITESTORM_E2E_DISPLAY ` JSON record to stderr before the
 - `requestedWindowBounds` and `actualWindowBounds`, both fully contained by the target work area;
 - `centerDisplayId`, equal to the target display id.
 
-Future screenshot threads must first run the canonical command and pass these assertions, then capture their screenshot in the same tagged spec. Evidence is incomplete without the placement JSON and final screenshot. Cleanup may close only the `ChildProcess` returned by the current spec; it must not stop Electron or other applications by name and must not manipulate applications on the user's primary display.
+Screenshot tasks must first pass the secondary-display assertions and then capture their screenshot in
+the same test run. Evidence is incomplete without the placement JSON and final screenshot. Cleanup may
+close only the `ChildProcess` returned by the current spec; it must not stop Electron or other
+applications by name.
 
 The packaged smoke is a scaffold/runtime check, not a production release signal. Remote CI is not configured, Windows signing is not configured, macOS notarization is not configured, and auto-update is not configured.
 
@@ -53,4 +64,5 @@ The packaged smoke is a scaffold/runtime check, not a production release signal.
 - The command covers `npm run build`, `electron-forge package`, and the real Electron window smoke.
 - Real-window smoke should run in an environment that can launch and connect to the packaged Electron app; the Codex sandbox may time out at the Playwright connection phase.
 - `npx playwright test` remains useful for isolating the window smoke, but it is not a replacement for full `npm run test:e2e`.
-- The secondary-display command is a development acceptance gate, not a product launch command and not part of Blocks 9 or 10 product functionality.
+- Secondary placement is the default local Playwright development-test policy, not a product launch
+  requirement or part of Blocks 9 or 10 product functionality.

@@ -21,26 +21,26 @@ describe('Block 8A status record', () => {
     expect(status).toContain('8A-10 | Worker telemetry');
     expect(status).toContain('Task 8.13');
     expect(status).toContain('Master Task 8.10 means Validation');
-    expect(status).toContain('Block 8B Review and freeze');
-    expect(status).toContain('Block 8C Invalidation hook');
+    expect(status).toContain('Block 8A detection slice');
+    expect(status).toContain('current whole-Block authority');
     expect(status).not.toContain('Block 8 is complete');
   });
 
   it('records feasibility and packaged-performance evidence without overstating it', () => {
     const status = readFileSync(statusPath, 'utf8');
 
-    expect(status).toContain('6A/Codex SDK feasibility remains unexecuted and unrecorded');
-    expect(status).not.toMatch(/6A[^\n]{0,80}\bGo\b/);
+    expect(status).toContain('At the 8A checkpoint, 6A/Codex SDK feasibility was unexecuted and unrecorded');
+    expect(status).toContain('Nothing in this historical status is a Codex SDK Go decision');
     expect(status).toContain('observation-only advisories');
     expect(status).toContain('macOS packaged performance evidence has not been recorded');
-    expect(status).toContain('Task 8.9 candidate persistence and stage-separation foundation is complete');
-    expect(status).toContain('draft/frozen repository and service transactions remain 8B work');
+    expect(status).toContain('Candidate side only at the 8A checkpoint');
+    expect(status).toContain('draft/frozen repository and service transactions were then deferred to 8B');
   });
 
   it('makes CONTEXT route readers to the durable 8A status and preserves unfinished boundaries', () => {
     const context = readFileSync(contextPath, 'utf8');
 
-    expect(context).toContain('Current Block 8A gate facts:');
+    expect(context).toContain('Historical Block 8A gate checkpoint facts:');
     expect(context).toContain('V1-BLOCK-8A-STATUS.md');
     expect(context).toContain('internal 8A-10 maps to master Task 8.13');
     expect(context).toContain('master Task 8.10 is validation');

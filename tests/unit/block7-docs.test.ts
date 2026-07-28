@@ -2,8 +2,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-describe('Block 7 deferral documentation gate', () => {
-  it('records the 6A deferral override and non-AI Block 7 boundary in engineering docs', () => {
+describe('Block 7 historical documentation gate', () => {
+  it('marks the 6A deferral as historical and routes current status to later authorities', () => {
     const context = readFileSync(path.resolve('docs/engineering/CONTEXT.md'), 'utf8');
     const statusPath = path.resolve('docs/engineering/V1-BLOCK-7-STATUS.md');
 
@@ -11,32 +11,35 @@ describe('Block 7 deferral documentation gate', () => {
 
     const status = readFileSync(statusPath, 'utf8');
 
-    for (const document of [context, status]) {
-      expect(document).toContain('Block 7 6A deferral override');
-      expect(document).toContain('6A has not run and has no recorded Go/No-Go');
-      expect(document).toContain('AI/Codex/prompt/runtime remain blocked');
-      expect(document).toContain('Task 19 later completed Block 8A');
-      expect(document).toContain('module generation remains unimplemented');
-      expect(document).not.toContain('structure detection and module generation remain blocked');
-    }
-
+    expect(status).toContain('HISTORICAL CHECKPOINT / SUPERSEDED');
+    expect(status).toContain('Historical Block 7 6A Deferral');
+    expect(status).toContain('At this checkpoint, 6A had not run');
+    expect(status).toContain('Later feasibility, Block 8 and Block 13 records supersede');
+    expect(status).toContain('structure detection/review/freeze');
+    expect(status).toContain('Production AI module-body generation remains unimplemented');
+    expect(context).toContain('Historical Block 7 gate checkpoint facts');
+    expect(context).toContain('Later 6A and Block 13 authorities supersede');
+    expect(context).toContain('production AI module-body generation remains unimplemented');
     expect(status).toContain('Authorized scope: Task 7.0 through Task 7.12 only');
     expect(status).toContain('Historical Task 7 out of scope: structure detection, AI, and module generation');
   });
 
-  it('records the unpublished Task 7.2 migration reset into the current baseline', () => {
+  it('records the unpublished Task 7.2 migration reset without freezing version 2 as current', () => {
     const context = readFileSync(path.resolve('docs/engineering/CONTEXT.md'), 'utf8');
     const status = readFileSync(path.resolve('docs/engineering/V1-BLOCK-7-STATUS.md'), 'utf8');
 
     for (const document of [context, status]) {
       expect(document).toContain('migration 001');
       expect(document).toContain('migration 002');
-      expect(document).toMatch(/schema version (?:is )?2|reaches version 2/);
+      expect(document).toContain('version 7');
       expect(document).toContain('source_texts.original_file_name');
       expect(document).toContain('source_texts.size_bytes');
       expect(document).toContain('idx_source_texts_content_hash');
       expect(document).toContain('does not implement file dialog, preflight, source copy, SQLite import writes, renderer import UI, BookService, or SourceTextService');
     }
+
+    expect(status).not.toContain('the current registry reaches version 2');
+    expect(context).not.toContain('raises the current schema version to 5');
   });
 
   it('records Task 7.3 as main-side dialog and pending-token boundary only', () => {
